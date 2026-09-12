@@ -1,0 +1,55 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#172e28">
+  <meta name="description" content="Zak's Throne: una aventura pixel art entre amigos, yuyos y un poquito de peligro.">
+  <title>Zak's Throne — Los Aromos</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23172e28'/%3E%3Cpath d='M6 10l5 5 5-9 5 9 5-5-3 15H9z' fill='%23eac779'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="src/style.css">
+</head>
+<body>
+  <main id="app">
+    <canvas id="world" width="640" height="360" aria-label="Mundo de Zak's Throne: juego de aventura visto desde arriba"></canvas>
+    <div class="vignette"></div>
+    <header id="masthead"><a class="brand" href="#" aria-label="Zak's Throne"><span class="crown">♜</span> ZAK'S THRONE</a><div class="edition"><span class="live-dot"></span> CRÓNICAS DE LOS AROMOS <span class="edition-version">/ VOL. 01</span></div><button class="icon-button" id="sound-toggle" title="Activar o desactivar sonido" aria-label="Activar sonido">♫<span class="sound-slash">/</span></button></header>
+    <section id="menu-screen" class="screen menu-screen">
+      <div class="menu-copy">
+        <div class="eyebrow"><span></span> UNA AVENTURA BIEN NUESTRA</div>
+        <h1>Zak's<br><span>Throne</span><i>✦</i></h1>
+        <div class="title-rule"><span></span><b>LOS AROMOS</b><span></span></div>
+        <p class="menu-description">Seis amigos. Un pueblo tranquilo.<br>Y unos cuantos problemas entre los yuyos.</p>
+        <nav class="main-actions" aria-label="Menú principal">
+          <button class="button primary" id="new-game"><span class="button-symbol">✦</span><span>Juego nuevo<small>Cada historia empieza en casa</small></span><span class="arrow">→</span></button>
+          <button class="button secondary" id="load-game"><span class="button-symbol">▤</span><span>Cargar juego</span><span id="save-count" class="button-tag">0 / 3</span></button>
+          <button class="button quiet" id="settings-button"><span class="button-symbol">⚙</span><span>Opciones y controles</span></button>
+          <button class="exit-link" id="exit-game">Salir del juego <span>↗</span></button>
+        </nav>
+        <div class="menu-note"><span class="tiny-leaf">❧</span> Sin apuro. El camino también es la aventura.</div>
+      </div>
+      <aside class="scene-caption"><div class="scene-marker">⌖</div><div><span>TE ESPERA UN LUGAR</span><strong>Aldea de los Aromos</strong><p>Un refugio antes de lo desconocido.</p></div><span class="safe-pill"><i></i> ZONA SEGURA</span></aside>
+      <div class="scene-label"><span>01 —</span> EL COMIENZO</div>
+    </section>
+    <section id="character-screen" class="screen hidden">
+      <div class="page-heading"><button class="back-button" data-back="menu">← Volver</button><div class="eyebrow">TU HISTORIA, TU PERSONAJE</div><h2>¿Quién sale a la aventura?</h2><p>Cada amigo tiene su manera de arreglárselas.</p></div>
+      <div id="character-grid" class="character-grid"></div>
+      <div id="character-detail" class="character-detail"></div>
+      <div class="character-bottom"><span>Una partida nueva no modifica tus guardados.</span><button id="begin-adventure" class="button primary compact">Empezar la aventura <span>→</span></button></div>
+    </section>
+    <section id="hud" class="hidden" aria-label="Interfaz de juego">
+      <div class="player-panel"><canvas id="hud-portrait" width="40" height="48"></canvas><div class="player-vitals"><div class="player-label"><strong id="hud-name">Dante</strong><span id="hud-level">NVL. 1</span></div><div class="meter health"><i id="health-fill"></i><span id="health-text"></span></div><div class="meter energy"><i id="energy-fill"></i><span id="energy-text"></span></div><div class="meter xp"><i id="xp-fill"></i></div></div></div>
+      <div class="location-panel"><span id="hud-time">☀ 08:00</span><strong id="hud-biome">Aldea de los Aromos</strong><span id="hud-safety" class="safe-text">ZONA SEGURA</span></div>
+      <div id="status-effects"></div><div id="quest-hint"><span>DIARIO DE VIAJE</span><strong id="quest-current">Encontrá el arco en la aldea</strong><small>J para abrir el diario</small></div>
+      <div id="interaction-hint" class="hidden"></div>
+      <div id="bag-hint" class="hidden"></div>
+      <div class="bottom-hud"><button id="stats-button" class="hud-button" title="Personaje (C)" aria-label="Personaje (C)">♙ <span>Personaje</span><b id="points-badge" class="hidden">0</b><kbd>C</kbd></button><div id="weapon-bar"></div><button id="ability-button" class="hud-button ability"><span id="ability-label">Habilidad</span><kbd>Q</kbd><i id="ability-cooldown"></i></button><button id="inventory-button" class="hud-button" title="Mochila y fabricación (B)" aria-label="Mochila y fabricación (B)">▣ <span>Mochila</span><kbd>B</kbd></button><button id="journal-button" class="hud-button" title="Diario (J)" aria-label="Diario (J)">▤ <kbd>J</kbd></button><button id="map-button" class="hud-button" title="Mapa (M)" aria-label="Mapa (M)">⌖ <kbd>M</kbd></button><button id="pause-button" class="hud-button" title="Pausa (Esc)" aria-label="Pausa (Esc)">Ⅱ <kbd>Esc</kbd></button></div>
+      <div id="touch-controls"><div class="dpad"><button data-touch="ArrowUp">▲</button><button data-touch="ArrowLeft">◀</button><button data-touch="ArrowDown">▼</button><button data-touch="ArrowRight">▶</button></div><div class="touch-actions"><button data-touch="Shift">Correr</button><button id="touch-interact">E</button><button id="touch-attack">Atacar</button></div></div>
+    </section>
+    <div id="toast-container" aria-live="polite"></div>
+    <div id="modal-overlay" class="hidden"><section id="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title"><button id="close-modal" class="modal-close" aria-label="Cerrar">×</button><div id="modal-content"></div></section></div>
+    <footer id="menu-footer"><span>HECHO DE PÍXELES Y BUENAS HISTORIAS</span><span><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> para moverte <i>·</i> <kbd>ESPACIO</kbd> para atacar</span><span>v1.0 <b>✦</b></span></footer>
+  </main>
+  <script src="src/data.js"></script><script src="src/world.js"></script><script src="src/render.js"></script><script src="src/game.js"></script><script src="src/survival.js"></script><script src="src/ui.js"></script>
+</body>
+</html>

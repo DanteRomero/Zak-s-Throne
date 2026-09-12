@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="es">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Zak's Throne - pruebas</title>
+<style>body{background:#172522;color:#efe7ce;font:16px/1.5 monospace;max-width:1000px;margin:40px auto;padding:0 24px}h1{color:#edc47a}.pass{color:#a5d297}.fail{color:#ff9f91}li{margin:5px 0}details{margin:24px 0}pre{white-space:pre-wrap}a{color:#edc47a}</style>
+</head>
+<body><h1>Pruebas de Zak's Throne</h1><p id="summary">Ejecutando reglas e integración...</p><div id="results"></div><p><a href="../index.html">Volver al juego</a></p>
+<script src="../src/data.js"></script><script src="../src/world.js"></script><script src="../src/render.js"></script><script src="../src/game.js"></script><script src="../src/survival.js"></script>
+<script src="rules.test.js"></script><script src="engine.test.js"></script><script src="survival.test.js"></script>
+<script>
+(function(){
+  const all=[];
+  function run(label,fn){
+    let summary;
+    try{summary=fn();summary.results=summary.results.map(r=>typeof r==='string'?{name:r,pass:true}:r);}
+    catch(error){summary={passed:0,failed:1,results:[{name:label,pass:false,error:error.stack||error.message}]};}
+    const section=document.createElement('details');section.open=true;
+    const heading=document.createElement('summary');heading.textContent=label+' - '+summary.passed+' correctas, '+(summary.failed||0)+' fallos';section.appendChild(heading);
+    const list=document.createElement('ol');
+    summary.results.forEach(result=>{all.push(result);const row=document.createElement('li');row.className=result.pass?'pass':'fail';row.textContent=(result.pass?'PASS ':'FAIL ')+result.name;
+      if(!result.pass){const error=document.createElement('pre');error.textContent=result.error;row.appendChild(error);}list.appendChild(row);});
+    section.appendChild(list);document.getElementById('results').appendChild(section);return summary;
+  }
+  const rules=run('Reglas',()=>runZakRulesTests()),engine=run('Motor',()=>runZakEngineTests()),survival=run('Inventario y consumibles',()=>runZakSurvivalTests());
+  window.zakTestResults={passed:all.filter(r=>r.pass).length,failed:all.filter(r=>!r.pass).length,rules,engine,survival};
+  const summary=document.getElementById('summary');summary.textContent=window.zakTestResults.passed+' pruebas correctas / '+window.zakTestResults.failed+' fallos';summary.className=window.zakTestResults.failed?'fail':'pass';
+  document.title=(window.zakTestResults.failed?'FAIL':'PASS')+' - Zak tests';
+})();
+</script></body></html>
