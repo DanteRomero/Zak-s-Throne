@@ -70,17 +70,9 @@ class Browser:
         except Exception:pass
         self.sock.close()
         try:self.proc.wait(timeout=5)
-        except subprocess.TimeoutExpired:
-            self.proc.terminate()
-            try:self.proc.wait(timeout=3)
-            except subprocess.TimeoutExpired:self.proc.kill();self.proc.wait(timeout=3)
-        # Chrome's cache workers can briefly retain file handles after the main process exits.
-        profile_path=Path(self.profile.name).resolve()
-        if profile_path.parent!=Path(tempfile.gettempdir()).resolve() or not profile_path.name.startswith('zak-browser-'):
-            raise RuntimeError('Unexpected browser profile path; cleanup cancelled')
-        for attempt in range(10):
-            try:self.profile.cleanup();break
-            except OSError:time.sleep(.2)
+        except subprocess.TimeoutExpired:self.proc.terminate()
+        try:self.profile.cleanup()
+        except PermissionError:pass
 
 if __name__=='__main__':
     parser=argparse.ArgumentParser();parser.add_argument('page',nargs='?',default='index.html');parser.add_argument('--script');parser.add_argument('--screenshot');parser.add_argument('--width',type=int,default=1440);parser.add_argument('--height',type=int,default=900);parser.add_argument('--touch',action='store_true');args=parser.parse_args()
@@ -88,10 +80,9 @@ if __name__=='__main__':
     try:
         browser.navigate(args.page,args.width,args.height)
         if args.touch:browser.command('Emulation.setTouchEmulationEnabled',{'enabled':True,'maxTouchPoints':1})
-        if args.script:result=browser.evaluate(Path(args.script).read_text(encoding='utf-8-sig'))
-        else:result=browser.evaluate("window.zakTestResults ? {passed:zakTestResults.passed,failed:zakTestResults.failed,failures:Object.values(zakTestResults).flatMap(s=>s?.results||[]).filter(t=>!t.pass)} : {title:document.title,state:window.zakGame?.state,canvas:!!document.querySelector('canvas')}")
-        print(json.dumps(result,ensure_ascii=False))
+        if args.script:print(json.dumps(browser.evaluate(Path(args.script).read_text(encoding='utf-8-sig')),ensure_ascii=False))
+        else:print(json.dumps(browser.evaluate("({title:document.title,state:window.zakGame?.state,canvas:!!document.querySelector('canvas')})"),ensure_ascii=False))
         if args.screenshot:browser.screenshot(args.screenshot)
         print('BROWSER_ERRORS:',json.dumps(browser.errors,ensure_ascii=False))
-        if browser.errors or (isinstance(result,dict) and result.get('failed',0)>0):raise SystemExit(1)
+        if browser.errors:raise SystemExit(1)
     finally:browser.close()

@@ -7,11 +7,8 @@
   $('world').tabIndex = 0;
   const SAVE_PREFIX = 'zak.throne.save.';
   const SETTINGS_KEY = 'zak.throne.settings.v1';
-  const WEAPONS = ['fists', 'bow', 'sword', 'stone', 'axe', 'pickaxe'];
-  const ICONS = { fists: '✊', bow: '➶', sword: '⚔', stone: '◆', axe: '🪓', pickaxe: '⛏' };
-  const RESOURCE_NAMES = {wood:'Madera',stone:'Piedra',metal:'Metal'};
-  const eventHistory = [], toastQueue = [];
-  let activeToast = null, toastTimer = 0;
+  const WEAPONS = ['fists', 'bow', 'sword', 'stone'];
+  const ICONS = { fists: '✊', bow: '➶', sword: '⚔', stone: '◆' };
   let selected = 'gero', modalResume = false, modalBack = null, lastFocus = null, modalVersion = 0, suppressPause = false;
   let lastPortrait = '', lastHud = 0, hasStarted = false;
   const number = value => Number.isFinite(Number(value)) ? Number(value) : 0;
@@ -31,42 +28,10 @@
   }
   function paragraph(parent, text, className = '') { const node = el('p', className, text); parent.append(node); return node; }
   function text(id, value) { const node = $(id); if (node && node.textContent !== String(value)) node.textContent = String(value); }
-  function nextToast() {
-    clearTimeout(toastTimer);
-    activeToast = toastQueue.shift() || null;
-    $('toast-container').replaceChildren();
-    if (!activeToast) return;
-    const node = el('div', 'toast' + (activeToast.error ? ' error' : ''));
-    node.append(el('span','toast-message',activeToast.message),el('small','', 'J · Historial en el diario' + (toastQueue.length ? ' · +' + toastQueue.length : '')));
-    $('toast-container').append(node);
-    toastTimer = setTimeout(nextToast, activeToast.error ? 5200 : 3600);
-  }
   function toast(message, error = false) {
-    message = String(message || '');
-    if (!message) return;
-    const last = eventHistory[eventHistory.length - 1];
-    if (last && last.message === message) last.count++;
-    else eventHistory.push({message,error,count:1,time:number(game.player?.playTime)});
-    if (eventHistory.length > 40) eventHistory.shift();
-    if (activeToast?.message === message || toastQueue.some(item => item.message === message)) return;
-    const item = {message,error};
-    if (error) {
-      toastQueue.unshift(item);
-      if (toastQueue.length > 4) toastQueue.pop();
-      nextToast();
-    } else {
-      if (toastQueue.length >= 4) toastQueue.shift();
-      toastQueue.push(item);
-      if (!activeToast) nextToast();
-    }
-  }
-  function clearToasts() {
-    clearTimeout(toastTimer); toastQueue.length = 0; eventHistory.length = 0;
-    activeToast = null; $('toast-container').replaceChildren();
-  }
-  function countdown(seconds) {
-    const remaining = Math.ceil(Math.max(0,number(seconds)));
-    return Math.floor(remaining / 60) + ':' + String(remaining % 60).padStart(2,'0');
+    const node = el('div', 'toast' + (error ? ' error' : ''), message);
+    $('toast-container').append(node);
+    setTimeout(() => { node.classList.add('leaving'); setTimeout(() => node.remove(), 350); }, error ? 6500 : 4300);
   }
   function safeSettings() {
     try { const value = JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}'); return value && typeof value === 'object' ? value : {}; }
@@ -299,16 +264,14 @@
   function showSettings() {
     const returnToPause = !!game.player && (game.state === 'playing' || game.state === 'paused');
     openModal('A tu manera', 'OPCIONES Y CONTROLES', parent => {
-      [['sound','Sonido ambiental y combate'],['particles','Partículas y efectos'],['tutorial','Consejos al empezar']].forEach(([key,label]) => {
+      [['sound','Sonido ambiental y combate'],['particles','Partículas y efectos'],['shake','Sacudida de pantalla'],['tutorial','Consejos al empezar']].forEach(([key,label]) => {
         const row = el('div','setting-row'); row.append(el('span','',label));
         const toggle = button(game.settings[key] ? 'ACTIVADO' : 'DESACTIVADO', () => { game.settings[key] = !game.settings[key]; persistSettings(); toggle.textContent = game.settings[key] ? 'ACTIVADO' : 'DESACTIVADO'; toggle.setAttribute('aria-pressed',String(game.settings[key])); },'toggle');
         toggle.setAttribute('aria-label',label); toggle.setAttribute('aria-pressed',String(game.settings[key])); row.append(toggle); parent.append(row);
       });
       const help = el('div','help-grid');
-      [['Moverte','WASD / flechas'],['Correr','Shift'],['Atacar / recolectar','Espacio / clic'],['Habilidad','Q'],['Recoger / consumir','E'],['Armas y herramientas','1 — 6'],['Mochila / fabricar','B / I'],['Personaje','C'],['Diario','J'],['Mapa','M'],['Pausa','Esc']].forEach(([action,key]) => { const row = el('div'); row.append(el('span','',action),el('kbd','',key)); help.append(row); });
+      [['Moverte','WASD / flechas'],['Correr','Shift'],['Atacar','Espacio / clic'],['Rodar','F / clic derecho'],['Habilidad','Q'],['Interactuar','E'],['Usar hierba','R'],['Armas','1 — 4'],['Personaje','C'],['Diario','J'],['Mapa','M'],['Pausa','Esc']].forEach(([action,key]) => { const row = el('div'); row.append(el('span','',action),el('kbd','',key)); help.append(row); });
       parent.append(help);
-      paragraph(parent,'Buscá el hacha en la aldea y golpeá árboles para juntar madera. Con una piedra equipada o guardada y 8 de madera fabricás un pico desde B; el pico extrae piedra y metal de la cueva.','hint');
-      paragraph(parent,'E consume tu objeto especial, recupera mochilas y recoge flores medicinales. Las flores y los objetos especiales vuelven a los 10 s. Si caés, tenés 5 minutos de juego para recuperar tu mochila; la pausa detiene el reloj.','hint');
       paragraph(parent,'Los controles táctiles aparecen en pantallas compatibles. En un teléfono, giralo horizontalmente para ver mejor. El sonido se activa después de tu primera interacción.','hint');
     },returnToPause ? showPause : null);
   }
@@ -318,7 +281,7 @@
     if (!game.player) return;
     const p = game.player, c = character(p.characterId), s = game.stats();
     openModal(c.name + ' · Nivel ' + p.level, 'FICHA DEL PERSONAJE', parent => {
-      paragraph(parent,p.points ? p.points + ' punto' + (p.points === 1 ? '' : 's') + ' para mejorar. Vida suma 5; velocidad y resistencia, 2; fuerza e inteligencia, 1.' : 'Cada nivel suma 2 de vida, 1 de fuerza y 2 puntos para mejorar. Dante recibe 1 de fuerza adicional.');
+      paragraph(parent,p.points ? p.points + ' punto' + (p.points === 1 ? '' : 's') + ' para mejorar. Vida suma 5; las otras estadísticas suman 1.' : 'Al subir de nivel recibís 2 de vida y un punto para mejorar.');
       Object.keys(Zak.STAT_LABELS).forEach(key => {
         const row = el('div','stats-upgrade'), cap = key === 'health' ? 500 : key === 'intelligence' ? Infinity : 100;
         row.append(el('span','',Zak.STAT_LABELS[key]),el('b','',fmt(p.stats[key]) + (cap < Infinity ? ' / ' + cap : '')));
@@ -329,6 +292,8 @@
       ['Vida efectiva: ' + fmt(s.maxHealth), 'Fuerza efectiva: ' + fmt(s.strength) + ' · Armadura: ' + fmt(s.armor),
        'Movimiento: ' + fmt(s.moveSpeed) + ' px/s · Golpe cada ' + fmt(s.attackCooldown) + ' s',
        'Carrera: ' + fmt(s.runDuration) + ' s · Experiencia: ×' + fmt(s.xpMultiplier),
+       'Daño de armas: ×' + fmt(s.damageMultiplier) + ' · Cuarto golpe seguido: crítico ×1,75',
+       'Monedas: ' + fmt(p.coins) + ' · Hierbas: ' + p.herbs + ' / ' + Zak.HERB_BAG + ' · Derrotas: ' + p.kills,
        'Próximo nivel: ' + fmt(p.xp) + ' / ' + Zak.xpNeeded(p.level) + ' XP'].forEach(line => summary.append(el('div','',line)));
       parent.append(summary); const benefits = el('div','traits'); benefits.style.marginTop = '20px'; traits(benefits,c); parent.append(benefits);
     });
@@ -343,67 +308,10 @@
       });
       const heading = el('h3','','Bichos y malas juntas'); heading.style.fontWeight = 'normal'; heading.style.color = 'var(--gold)'; parent.append(heading);
       Object.entries(Zak.ENEMY_TYPES).forEach(([type,enemy]) => {
-        const s = Zak.enemyStats(type,game.player.level), row = el('div','journal-task'), body = el('div');
-        body.append(el('strong','',enemy.name + ' · Nivel ' + s.level),el('small','',enemy.description),el('small','',fmt(s.health) + ' vida · ' + fmt(s.strength) + ' fuerza · ' + fmt(s.armor) + ' armadura')); row.append(body); parent.append(row);
+        const s = Zak.enemyStats(type,game.player.level), row = el('div','journal-task' + (enemy.boss ? ' boss' : '')), body = el('div');
+        if (enemy.boss) row.append(el('b','',game.questFlags['defeat_' + type] ? '✓' : '☠'));
+        body.append(el('strong','',enemy.name + (enemy.boss ? ' · JEFE' : '') + ' · Nivel ' + s.level),el('small','',enemy.description),el('small','',fmt(s.health) + ' vida · ' + fmt(s.strength) + ' fuerza · ' + fmt(s.armor) + ' armadura')); row.append(body); parent.append(row);
       });
-      const history = el('section','event-history');
-      history.append(el('h3','','Lo que pasó en este viaje'));
-      paragraph(history,'Últimos 40 avisos de esta sesión. Los avisos repetidos se agrupan.','hint');
-      if (!eventHistory.length) paragraph(history,'Todavía no hay novedades.');
-      [...eventHistory].reverse().forEach(entry => {
-        const row = el('div','event-entry' + (entry.error ? ' urgent' : ''));
-        row.append(el('small','',countdown(entry.time)),el('span','',entry.message + (entry.count > 1 ? ' (×' + entry.count + ')' : ''))); history.append(row);
-      });
-      parent.append(history);
-    });
-  }
-  function showInventory() {
-    if (!game.player) return;
-    const p = game.player, bags = game.lootBags || [];
-    openModal('Todo lo que llevás', 'MOCHILA Y FABRICACIÓN', parent => {
-      const materials = el('div','resource-grid');
-      Object.entries(RESOURCE_NAMES).forEach(([id,label]) => {
-        const card = el('div','resource-card'); card.dataset.resource = id;
-        card.append(el('span','',label),el('strong','',fmt(p.resources?.[id] || 0))); materials.append(card);
-      });
-      parent.append(materials,el('h3','inventory-heading','Armas y herramientas'));
-      const owned = el('div','inventory-tools');
-      WEAPONS.filter(id => p.weapons.includes(id)).forEach(id => {
-        const tool = button(ICONS[id] + ' ' + Zak.WEAPON_TYPES[id].name,() => { game.equip(id); showInventory(); },'tool-chip' + (p.weapon === id ? ' selected' : ''));
-        tool.setAttribute('aria-pressed',String(p.weapon === id)); tool.title = Zak.WEAPON_TYPES[id].description; owned.append(tool);
-      });
-      parent.append(owned,el('h3','inventory-heading','Fabricar'));
-      Object.entries(Zak.CRAFTING_RECIPES || {}).forEach(([id,recipe]) => {
-        const row = el('div','recipe-card'); row.dataset.recipe = id;
-        const weapon = recipe.weapon || id, alreadyOwned = p.weapons.includes(weapon), inBag = bags.some(bag => bag.weapons.includes(weapon));
-        row.append(el('strong','',ICONS[weapon] + ' ' + recipe.name));
-        const ingredients = el('div','recipe-ingredients');
-        (recipe.requires || []).forEach(required => {
-          const have = p.weapons.includes(required);
-          ingredients.append(el('span',have ? 'ready' : 'missing',(have ? '✓ ' : '○ ') + Zak.WEAPON_TYPES[required].name + ' · herramienta, no se consume'));
-        });
-        Object.entries(recipe.cost || {}).forEach(([resource,amount]) => {
-          const have = number(p.resources?.[resource]);
-          ingredients.append(el('span',have >= amount ? 'ready' : 'missing',(have >= amount ? '✓ ' : '○ ') + RESOURCE_NAMES[resource] + ' ' + fmt(have) + ' / ' + amount));
-        });
-        row.append(ingredients);
-        const ready = !alreadyOwned && !inBag && (recipe.requires || []).every(required => p.weapons.includes(required)) && Object.entries(recipe.cost || {}).every(([resource,amount]) => number(p.resources?.[resource]) >= amount);
-        const craft = button(alreadyOwned ? 'Ya está en tu mochila' : inBag ? 'Recuperá tu mochila del suelo' : 'Fabricar ' + recipe.name,() => { if (game.craft(id)) { showInventory(); updateHud(true); } },'button secondary craft-button');
-        craft.disabled = !ready; craft.dataset.craft = id; row.append(craft); parent.append(row);
-      });
-      paragraph(parent,'Primeros pasos: recogé el hacha en la aldea con E, equipala con 5 y golpeá un árbol. Buscá la piedra arrojadiza en la entrada de la cueva; es la herramienta que necesitás para fabricar tu primer pico.','hint');
-      paragraph(parent,'Equipá el pico con 6 y golpeá las vetas de la cueva. El metal requiere más golpes. Los recursos agotados vuelven a crecer; las armas que recogés esperan a que se pierdan para volver a aparecer.','hint');
-      if (bags.length) {
-        parent.append(el('h3','inventory-heading','Mochilas por recuperar'));
-        bags.forEach(bag => {
-          const row = el('div','lost-bag');
-          row.append(el('strong','','◈ ' + countdown(bag.time) + ' para recuperarla'));
-          const contents = bag.weapons.map(id => Zak.WEAPON_TYPES[id]?.name || id).concat(Object.entries(bag.resources || {}).filter(([,amount]) => amount > 0).map(([id,amount]) => amount + ' ' + RESOURCE_NAMES[id]));
-          paragraph(row,contents.join(' · ')); parent.append(row);
-        });
-      }
-      const special = Zak.SPECIAL_ITEMS?.[p.characterId];
-      if (special) { parent.append(el('h3','inventory-heading','Tu hallazgo especial: ' + special.name)); paragraph(parent,special.description,'hint'); }
     });
   }
   function showMap() {
@@ -411,18 +319,33 @@
     openModal('Los caminos de los Aromos', 'MAPA DE LA REGIÓN', parent => {
       const canvas = el('canvas','map-canvas'); canvas.width = 500; canvas.height = 300; canvas.setAttribute('aria-label','Mapa: aldea segura, cueva y Yuyos. Un punto marca tu posición.');
       parent.append(canvas); Zak.drawMinimap(canvas,game);
-      const legend = el('div','map-legend'); ['● Vos','◆ Herramienta','✦ Especial','◈ Mochila','Aldea · segura','Cueva / Yuyos · peligro'].forEach(label => legend.append(el('span','',label))); parent.append(legend);
+      const legend = el('div','map-legend'); ['● Vos','$ Almacén','☠ Jefe','Aldea · segura','Cueva y Yuyos · peligro'].forEach(label => legend.append(el('span','',label))); parent.append(legend);
       paragraph(parent,'Los enemigos no pueden entrar en la aldea. El pozo te espera cuando necesites recuperar vida.','hint');
     });
   }
   function showTutorial() {
     openModal('Primero, los pies en la tierra', 'BIENVENIDO A LOS AROMOS', parent => {
       paragraph(parent,'La aldea es tu refugio. Movete con WASD o flechas y buscá el arco: acercate a su brillo y presioná E.');
-      paragraph(parent,'Atacá con Espacio o clic. Q activa tu habilidad; Fede y Pepe tienen habilidades pasivas. Shift te permite correr: cuidá la energía.');
-      paragraph(parent,'Encontrá el hacha en la aldea: equipala con 5 y golpeá árboles para juntar madera. B abre tu mochila y las recetas; con madera y la piedra de la cueva podés fabricar el pico y extraer minerales.');
-      paragraph(parent,'E también consume objetos especiales de tu personaje. Si caés, tus armas, herramientas y materiales quedan en una mochila: tenés 5 minutos para volver a buscarla. M señala dónde está.');
-      paragraph(parent,'C abre tus estadísticas; J, el diario y el historial de avisos; M, el mapa. Guardá manualmente en una de las tres ranuras desde Esc antes de irte.');
+      paragraph(parent,'Atacá con Espacio o clic: cada cuarto golpe seguido es crítico. F o clic derecho te hace rodar y esquivar cualquier golpe. Q activa tu habilidad; Fede y Pepe tienen habilidades pasivas. Shift te permite correr: cuidá la energía.');
+      paragraph(parent,'Los enemigos sueltan monedas. Gastalas en el puesto de El Almacén, al oeste de la plaza. Las hierbas van a tu bolsa y se usan con R.');
+      paragraph(parent,'C abre tus estadísticas; J, el diario; M, el mapa. Guardá manualmente en una de las tres ranuras desde Esc antes de irte.');
       const actions = el('div','modal-actions'); actions.append(button('Ahora sí, a explorar',() => hideModal(),'button primary'),button('No mostrar este consejo otra vez',() => { game.settings.tutorial = false; persistSettings(); hideModal(); })); parent.append(actions);
+    });
+  }
+  function showShop(message) {
+    if (!game.player) return;
+    openModal('El Almacén de Don Ramón', 'PUESTO DE LA PLAZA', parent => {
+      const purse = el('p','shop-purse'); purse.append(el('span','','Tu guita'),el('strong','','◉ ' + game.player.coins)); parent.append(purse);
+      if (message) paragraph(parent,message,'hint shop-message');
+      game.shopItems().forEach(item => {
+        const row = el('div','shop-item' + (item.soldOut ? ' sold-out' : '')), body = el('div');
+        body.append(el('strong','',item.icon + ' ' + item.name),el('small','',item.detail));
+        if (item.note) body.append(el('small','shop-note',item.note));
+        const buy = button(item.soldOut ? 'Agotado' : '◉ ' + item.price, () => { const result = game.buy(item.id); showShop(result.message); updateHud(true); },'shop-buy');
+        buy.disabled = item.soldOut || !item.affordable; buy.setAttribute('aria-label','Comprar ' + item.name + ' por ' + item.price + ' monedas');
+        row.append(body,buy); parent.append(row);
+      });
+      paragraph(parent,'Chorros y jefes dejan más monedas. Si un chorro te noquea, se lleva parte de tu guita.','hint');
     });
   }
   function showPlaying() {
@@ -462,19 +385,25 @@
     if (p.buffs.gero > 0) statuses.push('✦ Fé Judía ' + Math.ceil(p.buffs.gero) + ' s');
     if (p.buffs.paco > 0) statuses.push('♥ ' + p.buffs.pacoAnimals + ' animales encantados');
     if (p.buffs.pepe > 0) statuses.push('✦ DeboraMundos');
+    if (p.buffs.mate > 0) statuses.push('☕ Mate ' + Math.ceil(p.buffs.mate) + ' s');
     if (c.id === 'fede' && p.hp <= s.maxHealth * .3) statuses.push('✦ Último aliento');
     if (c.id === 'paco' && biome === 'weeds') statuses.push('↑ Campesino +15%');
     if (c.id === 'tena' && ctx.pursuers >= 3) statuses.push('↓ Miedoso −10%');
-    if (p.special && p.special.time > 0) {
-      const special = Zak.SPECIAL_ITEMS?.[p.special.id || c.id];
-      statuses.unshift('✦ ' + (special?.name || 'Efecto especial') + ' · ' + Math.ceil(p.special.time) + ' s' + (p.special.shield > 0 ? ' · Escudo ' + fmt(p.special.shield) : ''));
-    }
-    if (p.stomach > 0) statuses.unshift('🔥 ¡Retorcijones! ' + Math.ceil(p.stomach) + ' s');
     const statusKey = statuses.join('|');
     if ($('status-effects').dataset.status !== statusKey) { $('status-effects').dataset.status = statusKey; $('status-effects').replaceChildren(...statuses.map(label => el('span','status-tag',label))); }
-    const bags = game.lootBags || [], closestBag = bags.reduce((best,bag) => !best || Math.hypot(bag.x-p.x,bag.y-p.y) < Math.hypot(best.x-p.x,best.y-p.y) ? bag : best,null);
-    $('bag-hint').classList.toggle('hidden',!closestBag);
-    if (closestBag) text('bag-hint','◈ Mochila · ' + countdown(closestBag.time) + ' · M para ubicar' + (bags.length > 1 ? ' · +' + (bags.length-1) : ''));
+    text('hud-coins','◉ ' + p.coins); text('hud-herbs',p.herbs + '/' + Zak.HERB_BAG);
+    $('herb-button').disabled = p.herbs < 1;
+    const comboReady = p.comboTime > 0 && p.combo % 4 === 3;
+    text('hud-combo',p.comboTime > 0 && p.combo > 1 ? '×' + p.combo + (comboReady ? ' ✦' : '') : '');
+    $('hud-combo').classList.toggle('ready',comboReady);
+    const boss = game.bossTarget();
+    $('boss-bar').classList.toggle('hidden',!boss);
+    if (boss) {
+      text('boss-name',Zak.ENEMY_TYPES[boss.type].name + ' · Nivel ' + boss.level);
+      $('boss-fill').style.width = Math.max(0,boss.hp / boss.maxHp * 100) + '%';
+      text('boss-hint',boss.telegraph > 0 ? (boss.type === 'capo' ? '¡VA A EMBESTIR! RODÁ (F)' : '¡VENENO! RODÁ (F)') : fmt(boss.hp) + ' / ' + fmt(boss.maxHp));
+      $('boss-bar').classList.toggle('warning',boss.telegraph > 0);
+    }
     const quests = game.quests(), next = quests.find(quest => !quest.done); text('quest-current',next ? next.title : 'Todos los caminos recorridos');
     const cooldown = Math.max(0,number(p.abilityCooldown));
     text('ability-label',c.ability + (c.abilityPassive ? ' · Pasiva' : cooldown > 0 ? ' · ' + Math.ceil(cooldown) + ' s' : ''));
@@ -483,26 +412,18 @@
     WEAPONS.forEach(id => {
       const slot = $('weapon-bar').querySelector('[data-weapon="' + id + '"]'), owned = p.weapons.includes(id);
       slot.disabled = !owned; slot.classList.toggle('locked',!owned); slot.classList.toggle('selected',p.weapon === id); slot.setAttribute('aria-pressed',String(p.weapon === id));
-      const recharge = slot.querySelector('.weapon-recharge'); if (recharge) recharge.style.width = (p.weapon === id && p.attackCooldown > 0 ? Math.max(0,1 - p.attackCooldown / Math.max(s.attackCooldown * (Zak.WEAPON_TYPES[id].cooldownMultiplier || 1),id === 'bow' ? .7 : 0)) * 100 : 100) + '%';
+      const recharge = slot.querySelector('.weapon-recharge'); if (recharge) recharge.style.width = (p.weapon === id && p.attackCooldown > 0 ? Math.max(0,1 - p.attackCooldown / Math.max(s.attackCooldown,id === 'bow' ? .7 : 0)) * 100 : 100) + '%';
       slot.querySelector('.ammo').textContent = id === 'stone' && owned ? p.stoneAmmo ? '1' : 'caminar' : '';
     });
     if (Zak.nearbyInteractable && game.world) {
       const nearby = Zak.nearbyInteractable(game.world,p.x,p.y,46);
-      let hint = nearby ? 'E · ' + (nearby.label || nearby.name || (nearby.type === 'well' ? 'Recuperar vida en el pozo' : nearby.type === 'lootBag' ? 'Recuperar mochila · ' + countdown(nearby.time) : 'Recoger')) : '';
-      if (!nearby) {
-        const node = game.world.objects.filter(o => o.resource && !o.depleted).map(o => ({node:o,distance:Math.hypot(p.x-Math.max(o.x,Math.min(p.x,o.x+o.w)),p.y-Math.max(o.y,Math.min(p.y,o.y+o.h)))})).filter(o => o.distance <= 44).sort((a,b) => a.distance-b.distance)[0]?.node;
-        if (node) {
-          const tool = node.resource === 'wood' ? 'axe' : 'pickaxe', action = node.resource === 'wood' ? 'Talar árbol' : 'Extraer ' + RESOURCE_NAMES[node.resource].toLowerCase();
-          hint = p.weapon === tool ? 'Espacio / clic · ' + action + ' · ' + node.hits + ' golpes' : action + ' · ' + (p.weapons.includes(tool) ? 'Equipá ' : 'Necesitás ') + (tool === 'axe' ? 'el hacha (5)' : 'el pico (6)');
-        }
-      }
-      $('interaction-hint').classList.toggle('hidden',!hint);
-      if (hint) text('interaction-hint',hint);
+      $('interaction-hint').classList.toggle('hidden',!nearby);
+      if (nearby) text('interaction-hint','E · ' + (nearby.label || nearby.name || (nearby.type === 'well' ? 'Recuperar vida en el pozo' : 'Recoger')));
     }
   }
   $('stats-button').addEventListener('click',showStats); $('journal-button').addEventListener('click',() => showJournal()); $('map-button').addEventListener('click',showMap); $('pause-button').addEventListener('click',showPause);
-  $('inventory-button').addEventListener('click',showInventory);
   $('ability-button').addEventListener('click',() => game.ability());
+  $('herb-button').addEventListener('click',() => { game.useHerb(); $('world').focus(); });
   function setTouchKey(key,pressed) {
     if (game.keys && typeof game.keys.add === 'function') { if (pressed) game.keys.add(key); else game.keys.delete(key); }
     else if (game.keys) game.keys[key] = pressed;
@@ -513,6 +434,8 @@
     ['pointerup','pointercancel','lostpointercapture'].forEach(type => node.addEventListener(type,event => { event.preventDefault(); setTouchKey(key,false); }));
   });
   $('touch-interact').addEventListener('click',() => game.interact());
+  $('touch-roll').addEventListener('pointerdown',event => { event.preventDefault(); game.roll(); });
+  $('touch-herb').addEventListener('click',() => game.useHerb());
   $('touch-attack').addEventListener('pointerdown',event => { event.preventDefault(); if (game.state !== 'playing') return; event.currentTarget.setPointerCapture(event.pointerId); setTouchKey(' ',true); if (game.attack) game.attack(); });
   ['pointerup','pointercancel','lostpointercapture'].forEach(type => $('touch-attack').addEventListener(type,event => { event.preventDefault(); setTouchKey(' ',false); }));
   function exitGame() {
@@ -534,7 +457,6 @@
     else if (type === 'toast') toast(detail.message,detail.error);
     else if (type === 'start') {
       hasStarted = true;
-      clearToasts();
       hideModal(false); showPlaying(); updateSound();
       if (!detail.loaded && game.settings.tutorial) showTutorial();
     } else if (type === 'escape') { if (visibleModal()) closeModal(); else if (game.player && game.state !== 'menu' && game.state !== 'characters') showPause(); }
@@ -542,13 +464,14 @@
     else if (type === 'stats') showStats();
     else if (type === 'map') showMap();
     else if (type === 'journal') showJournal();
-    else if (type === 'craft' || type === 'inventory') showInventory();
+    else if (type === 'shop') showShop();
+    else if (type === 'boss') toast('☠ ' + detail.name + ' te vio. Mirá sus avisos y rodá a tiempo.',true);
     else if (type === 'biome') { updateHud(true); toast(detail.name + (detail.safe ? ' · Zona segura' : ' · Mirá por dónde pisás')); }
     else if (type === 'knockout') {
       openModal('De vuelta en casa', 'UN TROPIEZO EN EL CAMINO',parent => {
         paragraph(parent,detail.quote || 'Un respiro, y volvemos a intentarlo.','death-quote');
-        paragraph(parent,'Volviste a la aldea. Tus armas, herramientas y materiales quedaron en una mochila donde caíste. Tenés 5 minutos de juego para recuperarla con E; el mapa M señala su ubicación.');
-        paragraph(parent,'Si se acaba el tiempo, el contenido se pierde. Las armas y herramientas encontradas vuelven a su lugar original; las fabricadas hay que hacerlas de nuevo. Tu experiencia y mejoras se conservan. La pausa detiene el reloj.','hint');
+        paragraph(parent,'Volviste a la aldea. Tu experiencia, mejoras y armas siguen con vos. El pozo puede ayudarte a recuperar vida.');
+        if (detail.lost > 0) paragraph(parent,'En el tropiezo perdiste ◉ ' + detail.lost + ' monedas.','hint');
         const actions = el('div','modal-actions'); actions.append(button('Levantarme y seguir',() => hideModal(),'button primary')); parent.append(actions);
       });
     } else if (type === 'complete') showJournal(true);

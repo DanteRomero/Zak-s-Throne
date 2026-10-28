@@ -28,66 +28,11 @@
   g.player.points=1;document.getElementById('stats-button').click();const strength=g.player.stats.strength;document.querySelector('[aria-label="Mejorar Fuerza"]').click();
   assert('Mejorar atributo consume un punto',g.player.stats.strength===strength+1&&g.player.points===0);close();
   document.getElementById('map-button').click();assert('Mapa renderizado',!!document.querySelector('.map-canvas'));close();
-  document.getElementById('journal-button').click();assert('Diario y bestiario visibles',document.querySelectorAll('.journal-task').length===11);close();
+  document.getElementById('journal-button').click();assert('Diario y bestiario visibles',document.querySelectorAll('.journal-task').length===16);close();
   localStorage.setItem('zak.throne.save.3','{roto');document.getElementById('load-game').click();
   assert('Ranura dañada no puede cargarse',document.querySelectorAll('.save-slot')[2].disabled);close();close();
   const time=g.time;document.getElementById('pause-button').click();g.update(1);
   assert('Pausa detiene la simulación',g.time===time&&g.state==='paused');close();
-  // Exercise the new flow through the same input events and buttons used to play.
-  g.newGame('fede');g.sound.enabled=false;g.enemies=[];
-  const key=(value,pressed=true)=>window.dispatchEvent(new KeyboardEvent(pressed?'keydown':'keyup',{key:value,bubbles:true}));
-  const refresh=async()=>{await new Promise(resolve=>setTimeout(resolve,105));g.emit('tick');};
-  const pickup=type=>{const item=g.world.pickups.find(p=>p.type===type&&!p.collected);if(!item)throw Error('No existe objeto: '+type);Object.assign(g.player,{x:item.x,y:item.y});g.biome=Zak.biomeAt(item.x,item.y);key('e');key('e',false);return item;};
-  assert('Seis ranuras de armas y herramientas visibles',document.querySelectorAll('.weapon-slot').length===6);
-  key('b');key('b',false);
-  assert('B abre fabricación y pausa el mundo',g.state==='paused'&&document.querySelectorAll('.resource-card').length===3&&document.querySelector('[data-craft="pickaxe"]').disabled);close();
-  const axe=pickup('axe');key('5');key('5',false);await refresh();
-  assert('E recoge el hacha y 5 la equipa',g.player.weapon==='axe'&&axe.collected&&g.player.weaponOrigins.axe==='world'&&!document.querySelector('[data-weapon="axe"]').disabled);
-  function approach(node){
-    const options=[{x:node.x+node.w/2,y:node.y+node.h+13,dir:'up'},{x:node.x+node.w/2,y:node.y-13,dir:'down'},{x:node.x-13,y:node.y+node.h/2,dir:'right'},{x:node.x+node.w+13,y:node.y+node.h/2,dir:'left'}];
-    const at=options.find(at=>!Zak.collides(g.world,at.x,at.y,8));if(!at)return false;
-    Object.assign(g.player,at);g.biome=Zak.biomeAt(at.x,at.y);g.aim=null;return true;
-  }
-  function harvest(resource){
-    const nodes=g.world.objects.filter(n=>n.resource===resource&&!n.depleted).sort((a,b)=>Math.hypot(a.x-770,a.y-960)-Math.hypot(b.x-770,b.y-960));
-    const node=nodes.find(approach);if(!node)throw Error('No hay recurso accesible: '+resource);
-    g.player.attackCooldown=0;key(' ');
-    for(let i=0;i<1500&&!node.depleted;i++)g.update(1/60);
-    key(' ',false);if(!node.depleted)throw Error('No se pudo recolectar: '+resource);return node;
-  }
-  const tree=harvest('wood');
-  assert('Mantener ataque tala un árbol real y entrega cuatro maderas',tree.depleted&&!tree.solid&&g.player.resources.wood===4);
-  harvest('wood');pickup('stone');key('b');key('b',false);
-  assert('La receta se habilita con piedra arrojadiza y ocho maderas',!document.querySelector('[data-craft="pickaxe"]').disabled);
-  document.querySelector('[data-craft="pickaxe"]').click();
-  assert('Fabricar desde la interfaz consume madera y conserva la piedra',g.player.resources.wood===0&&g.player.weapons.includes('stone')&&g.player.weapon==='pickaxe'&&g.player.weaponOrigins.pickaxe==='crafted');
-  assert('No permite fabricar un segundo pico',document.querySelector('[data-craft="pickaxe"]').disabled);close();key('6');key('6',false);
-  const ore=harvest('stone'),metal=harvest('metal');
-  assert('El pico recoge piedra y metal en las vetas del mapa',ore.depleted&&metal.depleted&&g.player.resources.stone===4&&g.player.resources.metal===3);
-  const dropAt={x:g.player.x,y:g.player.y},beforeXp=g.player.xp;
-  g.hurtPlayer(1000,'thief',true);
-  assert('Noqueo deja equipo y materiales en el suelo y conserva experiencia y objetivos',g.state==='paused'&&g.lootBags.length===1&&g.lootBags[0].x===dropAt.x&&g.lootBags[0].y===dropAt.y&&g.player.weapons.join()==='fists'&&g.player.resources.metal===0&&g.player.xp===beforeXp&&g.quests().find(q=>q.id==='stone').done);
-  const bag=g.lootBags[0];g.update(20);
-  assert('El diálogo de noqueo no consume el plazo de recuperación',bag.time===300&&document.getElementById('modal-content').textContent.includes('5 minutos'));
-  close();await refresh();
-  assert('HUD informa la mochila pendiente y su tiempo',!document.getElementById('bag-hint').classList.contains('hidden')&&document.getElementById('bag-hint').textContent.includes('5:00'));
-  key('i');key('i',false);
-  assert('I muestra el contenido perdido y bloquea duplicar el pico',document.querySelectorAll('.lost-bag').length===1&&document.querySelector('[data-craft="pickaxe"]').disabled);close();
-  save(2);clickText('Confirmar');const bagSave=JSON.parse(localStorage.getItem('zak.throne.save.2'));close();
-  assert('Guardado conserva origen de herramientas, recursos y reloj de mochila',bagSave.survival.lootBags[0].time===300&&bagSave.survival.lootBags[0].origins.axe==='world'&&bagSave.survival.lootBags[0].origins.pickaxe==='crafted');
-  Object.assign(g.player,dropAt);g.biome=Zak.biomeAt(dropAt.x,dropAt.y);key('e');key('e',false);
-  assert('E recupera las herramientas y recursos de la mochila',!g.lootBags.length&&g.player.weapons.includes('pickaxe')&&g.player.resources.metal===3&&axe.collected);
-  g.newGame('gero');
-  for(let i=0;i<20;i++)g.emit('toast',{message:'Evento de prueba '+i});
-  assert('Veinte eventos muestran un único cartel',document.querySelectorAll('#toast-container .toast').length===1);
-  g.emit('toast',{message:'Aviso urgente de prueba',error:true});
-  assert('Los avisos urgentes tienen prioridad inmediata',document.querySelector('#toast-container .toast.error')?.textContent.includes('Aviso urgente de prueba'));
-  key('j');key('j',false);
-  assert('El diario conserva también los eventos que ya no caben en la cola',[...document.querySelectorAll('.event-entry')].some(n=>n.textContent.includes('Evento de prueba 0'))&&[...document.querySelectorAll('.event-entry')].some(n=>n.textContent.includes('Evento de prueba 19')));close();
-  g.emit('toast',{message:'Repetido'});g.emit('toast',{message:'Repetido'});key('j');key('j',false);
-  assert('El historial agrupa avisos repetidos',document.querySelector('.event-entry').textContent.includes('(×2)'));close();
-  const special=pickup('special');await refresh();
-  assert('Consumir con E muestra escudo y temporizador del personaje',special.collected&&g.player.special.shield===g.stats().maxHealth*.4&&document.getElementById('status-effects').textContent.includes('Escudo'));
   await wait();
   return {passed:results.filter(r=>r.pass).length,failed:results.filter(r=>!r.pass).length,results};
 })()

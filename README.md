@@ -6,8 +6,7 @@ Una aventura de acción y exploración en pixel art, vista desde arriba. Elegí 
 
 1. Hacé doble clic en `Jugar.bat`, o abrí `index.html` con Chrome o Microsoft Edge.
 2. Elegí **Juego nuevo**, seleccioná un personaje y empezá la aventura.
-3. Recogé el arco y el hacha de la aldea con **E**. Equipá el hacha con **5** y golpeá árboles para juntar madera.
-4. Buscá la piedra arrojadiza en la cueva. Con ella en la mochila y 8 de madera, abrí **B** y fabricá un pico.
+3. El arco está en la aldea. Buscá el brillo y acercate para recogerlo.
 
 El juego funciona directamente desde sus archivos: no requiere servidor, instalación, conexión, cuenta ni dependencias. Conservá la carpeta `src` junto a `index.html`.
 
@@ -19,20 +18,21 @@ El juego funciona directamente desde sus archivos: no requiere servidor, instala
 | --- | --- |
 | Moverse | WASD o flechas |
 | Correr | Mantener Shift mientras te movés |
-| Atacar / talar / picar | Espacio o clic en el mundo |
+| Atacar | Espacio o clic en el mundo |
+| Rodar y esquivar | F o clic derecho (hacia el puntero) |
 | Habilidad activa | Q |
-| Recoger / consumir especial / recuperar mochila / usar pozo | E |
-| Puños / arco / espada / piedra / hacha / pico | 1 / 2 / 3 / 4 / 5 / 6 |
-| Mochila, materiales y fabricación | B o I |
+| Recoger / usar el pozo / comprar | E |
+| Usar hierba de la bolsa | R |
+| Cambiar arma | 1, 2, 3 y 4; también sus botones |
 | Ficha y mejoras | C |
-| Diario, bestiario e historial de avisos | J |
+| Diario de viaje | J |
 | Mapa | M |
 | Pausa y guardado | Esc |
 | Sonido | Botón musical de la esquina superior |
 
-La dirección de movimiento orienta al personaje; el ratón permite dirigir ataques a un punto del mundo. En pantallas táctiles aparecen una cruceta y botones para correr, atacar e interactuar. Los botones de la interfaz también permiten acceder a habilidades, armas, ficha, mapa y pausa.
+La dirección de movimiento orienta al personaje; el ratón permite dirigir ataques a un punto del mundo. En pantallas táctiles aparecen una cruceta y botones para correr, rodar, usar hierbas, atacar e interactuar. Los botones de la interfaz también permiten acceder a habilidades, armas, ficha, mapa y pausa.
 
-El juego se adapta al tamaño de pantalla; en teléfonos conviene usar orientación horizontal. Los indicadores combinan texto, iconos y color. Las opciones permiten ajustar sonido y efectos visuales.
+El juego se adapta al tamaño de pantalla; en teléfonos conviene usar orientación horizontal. Los indicadores combinan texto, iconos y color. Las opciones permiten ajustar sonido, efectos visuales y la sacudida de pantalla.
 
 ## Guardar y recuperar partidas
 
@@ -40,49 +40,65 @@ Hay **tres ranuras de guardado manual** accesibles desde la pausa. Cada una mues
 
 Los guardados se conservan en el almacenamiento local del navegador usado para jugar. Para trasladarlos a otro navegador o equipo, usá **Exportar** y **Importar**: se descarga o carga un archivo JSON de respaldo. Conservá una copia antes de borrar los datos del navegador.
 
-Las partidas de la **versión 1 son compatibles**: al cargarlas se adaptan al balance nuevo conservando nivel, experiencia, mejoras compradas y proporción de vida. Reciben el punto adicional pendiente por cada nivel ya ganado. El próximo guardado usa la versión 2 y no vuelve a aplicar la conversión. La vida de los enemigos también conserva su proporción durante la adaptación.
-
-Los guardados nuevos incluyen materiales, procedencia del equipo, mochilas perdidas, recursos agotados, reapariciones y efectos temporales. Sus relojes usan **tiempo de juego**: la pausa y tener el juego cerrado no consumen el tiempo que te queda para recuperar una mochila ni los efectos guardados.
-
 ## El mundo
 
-- **Aldea de los Aromos:** zona segura, con casas, árboles, flores y vecinos que caminan y tienen colisión. Los enemigos no pueden entrar. El pozo recupera vida y energía y cura el veneno. Acá encontrás el arco y el hacha.
-- **Cueva del Eco:** zona oscura habitada por chorros y perros callejeros. Contiene la piedra arrojadiza y vetas de piedra y metal para extraer con el pico.
-- **Yuyos:** pastos altos, serpientes y ratas. Acá se encuentra la espada y Paco recibe su bonificación de Campesino.
+- **Aldea de los Aromos:** zona completamente segura, con casas, árboles, flores y vecinos que caminan y tienen colisión. Los enemigos no pueden entrar. El pozo permite recuperar vida y el puesto de **El Almacén** vende provisiones. Acá se encuentra el arco.
+- **Cueva:** zona oscura habitada por chorros y perros callejeros. La piedra se encuentra en su interior. En el fondo oeste, sentado en un trono, espera **El Capo del Eco**.
+- **Yuyos:** pastos altos, serpientes y ratas. Acá se encuentra la espada y Paco recibe su bonificación de Campesino. En el rincón noreste anida **La Yarará Madre**.
 
-El mapa marca equipo disponible, especiales y mochilas perdidas. El diario registra objetivos, enemigos y los **últimos 40 avisos de la sesión**, agrupando repeticiones. En pantalla aparece **un solo aviso compacto a la vez**, con una cola corta; los avisos urgentes tienen prioridad. Si llegan varios eventos juntos, podés consultar su información en **J**.
+El mapa marca el almacén ($) y las guaridas de los jefes (☠). El diario de exploración, los avisos de interacción y las pistas iniciales ayudan a orientarte. Los enemigos vuelven a aparecer después de **35 segundos**; los jefes, después de **3 minutos**.
 
-Las flores medicinales recuperan **25 de vida**, curan el veneno y reaparecen en su lugar **10 segundos** después de recogerlas. Los enemigos pueden reaparecer tras **35 segundos**, cuando estás suficientemente lejos de su punto de origen. Hay ciclo de día y noche, sonido sintetizado, efectos de combate y animación ambiental.
+Al quedar noqueado volvés a la aldea. Si te vence un chorro aparece «Uhh... este gil me sacó guita»… y es literal: un chorro o el Capo se llevan el **30%** de tus monedas. Cualquier otra derrota cuesta el **10%**.
 
-Al quedar noqueado volvés a la aldea. Si te vence un chorro aparece «Uhh... este gil me sacó guita»; si te vence un perro, «¿Por qué Firulais? :c». No hay todavía un sistema de dinero.
+## Combate
 
-## Noqueo y pérdida de inventario
+- **Rodar (F o clic derecho):** una voltereta rápida que gasta 20% de energía. Mientras dura (0,3 s) ningún golpe ni proyectil te hace daño; el veneno que ya tenés sigue actuando. Rodar también te saca de encima una rata prendida. No se puede rodar agotado.
+- **Combos:** cada golpe que conecta suma al combo si no dejás pasar mucho tiempo. El **cuarto golpe seguido es crítico** e inflige ×1,75. El HUD muestra el combo y avisa con ✦ cuando el próximo golpe es crítico.
+- Los golpes producen chispas, la cámara se sacude con críticos y daño fuerte, y la pantalla destella al recibir daño.
 
-Al quedar sin vida volvés a la aldea con la salud y la energía recuperadas, pero **tus armas, herramientas y materiales quedan en una mochila donde caíste**. Conservás el personaje, nivel, experiencia y mejoras; volvés a pelear con los puños.
+## Guita, hierbas y El Almacén
 
-Tenés **300 segundos —5 minutos de juego—** para regresar y recuperar todo con **E**. El mapa **M**, el indicador de mochila y el panel **B / I** muestran su ubicación o tiempo restante. Cada caída puede dejar una mochila independiente. La pausa detiene estos relojes.
+Los enemigos sueltan monedas al caer: ratas 1–2, perros 2–4, serpientes 2–5, chorros 5–9 y jefes 40–60, más un extra según su nivel. Se recogen solas al pasar cerca y desaparecen a los 30 segundos.
 
-Si una mochila vence, su contenido se pierde. Las armas y herramientas originales del mapa vuelven a estar disponibles en sus lugares iniciales cuando ya no las llevás ni quedan en otra mochila. **No reaparecen mientras todavía podés recuperarlas.** El equipo fabricado se pierde y hay que volver a fabricarlo; los materiales perdidos deben recolectarse otra vez.
+Las hierbas medicinales ahora van a una **bolsa de 5**. R usa una: cura **25 de vida o el 20% de la vida máxima**, lo que sea mayor, y quita el veneno. Si la bolsa está llena y estás herido, la hierba se come en el momento. Las hierbas del campo vuelven a crecer a los **90 segundos**.
+
+El puesto de El Almacén está al oeste de la plaza (E para comprar):
+
+| Artículo | Precio | Efecto |
+| --- | ---: | --- |
+| Hierba medicinal | 10 | Una hierba para la bolsa |
+| Mate cebado | 6 | Energía al máximo y +10% de movimiento durante 30 s |
+| Afilar y tensar | 30, 60, 90… | +10% de daño con todas las armas, hasta 5 veces |
+| Clase con Beto | 60, 100, 140… | +1 punto de mejora |
+
+## Jefes
+
+Ambos escalan con tu nivel como el resto de los enemigos, no retroceden con los golpes, no se pueden encantar y el Baile del 7-0 solo los frena 2,5 s. La primera victoria contra cada uno otorga **un punto de mejora** de trofeo. Si te noquean, recuperan toda su vida.
+
+| Jefe | Vida | Fuerza | Velocidad | Resistencia | Ataque especial |
+| --- | ---: | ---: | ---: | ---: | --- |
+| El Capo del Eco | 340 | 9 | 20 | 30 | Marca una línea roja y embiste: 160% de su fuerza y frena 1,5 s |
+| La Yarará Madre | 260 | 7 | 25 | 15 | Marca tres líneas y escupe un abanico de veneno (50% de envenenar; 15% contra Fede) |
+
+Mientras peleás aparece una barra de vida del jefe que avisa cuándo viene el ataque especial. Se recomienda llegar al nivel 4.
 
 ## Personajes
 
 | Personaje | Vida | Fuerza | Velocidad | Resistencia | Inteligencia |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| Gero | 110 | 8 | 22 | 22 | 5 |
-| Paco | 115 | 9 | 22 | 28 | 10 |
-| Fede | 90 | 7 | 35 | 8 | 15 |
-| Pepe | 110 | 9 | 24 | 22 | 15 |
-| Tena | 115 | 6 | 30 | 45 | 10 |
-| Dante | 130 | 12 | 12 | 32 | 15 |
-
-Tena es el segundo más rápido, tiene la menor fuerza y la mayor resistencia inicial: puede correr **7 segundos**. Fede sigue siendo el más rápido y se cansa primero; Dante conserva la mayor fuerza y vida y el movimiento más lento.
+| Gero | 105 | 5 | 15 | 15 | 5 |
+| Paco | 100 | 6 | 15 | 20 | 10 |
+| Fede | 90 | 4 | 30 | 5 | 15 |
+| Pepe | 100 | 6 | 15 | 15 | 15 |
+| Tena | 100 | 2 | 20 | 5 | 5 |
+| Dante | 110 | 8 | 5 | 20 | 15 |
 
 - **Gero — Fé Judía:** recupera 5 de vida por segundo y gana 25 de velocidad durante 5 segundos. Puede alcanzar 125 de velocidad. Las ratas lo ignoran hasta que las golpea. Su experiencia parte de ×0,75.
 - **Paco — Afecto animal:** encanta animales cercanos durante 10 segundos; se apartan y le dan 2 de fuerza por animal. En los Yuyos sus estadísticas aumentan 15%. Obtiene 10% menos de los beneficios de resistencia.
 - **Fede — Último aliento, pasiva:** con 30% de vida o menos gana 15% de velocidad y resistencia. Las serpientes tienen solo 15% de probabilidad de envenenarlo. Obtiene 20% menos de los beneficios de resistencia.
 - **Pepe — DeboraMundos, pasiva:** derrotar un enemigo recupera 5 de vida y da 15% de velocidad por 3 segundos. Gana 50% más de experiencia. Los perros le hacen 10% más de daño y lo ralentizan 20%.
 - **Tena — Baile del 7-0:** aturde a los enemigos cercanos durante 7 segundos. Las ratas huyen de él. Con tres o más perseguidores pierde 10% de todas las estadísticas salvo vida.
-- **Dante — Tobi:** golpea el suelo tres veces con un enorme bastón de carne; cada onda inflige 10 de daño a los enemigos cercanos. Gana 2 de fuerza automática por nivel además de los 2 puntos a elección. Se mueve 10% más lento.
+- **Dante — Tobi:** golpea el suelo tres veces con un enorme bastón de carne; cada onda inflige 10 de daño a los enemigos cercanos. Gana 1 de fuerza automática por nivel además del punto a elección. Se mueve 10% más lento.
 
 **Nombre y apariencia:** la lista de habilidades nombra a Pepe y la descripción física nombra a Martín. Para mantener los seis personajes, Pepe usa el disfraz de pollo atribuido a Martín.
 
@@ -94,7 +110,7 @@ La vida máxima tiene un límite de **500**. Fuerza, velocidad y resistencia bas
 
 El nivel 2 requiere **100 XP**. Cada nivel siguiente requiere 50 adicionales: **150, 200, 250…**. La experiencia sobrante se conserva, incluso si una recompensa permite subir varios niveles.
 
-Cada nivel concede **2 de vida máxima, 1 de fuerza automática y 2 puntos de mejora**. Dante obtiene **2 de fuerza automática**, además de los mismos 2 puntos. Así podés mejorar energía, velocidad o inteligencia sin quedarte atrás en daño. Cada punto elegido suma **5 a vida, 1 a fuerza, 2 a velocidad, 2 a resistencia o 1 a inteligencia**. Las mejoras que ya están al máximo no consumen puntos.
+Cada nivel concede **2 de vida máxima** y **un punto de mejora**. Un punto suma 1 a fuerza, velocidad, resistencia o inteligencia, o 5 a vida. Dante gana además 1 de fuerza automático; si elige fuerza también, obtiene 2 en total. Las mejoras que ya están al máximo no consumen puntos.
 
 La inteligencia aporta un escalón cada 10 puntos:
 
@@ -110,9 +126,9 @@ Gero reemplaza la base 1 por 0,75. Pepe multiplica el resultado completo por 1,5
 | 15 a menos de 30 | 2 s | Moderado |
 | 30 a menos de 60 | 1 s | Normal |
 | 60 a 100 | 0,5 s | Rápido |
-| Más de 100 por efectos temporales | 0,25 s | Extraordinario |
+| Más de 100, durante Fé Judía | 0,25 s | Extraordinario |
 
-El movimiento base mejora con cada punto: **60 + 1,5 × velocidad** píxeles por segundo, antes de bonificaciones y penalizaciones. Así se distingue la velocidad 30 de Tena de la velocidad 35 de Fede. Los cambios porcentuales temporales afectan directamente al movimiento; el intervalo de ataque sigue la banda de velocidad efectiva. Los especiales pueden superar temporalmente los topes de fuerza y velocidad sin alterar las estadísticas permanentes.
+Las bandas establecen pasos base de 72, 92, 118 y 148 píxeles por segundo. La banda extraordinaria de Gero suma la misma diferencia que la anterior: **178 píxeles por segundo**. Los cambios porcentuales temporales afectan directamente al movimiento para que se sientan incluso dentro de una banda; el intervalo de ataque sigue la banda de velocidad efectiva.
 
 Correr aumenta el movimiento **25%**. Tras dejar de correr durante **2 segundos**, la energía comienza a recuperarse. Agotarla por completo bloquea la carrera por **10 segundos**, mientras la barra vuelve a llenarse.
 
@@ -130,87 +146,43 @@ Paco recibe el **90%** de la duración y protección de su banda; Fede, el **80%
 
 ## Enemigos
 
-Todos comparten un radio de detección de **195 píxeles**, salvo cuando el humo reduce su visión. Su nivel es `1 + floor((nivel del jugador - 1) / 3)`: niveles 1–3 del jugador enfrentan nivel 1; niveles 4–6, nivel 2; y así sucesivamente. No corren ni gastan energía.
+Todos comparten un radio de detección de **195 píxeles**. Su nivel es `1 + floor((nivel del jugador - 1) / 2)`: niveles 1 y 2 del jugador enfrentan nivel 1; niveles 3 y 4, nivel 2; y así sucesivamente. No corren ni gastan energía.
 
 | Enemigo | Vida | Fuerza | Velocidad | Resistencia | Aumento por nivel: V / F / Vel / R |
 | --- | ---: | ---: | ---: | ---: | --- |
-| Chorro | 42 | 5 | 18 | 5 | +2,8 / +0,32 / +0,35 / +0,4 |
-| Perro | 30 | 3 | 32 | 5 | +1,8 / +0,28 / +0,2 / +0,35 |
-| Serpiente | 24 | 4 | 25 | 3 | +1,2 / +0,22 / +0,25 / +0,2 |
-| Rata | 12 | 2 | 36 | 0 | +0,8 / +0,2 / +0,22 / +0,15 |
-
-Sus topes de vida son **180 / 130 / 100 / 70** y de fuerza **20 / 16 / 14 / 12**, respectivamente. La vida inicial más baja, el crecimiento gradual y los topes propios evitan que se vuelvan imposibles en partidas largas. La explicación completa y comparaciones antes/después están en [docs/BALANCE.md](docs/BALANCE.md).
+| Chorro | 100 | 5 | 15 | 10 | +3 / +1 / +2 / +2 |
+| Perro | 90 | 3 | 30 | 20 | +2 / +0,5 / +3 / +2 |
+| Serpiente | 35 | 5 | 25 | 5 | +1 / +2 / +2 / +0,5 |
+| Rata | 10 | 1 | 40 | 0 | +0,5 / +2 / +2 / +0,5 |
 
 - Los **chorros** atacan con cuchillo y no retroceden al recibir golpes.
 - Los **perros** reducen el movimiento un 15% durante 4 segundos; contra Pepe, un 20%.
-- Las **serpientes** tienen 40% de probabilidad de envenenar, salvo el 15% contra Fede. El veneno empieza en 2 de daño por segundo durante 5 segundos; aumenta 0,1 por nivel enemigo hasta un máximo de 6. Una nueva aplicación reinicia los 5 segundos.
+- Las **serpientes** tienen 40% de probabilidad de envenenar, salvo el 15% contra Fede. El veneno causa 2 de daño por segundo durante 5 segundos; aumenta 1 por nivel de serpiente. Una nueva aplicación reinicia los 5 segundos.
 - Las **ratas** se prenden del cuerpo por 3 segundos, atacan con su intervalo correspondiente y luego saltan hacia atrás antes de intentar prenderse otra vez.
 
-Los ataques empujan a perros, serpientes y ratas. Los golpes normales no alcanzan a las ratas prendidas; los efectos de área y el Puff sí pueden dañarlas. Los aumentos propios de vida de cada enemigo se aplican según la tabla, sin sumarles los 2 de vida automáticos del jugador.
+Los ataques empujan a perros, serpientes y ratas; las ratas prendidas deben terminar su agarre. Los aumentos propios de vida de cada enemigo se aplican según la tabla, sin sumarles los 2 de vida automáticos del jugador. El daño de veneno también respeta el límite de fuerza de 100.
 
 ## Armas
 
 | Arma | Dónde | Funcionamiento |
 | --- | --- | --- |
 | Puños | Desde el comienzo | Daño igual a fuerza, corto alcance |
-| Espada | Yuyos o fabricación | Fuerza ×1,5 y mayor alcance |
+| Espada | Yuyos | Fuerza ×1,5 y mayor alcance |
 | Arco | Aldea | Proyectil a distancia; necesita 0,7 s de carga y respeta el intervalo de ataque |
 | Piedra | Cueva | Proyectil a distancia; caminar 2 s recarga la munición |
-| Hacha | Aldea | Fuerza ×2; tarda 35% más entre golpes; tala árboles |
-| Pico | Fabricación | Fuerza ×1,25; cadencia normal; extrae piedra y metal |
 
 Se interpretó «aumenta el daño en un ×0,5» como **50% adicional**, por lo que la espada multiplica por **1,5**.
-
-## Recolección y fabricación
-
-Equipá la herramienta, acercate al recurso y golpeá mirando hacia él. La recolección cuenta impactos, independientemente del daño de combate:
-
-| Recurso | Lugar y herramienta | Golpes | Cantidad obtenida |
-| --- | --- | ---: | ---: |
-| Madera | Árboles del mundo, con hacha | 3 | 4 |
-| Piedra | Vetas de la cueva, con pico | 4 | 4 |
-| Metal | Vetas de la cueva, con pico | 7 | 3 |
-
-Los recursos agotados se recuperan después de **30 segundos**, cuando su espacio está libre. La **piedra material** del inventario es distinta de la **piedra arrojadiza** que equipás como arma.
-
-Abrí **B o I** para consultar materiales y fabricar:
-
-| Receta | Requisito que debés llevar | Materiales que consume |
-| --- | --- | --- |
-| Pico | Piedra arrojadiza | 8 de madera |
-| Espada | Pico | 4 de madera + 6 de metal |
-
-La piedra arrojadiza y el pico usados como requisitos **no se consumen**. No podés fabricar otra copia del equipo que ya llevás o que todavía está en una mochila recuperable. El equipo original del mapa no reaparece por esperar: vuelve cuando se pierde definitivamente el que recogiste.
-
-## Especiales de cada personaje
-
-En cada partida aparecen **8 objetos especiales del personaje elegido**, distribuidos al azar en puntos accesibles: 2 en la aldea, 2 en la cueva y 4 en los Yuyos. Acercate y presioná **E** para consumirlos. Tras **10 segundos**, cada objeto consumido reaparece en una posición aleatoria de su bioma.
-
-Todos sus beneficios duran **5 segundos**. Consumir otro renueva el reloj y repite la curación o recarga instantánea correspondiente, pero **no suma multiplicadores de daño o velocidad**.
-
-| Personaje y objeto | Efecto |
-| --- | --- |
-| **Gero — Capuchón** | +4 de defensa y escudo igual al 40% de su vida máxima. El escudo recibe el daño completo antes de aplicar armadura al sobrante; también intercepta veneno, cuyo sobrante sigue ignorando armadura. Otro Capuchón restaura el escudo y renueva el tiempo. |
-| **Paco — Leche de ¿Vaca?** | Cura toda la vida y duplica el daño. Cada consumo deja un charco durante 5 s que reduce a la mitad la velocidad enemiga. Cada charco tiene su propio reloj. |
-| **Fede — Puff** | Rellena energía, elimina el agotamiento y permite correr sin gastarla. Duplica su velocidad; al correr sobre enemigos hace daño igual a su fuerza, con 0,5 s entre impactos al mismo enemigo. |
-| **Pepe — Puchito** | Cura 35% de la vida máxima y aumenta velocidad 50%. Al moverse deja humo: cada tramo dura 2 s, hace 2 de daño cada 0,2 s y reduce la visión de los enemigos dentro. Las nubes superpuestas no multiplican el daño. |
-| **Tena — Arroz Chufa Picante** | Duplica daño y velocidad durante 5 s. Después queda inmóvil 1 s con retorcijones y emite una onda de fuego: 15 de daño cercano y quemadura de 3 por segundo durante 3 s. La explosión le cuesta 10 de vida. |
-| **Dante — Caramelo Media-Hora** | Congela durante 5 s a enemigos cercanos y duplica su velocidad. Al terminar recibe 3 de daño por intoxicación; renovar el efecto no acumula este costo. |
-
-Las curaciones nunca superan la vida máxima. Los daños finales del arroz y del caramelo ignoran la armadura y también se aplican en la aldea. Los efectos visuales y el indicador de estado muestran los beneficios activos y su duración restante.
 
 ## Desarrollo y pruebas
 
 Implementado con **HTML, CSS y JavaScript**, sin paquetes externos. El mundo se dibuja en Canvas 2D con gráficos pixel art creados por código; no requiere imágenes, tipografías ni sonidos descargados.
 
-- `src/data.js`: personajes, enemigos, equipo, recetas y reglas puras de estadísticas, experiencia y mejoras.
+- `src/data.js`: personajes, enemigos, jefes, artículos del almacén y reglas puras de estadísticas, experiencia y mejoras.
 - `src/world.js`: mapa, biomas, objetos, colisiones y vecinos.
 - `src/render.js`: sprites, terreno, cámara y efectos visuales.
-- `src/game.js`: simulación, movimiento, combate, habilidades y compatibilidad de guardados.
-- `src/survival.js`: recolección, fabricación, mochilas, reapariciones y especiales.
-- `src/ui.js`: menús, HUD, historial de avisos, inventario y guardados.
-- `tests/rules.test.js`, `tests/engine.test.js`, `tests/survival.test.js`: reglas, combate, migración y nuevas mecánicas.
-- `tests/ui.test.js`: interacción con menús y flujos del juego en el navegador.
+- `src/game.js`: simulación, movimiento, combate, esquiva, combos, monedas, tienda, jefes y habilidades.
+- `src/ui.js`: menús, HUD, tienda, guardados y controles.
+- `tests/rules.test.js`: 30 pruebas de reglas y casos límite.
 
 Si ya tenés Node instalado:
 
@@ -218,14 +190,14 @@ Si ya tenés Node instalado:
 node tests/rules.test.js
 ```
 
-Abrí **`tests/index.html`** para ejecutar las pruebas de reglas, motor e inventario en el navegador. La página detalla cada caso aprobado o fallido.
+Abrí `tests/index.html` para ejecutar las 30 pruebas de reglas y las 37 pruebas de integración del motor en el navegador. El resultado detalla cada caso aprobado o fallido.
 
-Con **Chrome y Python 3**, el verificador automatiza las pruebas de navegador sin librerías adicionales. Usa un perfil temporal aislado y no toca tus guardados personales. Ejecutá desde la carpeta del proyecto:
+También se incluyen 16 pruebas de interfaz con Chrome y Python 3, sin librerías adicionales. El verificador abre un perfil temporal aislado; nunca usa tus guardados personales:
 
 ```sh
-python tests/browser_check.py tests/index.html
+python tests/browser_check.py tests/index.html --script tests/engine.test.js
 python tests/browser_check.py index.html --script tests/ui.test.js
 python tests/browser_check.py index.html --screenshot .screenshots/menu.png
 ```
 
-El primer comando obtiene el informe de todas las pruebas de `tests/index.html`; el segundo ejecuta las pruebas de interfaz sobre el juego. El verificador informa los fallos y termina con código de error si una prueba falla. Está preparado para la ubicación estándar de Chrome en Windows. El juego también funciona en otros sistemas con un navegador moderno.
+El verificador está preparado para la ubicación estándar de Chrome en Windows. El juego también funciona en otros sistemas con un navegador moderno.

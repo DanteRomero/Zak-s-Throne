@@ -34,6 +34,7 @@ Z.createWorld=function(){
   for(let k=0;k<6;k++)object('flower',x-10+k*20,y+h+9,4,5,false,{variant:k%4});
   object('crate',x+w+8,y+h-18,15,14,true,{variant:variant%2});
  });
+ object('stall',620,1198,36,16,true,{label:'Comprar en El Almacén'});
  object('well',837,946,27,23,true,{label:'Recuperar vida en el pozo',text:'El agua de Los Aromos siempre te devuelve las ganas.'});
  object('pond',1000,975,150,115,true,{variant:0,label:'Laguna de las Libélulas'});
  object('pond',235,1165,146,112,true,{variant:1});
@@ -62,7 +63,6 @@ Z.createWorld=function(){
  for(let y=1100;y<1450;y+=34)object('fence',1516,y,9,27,true,{variant:2});
  for(let y=638;y<950;y+=34)object('fence',1516,y,9,27,true,{variant:2});
  pickup('village-bow','bow',820,1030,'Recoger el arco');
- pickup('village-axe','axe',690,1060,'Recoger el hacha');
  pickup('cave-stone','stone',750,450,'Recoger piedras');
  pickup('weeds-sword','sword',1710,1030,'Recoger la espada');
  [[698,1117],[1153,793],[1350,1230],[795,570],[684,472],[918,386],[1790,1120],[1930,745],[2250,1495],[1900,1350]].forEach(([x,y],i)=>pickup('herb-'+i,'herb',x,y,'Recoger hierba medicinal'));
@@ -72,6 +72,9 @@ Z.createWorld=function(){
  [[220,300],[555,390],[840,310],[170,140]].forEach(([x,y])=>enemy('dog',x,y));
  [[1850,850],[2180,680],[1760,1380],[2180,1420]].forEach(([x,y])=>enemy('snake',x,y));
  [[1840,1150],[2060,980],[2240,1180],[2030,1520]].forEach(([x,y])=>enemy('rat',x,y));
+ // Guaridas de los jefes: el fondo de la cueva y el rincón más alto de Los Yuyos.
+ enemy('capo',125,430);enemy('yarara',2170,265);
+ object('throne',108,384,34,26,false);object('nest',2142,262,46,18,false);
  const rectNear=(a,b,pad=0)=>a.x<b.x+b.w+pad&&a.x+a.w>b.x-pad&&a.y<b.y+b.h+pad&&a.y+a.h>b.y-pad;
  const clearFor=o=>{
   if(world.paths.some(p=>rectNear(o,p,15)))return false;
@@ -104,22 +107,11 @@ Z.createWorld=function(){
  world.objects=world.objects.filter(o=>!o.solid||!anchors.some(p=>{
   const nx=Math.max(o.x,Math.min(p.x,o.x+o.w)),ny=Math.max(o.y,Math.min(p.y,o.y+o.h));return Math.hypot(p.x-nx,p.y-ny)<18;
  }));
- // El hacha tala árboles; el pico extrae nodos de piedra y vetas de metal.
- // Se agregan después de la decoración para conservar identificadores de los árboles.
- world.objects.forEach(o=>{if(o.type==='tree'){o.resource='wood';o.hits=3;o.maxHits=3;o.depleted=false;o.regrow=0;}});
- const oreSites=[['stone',685,413],['stone',826,396],['stone',461,295],['stone',305,235],['stone',710,210],['stone',570,96],['metal',858,225],['metal',470,117],['metal',256,405],['metal',658,306]];
- for(const [resource,x,y] of oreSites){
-  const node={id:'ore-'+resource+'-'+x,type:resource==='metal'?'oreMetal':'oreStone',x,y,w:24,h:19,solid:true,resource,hits:resource==='metal'?7:4,maxHits:resource==='metal'?7:4,depleted:false,regrow:0};
-  // Un claro propio asegura acceso por todos los costados de cada veta.
-  world.objects=world.objects.filter(o=>!o.solid||o.type==='cliff'||o.x+o.w<x-18||o.x>x+42||o.y+o.h<y-18||o.y>y+37);
-  world.objects.push(node);
- }
- world.lootBags=[];
  return world;
 };
 Z.collides=function(world,x,y,radius=8,ignoreNpc=null){
  if(!Number.isFinite(x)||!Number.isFinite(y)||x-radius<12||y-radius<12||x+radius>world.width-12||y+radius>world.height-12)return true;
- for(const o of world.objects){if(!o.solid||o.depleted)continue;if(x+radius<o.x||x-radius>o.x+o.w||y+radius<o.y||y-radius>o.y+o.h)continue;
+ for(const o of world.objects){if(!o.solid)continue;if(x+radius<o.x||x-radius>o.x+o.w||y+radius<o.y||y-radius>o.y+o.h)continue;
   const nx=Math.max(o.x,Math.min(x,o.x+o.w)),ny=Math.max(o.y,Math.min(y,o.y+o.h));if((x-nx)**2+(y-ny)**2<radius*radius)return true;}
  const ignoreId=typeof ignoreNpc==='object'&&ignoreNpc?ignoreNpc.id:ignoreNpc;
  for(const n of world.npcs){if(n.id===ignoreId)continue;if((x-n.x)**2+(y-n.y)**2<(radius+9)**2)return true;}
@@ -127,12 +119,9 @@ Z.collides=function(world,x,y,radius=8,ignoreNpc=null){
 };
 Z.nearbyInteractable=function(world,x,y,maxDistance=46){
  let nearest=null,best=maxDistance;
- // Recuperar una mochila tiene prioridad sobre consumir un objeto que quedó encima.
- for(const bag of world.lootBags||[]){const d=Math.hypot(bag.x-x,bag.y-y);if(bag.time>0&&d<best){nearest=bag;best=d;}}
- if(nearest)return nearest;
  for(const p of world.pickups){if(p.collected)continue;const d=Math.hypot(p.x-x,p.y-y);if(d<best){nearest=p;best=d;}}
  if(nearest)return nearest;
- for(const o of world.objects){if(o.type!=='well'&&o.type!=='sign')continue;const nx=Math.max(o.x,Math.min(x,o.x+o.w)),ny=Math.max(o.y,Math.min(y,o.y+o.h)),d=Math.hypot(x-nx,y-ny);if(d<best){nearest=o;best=d;}}
+ for(const o of world.objects){if(o.type!=='well'&&o.type!=='sign'&&o.type!=='stall')continue;const nx=Math.max(o.x,Math.min(x,o.x+o.w)),ny=Math.max(o.y,Math.min(y,o.y+o.h)),d=Math.hypot(x-nx,y-ny);if(d<best){nearest=o;best=d;}}
  return nearest;
 };
 })();
