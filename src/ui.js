@@ -303,7 +303,7 @@
   function showSettings() {
     const returnToPause = !!game.player && (game.state === 'playing' || game.state === 'paused');
     openModal('A tu manera', 'OPCIONES Y CONTROLES', parent => {
-      [['sound','Sonido ambiental y combate'],['particles','Partículas y efectos'],['shake','Sacudida de pantalla'],['tutorial','Consejos al empezar'],['fullscreen','Pantalla completa al jugar (celular)']].forEach(([key,label]) => {
+      [['sound','Sonido ambiental y combate'],['particles','Partículas y efectos'],['shake','Sacudida de pantalla'],['tutorial','Consejos al empezar'],['tips','Tips: tecla para interactuar'],['notices','Avisos durante el juego'],['fullscreen','Pantalla completa al jugar (celular)']].forEach(([key,label]) => {
         const row = el('div','setting-row'); row.append(el('span','',label));
         const toggle = button(game.settings[key] ? 'ACTIVADO' : 'DESACTIVADO', () => { game.settings[key] = !game.settings[key]; persistSettings(); toggle.textContent = game.settings[key] ? 'ACTIVADO' : 'DESACTIVADO'; toggle.setAttribute('aria-pressed',String(game.settings[key])); },'toggle');
         toggle.setAttribute('aria-label',label); toggle.setAttribute('aria-pressed',String(game.settings[key])); row.append(toggle); parent.append(row);
@@ -562,7 +562,7 @@
     if (game.world) {
       const nearby = game.nearbyAction();
       $('touch-interact').classList.toggle('available',!!nearby);
-      $('interaction-hint').classList.toggle('hidden',!nearby);
+      $('interaction-hint').classList.toggle('hidden',!nearby || !game.settings.tips);
       if (nearby) text('interaction-hint',(isTouch() ? 'Tocá E · ' : 'E · ') + nearby.label);
     }
   }
@@ -642,7 +642,7 @@
   document.querySelector('.brand').addEventListener('click',event => { event.preventDefault(); if (game.state === 'characters') showMenu(); });
   game.onEvent = (type, detail = {}) => {
     if (type === 'tick') { updateHud(); if (game.player && game.state === 'playing' && game.player.kills - lastKills >= 5) submitScore(); }
-    else if (type === 'toast') toast(detail.message,detail.error);
+    else if (type === 'toast') { if (game.settings.notices || detail.error) toast(detail.message,detail.error); }
     else if (type === 'start') {
       hasStarted = true;
       hideModal(false); showPlaying(); updateSound();
@@ -655,8 +655,8 @@
     else if (type === 'shop') showShop();
     else if (type === 'smith') showSmith();
     else if (type === 'progress') submitScore();
-    else if (type === 'boss') toast('☠ ' + detail.name + ' te vio. Mirá sus avisos y rodá a tiempo.',true);
-    else if (type === 'biome') { updateHud(true); toast(detail.name + (detail.safe ? ' · Zona segura' : ' · Mirá por dónde pisás')); }
+    else if (type === 'boss') { if (game.settings.notices) toast('☠ ' + detail.name + ' te vio. Mirá sus avisos y rodá a tiempo.',true); }
+    else if (type === 'biome') { updateHud(true); if (game.settings.notices) toast(detail.name + (detail.safe ? ' · Zona segura' : ' · Mirá por dónde pisás')); }
     else if (type === 'knockout') {
       openModal('De vuelta en casa', 'UN TROPIEZO EN EL CAMINO',parent => {
         paragraph(parent,detail.quote || 'Un respiro, y volvemos a intentarlo.','death-quote');

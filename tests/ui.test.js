@@ -44,6 +44,11 @@
   assert('Reclamar en el diario suma guita',g.player.coins>coins&&document.querySelector('.shop-message').textContent.includes('guita'));close();
   g.emit('toast',{message:'Primero'});g.emit('toast',{message:'Segundo'});
   const toasts=document.querySelectorAll('#toast-container .toast');assert('Un aviso nuevo reemplaza al anterior',toasts.length===1&&toasts[0].textContent==='Segundo');
+  document.getElementById('toast-container').replaceChildren();g.settings.notices=false;g.emit('toast',{message:'Oculto'});
+  assert('Sin avisos no aparecen carteles',!document.querySelector('#toast-container .toast'));g.settings.notices=true;
+  const hudWait=()=>new Promise(r=>setTimeout(()=>{g.emit('tick');r();},120));g.settings.tips=false;g.player.x=1062;g.player.y=1462;await hudWait();
+  assert('Sin tips no se muestra la tecla para interactuar',!!g.nearbyAction()&&document.getElementById('interaction-hint').classList.contains('hidden'));
+  g.settings.tips=true;await hudWait();assert('Con tips vuelve la tecla',!document.getElementById('interaction-hint').classList.contains('hidden'));
   localStorage.setItem('zak.throne.save.3','{roto');document.getElementById('load-game').click();
   assert('Ranura dañada no puede cargarse',document.querySelectorAll('.save-slot')[2].disabled);close();close();
   const time=g.time;document.getElementById('pause-button').click();g.update(1);

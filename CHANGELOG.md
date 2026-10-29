@@ -12,6 +12,8 @@ Cada versión lista sus cambios agrupados por tipo:
     - **Recompensas del diario:** cada objetivo cumplido da guita, que se reclama en el diario (J) con «Reclamar» o «Reclamar todo». Los objetivos más difíciles pagan más: de 5 (arco, cueva, piedras, Yuyos) a 50 (llegar a Las Entrañas), 260 en total.
     - Las partidas que ya tenían objetivos cumplidos pueden reclamar sus recompensas: no se pierde nada.
     - El botón del diario muestra ◉ cuando hay recompensas sin cobrar, y el aviso de objetivo cumplido dice cuánto podés reclamar.
+    - **Opción «Tips»:** muestra u oculta el cartel con la tecla para interactuar («E · Hablar con el herrero»).
+    - **Opción «Avisos durante el juego»:** oculta los carteles de zona, jefes y diario. Los errores y las confirmaciones de guardado se siguen mostrando.
 * Fix
     - Los avisos ya no se apilan hasta tapar la pantalla: cada aviso nuevo reemplaza al anterior.
 
