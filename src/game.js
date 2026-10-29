@@ -4,7 +4,8 @@
 const Z = window.Zak, clamp = (v,a,b) => Math.max(a,Math.min(b,v));
 const distance = (a,b) => Math.hypot(a.x-b.x,a.y-b.y);
 const dirs = {down:[0,1],up:[0,-1],left:[-1,0],right:[1,0]};
-const names = Z.BIOME_NAMES = {village:'Palihue City',cave:'Cueva del Eco',weeds:'Los Yuyos'};
+const names = Z.BIOME_NAMES = {village:'Palihue City',cave:'Cueva del Eco',weeds:'Los Yuyos',cave2:'Cueva Profunda',cave3:'Las Entrañas'};
+const isCave = biome => /^cave/.test(biome||'');
 const ROLL_TIME=.3,ROLL_COOLDOWN=.55,ROLL_COST=.2,COMBO_CRIT=4,CRIT_MULTIPLIER=1.75,HERB_REGROW=90,TAIL_RADIUS=62;
 const isBoss = e => !!(Z.ENEMY_TYPES[e.type]&&Z.ENEMY_TYPES[e.type].boss);
 class Sound {
@@ -37,8 +38,12 @@ class Sound {
   if(kind==='ability')[220,330,440,660].forEach((n,i)=>this.tone(n,.35,'sine',.05,i*.08));
   if(kind==='wave')this.tone(90,.5,'triangle',.1,0,35);
   if(kind==='step')this.tone(95+Math.random()*35,.04,'triangle',.012);
+  if(kind==='chop')this.tone(150+Math.random()*30,.07,'square',.03,0,90);
+  if(kind==='mine'){this.tone(900+Math.random()*200,.05,'square',.02);this.tone(200,.08,'triangle',.04,0,120);}
+  if(kind==='crumble')[180,140,100].forEach((n,i)=>this.tone(n,.12,'triangle',.05,i*.05,60));
+  if(kind==='stairs')[392,330,262].forEach((n,i)=>this.tone(n,.15,'triangle',.04,i*.08));
  }
- update(dt,biome){if(!this.enabled)return;this.ambientTime-=dt;if(this.ambientTime<=0){this.ambientTime=3+Math.random()*3;if(biome==='cave')this.tone(65,2.5,'sine',.018);else{const n=[262,330,392,440,523][Math.floor(Math.random()*5)];this.tone(n,1.8,'sine',.016);this.tone(n*1.5,1.5,'sine',.009,.7);}}}
+ update(dt,biome){if(!this.enabled)return;this.ambientTime-=dt;if(this.ambientTime<=0){this.ambientTime=3+Math.random()*3;if(isCave(biome))this.tone(biome==='cave'?65:52,2.5,'sine',.018);else{const n=[262,330,392,440,523][Math.floor(Math.random()*5)];this.tone(n,1.8,'sine',.016);this.tone(n*1.5,1.5,'sine',.009,.7);}}}
 }
 class Game {
  constructor(canvas){
@@ -97,10 +102,11 @@ class Game {
   if(p.buffs.gero>0){p.healClock=(p.healClock||0)+Math.min(dt,p.buffs.gero);if(p.healClock>=1-1e-8){p.healClock-=1;this.heal(5);}}
   for(const buff of ['gero','pepe','paco','mate'])p.buffs[buff]=Math.max(0,(p.buffs[buff]||0)-dt);
   if(p.poison){p.poison.time-=dt;p.poison.tick-=dt;if(p.poison.tick<=1e-8){p.poison.tick+=1;this.hurtPlayer(p.poison.damage,'snake',true);}if(p.poison&&p.poison.time<=.000001)p.poison=null;if(this.state!=='playing')return;}
-  this.updateMovement(dt,stats);if((this.keys.has(' ')||this.mouseHeld)&&p.roll<=0)this.attack();
+  this.updateMovement(dt,stats);this.updateGather(dt);if((this.keys.has(' ')||this.mouseHeld)&&p.roll<=0)this.attack();
   if(this.queuedWaves&&this.queuedWaves.length)this.queuedWaves=this.queuedWaves.filter(w=>{w.delay-=dt;if(w.delay>0)return true;this.wave();return false;});
   this.updateNpcs(dt);this.updateEnemies(dt);if(this.state!=='playing')return;this.updateProjectiles(dt);if(this.state!=='playing')return;this.updateDrops(dt);
   for(const item of this.world.pickups)if(item.type==='herb'&&item.collected&&item.regrow>0){item.regrow-=dt;if(item.regrow<=0)item.collected=false;}
+  this.updateNodes(dt);
   this.effects.forEach(e=>e.life-=dt);this.effects=this.effects.filter(e=>e.life>0);this.sound.update(dt,this.biome);this.checkQuests();
  }
  movementInput(){
@@ -154,7 +160,7 @@ class Game {
    const ny=entity.y+dy/steps;if((!zone||Z.biomeAt(entity.x,ny)===zone)&&!Z.collides(this.world,entity.x,ny,radius,ignoreNpc))entity.y=ny;}
  }
  updateNpcs(dt){
-  this.world.npcs.forEach((n,index)=>{n.wait=(n.wait||0)-dt;
+  this.world.npcs.forEach((n,index)=>{if(n.static){n.moving=false;return;}n.wait=(n.wait||0)-dt;
    if(n.wait<=0&&Math.hypot(n.targetX-n.x,n.targetY-n.y)<7){n.wait=2+Math.random()*5;n.targetX=n.homeX+Math.sin(this.time*.17+index*3)*65;n.targetY=n.homeY+Math.cos(this.time*.21+index*2)*55;}
    if(n.wait>0){n.moving=false;return;}const dx=n.targetX-n.x,dy=n.targetY-n.y,len=Math.hypot(dx,dy),before={x:n.x,y:n.y};
    if(len>3){const nx=n.x+dx/len*22*dt,ny=n.y+dy/len*22*dt;if(Math.hypot(nx-this.player.x,ny-this.player.y)>20)this.move(n,nx-n.x,ny-n.y,9,'village',n.id);n.dir=Math.abs(dx)>Math.abs(dy)?(dx>0?'right':'left'):(dy>0?'down':'up');n.walk+=dt*5;}
@@ -168,7 +174,7 @@ class Game {
   if(p.weapon==='stone'&&!p.stoneAmmo){if(!this.noAmmoNotice||this.time-this.noAmmoNotice>3){this.noAmmoNotice=this.time;this.emit('toast',{message:'Caminá 2 segundos para recoger otra piedra.'});}return false;}
   let[dx,dy]=dirs[p.dir];const aim=this.aim||(this.touchMode?this.autoAim(weapon.range+(p.weapon==='bow'||p.weapon==='stone'?0:30)):null);
   if(aim){const len=distance(aim,p);if(len>0){dx=(aim.x-p.x)/len;dy=(aim.y-p.y)/len;p.dir=Math.abs(dx)>Math.abs(dy)?(dx>0?'right':'left'):(dy>0?'down':'up');}}
-  p.attackCooldown=Math.max(stats.attackCooldown,p.weapon==='bow'?.7:0);p.attackAnim=.24;const damage=stats.strength*weapon.damageMultiplier*stats.damageMultiplier;
+  p.gather=null;p.attackCooldown=Math.max(stats.attackCooldown,p.weapon==='bow'?.7:0);p.attackAnim=.24;const damage=stats.strength*weapon.damageMultiplier*stats.damageMultiplier*this.weaponLevelMultiplier();
   if(p.weapon==='bow'||p.weapon==='stone'){
    this.projectiles.push({x:p.x+dx*12,y:p.y-7+dy*12,dx,dy,type:p.weapon,damage,traveled:0,range:weapon.range});
    if(p.weapon==='stone'){p.stoneAmmo=0;p.stoneWalkTime=0;}this.sound.play('bow');
@@ -220,10 +226,13 @@ class Game {
     if(e.latched<=1e-8){e.latched=0;e.latchRest=1.6;e.cooldown=.6;const[dx,dy]=dirs[p.dir];e.x=p.x;e.y=p.y;this.move(e,-dx*85,-dy*85,7,e.biome);if(distance(e,p)<28){e.x=e.homeX;e.y=e.homeY;}}continue;
    }
    const len=distance(e,p),ratFlees=e.type==='rat'&&p.characterId==='tena',ratIgnores=e.type==='rat'&&p.characterId==='gero'&&!e.provoked;
-   const fleeing=sameZone&&len<210&&(e.charm>0||ratFlees),wasAlert=e.alert;e.alert=sameZone&&!ratIgnores&&!fleeing&&(len<195||(e.alert&&len<320));
+   const fleeing=sameZone&&len<210&&(e.charm>0||ratFlees),wasAlert=e.alert;e.alert=sameZone&&!ratIgnores&&!fleeing&&(len<(e.type==='worm'?120:195)||(e.alert&&len<320));
    if(e.alert&&!wasAlert)this.sound.play('alert');
    let tx,ty,velocity=e.stats.moveSpeed;
-   if(fleeing){tx=e.x+(e.x-p.x);ty=e.y+(e.y-p.y);}else if(e.alert){tx=p.x;ty=p.y;}else{tx=e.homeX+Math.sin(this.time*.2+e.homeX)*28;ty=e.homeY+Math.cos(this.time*.15+e.homeY)*22;velocity*=.28;}
+   if(fleeing){tx=e.x+(e.x-p.x);ty=e.y+(e.y-p.y);}else if(e.alert){tx=p.x;ty=p.y;
+    if(e.type==='bat'&&len>18){const wobble=Math.sin(this.time*5+e.homeX)*38;tx+=-(p.y-e.y)/(len||1)*wobble;ty+=(p.x-e.x)/(len||1)*wobble;}
+    if(e.type==='worm'&&!wasAlert)this.effect(e.x,e.y,'dust',.6);}
+   else if(e.type==='worm'){tx=e.x;ty=e.y;}else{tx=e.homeX+Math.sin(this.time*.2+e.homeX)*28;ty=e.homeY+Math.cos(this.time*.15+e.homeY)*22;velocity*=.28;}
    this.steer(e,tx,ty,velocity,dt,len);
    if(e.alert&&len<22&&e.cooldown<=0){if(e.type==='rat'){if(e.latchRest<=0&&p.roll<=0){e.latched=3;this.enemyAttack(e);this.emit('toast',{message:'¡Una rata se te prendió! Rodá (F) para sacártela.'});}}else this.enemyAttack(e);}
    if(this.state!=='playing')break;
@@ -281,22 +290,23 @@ class Game {
   if(e.type==='dog'&&p.characterId==='pepe')raw*=1.1;if(!this.hurtPlayer(raw,e.type)||this.state!=='playing')return;
   if(e.type==='dog')p.slow=4;
   if(e.type==='snake'&&Math.random()<(p.characterId==='fede'?.15:.4))this.poisonPlayer(e.stats.poison);
+  if(e.type==='spider'&&Math.random()<(p.characterId==='fede'?.05:.15))this.poisonPlayer(e.stats.poison);
  }
  poisonPlayer(damage){this.player.poison={time:5,tick:1,damage};this.emit('toast',{message:'Envenenado: '+damage+' de vida por segundo durante 5 s.',error:true});}
  hurtPlayer(raw,source,poison=false){
   if(this.state!=='playing'||this.biome==='village')return false;const p=this.player;
   if(!poison&&p.roll>0){if(!this.lastDodge||this.time-this.lastDodge>.25){this.lastDodge=this.time;this.effect(p.x,p.y-29,'miss',.7,{text:'¡Esquivado!'});this.sound.play('dodge');}return false;}
-  const damage=poison?raw:Z.damageAfterArmor(raw,this.stats().armor);
+  const damage=poison?raw:Z.damageAfterArmor(raw,this.stats().armor);if(!poison)p.gather=null;
   p.hp=Math.max(0,p.hp-damage);p.hitFlash=.22;this.hurtFlash=poison?.12:.3;this.effect(p.x,p.y-29,'hit',.8,{text:'-'+this.number(damage),poison});this.sound.play('hurt');if(!poison){this.shake(2.5,.18);this.vibrate(35);}
   if(p.hp<=0)this.knockout(source);return true;
  }
  knockout(source){
   const p=this.player;p.deaths++;
-  const quotes={thief:'Uhh... este gil me sacó guita',dog:'¿Por qué Firulais? :c',snake:'La próxima miro dónde piso...',rat:'Me ganaron las ratas. No se lo cuenten a nadie.',capo:'El Capo me dejó en patas y sin un mango.',yarara:'La Yarará Madre me mandó a dormir la siesta.'};
+  const quotes={thief:'Uhh... este gil me sacó guita',dog:'¿Por qué Firulais? :c',snake:'La próxima miro dónde piso...',rat:'Me ganaron las ratas. No se lo cuenten a nadie.',capo:'El Capo me dejó en patas y sin un mango.',bat:'Un murciélago me dejó viendo estrellas.',spider:'Odio las arañas. Las odio.',worm:'Me comió un gusano. Literal.',yarara:'La Yarará Madre me mandó a dormir la siesta.'};
   const quote=quotes[source]||quotes.rat;
   // Los chorros se llevan la guita de verdad; el resto se pierde en el apuro.
   const lost=Math.floor((p.coins||0)*(source==='thief'||source==='capo'?.3:.1));p.coins=Math.max(0,(p.coins||0)-lost);
-  Object.assign(p,this.world.spawn,{hp:1,poison:null,slow:0,stamina:1,exhausted:0,restTime:0,attackCooldown:0,moving:false,roll:0,combo:0,comboTime:0});p.buffs={gero:0,pepe:0,paco:0,pacoAnimals:0,mate:0};this.biome='village';p.hp=this.stats().maxHealth;
+  Object.assign(p,this.world.spawn,{hp:1,poison:null,slow:0,stamina:1,exhausted:0,restTime:0,attackCooldown:0,moving:false,roll:0,combo:0,comboTime:0,gather:null});p.buffs={gero:0,pepe:0,paco:0,pacoAnimals:0,mate:0};this.biome='village';p.hp=this.stats().maxHealth;
   this.enemies.forEach(e=>{if(!e.dead){e.x=e.homeX;e.y=e.homeY;if(isBoss(e))e.hp=e.maxHp;}e.latched=0;e.alert=false;e.telegraph=0;e.dash=0;});this.queuedWaves=[];this.projectiles=[];this.state='paused';this.clearInput();this.emit('knockout',{source,quote,lost});
  }
  heal(amount){const before=this.player.hp;this.player.hp=Math.min(this.stats().maxHealth,before+amount);if(this.player.hp>before)this.effect(this.player.x,this.player.y-30,'heal',.9,{text:'+'+this.number(this.player.hp-before)});}
@@ -328,7 +338,10 @@ class Game {
  }
  herbHealing(){return Math.max(25,Math.round(this.stats().maxHealth*.2));}
  interact(){
-  if(this.state!=='playing')return;const item=Z.nearbyInteractable(this.world,this.player.x,this.player.y,46);if(!item)return;const p=this.player;
+  if(this.state!=='playing')return;const p=this.player,item=Z.nearbyInteractable(this.world,p.x,p.y,46,p);if(!item)return;
+  if(item.type==='forge'){this.emit('smith');return;}
+  if(item.type==='stairs'){this.takeStairs(item);return;}
+  if(item.type==='ore'||item.type==='tree'){this.startGather(item);return;}
   if(item.type==='well'){this.heal(this.stats().maxHealth);p.poison=null;p.stamina=1;p.exhausted=0;this.sound.play('pickup');this.emit('toast',{message:'Agua fresca, vida y energía renovadas.'});return;}
   if(item.type==='sign'){this.emit('toast',{message:item.text||'Todos los caminos empiezan en Los Aromos.'});return;}
   if(item.type==='stall'){this.emit('shop');return;}
@@ -337,6 +350,75 @@ class Game {
    if(p.hp>=this.stats().maxHealth&&!p.poison){this.emit('toast',{message:'La bolsa está llena y tenés toda la vida.'});return;}
    item.collected=true;item.regrow=HERB_REGROW;this.heal(this.herbHealing());p.poison=null;this.sound.play('pickup');this.emit('toast',{message:'Bolsa llena: la comiste ahí mismo.'});return;}
   if(Z.WEAPON_TYPES[item.type]){item.collected=true;if(!p.weapons.includes(item.type))p.weapons.push(item.type);this.equip(item.type);this.sound.play('pickup');this.emit('toast',{message:'¡Conseguiste '+Z.WEAPON_TYPES[item.type].name.toLowerCase()+'! '+Z.WEAPON_TYPES[item.type].description});}
+ }
+ // Texto del aviso de interacción, con lo que falta para usar bajadas y vetas.
+ nearbyAction(){
+  const p=this.player,item=Z.nearbyInteractable(this.world,p.x,p.y,46,p);if(!item)return null;
+  if(item.type==='stairs')return{item,label:item.label+(item.dir==='down'&&!p.torch?' · necesitás antorcha':'')};
+  if(item.type==='ore'||item.type==='tree'){const def=this.nodeDef(item),tool=Z.TOOLS[def.tool],have=p[def.tool]||0;
+   if(have<def.tier)return{item,label:'Veta de '+def.name+' · necesitás '+tool.name.toLowerCase()+' de '+Z.TIER_NAMES[def.tier]+' o mejor'};
+   if(p.gather&&p.gather.id===item.id)return{item,label:(def.tool==='axe'?'Talando… ':'Picando… ')+Math.round(p.gather.time/p.gather.total*100)+'%'};
+   return{item,label:def.tool==='axe'?'Talar el árbol':'Picar '+def.name};}
+  return{item,label:item.label||item.name||(item.type==='well'?'Recuperar vida en el pozo':'Recoger')};
+ }
+ nodeDef(node){return Z.NODES[node.type==='tree'?'tree':node.ore];}
+ weaponLevelMultiplier(weapon=this.player.weapon){return Z.weaponLevelMultiplier((this.player.weaponLevels||{})[weapon]);}
+ // Talar y picar llevan tiempo: moverse, atacar, rodar o recibir un golpe lo interrumpe.
+ startGather(node){
+  const p=this.player,def=this.nodeDef(node);if(!def||node.harvested)return false;
+  const have=p[def.tool]||0,tool=Z.TOOLS[def.tool];
+  if(have<def.tier){this.emit('toast',{message:'Para '+(def.tool==='axe'?'talar':'picar '+def.name)+' necesitás '+tool.name.toLowerCase()+' de '+Z.TIER_NAMES[def.tier]+' o mejor. Pedíselo al herrero de El Taller.',error:true});return false;}
+  if(p.gather&&p.gather.id===node.id)return true;
+  p.gather={id:node.id,x:node.x+node.w/2,y:node.y,time:0,total:def.time/Z.TOOL_SPEED[have],tick:0,tool:def.tool};
+  p.dir=Math.abs(p.gather.x-p.x)>Math.abs(node.y+node.h/2-p.y)?(p.gather.x>p.x?'right':'left'):(node.y+node.h/2>p.y?'down':'up');return true;
+ }
+ updateGather(dt){
+  const p=this.player,g=p.gather;if(!g)return;const[x,y]=this.movementInput(),node=this.world.objects.find(o=>o.id===g.id);
+  if(x||y||p.roll>0||!node||node.harvested){p.gather=null;return;}
+  g.time+=dt;g.tick-=dt;if(g.tick<=0){g.tick=.45;p.attackAnim=.2;this.sound.play(g.tool==='axe'?'chop':'mine');this.effect(g.x,node.y+node.h/2,g.tool==='axe'?'leaf':'spark',.35,{seed:Math.random()*99});}
+  if(g.time<g.total)return;
+  const def=this.nodeDef(node);node.harvested=true;node.regrow=def.regrow;if(node.type==='ore')node.solid=false;p.gather=null;
+  p.materials[def.material]=(p.materials[def.material]||0)+def.yield;this.questFlags.gathered=true;
+  this.sound.play('crumble');this.shake(2,.15);this.effect(g.x,node.y+node.h/2,'poof',.6,{seed:Math.random()*99});
+  this.effect(p.x,p.y-30,'coin',.9,{text:'+'+def.yield+' '+Z.MATERIALS[def.material].name});
+ }
+ updateNodes(dt){
+  const p=this.player;for(const o of this.world.objects){if(!o.harvested)continue;o.regrow-=dt;if(o.regrow>0)continue;
+   // Una veta no vuelve a crecer encima del jugador.
+   if(o.type==='ore'&&p.x+8>o.x&&p.x-8<o.x+o.w&&p.y+8>o.y&&p.y-8<o.y+o.h){o.regrow=1;continue;}
+   o.harvested=false;o.regrow=0;if(o.type==='ore')o.solid=true;}
+ }
+ takeStairs(stairs){
+  const p=this.player;
+  if(stairs.dir==='down'&&!p.torch){this.emit('toast',{message:'Abajo no se ve nada. Necesitás una antorcha: el herrero la hace con 1 de madera y 3 de carbón.',error:true});return false;}
+  Object.assign(p,{x:stairs.arrive.x,y:stairs.arrive.y,gather:null,roll:0,moving:false});
+  this.projectiles=[];this.enemies.forEach(e=>{if(e.latched>0){e.x=e.homeX;e.y=e.homeY;}e.latched=0;e.alert=false;e.telegraph=0;e.dash=0;});
+  this.renderer.initialized=false;this.clearInput();this.sound.play('stairs');return true;
+ }
+ // El Taller: antorcha, picos, hachas y mejoras de armas. Todo se paga con materiales y guita.
+ missingFor(cost){const p=this.player,missing=[];
+  if(p.coins<cost.coins)missing.push((cost.coins-p.coins)+' de guita');
+  for(const [k,n] of Object.entries(cost.materials))if((p.materials[k]||0)<n)missing.push((n-(p.materials[k]||0))+' de '+Z.MATERIALS[k].name.toLowerCase());
+  return missing;}
+ craftOptions(){
+  const p=this.player,list=[];
+  list.push({id:'torch',group:'tools',icon:'🔥',name:'Antorcha',detail:'Ilumina las cuevas profundas. Sin ella no podés bajar.',cost:Z.TORCH_RECIPE,done:p.torch,doneText:'Ya la tenés'});
+  for(const kind of ['pickaxe','axe']){const tool=Z.TOOLS[kind],next=(p[kind]||0)+1,done=next>5;
+   const current=p[kind]?tool.name+' de '+Z.TIER_NAMES[p[kind]]:'Sin '+tool.name.toLowerCase();
+   list.push({id:kind,group:'tools',icon:tool.icon,name:done?tool.name+' de diamante':tool.name+' de '+Z.TIER_NAMES[next],
+    detail:(kind==='pickaxe'?'Pica más rápido y vetas más duras.':'Tala más rápido.')+' Ahora: '+current+'.',cost:done?null:tool.recipes[next],done,doneText:'Al máximo'});}
+  for(const w of ['fists','bow','sword','stone']){if(!p.weapons.includes(w))continue;const level=p.weaponLevels[w]||1,next=level+1,done=next>Z.MAX_WEAPON_LEVEL;
+   list.push({id:'weapon:'+w,group:'weapons',icon:{fists:'✊',bow:'➶',sword:'⚔',stone:'◆'}[w],name:Z.WEAPON_TYPES[w].name+(done?' nvl '+level:' nvl '+next),
+    detail:done?'Daño ×'+this.number(Z.weaponLevelMultiplier(level))+'.':'Daño ×'+this.number(Z.weaponLevelMultiplier(level))+' → ×'+this.number(Z.weaponLevelMultiplier(next))+'.',cost:done?null:Z.WEAPON_UPGRADES[next],done,doneText:'Nivel máximo'});}
+  return list.map(o=>({...o,missing:o.cost?this.missingFor(o.cost):[]}));
+ }
+ craft(id){
+  const p=this.player,option=this.craftOptions().find(o=>o.id===id);if(!option)return{ok:false,message:'Eso no lo hago, pa.'};
+  if(option.done)return{ok:false,message:option.doneText+'.'};
+  if(option.missing.length)return{ok:false,message:'Te falta: '+option.missing.join(', ')+'.'};
+  p.coins-=option.cost.coins;for(const [k,n] of Object.entries(option.cost.materials))p.materials[k]-=n;
+  if(id==='torch')p.torch=true;else if(id==='pickaxe'||id==='axe')p[id]=(p[id]||0)+1;else{const w=id.slice(7);p.weaponLevels[w]=(p.weaponLevels[w]||1)+1;}
+  this.questFlags.crafted=true;this.sound.play('buy');return{ok:true,message:option.name+': ¡listo!'};
  }
  shopItems(){const p=this.player;return Z.SHOP_ITEMS.map(item=>{
   const price=item.price(p),soldOut=(item.id==='herb'&&p.herbs>=Z.HERB_BAG)||(item.id==='sharpen'&&p.sharpen>=5);
@@ -366,20 +448,26 @@ class Game {
   {id:'bestiary',title:'Anécdotas para el fogón',detail:'Derrotá al menos un chorro, perro, serpiente y rata.',done:['thief','dog','snake','rat'].every(t=>flags['defeat_'+t])},
   {id:'level5',title:'Ya no sos el mismo',detail:'Llegá al nivel 5 con tu personaje.',done:this.player.level>=5},
   {id:'capo',title:'El trono de la cueva',detail:'Alguien se sentó en el trono del fondo de la cueva. Derrotá al Capo del Eco. Recomendado: nivel 4.',done:!!flags.defeat_capo},
-  {id:'yarara',title:'La madre de todas las víboras',detail:'Derrotá a la Yarará Madre en el rincón noreste de Los Yuyos. Recomendado: nivel 4.',done:!!flags.defeat_yarara}
+  {id:'yarara',title:'La madre de todas las víboras',detail:'Derrotá a la Yarará Madre en el rincón noreste de Los Yuyos. Recomendado: nivel 4.',done:!!flags.defeat_yarara},
+  {id:'smith',title:'Acá todo con verdes',detail:'Visitá al herrero de El Taller, al sur de la aldea, y fabricá tu primera herramienta.',done:!!flags.crafted},
+  {id:'deep',title:'Luz en la oscuridad',detail:'Con una antorcha, tomá la bajada del fondo de la Cueva del Eco hacia la Cueva Profunda.',done:this.player.discovered.includes('cave2')},
+  {id:'deepest',title:'Las entrañas de la tierra',detail:'Encontrá la bajada de la Cueva Profunda y llegá a Las Entrañas. Llevá armas mejoradas.',done:this.player.discovered.includes('cave3')}
  ];}
  checkQuests(){for(const q of this.quests())if(q.done&&!this.questFlags['quest_'+q.id]){this.questFlags['quest_'+q.id]=true;this.emit('toast',{message:'Diario actualizado: '+q.title});this.sound.play('pickup');}if(this.quests().every(q=>q.done)&&!this.questFlags.complete){this.questFlags.complete=true;this.emit('complete');}}
- snapshot(){return JSON.parse(JSON.stringify({version:1,savedAt:new Date().toISOString(),player:this.player,time:this.time,queuedWaves:this.queuedWaves||[],questFlags:this.questFlags,collected:this.world.pickups.filter(p=>p.collected).map(p=>p.id),enemies:this.enemies.map(e=>({id:e.id,hp:e.hp,dead:e.dead,respawn:e.respawn,x:e.x,y:e.y,provoked:e.provoked,cooldown:e.cooldown,stun:e.stun,charm:e.charm,latched:e.latched,latchRest:e.latchRest,alert:e.alert}))}));}
+ snapshot(){return JSON.parse(JSON.stringify({version:1,savedAt:new Date().toISOString(),player:this.player,time:this.time,queuedWaves:this.queuedWaves||[],questFlags:this.questFlags,collected:this.world.pickups.filter(p=>p.collected).map(p=>p.id),nodes:this.world.objects.filter(o=>o.harvested).map(o=>({id:o.id,regrow:o.regrow})),enemies:this.enemies.map(e=>({id:e.id,hp:e.hp,dead:e.dead,respawn:e.respawn,x:e.x,y:e.y,provoked:e.provoked,cooldown:e.cooldown,stun:e.stun,charm:e.charm,latched:e.latched,latchRest:e.latchRest,alert:e.alert}))}));}
  static validateSave(data){
   if(!data||data.version!==1||!data.player||!Array.isArray(data.collected)||!Array.isArray(data.enemies))throw new Error('El archivo no es una partida válida de Zak’s Throne.');
   const p=data.player,isNumber=n=>typeof n==='number'&&Number.isFinite(n);if(!Z.CHARACTERS.some(c=>c.id===p.characterId))throw new Error('Personaje desconocido.');
   for(const k of ['level','xp','points','hp','x','y','stamina'])if(!isNumber(p[k]))throw new Error('La partida tiene datos incompletos.');
-  if(!Number.isInteger(p.level)||p.level<1||!Number.isSafeInteger(p.level)||p.xp<0||p.xp>=Z.xpNeeded(p.level)||!Number.isInteger(p.points)||p.points<0||p.hp<=0||p.hp>500||p.x<10||p.x>2390||p.y<10||p.y>1790)throw new Error('La partida contiene valores fuera de rango.');
+  if(!Number.isInteger(p.level)||p.level<1||!Number.isSafeInteger(p.level)||p.xp<0||p.xp>=Z.xpNeeded(p.level)||!Number.isInteger(p.points)||p.points<0||p.hp<=0||p.hp>500||p.x<10||p.x>2390||p.y<10||p.y>2490)throw new Error('La partida contiene valores fuera de rango.');
   if(!p.stats)throw new Error('Faltan las estadísticas.');
   for(const k of Object.keys(Z.STAT_LABELS))if(!isNumber(p.stats[k])||p.stats[k]<0||p.stats[k]>(k==='health'?500:k==='intelligence'?Number.MAX_SAFE_INTEGER:100))throw new Error('Estadísticas inválidas.');
   if(p.stats.health<1)throw new Error('La vida máxima debe ser positiva.');
   if(!Array.isArray(p.weapons)||!p.weapons.includes('fists')||!p.weapons.every(w=>Object.hasOwn(Z.WEAPON_TYPES,w))||!p.weapons.includes(p.weapon))throw new Error('Inventario inválido.');
-  for(const k of ['coins','herbs','sharpen','lessons'])if(p[k]!==undefined&&(!isNumber(p[k])||p[k]<0))throw new Error('Inventario inválido.');
+  for(const k of ['coins','herbs','sharpen','lessons','axe','pickaxe'])if(p[k]!==undefined&&(!isNumber(p[k])||p[k]<0))throw new Error('Inventario inválido.');
+  if(p.materials!==undefined&&(!p.materials||typeof p.materials!=='object'||Object.values(p.materials).some(n=>!isNumber(n)||n<0)))throw new Error('Inventario inválido.');
+  if(p.weaponLevels!==undefined&&(!p.weaponLevels||typeof p.weaponLevels!=='object'||Object.values(p.weaponLevels).some(n=>!isNumber(n)||n<1||n>Z.MAX_WEAPON_LEVEL)))throw new Error('Inventario inválido.');
+  if(data.nodes!==undefined&&(!Array.isArray(data.nodes)||data.nodes.length>1000))throw new Error('El archivo es demasiado grande.');
   if(data.enemies.length>100||data.collected.length>500)throw new Error('El archivo es demasiado grande.');return true;
  }
  restore(data,slot=null){
@@ -388,7 +476,10 @@ class Game {
   for(const k of ['kills','deaths','playTime','abilityCooldown','attackCooldown','stoneWalkTime','restTime','slow','exhausted'])p[k]=typeof source[k]==='number'&&Number.isFinite(source[k])?clamp(source[k],0,1e9):0;
   p.abilityCooldown=Math.min(p.abilityCooldown,30);p.attackCooldown=Math.min(p.attackCooldown,3);p.slow=Math.min(p.slow,4);p.exhausted=Math.min(p.exhausted,10);p.stamina=clamp(p.stamina,0,1);p.stoneWalkTime=clamp(p.stoneWalkTime,0,2);
   p.coins=Math.floor(clamp(Number(source.coins)||0,0,1e7));p.herbs=Math.floor(clamp(Number(source.herbs)||0,0,Z.HERB_BAG));p.sharpen=Math.floor(clamp(Number(source.sharpen)||0,0,5));p.lessons=Math.floor(clamp(Number(source.lessons)||0,0,1e4));
-  p.bossKills=Math.floor(clamp(Number(source.bossKills)||0,0,1e4));if(typeof source.runId==='string'&&/^[\w-]{6,64}$/.test(source.runId))p.runId=source.runId;
+  p.bossKills=Math.floor(clamp(Number(source.bossKills)||0,0,1e4));
+  if(source.materials)for(const k of Object.keys(Z.MATERIALS))p.materials[k]=Math.floor(clamp(Number(source.materials[k])||0,0,1e6));
+  for(const k of ['axe','pickaxe'])p[k]=Math.floor(clamp(Number(source[k])||0,0,5));p.torch=source.torch===true;
+  if(source.weaponLevels)for(const w of Object.keys(p.weaponLevels))p.weaponLevels[w]=Math.floor(clamp(Number(source.weaponLevels[w])||1,1,Z.MAX_WEAPON_LEVEL));if(typeof source.runId==='string'&&/^[\w-]{6,64}$/.test(source.runId))p.runId=source.runId;
   p.weapon=source.weapon;p.weapons=[...new Set(source.weapons)];p.stoneAmmo=source.stoneAmmo===0?0:1;
   p.discovered=Array.isArray(source.discovered)?source.discovered.filter(z=>Object.hasOwn(names,z)):['village'];p.dir=Object.hasOwn(dirs,source.dir)?source.dir:'down';p.walk=0;p.moving=false;p.attackAnim=0;
   if(source.buffs)for(const key of ['gero','pepe','paco','pacoAnimals','mate'])p.buffs[key]=clamp(Number(source.buffs[key])||0,0,key==='pacoAnimals'?25:key==='mate'?30:10);
@@ -396,9 +487,11 @@ class Game {
   if(source.poison&&Number.isFinite(source.poison.damage))p.poison={time:clamp(Number(source.poison.time)||0,0,5),tick:clamp(Number(source.poison.tick)||1,.01,1),damage:clamp(source.poison.damage,0,100)};
   this.player=p;this.world=Z.createWorld();this.biome=Z.biomeAt(p.x,p.y);if(Z.collides(this.world,p.x,p.y,8)){Object.assign(p,this.world.spawn);this.biome='village';}
   if(this.biome==='village'){p.poison=null;p.slow=0;}this.time=Number.isFinite(data.time)?clamp(data.time,0,1e9):0;this.questFlags={};
-  if(data.questFlags&&typeof data.questFlags==='object')for(const k of Object.keys(data.questFlags))if(/^(quest_(bow|cave|stone|weeds|sword|shop|bestiary|level5|capo|yarara)|defeat_(thief|dog|snake|rat|capo|yarara)|bought|complete)$/.test(k))this.questFlags[k]=data.questFlags[k]===true;
+  if(data.questFlags&&typeof data.questFlags==='object')for(const k of Object.keys(data.questFlags))if(/^(quest_(bow|cave|stone|weeds|sword|shop|bestiary|level5|capo|yarara|smith|deep|deepest)|defeat_(thief|dog|snake|rat|bat|spider|worm|capo|yarara)|bought|crafted|gathered|complete)$/.test(k))this.questFlags[k]=data.questFlags[k]===true;
   if(!this.quests().every(q=>q.done))delete this.questFlags.complete;
-  this.world.pickups.forEach(i=>{i.collected=data.collected.includes(i.id);if(i.collected&&i.type==='herb')i.regrow=HERB_REGROW;});this.enemies=this.world.enemySpawns.map(spawn=>{
+  this.world.pickups.forEach(i=>{i.collected=data.collected.includes(i.id);if(i.collected&&i.type==='herb')i.regrow=HERB_REGROW;});
+  for(const saved of data.nodes||[]){const o=saved&&this.world.objects.find(n=>n.id===saved.id&&(n.type==='ore'||n.type==='tree'));if(!o)continue;
+   o.harvested=true;o.regrow=clamp(Number(saved.regrow)||0,0,this.nodeDef(o).regrow);if(o.type==='ore')o.solid=false;}this.enemies=this.world.enemySpawns.map(spawn=>{
    const e=this.makeEnemy(spawn),saved=data.enemies.find(i=>i&&i.id===e.id);if(saved){if(Number.isFinite(saved.hp))e.hp=clamp(saved.hp,0,e.maxHp);e.dead=saved.dead===true||e.hp<=0;e.respawn=clamp(Number(saved.respawn)||0,0,Z.ENEMY_TYPES[e.type].respawn||35);e.provoked=saved.provoked===true;e.cooldown=clamp(Number(saved.cooldown)||0,0,3);e.stun=clamp(Number(saved.stun)||0,0,7);e.charm=clamp(Number(saved.charm)||0,0,10);e.latched=clamp(Number(saved.latched)||0,0,3);e.latchRest=clamp(Number(saved.latchRest)||0,0,1.6);e.alert=saved.alert===true;if(this.biome==='village'||e.dead)e.latched=0;
     if(Number.isFinite(saved.x)&&Number.isFinite(saved.y)&&Z.biomeAt(saved.x,saved.y)===e.biome&&!Z.collides(this.world,saved.x,saved.y,7)){e.x=saved.x;e.y=saved.y;}}
    return e;});

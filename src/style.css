@@ -107,3 +107,14 @@
 /* v1.3: apodo obligatorio y borrar ranuras. */
 .ranking-name input.invalid{border-color:var(--red);outline:2px solid var(--red);outline-offset:1px}.ranking-name input.invalid::placeholder{color:#e8a285}
 .slot-line{display:flex;gap:8px;align-items:stretch;margin:8px 0}.slot-line .save-slot{margin:0;flex:1}.slot-delete{width:52px;flex:none;border:1px solid var(--line);background:#10291f;color:#e8a285;font-size:18px}.slot-delete:hover{border-color:var(--red);background:#3a2621}
+/* v1.4: el herrero y botones táctiles un poco más grandes que el joystick. */
+@media(pointer:coarse){#touch-controls .touch-actions{transform:scale(var(--tb,.82))}}
+.smith-talk{display:flex;gap:14px;align-items:stretch;margin-bottom:12px}.smith-portrait{width:96px;height:132px;flex:none;image-rendering:pixelated;border:1px solid #b8aa7c88}
+.smith-bubble{position:relative;flex:1;background:#f1e6c8;color:#2a2219;padding:12px 15px;border:2px solid #6b4f33;box-shadow:3px 3px #0b201b66;align-self:center}
+.smith-bubble:before{content:'';position:absolute;left:-10px;top:22px;border:8px solid transparent;border-right-color:#6b4f33;border-left:0}
+.smith-bubble strong{display:block;font:11px 'Courier New',monospace;letter-spacing:1.5px;color:#7a4b22}#modal .smith-bubble .smith-line{font:italic 19px Georgia;color:#2a2219;margin:6px 0 0}
+.smith-message{display:block;margin-top:8px;font:12px 'Courier New',monospace;color:#6b3a1c}
+.smith-bag{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 4px}.smith-bag span{background:#10281f;border:1px solid var(--line);padding:5px 8px;font:11px 'Courier New',monospace;color:#d8dcc4}.smith-bag .bag-coins{color:#f2cb5b}
+.smith-heading{font-weight:normal;color:var(--gold);font-size:15px;margin:16px 0 2px}
+.smith-cost{display:flex!important;flex-wrap:wrap;gap:5px;margin-top:6px}.smith-cost .need{font:10px 'Courier New',monospace;padding:2px 6px;border:1px solid #8ba78066;color:#bfe0a8}.smith-cost .need.missing{border-color:#cd817088;color:#e8a285}
+@media(max-width:700px),(max-height:520px){.smith-portrait{width:64px;height:88px}#modal .smith-bubble .smith-line{font-size:16px}}

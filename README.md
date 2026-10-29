@@ -2,6 +2,8 @@
 
 Una aventura de acción y exploración en pixel art, vista desde arriba. Elegí a uno de seis amigos, preparate en la aldea y salí a explorar la cueva y los Yuyos.
 
+Versión actual: **v1.4**. Los cambios de cada versión están en [CHANGELOG.md](CHANGELOG.md).
+
 ## Jugar
 
 1. Hacé doble clic en `Jugar.bat`, o abrí `index.html` con Chrome o Microsoft Edge.
@@ -21,7 +23,8 @@ El juego funciona directamente desde sus archivos: no requiere servidor, instala
 | Atacar | Espacio o clic en el mundo |
 | Rodar y esquivar | F o clic derecho (hacia el puntero) |
 | Habilidad activa | Q |
-| Recoger / usar el pozo / comprar | E |
+| Recoger / usar el pozo / comprar / hablar con el herrero / bajar y subir | E |
+| Talar o picar | E cerca del árbol o la veta, y quedarse quieto |
 | Usar hierba de la bolsa | R |
 | Cambiar arma | 1, 2, 3 y 4; también sus botones |
 | Ficha y mejoras | C |
@@ -58,8 +61,10 @@ Los guardados se conservan en el almacenamiento local del navegador usado para j
 - **Palihue City:** zona completamente segura, con casas, árboles, flores y vecinos que caminan y tienen colisión. Los enemigos no pueden entrar. El pozo permite recuperar vida y el puesto de **El Almacén** vende provisiones. Acá se encuentra el arco.
 - **Cueva:** zona oscura habitada por chorros y perros callejeros. La piedra se encuentra en su interior. En el fondo oeste, sentado en un trono, espera **El Capo del Eco**.
 - **Yuyos:** pastos altos, serpientes y ratas. Acá se encuentra la espada y Paco recibe su bonificación de Campesino. En el rincón noreste anida **La Yarará Madre**.
+- **Cueva Profunda (Nvl 2):** se baja por la escalera del fondo noroeste de la Cueva del Eco y **hace falta una antorcha**. Está a oscuras: ves lo que alumbra la antorcha. Hay murciélagos, arañas, hierro y oro, y **no crecen hierbas medicinales**. En su extremo sureste baja otra escalera.
+- **Las Entrañas (Nvl 3):** pocos gusanos de tierra, enterrados hasta que te acercás, y las únicas vetas de diamante.
 
-El mapa marca el almacén ($) y las guaridas de los jefes (☠). El diario de exploración, los avisos de interacción y las pistas iniciales ayudan a orientarte. Los enemigos vuelven a aparecer después de **35 segundos**; los jefes, después de **3 minutos**.
+El mapa marca el almacén ($), el herrero (⚒), las bajadas (▼ ▲) y las guaridas de los jefes (☠). Dentro de una cueva profunda, el mapa muestra ese nivel. El diario de exploración, los avisos de interacción y las pistas iniciales ayudan a orientarte. Los enemigos vuelven a aparecer después de **35 segundos**; los jefes, después de **3 minutos**.
 
 Al quedar noqueado volvés a la aldea. Si te vence un chorro aparece «Uhh... este gil me sacó guita»… y es literal: un chorro o el Capo se llevan el **30%** de tus monedas. Cualquier otra derrota cuesta el **10%**.
 
@@ -83,6 +88,47 @@ El puesto de El Almacén está al oeste de la plaza (E para comprar):
 | Mate cebado | 6 | Energía al máximo y +10% de movimiento durante 30 s |
 | Afilar y tensar | 30, 60, 90… | +10% de daño con todas las armas, hasta 5 veces |
 | Clase con Beto | 60, 100, 140… | +1 punto de mejora |
+
+## Materiales, herramientas y El Taller
+
+Al sur de la aldea, junto a **El Taller**, atiende **El Herrero**: E en su mesa de trabajo abre su taller. Él te recibe con un «Acá todo con verdes, pa.». Fabrica herramientas y mejora armas a cambio de materiales y guita.
+
+**Recolección.** Acercate a un árbol o a una veta, tocá E y quedate quieto: aparece una barra de progreso. Moverte, atacar, rodar o recibir un golpe interrumpe el trabajo. Las vetas son piedras grandes que se hacen añicos al terminar.
+
+| Material | Dónde | Herramienta mínima | Botín | Vuelve a aparecer |
+| --- | --- | --- | ---: | ---: |
+| Madera | Cualquier árbol (queda el tocón) | Cualquier hacha | 2 | 1 min |
+| Piedra | Cueva del Eco (gris rocosa) | Pico de madera | 2 | 3 min |
+| Carbón | Cueva del Eco (gris con manchas negras) | Pico de madera | 2 | 3 min |
+| Hierro | Cueva Profunda (gris metálica) | Pico de piedra | 2 | 5 min |
+| Oro | Cueva Profunda (amarilla, hay menos) | Pico de hierro | 2 | 7 min |
+| Diamante | Las Entrañas (pedazos celestes, muy pocas) | Pico de oro | 2 | 10 min |
+
+Hay 8 vetas de piedra, 6 de carbón, 9 de hierro, 5 de oro y 4 de diamante. Cada nivel de herramienta trabaja más rápido que el anterior: madera ×1, piedra ×1,3, hierro ×1,6, oro ×1,95 y diamante ×2,4.
+
+**Herramientas.** Cada pico y cada hacha requiere el nivel anterior. Las hachas solo aceleran la tala.
+
+| Herramienta | Pico | Hacha |
+| --- | --- | --- |
+| Madera | 10 madera + 30 de guita | 30 de guita |
+| Piedra | 10 piedra + 45 | 5 piedra + 45 |
+| Hierro | 10 hierro + 60 | 5 hierro + 60 |
+| Oro | 10 oro + 75 | 5 oro + 75 |
+| Diamante | 10 diamante + 90 | 5 diamante + 90 |
+
+La **antorcha** cuesta 1 de madera y 3 de carbón. Se fabrica una sola vez y habilita las bajadas.
+
+**Mejoras de armas.** Puños, arco, espada y piedra se mejoran por separado, siempre de a un nivel y solo si ya tenés el arma. Cada nivel suma **20% de daño** a esa arma (nivel 6: ×2). Se combina con «Afilar y tensar» de El Almacén.
+
+| Nivel | Costo |
+| --- | --- |
+| 2 | 15 madera + 30 de guita |
+| 3 | 15 piedra + 45 |
+| 4 | 15 hierro + 60 |
+| 5 | 15 oro + 75 |
+| 6 | 15 diamante + 90 |
+
+Los materiales, las herramientas, las mejoras y las vetas recién picadas se guardan con la partida. La ficha del personaje (C) muestra tu bolsa de materiales.
 
 ## Jefes
 
@@ -167,11 +213,17 @@ Todos comparten un radio de detección de **195 píxeles**. Su nivel es `1 + flo
 | Perro | 60 | 3 | 30 | 20 | +1,5 / +0,5 / +3 / +2 |
 | Serpiente | 35 | 5 | 25 | 5 | +1 / +2 / +2 / +0,5 |
 | Rata | 10 | 1 | 40 | 0 | +0,5 / +2 / +2 / +0,5 |
+| Murciélago | 40 | 6 | 45 | 15 | +3 / +1 / +2 / +1 |
+| Araña | 75 | 8 | 26 | 35 | +4 / +1 / +1 / +2 |
+| Gusano de tierra | 100 | 10 | 18 | 62 | +8 / +1,5 / +1 / +2 |
 
 - Los **chorros** atacan con cuchillo y no retroceden al recibir golpes.
 - Los **perros** reducen el movimiento un 15% durante 4 segundos; contra Pepe, un 20%.
 - Las **serpientes** tienen 40% de probabilidad de envenenar, salvo el 15% contra Fede. El veneno causa 2 de daño por segundo durante 5 segundos; aumenta 1 por nivel de serpiente. Una nueva aplicación reinicia los 5 segundos.
 - Las **ratas** se prenden del cuerpo por 3 segundos, atacan con su intervalo correspondiente y luego saltan hacia atrás antes de intentar prenderse otra vez.
+- Los **murciélagos** (Cueva Profunda) vuelan en zigzag y muerden rápido.
+- Las **arañas** (Cueva Profunda) tienen 15% de probabilidad de envenenar como las serpientes (5% contra Fede). Su caparazón absorbe 4 de daño por golpe.
+- Los **gusanos de tierra** (Las Entrañas) esperan enterrados, salen cuando te acercás a unos 120 píxeles y absorben 6 de daño por golpe. Reaparecen a los 90 segundos. Para pelear cómodo en los niveles profundos conviene llevar armas mejoradas.
 
 Los ataques empujan a perros, serpientes y ratas; las ratas prendidas deben terminar su agarre. Los aumentos propios de vida de cada enemigo se aplican según la tabla, sin sumarles los 2 de vida automáticos del jugador. El daño de veneno también respeta el límite de fuerza de 100.
 

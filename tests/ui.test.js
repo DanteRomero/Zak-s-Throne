@@ -38,7 +38,7 @@
   g.player.points=1;document.getElementById('stats-button').click();const strength=g.player.stats.strength;document.querySelector('[aria-label="Mejorar Fuerza"]').click();
   assert('Mejorar atributo consume un punto',g.player.stats.strength===strength+1&&g.player.points===0);close();
   document.getElementById('map-button').click();assert('Mapa renderizado',!!document.querySelector('.map-canvas'));close();
-  document.getElementById('journal-button').click();assert('Diario y bestiario visibles',document.querySelectorAll('.journal-task').length===16);close();
+  document.getElementById('journal-button').click();assert('Diario y bestiario visibles',document.querySelectorAll('.journal-task').length===22);close();
   localStorage.setItem('zak.throne.save.3','{roto');document.getElementById('load-game').click();
   assert('Ranura dañada no puede cargarse',document.querySelectorAll('.save-slot')[2].disabled);close();close();
   const time=g.time;document.getElementById('pause-button').click();g.update(1);

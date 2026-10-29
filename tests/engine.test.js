@@ -319,6 +319,77 @@
       equal(game.questFlags.bought, true); equal(game.questFlags.defeat_capo, true);
     });
 
+    // Recolección, El Taller y cuevas profundas usan el mapa real.
+    const node = (type, ore) => game.world.objects.find(o => o.type === type && (!ore || o.ore === ore) && !o.harvested);
+    const standBy = o => { Object.assign(game.player, {x: o.x + o.w / 2, y: o.y + o.h + 9}); game.biome = Z.biomeAt(game.player.x, game.player.y); game.enemies = []; };
+    test('Trees need an axe, take time to chop, give wood and regrow after a minute', () => {
+      const p = fixture('gero', true), tree = node('tree'); standBy(tree);
+      equal(Z.nearbyInteractable(game.world, p.x, p.y, 46, p) === tree, false, 'Without an axe trees are not interactable');
+      ok(!game.startGather(tree), 'No axe, no wood');
+      p.axe = 1; ok(game.startGather(tree)); advance(2.5); equal(p.materials.wood, 0, 'Still chopping');
+      advance(.6); equal(p.materials.wood, 2); ok(tree.harvested && tree.solid, 'Stump stays solid');
+      advance(59); ok(tree.harvested); advance(1.2); ok(!tree.harvested, 'Tree regrows after 60 s');
+    });
+    test('Better axes chop faster and moving cancels the work', () => {
+      const p = fixture('gero', true), tree = node('tree'); standBy(tree); p.axe = 5;
+      game.startGather(tree); advance(1.3); equal(p.materials.wood, 2, 'Diamond axe: 3 s / 2.4');
+      const other = node('tree'); standBy(other); game.startGather(other); advance(.3); game.keys.add('d'); advance(.1); game.keys.clear();
+      equal(p.gather, null, 'Walking away cancels'); advance(2); equal(p.materials.wood, 2);
+    });
+    test('Ore veins need the right pickaxe tier, shatter and stop blocking', () => {
+      const p = fixture('gero', true), stone = node('ore', 'stone'); standBy(stone);
+      ok(!game.startGather(stone), 'Needs a pickaxe'); p.pickaxe = 1; ok(game.startGather(stone)); advance(3.3);
+      equal(p.materials.stone, 2); ok(stone.harvested && !stone.solid); ok(stone.regrow > 170, 'Stone regrows in 3 minutes');
+      const iron = node('ore', 'iron'); standBy(iron); ok(!game.startGather(iron), 'Iron needs a stone pickaxe');
+      p.pickaxe = 2; ok(game.startGather(iron)); advance(3.2); equal(p.materials.iron, 2);
+      const gold = node('ore', 'gold'), diamond = node('ore', 'diamond'); standBy(gold); ok(!game.startGather(gold)); p.pickaxe = 3; ok(game.startGather(gold));
+      standBy(diamond); ok(!game.startGather(diamond)); p.pickaxe = 4; ok(game.startGather(diamond));
+    });
+    test('A hit interrupts gathering', () => {
+      const p = fixture(); p.axe = 1; const tree = {id: 'x-tree', type: 'tree', x: p.x - 10, y: p.y - 30, w: 20, h: 16, solid: true}; game.world.objects.push(tree);
+      game.startGather(tree); advance(.5); game.hurtPlayer(5, 'bat'); equal(p.gather, null);
+    });
+    test('The smith crafts torch, tools and weapon upgrades in order and charges for them', () => {
+      const p = fixture('gero', true); p.coins = 1000; Object.assign(p.materials, {wood: 40, stone: 30, coal: 3, iron: 30, gold: 30, diamond: 30});
+      equal(game.craft('axe').ok, true); equal(p.axe, 1); equal(p.coins, 970);
+      equal(game.craft('pickaxe').ok, true); equal(p.pickaxe, 1); equal(p.materials.wood, 30);
+      equal(game.craft('torch').ok, true); ok(p.torch); equal(p.materials.coal, 0); equal(game.craft('torch').ok, false, 'Only one torch');
+      equal(game.craft('pickaxe').ok, true); equal(p.pickaxe, 2); equal(p.materials.stone, 20); equal(p.coins, 895);
+      equal(game.craft('weapon:sword').ok, false, 'Needs the sword first');
+      p.weapons.push('sword'); const base = game.weaponLevelMultiplier('sword');
+      equal(game.craft('weapon:sword').ok, true); equal(p.weaponLevels.sword, 2); near(game.weaponLevelMultiplier('sword'), base * 1.2);
+      p.coins = 10; const result = game.craft('weapon:sword'); equal(result.ok, false); ok(result.message.includes('guita'));
+      equal(p.weaponLevels.sword, 2); ok(game.questFlags.crafted);
+    });
+    test('Weapon level raises real damage', () => {
+      const p = fixture(); p.weapon = 'fists'; p.dir = 'down'; const a = enemy('dog', p.x, p.y + 20); game.attack(); const first = a.maxHp - a.hp;
+      a.dead = true; const b = enemy('dog', p.x, p.y + 20); p.weaponLevels.fists = 6; p.attackCooldown = 0; p.combo = 0; game.attack();
+      ok(b.maxHp - b.hp > first, 'Level 6 hits harder');
+    });
+    test('Stairs down need a torch and lead to the deep caves', () => {
+      const p = fixture('gero', true), down = game.world.objects.find(o => o.type === 'stairs' && o.to === 'cave2');
+      ok(!game.takeStairs(down), 'Too dark without a torch'); p.torch = true; ok(game.takeStairs(down));
+      advance(.1); equal(game.biome, 'cave2'); ok(p.discovered.includes('cave2'));
+      equal(game.world.pickups.some(i => i.type === 'herb' && /cave[23]/.test(Z.biomeAt(i.x, i.y))), false, 'No healing herbs down here');
+      const deeper = game.world.objects.find(o => o.type === 'stairs' && o.to === 'cave3'); ok(game.takeStairs(deeper)); advance(.1); equal(game.biome, 'cave3');
+      const up = game.world.objects.find(o => o.type === 'stairs' && o.to === 'cave'); ok(game.takeStairs(up)); advance(.1); equal(game.biome, 'cave');
+    });
+    test('Deep cave enemies: spiders poison 15%, worms wait buried', () => {
+      const p = fixture(); Math.random = () => .1; const spider = enemy('spider'); game.enemyAttack(spider); ok(p.poison, '0.1 < 15%');
+      p.poison = null; Math.random = () => .2; spider.cooldown = 0; game.enemyAttack(spider); equal(p.poison, null, '0.2 > 15%');
+      game.enemies = []; const worm = enemy('worm', p.x + 150); const x = worm.x; advance(1); equal(worm.alert, false); near(worm.x, x, 'Buried worm does not wander');
+      worm.x = p.x + 100; advance(.1); ok(worm.alert, 'Worm emerges when you get close');
+      equal(Z.enemyStats('worm', 1).health, 100); equal(Z.enemyStats('worm', 1).strength, 10);
+    });
+    test('Materials, tools, upgrades and harvested nodes survive a save round trip', () => {
+      const p = fixture('gero', true); Object.assign(p, {axe: 2, pickaxe: 3, torch: true}); p.materials.gold = 7; p.weaponLevels.fists = 4;
+      const tree = node('tree'); tree.harvested = true; tree.regrow = 30; const save = game.snapshot();
+      game.newGame('tena'); game.restore(save, 1); const q = game.player;
+      equal(q.axe, 2); equal(q.pickaxe, 3); equal(q.torch, true); equal(q.materials.gold, 7); equal(q.weaponLevels.fists, 4);
+      const again = game.world.objects.find(o => o.id === tree.id); ok(again.harvested); near(again.regrow, 30);
+      const deep = game.snapshot(); deep.player.x = 105; deep.player.y = 1975; game.restore(deep, 1); equal(game.biome, 'cave2', 'Saving in a deep cave works');
+    });
+
     game.pause(); cancelAnimationFrame(game.frame);
     return {passed: results.filter(r=>r.pass).length, failed: results.filter(r=>!r.pass).length, results};
   };

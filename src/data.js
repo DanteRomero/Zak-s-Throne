@@ -91,6 +91,24 @@
       xp: 16, coins: [1, 2], color: '#a6a0b7', visionRange: 195, knockback: true,
       description: 'Se prende del cuerpo durante 3 s y después salta para volver a acercarse.'
     },
+    bat: {
+      name: 'Murciélago', base: { health: 40, strength: 6, speed: 45, endurance: 15 },
+      growth: { health: 3, strength: 1, speed: 2, endurance: 1 },
+      xp: 50, coins: [4, 8], color: '#7d6f96', visionRange: 210, knockback: true,
+      description: 'Vuela en zigzag y muerde rápido. Vive en la Cueva Profunda.'
+    },
+    spider: {
+      name: 'Araña', base: { health: 75, strength: 8, poison: 4, speed: 26, endurance: 35 },
+      growth: { health: 4, strength: 1, poison: 1, speed: 1, endurance: 2 },
+      xp: 70, coins: [6, 10], color: '#6b5a52', visionRange: 195, knockback: true,
+      description: '15% de probabilidad de envenenar durante 5 s. Caparazón duro: conviene un arma mejorada.'
+    },
+    worm: {
+      name: 'Gusano de tierra', base: { health: 100, strength: 10, speed: 18, endurance: 62 },
+      growth: { health: 8, strength: 1.5, speed: 1, endurance: 2 },
+      xp: 140, coins: [12, 20], color: '#b87a6a', visionRange: 170, knockback: false, respawn: 90,
+      description: 'Espera enterrado y sale cuando te acercás. Muy fuerte y blindado: entrá con armas de hierro o mejores.'
+    },
     capo: {
       name: 'El Capo del Eco', boss: true, base: { health: 340, strength: 9, speed: 20, endurance: 30 },
       growth: { health: 40, strength: 2, speed: 2, endurance: 3 },
@@ -113,6 +131,41 @@
     { id: 'lesson', name: 'Clase con Beto', icon: '✎', detail: '+1 punto de mejora para tu ficha.', price: p => 60 + p.lessons * 40 }
   ];
   Zak.HERB_BAG = 5;
+
+  // Materiales que se recolectan con hacha o pico.
+  Zak.MATERIALS = {
+    wood: { name: 'Madera', icon: '🪵' }, stone: { name: 'Piedra', icon: '🪨' }, coal: { name: 'Carbón', icon: '⬛' },
+    iron: { name: 'Hierro', icon: '⛓' }, gold: { name: 'Oro', icon: '🟨' }, diamond: { name: 'Diamante', icon: '💎' }
+  };
+  Zak.emptyMaterials = () => ({ wood: 0, stone: 0, coal: 0, iron: 0, gold: 0, diamond: 0 });
+  // Vetas y árboles: herramienta, nivel mínimo, segundos base de trabajo, botín y regeneración.
+  Zak.NODES = {
+    tree: { material: 'wood', tool: 'axe', tier: 1, time: 3, yield: 2, regrow: 60, name: 'árbol' },
+    stone: { material: 'stone', tool: 'pickaxe', tier: 1, time: 3.2, yield: 2, regrow: 180, name: 'piedra' },
+    coal: { material: 'coal', tool: 'pickaxe', tier: 1, time: 3.2, yield: 2, regrow: 180, name: 'carbón' },
+    iron: { material: 'iron', tool: 'pickaxe', tier: 2, time: 4, yield: 2, regrow: 300, name: 'hierro' },
+    gold: { material: 'gold', tool: 'pickaxe', tier: 3, time: 4.5, yield: 2, regrow: 420, name: 'oro' },
+    diamond: { material: 'diamond', tool: 'pickaxe', tier: 4, time: 5.5, yield: 2, regrow: 600, name: 'diamante' }
+  };
+  Zak.TIER_NAMES = ['', 'madera', 'piedra', 'hierro', 'oro', 'diamante'];
+  // Cada nivel de herramienta trabaja más rápido que el anterior.
+  Zak.TOOL_SPEED = [0, 1, 1.3, 1.6, 1.95, 2.4];
+  Zak.TOOLS = {
+    pickaxe: { name: 'Pico', icon: '⛏', recipes: [null,
+      { coins: 30, materials: { wood: 10 } }, { coins: 45, materials: { stone: 10 } }, { coins: 60, materials: { iron: 10 } },
+      { coins: 75, materials: { gold: 10 } }, { coins: 90, materials: { diamond: 10 } }] },
+    axe: { name: 'Hacha', icon: '🪓', recipes: [null,
+      { coins: 30, materials: {} }, { coins: 45, materials: { stone: 5 } }, { coins: 60, materials: { iron: 5 } },
+      { coins: 75, materials: { gold: 5 } }, { coins: 90, materials: { diamond: 5 } }] }
+  };
+  Zak.TORCH_RECIPE = { coins: 0, materials: { wood: 1, coal: 3 } };
+  Zak.MAX_WEAPON_LEVEL = 6;
+  // Receta para llevar un arma al nivel indicado (2 a 6).
+  Zak.WEAPON_UPGRADES = [null, null,
+    { coins: 30, materials: { wood: 15 } }, { coins: 45, materials: { stone: 15 } }, { coins: 60, materials: { iron: 15 } },
+    { coins: 75, materials: { gold: 15 } }, { coins: 90, materials: { diamond: 15 } }];
+  // Cada nivel de mejora suma 20% de daño a esa arma: nivel 6 = ×2.
+  Zak.weaponLevelMultiplier = level => 1 + 0.2 * (clamp(Math.floor(finite(level, 1)), 1, Zak.MAX_WEAPON_LEVEL) - 1);
 
   Zak.WEAPON_TYPES = {
     fists: { name: 'Puños', damageMultiplier: 1, range: 36, description: 'Un buen golpe a corta distancia.' },
@@ -151,6 +204,8 @@
       stoneAmmo: 1, stoneWalkTime: 0, bowCharge: 0,
       playTime: 0, discovered: ['village'],
       coins: 0, herbs: 0, sharpen: 0, lessons: 0,
+      materials: Zak.emptyMaterials(), axe: 0, pickaxe: 0, torch: false,
+      weaponLevels: { fists: 1, bow: 1, sword: 1, stone: 1 }, gather: null,
       combo: 0, comboTime: 0, roll: 0, rollCooldown: 0, rollX: 0, rollY: 1
     };
   };

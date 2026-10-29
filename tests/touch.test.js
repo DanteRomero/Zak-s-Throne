@@ -32,7 +32,8 @@
   g.player.rollCooldown = 0; pointer(document.getElementById('touch-roll'), 'pointerdown', 0, 0);
   assert('Rodar desde el botón', g.player.roll > 0);
   const actions = document.querySelector('.touch-actions'), small = actions.getBoundingClientRect().width;
-  assert('Los controles arrancan en tamaño chico', getComputedStyle(document.documentElement).getPropertyValue('--tc').trim() === '0.7' && small < 170);
+  const css = name => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  assert('Los controles arrancan en tamaño chico, con botones un poco más grandes que el joystick', css('--tc') === '0.7' && css('--tb') === '0.82' && small > 170 && small < 190);
   document.getElementById('pause-button').click();
   [...document.querySelectorAll('#modal-content button')].find(b => b.textContent === 'Opciones y controles').click();
   const size = document.querySelector('[aria-label="Tamaño de los controles táctiles"]'); size.click();

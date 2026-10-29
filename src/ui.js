@@ -39,10 +39,13 @@
   }
   const preferences = safeSettings();
   Object.keys(game.settings).forEach(key => { if (typeof preferences[key] === 'boolean' && typeof game.settings[key] === 'boolean') game.settings[key] = preferences[key]; });
-  const CONTROL_SIZES = { small: ['Chicos', .7], medium: ['Medianos', .85], large: ['Grandes', 1] };
+  const CONTROL_SIZES = { small: ['Chicos', .7, .82], medium: ['Medianos', .85, .96], large: ['Grandes', 1, 1.1] };
   if (CONTROL_SIZES[preferences.controls]) game.settings.controls = preferences.controls;
   const controlScale = () => CONTROL_SIZES[game.settings.controls][1];
-  function applyControls() { document.documentElement.style.setProperty('--tc', controlScale()); }
+  function applyControls() {
+    document.documentElement.style.setProperty('--tc', controlScale());
+    document.documentElement.style.setProperty('--tb', CONTROL_SIZES[game.settings.controls][2]);
+  }
   applyControls();
   if (game.sound) game.sound.enabled = game.settings.sound;
   function updateSound() {
@@ -98,7 +101,8 @@
     requestAnimationFrame(() => {
       if (version !== modalVersion || !visibleModal()) return;
       const first = content.querySelector('button:not(:disabled), input, [tabindex="0"]');
-      (first || $('close-modal')).focus();
+      // Sin desplazar: la ventana siempre arranca desde arriba (por ejemplo, el diálogo del herrero).
+      (first || $('close-modal')).focus({ preventScroll: true }); $('modal').scrollTop = 0;
     });
   }
   function hideModal(resume = true) {
@@ -310,7 +314,7 @@
       },'toggle');
       sizeToggle.setAttribute('aria-label','Tamaño de los controles táctiles'); sizeRow.append(sizeToggle); parent.append(sizeRow);
       const help = el('div','help-grid');
-      [['Moverte','WASD / flechas'],['Correr','Shift'],['Atacar','Espacio / clic'],['Rodar','F / clic derecho'],['Habilidad','Q'],['Interactuar','E'],['Usar hierba','R'],['Armas','1 — 4'],['Personaje','C'],['Diario','J'],['Mapa','M'],['Pausa','Esc']].forEach(([action,key]) => { const row = el('div'); row.append(el('span','',action),el('kbd','',key)); help.append(row); });
+      [['Moverte','WASD / flechas'],['Talar o picar','E, quieto'],['Correr','Shift'],['Atacar','Espacio / clic'],['Rodar','F / clic derecho'],['Habilidad','Q'],['Interactuar','E'],['Usar hierba','R'],['Armas','1 — 4'],['Personaje','C'],['Diario','J'],['Mapa','M'],['Pausa','Esc']].forEach(([action,key]) => { const row = el('div'); row.append(el('span','',action),el('kbd','',key)); help.append(row); });
       parent.append(help);
       paragraph(parent,'Los controles táctiles aparecen en pantallas compatibles. En un teléfono, giralo horizontalmente para ver mejor. El sonido se activa después de tu primera interacción.','hint');
     },returnToPause ? showPause : null);
@@ -334,7 +338,10 @@
        'Carrera: ' + fmt(s.runDuration) + ' s · Experiencia: ×' + fmt(s.xpMultiplier),
        'Daño de armas: ×' + fmt(s.damageMultiplier) + ' · Cuarto golpe seguido: crítico ×1,75',
        'Monedas: ' + fmt(p.coins) + ' · Hierbas: ' + p.herbs + ' / ' + Zak.HERB_BAG + ' · Derrotas: ' + p.kills,
-       'Próximo nivel: ' + fmt(p.xp) + ' / ' + Zak.xpNeeded(p.level) + ' XP'].forEach(line => summary.append(el('div','',line)));
+       'Próximo nivel: ' + fmt(p.xp) + ' / ' + Zak.xpNeeded(p.level) + ' XP',
+       'Materiales: ' + Object.entries(Zak.MATERIALS).map(([k,m]) => m.name + ' ' + (p.materials[k] || 0)).join(' · '),
+       'Pico: ' + (p.pickaxe ? Zak.TIER_NAMES[p.pickaxe] : 'no') + ' · Hacha: ' + (p.axe ? Zak.TIER_NAMES[p.axe] : 'no') + ' · Antorcha: ' + (p.torch ? 'sí' : 'no'),
+       'Armas: ' + p.weapons.map(w => Zak.WEAPON_TYPES[w].name + ' nvl ' + (p.weaponLevels[w] || 1)).join(' · ')].forEach(line => summary.append(el('div','',line)));
       parent.append(summary); const benefits = el('div','traits'); benefits.style.marginTop = '20px'; traits(benefits,c); parent.append(benefits);
     });
   }
@@ -359,7 +366,7 @@
     openModal('Los caminos de los Aromos', 'MAPA DE LA REGIÓN', parent => {
       const canvas = el('canvas','map-canvas'); canvas.width = 500; canvas.height = 300; canvas.setAttribute('aria-label','Mapa: aldea segura, cueva y Yuyos. Un punto marca tu posición.');
       parent.append(canvas); Zak.drawMinimap(canvas,game);
-      const legend = el('div','map-legend'); ['● Vos','$ Almacén','☠ Jefe','Aldea · segura','Cueva y Yuyos · peligro'].forEach(label => legend.append(el('span','',label))); parent.append(legend);
+      const legend = el('div','map-legend'); ['● Vos','$ Almacén','⚒ Herrero','▼ Bajada','☠ Jefe','Aldea · segura'].forEach(label => legend.append(el('span','',label))); parent.append(legend);
       paragraph(parent,'Los enemigos no pueden entrar en la aldea. El pozo te espera cuando necesites recuperar vida.','hint');
     });
   }
@@ -376,6 +383,40 @@
         paragraph(parent,'C abre tus estadísticas; J, el diario; M, el mapa. Guardá manualmente en una de las tres ranuras desde Esc antes de irte.');
       }
       const actions = el('div','modal-actions'); actions.append(button('Ahora sí, a explorar',() => hideModal(),'button primary'),button('No mostrar este consejo otra vez',() => { game.settings.tutorial = false; persistSettings(); hideModal(); })); parent.append(actions);
+    });
+  }
+  function costLine(option) {
+    const line = el('small','smith-cost'), p = game.player;
+    const need = (label,ok) => line.append(el('span','need' + (ok ? '' : ' missing'),label));
+    if (option.cost.coins) need('◉ ' + option.cost.coins,p.coins >= option.cost.coins);
+    Object.entries(option.cost.materials).forEach(([k,n]) => need(n + ' ' + Zak.MATERIALS[k].name.toLowerCase() + ' (' + (p.materials[k] || 0) + ')',(p.materials[k] || 0) >= n));
+    return line;
+  }
+  function showSmith(message) {
+    if (!game.player) return;
+    const p = game.player;
+    openModal('El Taller', 'EL HERRERO DE LA ALDEA', parent => {
+      const talk = el('div','smith-talk'), portrait = el('canvas','smith-portrait'), bubble = el('div','smith-bubble');
+      portrait.width = 96; portrait.height = 132; portrait.setAttribute('aria-label','El herrero: sin remera, musculoso, barbudo y con un martillo'); Zak.drawSmithPortrait(portrait);
+      bubble.append(el('strong','','El Herrero'),el('p','smith-line','“Acá todo con verdes, pa.”'));
+      if (message) bubble.append(el('small','smith-message',message));
+      talk.append(portrait,bubble); parent.append(talk);
+      const bag = el('div','smith-bag'); bag.append(el('span','bag-coins','◉ ' + p.coins));
+      Object.entries(Zak.MATERIALS).forEach(([k,m]) => bag.append(el('span','',m.icon + ' ' + m.name + ' ' + (p.materials[k] || 0)))); parent.append(bag);
+      const options = game.craftOptions();
+      [['tools','Herramientas'],['weapons','Mejorar armas']].forEach(([group,title]) => {
+        parent.append(el('h3','smith-heading',title));
+        options.filter(o => o.group === group).forEach(option => {
+          const row = el('div','shop-item' + (option.done ? ' sold-out' : '')), body = el('div');
+          body.append(el('strong','',option.icon + ' ' + option.name),el('small','',option.detail));
+          if (option.cost) body.append(costLine(option));
+          const action = option.id === 'torch' || (option.group === 'tools' && !p[option.id]) ? 'Fabricar' : 'Mejorar';
+          const go = button(option.done ? option.doneText : action,() => { const result = game.craft(option.id); showSmith(result.message); updateHud(true); },'shop-buy');
+          go.disabled = option.done || option.missing.length > 0; go.setAttribute('aria-label',action + ' ' + option.name);
+          row.append(body,go); parent.append(row);
+        });
+      });
+      paragraph(parent,'La madera sale de los árboles (con hacha). Piedra y carbón, de la Cueva del Eco; hierro y oro, de la Cueva Profunda; diamante, de Las Entrañas. Cada veta necesita un pico de cierto nivel.','hint');
     });
   }
   function showShop(message) {
@@ -458,8 +499,7 @@
     $('xp-fill').style.width = Math.min(100,p.xp / Zak.xpNeeded(p.level) * 100) + '%';
     text('points-badge',p.points); $('points-badge').classList.toggle('hidden',p.points < 1);
     const ctx = game.context(), biome = ctx.biome || 'village';
-    const biomeNames = {village:'Palihue City',cave:'Cueva del Eco',weeds:'Los Yuyos',yuyos:'Los Yuyos'};
-    text('hud-biome',biomeNames[biome] || biome); text('hud-safety',biome === 'village' ? 'ZONA SEGURA' : 'ZONA PELIGROSA');
+    text('hud-biome',Zak.BIOME_NAMES[biome] || biome); text('hud-safety',biome === 'village' ? 'ZONA SEGURA' : 'ZONA PELIGROSA');
     $('hud-safety').classList.toggle('danger',biome !== 'village');
     const hours = (8 + Math.floor(number(p.playTime) / 60)) % 24, minutes = Math.floor(number(p.playTime) % 60);
     text('hud-time',(hours >= 7 && hours < 19 ? '☀ ' : '☾ ') + String(hours).padStart(2,'0') + ':' + String(minutes).padStart(2,'0'));
@@ -506,11 +546,11 @@
     text('touch-herb-count',p.herbs); $('touch-herb').disabled = p.herbs < 1;
     $('touch-weapon').firstChild.textContent = ICONS[p.weapon]; $('touch-weapon').disabled = p.weapons.length < 2;
     $('touch-run').classList.toggle('active',game.runToggle); $('touch-run').setAttribute('aria-pressed',String(game.runToggle));
-    if (Zak.nearbyInteractable && game.world) {
-      const nearby = Zak.nearbyInteractable(game.world,p.x,p.y,46);
+    if (game.world) {
+      const nearby = game.nearbyAction();
       $('touch-interact').classList.toggle('available',!!nearby);
       $('interaction-hint').classList.toggle('hidden',!nearby);
-      if (nearby) text('interaction-hint',(isTouch() ? 'Tocá E · ' : 'E · ') + (nearby.label || nearby.name || (nearby.type === 'well' ? 'Recuperar vida en el pozo' : 'Recoger')));
+      if (nearby) text('interaction-hint',(isTouch() ? 'Tocá E · ' : 'E · ') + nearby.label);
     }
   }
   $('stats-button').addEventListener('click',showStats); $('journal-button').addEventListener('click',() => showJournal()); $('map-button').addEventListener('click',showMap); $('pause-button').addEventListener('click',showPause);
@@ -600,6 +640,7 @@
     else if (type === 'map') showMap();
     else if (type === 'journal') showJournal();
     else if (type === 'shop') showShop();
+    else if (type === 'smith') showSmith();
     else if (type === 'progress') submitScore();
     else if (type === 'boss') toast('☠ ' + detail.name + ' te vio. Mirá sus avisos y rodá a tiempo.',true);
     else if (type === 'biome') { updateHud(true); toast(detail.name + (detail.safe ? ' · Zona segura' : ' · Mirá por dónde pisás')); }
