@@ -84,3 +84,23 @@
 .rank-list{max-height:52vh;overflow:auto}.rank-row{display:grid;grid-template-columns:34px 1fr 46px 70px 48px;gap:8px;align-items:center;padding:9px 6px;border-bottom:1px solid var(--line);font:13px 'Courier New',monospace;text-align:right}.rank-row>span:nth-child(2){text-align:left}.rank-head{font-size:9px;color:var(--gold);letter-spacing:1px;position:sticky;top:0;background:#19342b}.rank-pos{text-align:center!important;color:var(--gold)}.rank-player strong{display:block;font:15px Georgia;font-weight:normal}.rank-player small{font-size:9px;color:var(--muted)}.rank-row.top .rank-pos{font-size:17px}.rank-row.mine{background:#e7be7214;box-shadow:inset 2px 0 var(--gold)}
 @media(max-width:700px){.ranking-name{flex-direction:column;align-items:stretch;gap:5px;width:100%}.ranking-name input{width:100%}.rank-row{grid-template-columns:26px 1fr 34px 54px 38px;gap:5px;font-size:11px}}
 @media(max-height:520px){.ranking-name input{padding:6px 9px;font-size:13px}.rank-list{max-height:46svh}.main-actions .quiet{padding-top:8px;padding-bottom:8px}}
+
+/* v1.3: controles táctiles más chicos y configurables (--tc la fija ui.js según Opciones). */
+#menu-fullscreen{display:none}
+@media(pointer:coarse){
+ #menu-fullscreen{display:block;margin-left:auto;font-size:18px}#menu-fullscreen+#sound-toggle{margin-left:8px}
+ #touch-controls .touch-actions{transform:scale(var(--tc,.7));transform-origin:100% 100%}
+ .stick-base{transform:scale(var(--tc,.7));opacity:.35}
+ #joystick-zone.active .stick-base{opacity:.85}
+ #touch-controls .touch-actions button{background:#1330256b;border-color:#d7c78870;box-shadow:none;backdrop-filter:none}
+ #touch-controls #touch-attack{background:#7a3a2f99}
+ #touch-controls .touch-actions button:active{background:#34503bb3}
+ .player-panel,.location-panel{opacity:.92}
+}
+@media(pointer:coarse) and (max-height:430px){
+ .player-panel{padding:5px;gap:5px}.player-panel canvas{width:24px;height:29px}.player-vitals{width:128px}
+ .meter{height:10px}.meter span{font-size:8px;line-height:8px}.energy{height:7px}.energy span{display:none}
+ .location-panel{padding:5px 9px}.location-panel strong{font-size:12px}.location-panel .safe-text{display:none}
+ .bottom-hud .hud-button{min-height:32px;min-width:32px;padding:3px 6px;font-size:13px}
+ #status-effects{top:86px}
+}

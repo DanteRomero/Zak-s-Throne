@@ -38,7 +38,12 @@
     catch (_) { return {}; }
   }
   const preferences = safeSettings();
-  Object.keys(game.settings).forEach(key => { if (typeof preferences[key] === 'boolean') game.settings[key] = preferences[key]; });
+  Object.keys(game.settings).forEach(key => { if (typeof preferences[key] === 'boolean' && typeof game.settings[key] === 'boolean') game.settings[key] = preferences[key]; });
+  const CONTROL_SIZES = { small: ['Chicos', .7], medium: ['Medianos', .85], large: ['Grandes', 1] };
+  if (CONTROL_SIZES[preferences.controls]) game.settings.controls = preferences.controls;
+  const controlScale = () => CONTROL_SIZES[game.settings.controls][1];
+  function applyControls() { document.documentElement.style.setProperty('--tc', controlScale()); }
+  applyControls();
   if (game.sound) game.sound.enabled = game.settings.sound;
   function updateSound() {
     const enabled = !!game.settings.sound;
@@ -172,7 +177,7 @@
   document.querySelectorAll('[data-back="menu"]').forEach(node => node.addEventListener('click', showMenu));
   $('player-name').value = Zak.Ranking.profile().name;
   $('player-name').addEventListener('change', () => { $('player-name').value = Zak.Ranking.setName($('player-name').value); });
-  $('begin-adventure').addEventListener('click', () => { Zak.Ranking.setName($('player-name').value); updateSound(); game.newGame(selected); submitScore(); });
+  $('begin-adventure').addEventListener('click', () => { Zak.Ranking.setName($('player-name').value); updateSound(); autoFullscreen(); game.newGame(selected); submitScore(); });
   function saveLabel(data) {
     const p = data.player || {};
     return character(p.characterId).name + ' · Nivel ' + Math.max(1,number(p.level));
@@ -207,7 +212,7 @@
     const slot = readSlot(index);
     if (mode === 'load') {
       if (slot.state !== 'valid') return;
-      try { game.restore(slot.data,index); hideModal(false); showPlaying(); toast('Partida de la ranura ' + index + ' cargada.'); }
+      try { autoFullscreen(); game.restore(slot.data,index); hideModal(false); showPlaying(); toast('Partida de la ranura ' + index + ' cargada.'); }
       catch (error) { toast('No se pudo cargar: ' + error.message,true); }
     } else if (mode === 'export') {
       if (slot.state === 'valid') download(slot.data);
@@ -266,11 +271,17 @@
   function showSettings() {
     const returnToPause = !!game.player && (game.state === 'playing' || game.state === 'paused');
     openModal('A tu manera', 'OPCIONES Y CONTROLES', parent => {
-      [['sound','Sonido ambiental y combate'],['particles','Partículas y efectos'],['shake','Sacudida de pantalla'],['tutorial','Consejos al empezar']].forEach(([key,label]) => {
+      [['sound','Sonido ambiental y combate'],['particles','Partículas y efectos'],['shake','Sacudida de pantalla'],['tutorial','Consejos al empezar'],['fullscreen','Pantalla completa al jugar (celular)']].forEach(([key,label]) => {
         const row = el('div','setting-row'); row.append(el('span','',label));
         const toggle = button(game.settings[key] ? 'ACTIVADO' : 'DESACTIVADO', () => { game.settings[key] = !game.settings[key]; persistSettings(); toggle.textContent = game.settings[key] ? 'ACTIVADO' : 'DESACTIVADO'; toggle.setAttribute('aria-pressed',String(game.settings[key])); },'toggle');
         toggle.setAttribute('aria-label',label); toggle.setAttribute('aria-pressed',String(game.settings[key])); row.append(toggle); parent.append(row);
       });
+      const sizes = Object.keys(CONTROL_SIZES), sizeRow = el('div','setting-row'); sizeRow.append(el('span','','Tamaño de los controles táctiles'));
+      const sizeToggle = button(CONTROL_SIZES[game.settings.controls][0].toUpperCase(), () => {
+        game.settings.controls = sizes[(sizes.indexOf(game.settings.controls) + 1) % sizes.length]; persistSettings(); applyControls();
+        sizeToggle.textContent = CONTROL_SIZES[game.settings.controls][0].toUpperCase();
+      },'toggle');
+      sizeToggle.setAttribute('aria-label','Tamaño de los controles táctiles'); sizeRow.append(sizeToggle); parent.append(sizeRow);
       const help = el('div','help-grid');
       [['Moverte','WASD / flechas'],['Correr','Shift'],['Atacar','Espacio / clic'],['Rodar','F / clic derecho'],['Habilidad','Q'],['Interactuar','E'],['Usar hierba','R'],['Armas','1 — 4'],['Personaje','C'],['Diario','J'],['Mapa','M'],['Pausa','Esc']].forEach(([action,key]) => { const row = el('div'); row.append(el('span','',action),el('kbd','',key)); help.append(row); });
       parent.append(help);
@@ -490,7 +501,7 @@
   const zone = $('joystick-zone'), base = zone.querySelector('.stick-base'), knob = zone.querySelector('.stick-knob');
   let stickPointer = null, stickOrigin = null;
   function stickMove(event) {
-    const max = 52, dx = event.clientX - stickOrigin.x, dy = event.clientY - stickOrigin.y, len = Math.hypot(dx,dy) || 1, clamped = Math.min(max,len);
+    const max = 52 * controlScale(), dx = event.clientX - stickOrigin.x, dy = event.clientY - stickOrigin.y, len = Math.hypot(dx,dy) || 1, clamped = Math.min(max,len);
     knob.style.transform = 'translate(' + dx / len * clamped + 'px,' + dy / len * clamped + 'px)';
     game.stick = { x: dx / len * clamped / max, y: dy / len * clamped / max };
   }
@@ -514,16 +525,27 @@
   touchButton('touch-herb',() => game.useHerb());
   touchButton('touch-weapon',() => game.cycleWeapon());
   touchButton('touch-run',() => { game.runToggle = !game.runToggle; updateHud(true); });
-  $('fullscreen-button').addEventListener('click',() => {
-    const root = document.documentElement;
-    if (document.fullscreenElement) { document.exitFullscreen().catch(() => {}); return; }
-    if (!root.requestFullscreen) { toast('Este navegador no permite pantalla completa. Probá agregar el juego a la pantalla de inicio.'); return; }
-    root.requestFullscreen({ navigationUI: 'hide' }).then(() => {
+  const standalone = () => (window.matchMedia && matchMedia('(display-mode: fullscreen), (display-mode: standalone)').matches) || navigator.standalone === true;
+  function enterFullscreen(quiet) {
+    const root = document.documentElement, request = root.requestFullscreen || root.webkitRequestFullscreen;
+    if (document.fullscreenElement || document.webkitFullscreenElement || standalone()) return;
+    // iPhone no tiene pantalla completa para páginas: solo instalándola en la pantalla de inicio.
+    if (!request) { if (!quiet) toast(/iPhone|iPod/.test(navigator.userAgent) ? 'En iPhone: tocá Compartir → «Agregar a inicio» y abrí el juego desde ese ícono para verlo en pantalla completa.' : 'Este navegador no permite pantalla completa. Probá agregar el juego a la pantalla de inicio.'); return; }
+    Promise.resolve(request.call(root,{ navigationUI: 'hide' })).then(() => {
       if (screen.orientation && screen.orientation.lock) screen.orientation.lock('landscape').catch(() => {});
-    }).catch(() => toast('No se pudo activar la pantalla completa.'));
-    $('world').focus();
-  });
-  document.addEventListener('fullscreenchange',() => { game.renderer.resize(game.state === 'playing' || game.state === 'paused'); text('fullscreen-button',document.fullscreenElement ? '🗗' : '⛶'); });
+    }).catch(() => { if (!quiet) toast('No se pudo activar la pantalla completa.'); });
+  }
+  function toggleFullscreen() {
+    if (document.fullscreenElement || document.webkitFullscreenElement) { (document.exitFullscreen || document.webkitExitFullscreen).call(document); return; }
+    enterFullscreen(false);
+  }
+  function autoFullscreen() { if (game.settings.fullscreen && isTouch()) enterFullscreen(true); }
+  ['fullscreen-button','menu-fullscreen'].forEach(id => $(id).addEventListener('click',() => { toggleFullscreen(); if (game.state === 'playing') $('world').focus(); }));
+  ['fullscreenchange','webkitfullscreenchange'].forEach(type => document.addEventListener(type,() => {
+    game.renderer.resize(game.state === 'playing' || game.state === 'paused');
+    const full = !!(document.fullscreenElement || document.webkitFullscreenElement);
+    ['fullscreen-button','menu-fullscreen'].forEach(id => text(id,full ? '🗗' : '⛶'));
+  }));
   function exitGame() {
     suppressPause = true; try { if (game.player) game.pause(); } finally { suppressPause = false; }
     try { window.close(); } catch (_) {}

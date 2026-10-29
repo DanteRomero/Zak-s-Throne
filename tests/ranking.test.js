@@ -2,6 +2,7 @@
    Prueba el modo local y el modo online con un servidor simulado (no usa Internet). */
 (async () => {
   'use strict';
+  window.ZAK_CONFIG = {supabaseUrl: '', supabaseKey: ''}; // Las pruebas nunca publican en el ranking real.
   const g = window.zakGame, Z = window.Zak, results = [];
   const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
   const assert = (name, condition) => results.push({name, pass: !!condition});

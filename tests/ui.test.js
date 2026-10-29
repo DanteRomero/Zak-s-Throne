@@ -1,5 +1,6 @@
 ﻿(async () => {
   'use strict';
+  window.ZAK_CONFIG = {supabaseUrl: '', supabaseKey: ''}; // Las pruebas nunca publican en el ranking real.
   const g=window.zakGame,results=[];
   const assert=(name,condition)=>{results.push({name,pass:!!condition});if(!condition)throw Error(name);};
   const clickText=text=>{const b=[...document.querySelectorAll('#modal-content button')].find(b=>b.textContent.trim()===text);if(!b)throw Error('No existe botón: '+text);b.click();};

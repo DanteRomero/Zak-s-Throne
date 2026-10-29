@@ -1,6 +1,7 @@
 /* Controles táctiles: ejecutar con browser_check.py index.html --touch --width 844 --height 390 --script tests/touch.test.js */
 (async () => {
   'use strict';
+  window.ZAK_CONFIG = {supabaseUrl: '', supabaseKey: ''}; // Las pruebas nunca publican en el ranking real.
   const g = window.zakGame, results = [];
   const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
   const assert = (name, condition) => results.push({name, pass: !!condition});
@@ -29,6 +30,15 @@
   assert('El botón de arma rota entre las conseguidas', g.player.weapon === 'bow');
   g.player.rollCooldown = 0; pointer(document.getElementById('touch-roll'), 'pointerdown', 0, 0);
   assert('Rodar desde el botón', g.player.roll > 0);
+  const actions = document.querySelector('.touch-actions'), small = actions.getBoundingClientRect().width;
+  assert('Los controles arrancan en tamaño chico', getComputedStyle(document.documentElement).getPropertyValue('--tc').trim() === '0.7' && small < 170);
+  document.getElementById('pause-button').click();
+  [...document.querySelectorAll('#modal-content button')].find(b => b.textContent === 'Opciones y controles').click();
+  const size = document.querySelector('[aria-label="Tamaño de los controles táctiles"]'); size.click();
+  assert('Opciones permite agrandar los controles', size.textContent === 'MEDIANOS' && actions.getBoundingClientRect().width > small && JSON.parse(localStorage.getItem('zak.throne.settings.v1')).controls === 'medium');
+  size.click(); size.click();
+  assert('El tamaño vuelve a chico al recorrer las opciones', size.textContent === 'CHICOS');
+  document.getElementById('close-modal').click(); document.getElementById('close-modal').click();
   g.pause(); g.resume();
   return {passed: results.filter(r => r.pass).length, failed: results.filter(r => !r.pass).length, results};
 })()

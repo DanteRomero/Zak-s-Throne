@@ -43,7 +43,7 @@ class Sound {
 class Game {
  constructor(canvas){
   this.canvas=canvas;this.renderer=new Z.Renderer(canvas);this.sound=new Sound();
-  this.settings={sound:false,particles:true,shake:true,tutorial:true};this.keys=new Set();this.camera={x:0,y:0};this.state='menu';this.time=0;
+  this.settings={sound:false,particles:true,shake:true,tutorial:true,fullscreen:true,controls:'small'};this.keys=new Set();this.camera={x:0,y:0};this.state='menu';this.time=0;
   this.onEvent=()=>{};this.aim=null;this.mouseHeld=false;this.stick={x:0,y:0};this.runToggle=false;this.touchMode=false;this.effects=[];this.projectiles=[];this.drops=[];this.shakeTime=0;this.shakePower=0;this.hurtFlash=0;
   this.world=Z.createWorld();this.player=Z.createPlayer('paco');
   Object.assign(this.player,{x:770,y:950,dir:'down',walk:0,moving:false,attackAnim:0});
