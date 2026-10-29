@@ -48,7 +48,12 @@
     [...document.querySelectorAll('.rank-tab')].find(b => b.textContent === 'Jefes').click(); await wait(50);
     assert('Las pestañas piden otro orden al servidor', sent.some(r => String(r.url).includes('order=bosses.desc')));
     close();
+    await Z.Ranking.remove('friend-run-1');
+    const del = sent.find(r => r.options.method === 'DELETE');
+    assert('Borrar una partida la quita del servidor por run_id', del && del.url === 'https://demo.supabase.co/rest/v1/scores?run_id=eq.friend-run-1' && del.options.headers.apikey === 'sb_publishable_demo');
     window.fetch = async () => { throw new Error('sin conexión'); };
+    await Z.Ranking.remove('otra-partida-1').catch(() => {});
+    assert('Sin conexión el borrado queda pendiente', JSON.parse(localStorage.getItem('zak.throne.ranking.deleted.v1')).includes('otra-partida-1'));
     document.getElementById('ranking-button').click(); await wait(50);
     assert('Sin conexión muestra las partidas locales', document.querySelector('.rank-list').textContent.includes('No se pudo cargar') && rows().length >= 1);
     close();

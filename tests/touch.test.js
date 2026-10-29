@@ -8,6 +8,7 @@
   const pointer = (node, type, x, y, id = 7) => node.dispatchEvent(new PointerEvent(type, {bubbles: true, cancelable: true, pointerId: id, pointerType: 'touch', clientX: x, clientY: y, isPrimary: true}));
   g.settings.tutorial = false;
   document.getElementById('new-game').click();
+  document.getElementById('player-name').value = 'Pulgar';
   document.getElementById('begin-adventure').click();
   const zone = document.getElementById('joystick-zone'), box = zone.getBoundingClientRect();
   assert('Joystick visible en pantalla táctil', box.width > 100 && getComputedStyle(document.getElementById('touch-controls')).display !== 'none');

@@ -125,11 +125,11 @@
     if (event.shiftKey && (document.activeElement === first || !focusable.includes(document.activeElement))) { event.preventDefault(); last.focus(); }
     else if (!event.shiftKey && (document.activeElement === last || !focusable.includes(document.activeElement))) { event.preventDefault(); first.focus(); }
   }, true);
-  function confirmAction(title, message, action, back) {
+  function confirmAction(title, message, action, back, confirmLabel = 'Confirmar') {
     openModal(title, 'ANTES DE SEGUIR', parent => {
       paragraph(parent, message);
       const actions = el('div','modal-actions');
-      actions.append(button('Confirmar', action, 'button primary'), button('Volver', back));
+      actions.append(button(confirmLabel, action, 'button primary'), button('Volver', back));
       parent.append(actions);
     }, back);
   }
@@ -177,7 +177,11 @@
   document.querySelectorAll('[data-back="menu"]').forEach(node => node.addEventListener('click', showMenu));
   $('player-name').value = Zak.Ranking.profile().name;
   $('player-name').addEventListener('change', () => { $('player-name').value = Zak.Ranking.setName($('player-name').value); });
-  $('begin-adventure').addEventListener('click', () => { Zak.Ranking.setName($('player-name').value); updateSound(); autoFullscreen(); game.newGame(selected); submitScore(); });
+  $('player-name').addEventListener('input', () => $('player-name').classList.remove('invalid'));
+  $('begin-adventure').addEventListener('click', () => {
+    const name = Zak.Ranking.setName($('player-name').value); $('player-name').value = name;
+    if (!name) { $('player-name').classList.add('invalid'); $('player-name').focus(); toast('Escribí tu apodo para el ranking antes de empezar.',true); return; }
+    updateSound(); autoFullscreen(); game.newGame(selected); submitScore(); });
   function saveLabel(data) {
     const p = data.player || {};
     return character(p.characterId).name + ' · Nivel ' + Math.max(1,number(p.level));
@@ -222,6 +226,25 @@
     } else if (slot.state === 'empty') storeSlot(index,imported);
     else toast('El navegador bloquea el almacenamiento local. Exportá un respaldo para conservar tu partida.',true);
   }
+  const slotRunId = slot => slot.state === 'valid' && slot.data.player && /^[\w-]{6,64}$/.test(String(slot.data.player.runId || '')) ? slot.data.player.runId : null;
+  function deleteSlot(index, mode) {
+    const slot = readSlot(index), runId = slotRunId(slot);
+    // Si la misma partida está guardada en otra ranura, sigue en el ranking.
+    const shared = runId && [1,2,3].some(other => other !== index && slotRunId(readSlot(other)) === runId);
+    const label = slot.state === 'valid' ? saveLabel(slot.data) : 'un guardado dañado';
+    const warning = !runId ? 'Esta partida no figura en el ranking.' : shared ? 'Esta misma partida está guardada en otra ranura, así que se mantiene en el ranking.' : 'También se va a eliminar del ranking de amigos, con su nivel, enemigos y jefes. Esto no se puede deshacer.';
+    confirmAction('¿Borrar la ranura ' + index + '?', 'Esta ranura contiene ' + label + '. ' + warning, async () => {
+      try { localStorage.removeItem(SAVE_PREFIX + index); }
+      catch (_) { toast('El navegador no permitió borrar la ranura.',true); showSlots(mode); return; }
+      if (game.currentSlot === index) game.currentSlot = null;
+      // La partida en curso que se borró del ranking empieza a contar como una nueva.
+      if (runId && !shared && game.player && game.player.runId === runId) game.player.runId = null;
+      updateSaveCount(); showSlots(mode);
+      if (!runId || shared) { toast('Ranura ' + index + ' borrada.'); return; }
+      try { const result = await Zak.Ranking.remove(runId); toast('Ranura ' + index + ' borrada' + (result.online ? ' y quitada del ranking.' : '.')); }
+      catch (error) { toast('Ranura ' + index + ' borrada. No se pudo quitar del ranking online (' + error.message + '); se reintentará más tarde.',true); }
+    }, () => showSlots(mode), 'Borrar partida');
+  }
   function showSlots(mode = 'load', imported = null) {
     const titles = {load:'Cargar juego',save:'Guardar partida',import:'Importar partida',export:'Exportar un guardado'};
     openModal(titles[mode], 'TRES HISTORIAS, TRES RANURAS', parent => {
@@ -237,7 +260,11 @@
         }
         btn.append(content,el('span','slot-arrow','→'));
         btn.disabled = slot.state === 'unavailable' || ((mode === 'load' || mode === 'export') && slot.state !== 'valid');
-        parent.append(btn);
+        if ((mode === 'load' || mode === 'save') && (slot.state === 'valid' || slot.state === 'invalid')) {
+          const line = el('div','slot-line'), remove = button('🗑',() => deleteSlot(index,mode),'slot-delete');
+          remove.title = 'Borrar la ranura ' + index; remove.setAttribute('aria-label','Borrar la ranura ' + index);
+          line.append(btn,remove); parent.append(line);
+        } else parent.append(btn);
       });
       const actions = el('div','inline-actions');
       actions.append(button('Importar JSON',pickImport));

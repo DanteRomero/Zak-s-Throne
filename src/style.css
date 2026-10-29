@@ -104,3 +104,6 @@
  .bottom-hud .hud-button{min-height:32px;min-width:32px;padding:3px 6px;font-size:13px}
  #status-effects{top:86px}
 }
+/* v1.3: apodo obligatorio y borrar ranuras. */
+.ranking-name input.invalid{border-color:var(--red);outline:2px solid var(--red);outline-offset:1px}.ranking-name input.invalid::placeholder{color:#e8a285}
+.slot-line{display:flex;gap:8px;align-items:stretch;margin:8px 0}.slot-line .save-slot{margin:0;flex:1}.slot-delete{width:52px;flex:none;border:1px solid var(--line);background:#10291f;color:#e8a285;font-size:18px}.slot-delete:hover{border-color:var(--red);background:#3a2621}

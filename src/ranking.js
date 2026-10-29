@@ -2,7 +2,7 @@
 (function () {
 'use strict';
 const Z = window.Zak = window.Zak || {};
-const LOCAL_KEY = 'zak.throne.ranking.v1', PROFILE_KEY = 'zak.throne.profile.v1';
+const LOCAL_KEY = 'zak.throne.ranking.v1', PROFILE_KEY = 'zak.throne.profile.v1', DELETE_KEY = 'zak.throne.ranking.deleted.v1';
 const ID_PATTERN = /^[\w-]{6,64}$/;
 const config = () => window.ZAK_CONFIG || {};
 const online = () => !!(config().supabaseUrl && config().supabaseKey);
@@ -28,6 +28,8 @@ function normalize(entry) {
     play_time: int(entry.play_time, 1e7), updated_at: String(entry.updated_at || '')
   };
 }
+// Partidas borradas que todavía no se pudieron quitar del servidor (por ejemplo, sin conexión).
+function pendingDeletes() { const list = readJson(DELETE_KEY, []); return Array.isArray(list) ? list.filter(id => ID_PATTERN.test(String(id))) : []; }
 const SORTS = {
   level: (a, b) => b.level - a.level || b.kills - a.kills || b.bosses - a.bosses,
   kills: (a, b) => b.kills - a.kills || b.level - a.level,
@@ -48,9 +50,25 @@ Z.Ranking = {
   },
   local() { const list = readJson(LOCAL_KEY, []); return Array.isArray(list) ? list.map(normalize).filter(Boolean) : []; },
   saveLocal(entry) { const list = this.local().filter(e => e.run_id !== entry.run_id); list.push(entry); writeJson(LOCAL_KEY, list.slice(-200)); },
+  async remove(runId) {
+    if (!ID_PATTERN.test(String(runId || ''))) return { online: online(), removed: false };
+    writeJson(LOCAL_KEY, this.local().filter(e => e.run_id !== runId));
+    if (!online()) return { online: false, removed: true };
+    writeJson(DELETE_KEY, [...new Set([...pendingDeletes(), runId])].slice(-50));
+    await this.flushDeletes();
+    return { online: true, removed: true };
+  },
+  async flushDeletes() {
+    for (const id of pendingDeletes()) {
+      const response = await fetch(endpoint() + '?run_id=eq.' + encodeURIComponent(id), { method: 'DELETE', headers: { ...headers(), Prefer: 'return=minimal' } });
+      if (!response.ok) throw new Error('el servidor respondió ' + response.status);
+      writeJson(DELETE_KEY, pendingDeletes().filter(other => other !== id));
+    }
+  },
   async submit(game) {
     const entry = this.entryFor(game); this.saveLocal(entry);
     if (!online()) return { online: false, entry };
+    this.flushDeletes().catch(() => {});
     const response = await fetch(endpoint() + '?on_conflict=run_id', {
       method: 'POST', body: JSON.stringify(entry),
       headers: { ...headers(), 'Content-Type': 'application/json', Prefer: 'resolution=merge-duplicates,return=minimal' }
@@ -63,8 +81,8 @@ Z.Ranking = {
     if (!online()) return { online: false, entries: this.local().sort(SORTS[sort] || SORTS.level) };
     const response = await fetch(endpoint() + '?select=run_id,player_id,name,character,level,kills,bosses,play_time,updated_at&order=' + order + '&limit=100', { headers: headers() });
     if (!response.ok) throw new Error('el servidor respondió ' + response.status);
-    const data = await response.json();
-    return { online: true, entries: (Array.isArray(data) ? data : []).map(normalize).filter(Boolean).sort(SORTS[sort] || SORTS.level) };
+    const data = await response.json(), hidden = new Set(pendingDeletes());
+    return { online: true, entries: (Array.isArray(data) ? data : []).map(normalize).filter(entry => entry && !hidden.has(entry.run_id)).sort(SORTS[sort] || SORTS.level) };
   }
 };
 })();

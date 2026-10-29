@@ -1,4 +1,4 @@
-﻿(async () => {
+(async () => {
   'use strict';
   window.ZAK_CONFIG = {supabaseUrl: '', supabaseKey: ''}; // Las pruebas nunca publican en el ranking real.
   const g=window.zakGame,results=[];
@@ -12,7 +12,9 @@
   assert('Tres ranuras vacías deshabilitadas',document.querySelectorAll('.save-slot:disabled').length===3);close();
   document.getElementById('new-game').click();
   assert('Seis personajes seleccionables',document.querySelectorAll('.character-card').length===6);
-  document.querySelector('[data-character="gero"]').click();document.getElementById('begin-adventure').click();
+  document.querySelector('[data-character="gero"]').click();document.getElementById('player-name').value='   ';document.getElementById('begin-adventure').click();
+  assert('Sin apodo no se puede empezar',g.state!=='playing'&&document.getElementById('player-name').classList.contains('invalid'));
+  document.getElementById('player-name').value='Probador';document.getElementById('begin-adventure').click();
   assert('Nueva partida de Gero nivel 1',g.state==='playing'&&g.player.characterId==='gero'&&g.player.level===1);
   const bow=g.world.pickups.find(p=>p.type==='bow');g.player.x=bow.x;g.player.y=bow.y;g.interact();
   assert('Recoger arco actualiza inventario y mapa',g.player.weapons.includes('bow')&&bow.collected&&g.player.weapon==='bow');
@@ -24,6 +26,13 @@
   assert('Tres guardados independientes',['gero','dante','paco'].every((id,i)=>JSON.parse(localStorage.getItem('zak.throne.save.'+(i+1))).player.characterId===id));
   save(1);assert('Reemplazo pide confirmación concreta',document.getElementById('modal-title').textContent.includes('Reemplazar la ranura 1'));
   assert('No se sobrescribe antes de confirmar',localStorage.getItem('zak.throne.save.1')===first);clickText('Volver');close();close();
+  const doomed=JSON.parse(localStorage.getItem('zak.throne.save.3')).player.runId;
+  Zak.Ranking.saveLocal({run_id:doomed,player_id:'probador',name:'Paco',character:'paco',level:3,kills:5,bosses:0});
+  document.getElementById('load-game').click();document.querySelector('[aria-label="Borrar la ranura 3"]').click();
+  assert('Borrar avisa que sale del ranking',document.getElementById('modal-title').textContent.includes('Borrar la ranura 3')&&document.getElementById('modal-content').textContent.includes('eliminar del ranking'));
+  clickText('Volver');assert('Volver no borra',!!localStorage.getItem('zak.throne.save.3'));
+  document.querySelector('[aria-label="Borrar la ranura 3"]').click();clickText('Borrar partida');await wait();
+  assert('Borrar quita la ranura y su fila del ranking',!localStorage.getItem('zak.throne.save.3')&&!Zak.Ranking.local().some(e=>e.run_id===doomed)&&document.querySelectorAll('.save-slot:disabled').length===1);close();
   document.getElementById('load-game').click();document.querySelectorAll('.save-slot')[0].click();
   assert('Cargar recupera personaje e inventario',g.state==='playing'&&g.player.characterId==='gero'&&g.player.weapons.includes('bow')&&g.currentSlot===1);
   g.player.points=1;document.getElementById('stats-button').click();const strength=g.player.stats.strength;document.querySelector('[aria-label="Mejorar Fuerza"]').click();

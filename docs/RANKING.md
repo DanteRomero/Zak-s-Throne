@@ -30,14 +30,26 @@ alter table public.scores enable row level security;
 drop policy if exists "ranking: leer" on public.scores;
 drop policy if exists "ranking: crear" on public.scores;
 drop policy if exists "ranking: actualizar" on public.scores;
+drop policy if exists "ranking: borrar" on public.scores;
 create policy "ranking: leer" on public.scores for select to anon using (true);
 create policy "ranking: crear" on public.scores for insert to anon with check (true);
 create policy "ranking: actualizar" on public.scores for update to anon using (true) with check (true);
+create policy "ranking: borrar" on public.scores for delete to anon using (true);
 
-grant select, insert, update on public.scores to anon;
+grant select, insert, update, delete on public.scores to anon;
 ```
 
-No se permite borrar filas desde el juego. Para limpiar el ranking usá **Table Editor → scores** en el panel.
+El permiso de borrar se usa cuando alguien borra una partida guardada: el juego quita esa partida del ranking. También podés limpiar filas a mano en **Table Editor → scores**.
+
+### Si ya habías creado la tabla antes
+
+Corré solo esto en **SQL Editor** para habilitar el borrado:
+
+```sql
+drop policy if exists "ranking: borrar" on public.scores;
+create policy "ranking: borrar" on public.scores for delete to anon using (true);
+grant delete on public.scores to anon;
+```
 
 ## 3. Copiar la URL y la clave pública
 
@@ -65,9 +77,10 @@ Subí el cambio a GitHub. Con GitHub Pages activo, en uno o dos minutos todos tu
 ## Cómo funciona
 
 - Cada partida nueva tiene su propia fila. Se actualiza al subir de nivel, al derrotar un jefe, cada 5 enemigos y al guardar.
-- El nombre se elige en la pantalla de personajes y queda recordado en ese dispositivo.
+- El apodo es obligatorio: se escribe en la pantalla de personajes y queda recordado en ese dispositivo.
+- Al borrar una ranura guardada, esa partida también sale del ranking (salvo que siga guardada en otra ranura). Si no hay conexión, el borrado se reintenta más tarde.
 - Si no hay conexión, el juego sigue normalmente y muestra las partidas locales.
 
 ## Límites
 
-La clave pública está pensada para ir en páginas web, y la tabla solo acepta valores dentro de rangos razonables. Aun así, alguien con conocimientos técnicos podría enviar un puntaje inventado o pisar una fila ajena. Para un ranking entre amigos alcanza. Si se vuelve competitivo en serio, haría falta validar los puntajes en un servidor.
+La clave pública está pensada para ir en páginas web, y la tabla solo acepta valores dentro de rangos razonables. Aun así, alguien con conocimientos técnicos podría enviar un puntaje inventado, pisar o borrar una fila ajena. Para un ranking entre amigos alcanza. Si se vuelve competitivo en serio, haría falta validar los puntajes en un servidor.
