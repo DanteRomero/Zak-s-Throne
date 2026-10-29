@@ -824,7 +824,7 @@
     }
     if(game.player){const x=4+game.player.x*sx,y=4+game.player.y*sy;rect(c,x-2,y-2,5,5,"#344c3b");rect(c,x-1,y-1,3,3,"#fff0bd");}
     if(w>300){
-      pixelText(c,"ALDEA DE LOS AROMOS",4+850*sx,4+1260*sy,"#f3e9c1",11);
+      pixelText(c,"PALIHUE CITY",4+850*sx,4+1260*sy,"#f3e9c1",11);
       pixelText(c,"CUEVA DEL ECO",4+450*sx,4+280*sy,"#e4ddd0",11);
       pixelText(c,"LOS YUYOS",4+1950*sx,4+900*sy,"#f1e5b6",11);
       pixelText(c,"N",w-19,18,"#eadbb0",10);rect(c,w-20,27,2,15,"#ddc99a");

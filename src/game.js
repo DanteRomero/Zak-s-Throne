@@ -4,7 +4,7 @@
 const Z = window.Zak, clamp = (v,a,b) => Math.max(a,Math.min(b,v));
 const distance = (a,b) => Math.hypot(a.x-b.x,a.y-b.y);
 const dirs = {down:[0,1],up:[0,-1],left:[-1,0],right:[1,0]};
-const names = Z.BIOME_NAMES = {village:'Aldea de los Aromos',cave:'Cueva del Eco',weeds:'Los Yuyos'};
+const names = Z.BIOME_NAMES = {village:'Palihue City',cave:'Cueva del Eco',weeds:'Los Yuyos'};
 const ROLL_TIME=.3,ROLL_COOLDOWN=.55,ROLL_COST=.2,COMBO_CRIT=4,CRIT_MULTIPLIER=1.75,HERB_REGROW=90,TAIL_RADIUS=62;
 const isBoss = e => !!(Z.ENEMY_TYPES[e.type]&&Z.ENEMY_TYPES[e.type].boss);
 class Sound {

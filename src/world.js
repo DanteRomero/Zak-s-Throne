@@ -5,7 +5,7 @@ const Z=window.Zak=window.Zak||{};
 Z.biomeAt=function(x,y){return x<1000&&y<520?'cave':x>=1550?'weeds':'village';};
 Z.createWorld=function(){
  const world={width:2400,height:1800,spawn:{x:770,y:960},zones:[
-  {id:'village',x:0,y:0,w:1550,h:1800,name:'Aldea de los Aromos'},
+  {id:'village',x:0,y:0,w:1550,h:1800,name:'Palihue City'},
   {id:'weeds',x:1550,y:0,w:850,h:1800,name:'Los Yuyos'},
   {id:'cave',x:0,y:0,w:1000,h:520,name:'Cueva del Eco'}
  ],objects:[],npcs:[],pickups:[],enemySpawns:[],paths:[]};

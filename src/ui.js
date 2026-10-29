@@ -458,7 +458,7 @@
     $('xp-fill').style.width = Math.min(100,p.xp / Zak.xpNeeded(p.level) * 100) + '%';
     text('points-badge',p.points); $('points-badge').classList.toggle('hidden',p.points < 1);
     const ctx = game.context(), biome = ctx.biome || 'village';
-    const biomeNames = {village:'Aldea de los Aromos',cave:'Cueva del Eco',weeds:'Los Yuyos',yuyos:'Los Yuyos'};
+    const biomeNames = {village:'Palihue City',cave:'Cueva del Eco',weeds:'Los Yuyos',yuyos:'Los Yuyos'};
     text('hud-biome',biomeNames[biome] || biome); text('hud-safety',biome === 'village' ? 'ZONA SEGURA' : 'ZONA PELIGROSA');
     $('hud-safety').classList.toggle('danger',biome !== 'village');
     const hours = (8 + Math.floor(number(p.playTime) / 60)) % 24, minutes = Math.floor(number(p.playTime) % 60);
