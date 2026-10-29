@@ -124,7 +124,7 @@
     });
     test('Crecimientos fraccionarios y daño de veneno se conservan', () => {
       const dog=Zak.enemyStats('dog',3), snake=Zak.enemyStats('snake',3), rat=Zak.enemyStats('rat',3);
-      equal(dog.health,92); equal(dog.strength,3.5); equal(dog.speed,33); equal(dog.endurance,22);
+      equal(dog.health,61.5); equal(dog.strength,3.5); equal(dog.speed,33); equal(dog.endurance,22);
       equal(snake.health,36); equal(snake.strength,7); equal(snake.poison,3); equal(snake.speed,27); equal(snake.endurance,5.5);
       equal(rat.health,10.5); equal(rat.strength,3); equal(rat.speed,42); equal(rat.endurance,.5);
     });

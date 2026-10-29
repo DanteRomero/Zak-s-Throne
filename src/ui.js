@@ -487,7 +487,7 @@
     if (boss) {
       text('boss-name',Zak.ENEMY_TYPES[boss.type].name + ' · Nivel ' + boss.level);
       $('boss-fill').style.width = Math.max(0,boss.hp / boss.maxHp * 100) + '%';
-      text('boss-hint',boss.telegraph > 0 ? (boss.type === 'capo' ? '¡VA A EMBESTIR! RODÁ (F)' : '¡VENENO! RODÁ (F)') : fmt(boss.hp) + ' / ' + fmt(boss.maxHp));
+      text('boss-hint',boss.telegraph > 0 ? (boss.type === 'capo' ? '¡VA A EMBESTIR! RODÁ (F)' : boss.kind === 'tail' ? '¡COLAZO! ALEJATE O RODÁ (F)' : '¡VENENO! RODÁ (F)') : fmt(boss.hp) + ' / ' + fmt(boss.maxHp));
       $('boss-bar').classList.toggle('warning',boss.telegraph > 0);
     }
     const quests = game.quests(), next = quests.find(quest => !quest.done); text('quest-current',next ? next.title : 'Todos los caminos recorridos');

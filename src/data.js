@@ -74,8 +74,8 @@
       description: 'Persigue y ataca con su cuchillo. No retrocede al recibir golpes.'
     },
     dog: {
-      name: 'Perro callejero', base: { health: 90, strength: 3, speed: 30, endurance: 20 },
-      growth: { health: 2, strength: 0.5, speed: 3, endurance: 2 },
+      name: 'Perro callejero', base: { health: 60, strength: 3, speed: 30, endurance: 20 },
+      growth: { health: 1.5, strength: 0.5, speed: 3, endurance: 2 },
       xp: 40, coins: [2, 4], color: '#b68a63', visionRange: 195, knockback: true,
       description: 'Su mordedura reduce 15% el movimiento durante 4 s.'
     },
@@ -98,10 +98,10 @@
       description: 'Jefe de la cueva. Avisa con una línea roja y embiste: rodá hacia un costado.'
     },
     yarara: {
-      name: 'La Yarará Madre', boss: true, base: { health: 260, strength: 7, poison: 4, speed: 25, endurance: 15 },
-      growth: { health: 30, strength: 2, poison: 1, speed: 2, endurance: 2 },
+      name: 'La Yarará Madre', boss: true, base: { health: 320, strength: 7, poison: 4, speed: 25, endurance: 15 },
+      growth: { health: 36, strength: 2, poison: 1, speed: 2, endurance: 2 },
       xp: 220, coins: [40, 55], color: '#9d7fc4', visionRange: 230, knockback: false, respawn: 180,
-      description: 'Jefa de Los Yuyos. Mantiene distancia y escupe tres chorros de veneno en abanico.'
+      description: 'Jefa de Los Yuyos. Te persigue y da colazos alrededor suyo; antes de escupir tres chorros de veneno, retrocede un poco.'
     }
   };
 

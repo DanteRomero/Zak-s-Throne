@@ -91,7 +91,7 @@ Ambos escalan con tu nivel como el resto de los enemigos, no retroceden con los 
 | Jefe | Vida | Fuerza | Velocidad | Resistencia | Ataque especial |
 | --- | ---: | ---: | ---: | ---: | --- |
 | El Capo del Eco | 340 | 9 | 20 | 30 | Marca una línea roja y embiste: 160% de su fuerza y frena 1,5 s |
-| La Yarará Madre | 260 | 7 | 25 | 15 | Marca tres líneas y escupe un abanico de veneno (50% de envenenar; 15% contra Fede) |
+| La Yarará Madre | 320 | 7 | 25 | 15 | Te persigue. Colazo en anillo alrededor suyo (marca un círculo rosado: rodá o alejate). Antes de escupir el abanico de veneno retrocede un poco y marca tres líneas (50% de envenenar; 15% contra Fede) |
 
 Mientras peleás aparece una barra de vida del jefe que avisa cuándo viene el ataque especial. Se recomienda llegar al nivel 4.
 
@@ -164,7 +164,7 @@ Todos comparten un radio de detección de **195 píxeles**. Su nivel es `1 + flo
 | Enemigo | Vida | Fuerza | Velocidad | Resistencia | Aumento por nivel: V / F / Vel / R |
 | --- | ---: | ---: | ---: | ---: | --- |
 | Chorro | 100 | 5 | 15 | 10 | +3 / +1 / +2 / +2 |
-| Perro | 90 | 3 | 30 | 20 | +2 / +0,5 / +3 / +2 |
+| Perro | 60 | 3 | 30 | 20 | +1,5 / +0,5 / +3 / +2 |
 | Serpiente | 35 | 5 | 25 | 5 | +1 / +2 / +2 / +0,5 |
 | Rata | 10 | 1 | 40 | 0 | +0,5 / +2 / +2 / +0,5 |
 

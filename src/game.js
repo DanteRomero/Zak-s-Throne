@@ -5,7 +5,7 @@ const Z = window.Zak, clamp = (v,a,b) => Math.max(a,Math.min(b,v));
 const distance = (a,b) => Math.hypot(a.x-b.x,a.y-b.y);
 const dirs = {down:[0,1],up:[0,-1],left:[-1,0],right:[1,0]};
 const names = Z.BIOME_NAMES = {village:'Aldea de los Aromos',cave:'Cueva del Eco',weeds:'Los Yuyos'};
-const ROLL_TIME=.3,ROLL_COOLDOWN=.55,ROLL_COST=.2,COMBO_CRIT=4,CRIT_MULTIPLIER=1.75,HERB_REGROW=90;
+const ROLL_TIME=.3,ROLL_COOLDOWN=.55,ROLL_COST=.2,COMBO_CRIT=4,CRIT_MULTIPLIER=1.75,HERB_REGROW=90,TAIL_RADIUS=62;
 const isBoss = e => !!(Z.ENEMY_TYPES[e.type]&&Z.ENEMY_TYPES[e.type].boss);
 class Sound {
  constructor(){this.enabled=false;this.ctx=null;this.ambientTime=0;this.lastCoin=0;}
@@ -212,7 +212,7 @@ class Game {
   const p=this.player;for(const e of this.enemies){
    if(e.dead){e.respawn-=dt;if(e.respawn<=0&&distance({x:e.homeX,y:e.homeY},p)>230)Object.assign(e,this.makeEnemy({id:e.id,type:e.type,x:e.homeX,y:e.homeY}));continue;}
    e.cooldown=Math.max(0,e.cooldown-dt);e.hitFlash=Math.max(0,e.hitFlash-dt);e.latchRest=Math.max(0,e.latchRest-dt);e.stun=Math.max(0,e.stun-dt);e.charm=Math.max(0,e.charm-dt);e.moving=false;
-   if(e.stun>0){e.alert=false;e.telegraph=0;e.dash=0;continue;}const sameZone=e.biome===this.biome&&this.biome!=='village';
+   if(e.stun>0){e.alert=false;e.telegraph=0;e.dash=0;e.backoff=0;continue;}const sameZone=e.biome===this.biome&&this.biome!=='village';
    if(isBoss(e)){this.updateBoss(e,dt,sameZone);if(this.state!=='playing')break;continue;}
    if(e.latched>0){
     if(!sameZone){e.latched=0;e.x=e.homeX;e.y=e.homeY;continue;}e.latched=Math.max(0,e.latched-dt);e.x=p.x+5;e.y=p.y-8;
@@ -239,28 +239,37 @@ class Game {
  updateBoss(e,dt,sameZone){
   const p=this.player,len=distance(e,p),wasAlert=e.alert;
   e.alert=sameZone&&(len<230||(e.alert&&len<400));
-  if(!e.alert){e.telegraph=0;e.dash=0;}
+  if(!e.alert){e.telegraph=0;e.dash=0;e.backoff=0;}
+  e.tailCd=Math.max(0,(e.tailCd||0)-dt);
   if(e.alert&&!wasAlert){this.sound.play('telegraph');this.emit('boss',{name:Z.ENEMY_TYPES[e.type].name});}
   if(e.telegraph>0){e.telegraph-=dt;
    if(e.type==='capo'){const tl=Math.hypot(p.x-e.x,p.y-e.y)||1;if(e.telegraph>.35){e.aimX=(p.x-e.x)/tl;e.aimY=(p.y-e.y)/tl;}}
-   if(e.telegraph<=0){e.telegraph=0;if(e.type==='capo'){e.dash=.5;e.dashHit=false;this.sound.play('swing');}else this.spit(e);}
+   if(e.telegraph<=0){e.telegraph=0;if(e.type==='capo'){e.dash=.5;e.dashHit=false;this.sound.play('swing');}else if(e.kind==='tail')this.tailSweep(e);else this.spit(e);}
    return;}
   if(e.dash>0){e.dash-=dt;const before={x:e.x,y:e.y};this.move(e,e.aimX*360*dt,e.aimY*360*dt,7,e.biome);e.moving=true;e.walk+=dt*16;
    if(this.time%.06<dt)this.effect(e.x,e.y,'dust',.35);
    if(!e.dashHit&&distance(e,p)<22){e.dashHit=true;if(this.hurtPlayer(e.stats.strength*1.6,e.type)){this.shake(5,.3);p.slow=Math.max(p.slow,1.5);}}
    if(distance(before,e)<1)e.dash=0;return;}
+  if(e.backoff>0){e.backoff-=dt;const ox=(e.x-p.x)/(len||1),oy=(e.y-p.y)/(len||1);this.steer(e,e.x+ox*40,e.y+oy*40,e.stats.moveSpeed*1.5,dt,len);
+   if(e.backoff<=0){e.backoff=0;e.kind='spit';e.telegraph=.55;e.aimX=(p.x-e.x)/(len||1);e.aimY=(p.y-e.y)/(len||1);this.sound.play('telegraph');}
+   return;}
   e.special=Math.max(0,e.special-dt);
-  let tx=e.homeX,ty=e.homeY,velocity=e.stats.moveSpeed*.8;
-  if(e.alert){
-   if(e.type==='yarara'){const away=len<110,near=len<170;const ox=(e.x-p.x)/(len||1),oy=(e.y-p.y)/(len||1);
-    if(away){tx=e.x+ox*40;ty=e.y+oy*40;}else if(near){tx=e.x-oy*40;ty=e.y+ox*40;velocity*=.6;}else{tx=p.x;ty=p.y;}}
-   else{tx=p.x;ty=p.y;}
-  }else velocity*=.35;
+  let tx=e.homeX,ty=e.homeY,velocity=e.stats.moveSpeed*(e.type==='yarara'?.95:.8);
+  if(e.alert){tx=p.x;ty=p.y;}else velocity*=.35;
   if(!e.alert&&Math.hypot(tx-e.x,ty-e.y)<4){e.moving=false;}else this.steer(e,tx,ty,velocity,dt,len);
-  if(e.alert&&e.special<=0&&len<260){
-   e.telegraph=e.type==='capo'?.8:.65;e.special=e.type==='capo'?4.2:3.4;e.aimX=(p.x-e.x)/(len||1);e.aimY=(p.y-e.y)/(len||1);
+  if(e.type==='yarara'&&e.alert){
+   if(len<TAIL_RADIUS&&e.tailCd<=0){e.kind='tail';e.telegraph=.6;e.tailCd=2.8;this.sound.play('telegraph');return;}
+   if(e.special<=0&&len<260){e.special=3.8;e.backoff=.4;return;}
+  }else if(e.alert&&e.special<=0&&len<260){
+   e.kind='dash';e.telegraph=.8;e.special=4.2;e.aimX=(p.x-e.x)/(len||1);e.aimY=(p.y-e.y)/(len||1);
    this.sound.play('telegraph');return;}
   if(e.alert&&len<26&&e.cooldown<=0)this.enemyAttack(e);
+ }
+ // Colazo: golpea todo el anillo alrededor de la Yarará y empuja hacia afuera. Se esquiva rodando o alejándose.
+ tailSweep(e){
+  const p=this.player;this.sound.play('swing');this.effect(e.x,e.y,'wave',.35,{radius:TAIL_RADIUS});this.shake(3,.2);
+  const dx=p.x-e.x,dy=p.y-e.y;if(Math.hypot(dx,dy/.65)>TAIL_RADIUS+6)return;
+  if(this.hurtPlayer(e.stats.strength*1.4,e.type)&&this.state==='playing'){const len=Math.hypot(dx,dy)||1;this.move(p,dx/len*38,dy/len*38,8);this.shake(5,.25);}
  }
  spit(e){
   const base=Math.atan2(this.player.y-6-(e.y-8),this.player.x-e.x);this.sound.play('spit');

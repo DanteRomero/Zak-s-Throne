@@ -211,6 +211,12 @@
       c.beginPath();c.moveTo(x,y-6);c.lineTo(x+e.aimX*180,y-6+e.aimY*180);c.stroke();
       c.globalAlpha=pulse;c.lineWidth=2;c.setLineDash([6,5]);c.strokeStyle="#ffb09a";
       c.beginPath();c.moveTo(x,y-6);c.lineTo(x+e.aimX*180,y-6+e.aimY*180);c.stroke();
+    }else if(e.kind==="tail"){
+      // El anillo del colazo coincide con la zona que golpea (elipse en perspectiva).
+      const r=62,grow=1-Math.max(0,e.telegraph)/.6;
+      c.fillStyle="#b04a6a";c.globalAlpha=pulse*.28;c.beginPath();c.ellipse(x,y-3,r,r*.65,0,0,Math.PI*2);c.fill();
+      c.globalAlpha=pulse;c.strokeStyle="#e98fb0";c.lineWidth=2;c.setLineDash([6,5]);c.beginPath();c.ellipse(x,y-3,r,r*.65,0,0,Math.PI*2);c.stroke();
+      c.setLineDash([]);c.globalAlpha=.6;c.beginPath();c.ellipse(x,y-3,r*grow,r*grow*.65,0,0,Math.PI*2);c.stroke();
     }else{
       const base=Math.atan2(e.aimY,e.aimX);c.strokeStyle="#c79be3";c.lineWidth=2;c.setLineDash([4,6]);
       for(const o of [-.32,0,.32]){c.beginPath();c.moveTo(x,y-8);c.lineTo(x+Math.cos(base+o)*150,y-8+Math.sin(base+o)*150);c.stroke();}

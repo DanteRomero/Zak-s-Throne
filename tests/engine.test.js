@@ -290,9 +290,25 @@
       const other = fixture(); const second = enemy('capo', other.x + 60); second.special = 0; const full = other.hp;
       game.update(1 / 60); advance(1.1); ok(other.hp < full, 'Standing still in the dash line hurts');
     });
+    test('The Yarara chases instead of fleeing', () => {
+      const p = fixture(); const yarara = enemy('yarara', p.x + 200); yarara.special = 99; yarara.alert = true;
+      const before = yarara.x - p.x; advance(.5); ok(yarara.x - p.x < before - 10, 'She closes the distance');
+    });
+    test('The Yarara backs off a little before spitting', () => {
+      const p = fixture(); const yarara = enemy('yarara', p.x + 120); yarara.special = 0; yarara.alert = true;
+      game.update(1 / 60); ok(yarara.backoff > 0); const start = yarara.x; advance(.3);
+      ok(yarara.x > start + 5 && yarara.x < start + 60, 'Retreats only a few steps'); advance(.15); ok(yarara.telegraph > 0 && yarara.kind === 'spit');
+    });
+    test('The Yarara tail sweep hits around her and can be rolled through', () => {
+      const p = fixture(); const yarara = enemy('yarara', p.x, p.y - 40); yarara.special = 99; yarara.alert = true;
+      game.update(1 / 60); ok(yarara.telegraph > 0 && yarara.kind === 'tail', 'Tail sweep is telegraphed'); const hp = p.hp;
+      advance(.65); ok(p.hp < hp, 'Standing in the ring hurts'); ok(Math.hypot(p.x - yarara.x, p.y - yarara.y) > 40, 'Knocked outward');
+      const q = fixture(); const second = enemy('yarara', q.x, q.y - 40); second.special = 99; second.alert = true; const full = q.hp;
+      game.update(1 / 60); advance(.45); q.rollCooldown = 0; ok(game.roll()); q.rollX = 0; q.rollY = 0; advance(.2); near(q.hp, full, 'Rolling dodges the sweep');
+    });
     test('The Yarara spits a three-way venom fan that hurts the player', () => {
       const p = fixture(); const yarara = enemy('yarara', p.x + 150); yarara.special = 0; Math.random = () => .99;
-      game.update(1 / 60); ok(yarara.telegraph > 0); advance(.7);
+      game.update(1 / 60); ok(yarara.backoff > 0); advance(.45); ok(yarara.telegraph > 0); advance(.7);
       ok(game.projectiles.filter(s => s.hostile).length >= 2, 'Venom fan spawned'); const hp = p.hp;
       advance(1.2); ok(p.hp < hp, 'Venom must reach the player');
     });
