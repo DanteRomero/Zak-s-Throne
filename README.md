@@ -30,9 +30,22 @@ El juego funciona directamente desde sus archivos: no requiere servidor, instala
 | Pausa y guardado | Esc |
 | Sonido | Botón musical de la esquina superior |
 
-La dirección de movimiento orienta al personaje; el ratón permite dirigir ataques a un punto del mundo. En pantallas táctiles aparecen una cruceta y botones para correr, rodar, usar hierbas, atacar e interactuar. Los botones de la interfaz también permiten acceder a habilidades, armas, ficha, mapa y pausa.
+La dirección de movimiento orienta al personaje; el ratón permite dirigir ataques a un punto del mundo.
+
+### En el celular
+
+- **Joystick analógico:** apoyá el pulgar en cualquier parte de la mitad izquierda y arrastrá. Inclinarlo poco camina más despacio.
+- **Botones para el pulgar derecho:** ⚔ ataca y apunta solo al enemigo más cercano, ⟲ rueda, ✦ usa la habilidad, E se ilumina cuando hay algo para usar cerca, ❦ usa una hierba, » activa o desactiva la carrera y el botón de arma rota entre las conseguidas.
+- **Arriba:** ficha, diario, mapa, pausa y ⛶ para pantalla completa, que también intenta fijar la orientación horizontal.
+- El teléfono vibra al recibir daño (se desactiva junto con la sacudida de pantalla). Se juega en horizontal o en vertical, aunque en horizontal se ve más mundo. Los botones de la interfaz también permiten acceder a habilidades, armas, ficha, mapa y pausa.
 
 El juego se adapta al tamaño de pantalla; en teléfonos conviene usar orientación horizontal. Los indicadores combinan texto, iconos y color. Las opciones permiten ajustar sonido, efectos visuales y la sacudida de pantalla.
+
+## Ranking de amigos
+
+Desde el menú principal o la pausa, **Ranking de amigos** muestra nivel, enemigos derrotados y jefes vencidos de cada partida, con pestañas para ordenar por cada uno. El nombre se elige al seleccionar el personaje.
+
+Sin configuración, el ranking muestra las partidas de cada dispositivo. Para compartirlo entre todos los dispositivos, seguí [docs/RANKING.md](docs/RANKING.md): se conecta un proyecto gratuito de Supabase pegando dos valores en `src/config.js`.
 
 ## Guardar y recuperar partidas
 
@@ -181,7 +194,8 @@ Implementado con **HTML, CSS y JavaScript**, sin paquetes externos. El mundo se 
 - `src/world.js`: mapa, biomas, objetos, colisiones y vecinos.
 - `src/render.js`: sprites, terreno, cámara y efectos visuales.
 - `src/game.js`: simulación, movimiento, combate, esquiva, combos, monedas, tienda, jefes y habilidades.
-- `src/ui.js`: menús, HUD, tienda, guardados y controles.
+- `src/ui.js`: menús, HUD, tienda, ranking, guardados y controles táctiles.
+- `src/ranking.js` y `src/config.js`: ranking local u online (Supabase).
 - `tests/rules.test.js`: 30 pruebas de reglas y casos límite.
 
 Si ya tenés Node instalado:
@@ -192,11 +206,13 @@ node tests/rules.test.js
 
 Abrí `tests/index.html` para ejecutar las 30 pruebas de reglas y las 37 pruebas de integración del motor en el navegador. El resultado detalla cada caso aprobado o fallido.
 
-También se incluyen 16 pruebas de interfaz con Chrome y Python 3, sin librerías adicionales. El verificador abre un perfil temporal aislado; nunca usa tus guardados personales:
+También se incluyen 16 pruebas de interfaz, 11 del ranking (con un servidor simulado) y 9 de controles táctiles con Chrome y Python 3, sin librerías adicionales. El verificador abre un perfil temporal aislado; nunca usa tus guardados personales:
 
 ```sh
 python tests/browser_check.py tests/index.html --script tests/engine.test.js
 python tests/browser_check.py index.html --script tests/ui.test.js
+python tests/browser_check.py index.html --script tests/ranking.test.js
+python tests/browser_check.py index.html --touch --width 844 --height 390 --script tests/touch.test.js
 python tests/browser_check.py index.html --screenshot .screenshots/menu.png
 ```
 

@@ -44,7 +44,7 @@ class Game {
  constructor(canvas){
   this.canvas=canvas;this.renderer=new Z.Renderer(canvas);this.sound=new Sound();
   this.settings={sound:false,particles:true,shake:true,tutorial:true};this.keys=new Set();this.camera={x:0,y:0};this.state='menu';this.time=0;
-  this.onEvent=()=>{};this.aim=null;this.mouseHeld=false;this.effects=[];this.projectiles=[];this.drops=[];this.shakeTime=0;this.shakePower=0;this.hurtFlash=0;
+  this.onEvent=()=>{};this.aim=null;this.mouseHeld=false;this.stick={x:0,y:0};this.runToggle=false;this.touchMode=false;this.effects=[];this.projectiles=[];this.drops=[];this.shakeTime=0;this.shakePower=0;this.hurtFlash=0;
   this.world=Z.createWorld();this.player=Z.createPlayer('paco');
   Object.assign(this.player,{x:770,y:950,dir:'down',walk:0,moving:false,attackAnim:0});
   this.biome='village';this.enemies=[];this.questFlags={};this.stepTime=0;this.last=0;this.accumulator=0;this.uiTimer=0;this.input();
@@ -69,9 +69,9 @@ class Game {
    if(['1','2','3','4'].includes(key))this.equip(['fists','bow','sword','stone'][+key-1]);
   });
   window.addEventListener('keyup',e=>this.keys.delete(e.key.length===1?e.key.toLowerCase():e.key));
-  window.addEventListener('blur',()=>{this.keys.clear();this.mouseHeld=false;if(this.state==='playing')this.emit('pause');});
-  document.addEventListener('visibilitychange',()=>{if(document.hidden){this.keys.clear();this.mouseHeld=false;if(this.state==='playing')this.emit('pause');}});
-  this.canvas.addEventListener('pointerdown',e=>{if(this.state!=='playing')return;this.sound.unlock();
+  window.addEventListener('blur',()=>{this.clearInput();if(this.state==='playing')this.emit('pause');});
+  document.addEventListener('visibilitychange',()=>{if(document.hidden){this.clearInput();if(this.state==='playing')this.emit('pause');}});
+  this.canvas.addEventListener('pointerdown',e=>{if(this.state!=='playing')return;this.sound.unlock();if(e.pointerType==='touch')this.touchMode=true;
    if(e.button===2){this.setAim(e);const aim=this.aim;this.aim=null;this.roll(aim);return;}
    if(e.button!==0)return;this.mouseHeld=true;this.setAim(e);});
   this.canvas.addEventListener('pointermove',e=>{if(this.mouseHeld)this.setAim(e);});
@@ -81,11 +81,12 @@ class Game {
  newGame(id){
   this.world=Z.createWorld();this.player=Z.createPlayer(id);Object.assign(this.player,{...this.world.spawn,dir:'down',moving:false,walk:0,attackAnim:0});
   this.biome='village';this.time=0;this.effects=[];this.projectiles=[];this.drops=[];this.queuedWaves=[];this.questFlags={};this.currentSlot=null;
-  this.enemies=this.world.enemySpawns.map(s=>this.makeEnemy(s));this.keys.clear();this.mouseHeld=false;this.aim=null;this.state='playing';this.renderer.resize(true);this.emit('start');
+  this.enemies=this.world.enemySpawns.map(s=>this.makeEnemy(s));this.clearInput();this.aim=null;this.state='playing';this.renderer.resize(true);this.emit('start');
  }
  makeEnemy(s){const stats=Z.enemyStats(s.type,this.player.level);return{...s,homeX:s.x,homeY:s.y,biome:Z.biomeAt(s.x,s.y),stats,hp:stats.health,maxHp:stats.health,level:stats.level,dir:'down',walk:0,moving:false,dead:false,respawn:0,cooldown:.6,stun:0,charm:0,latched:0,latchRest:0,alert:false,provoked:false,hitFlash:0,special:2.5,telegraph:0,dash:0,aimX:0,aimY:1};}
- pause(){if(this.state==='playing'){this.state='paused';this.keys.clear();this.mouseHeld=false;}}
- resume(){if(this.state==='paused'){this.state='playing';this.keys.clear();this.mouseHeld=false;}}
+ pause(){if(this.state==='playing'){this.state='paused';this.clearInput();}}
+ resume(){if(this.state==='paused'){this.state='playing';this.clearInput();}}
+ vibrate(ms){if(this.touchMode&&this.settings.shake&&navigator.vibrate)try{navigator.vibrate(ms);}catch(_){}}
  shake(power,time=.25){if(!this.settings.shake)return;this.shakePower=Math.max(this.shakePower*(this.shakeTime>0?1:0),power);this.shakeTime=Math.max(this.shakeTime,time);}
  update(dt){
   if(this.state==='menu'||this.state==='characters'){this.time+=dt;this.updateNpcs(dt);return;}if(this.state!=='playing')return;
@@ -104,13 +105,25 @@ class Game {
  }
  movementInput(){
   let x=(this.keys.has('d')||this.keys.has('ArrowRight')?1:0)-(this.keys.has('a')||this.keys.has('ArrowLeft')?1:0);
-  let y=(this.keys.has('s')||this.keys.has('ArrowDown')?1:0)-(this.keys.has('w')||this.keys.has('ArrowUp')?1:0);if(x&&y){x*=Math.SQRT1_2;y*=Math.SQRT1_2;}return[x,y];
+  let y=(this.keys.has('s')||this.keys.has('ArrowDown')?1:0)-(this.keys.has('w')||this.keys.has('ArrowUp')?1:0);if(x&&y){x*=Math.SQRT1_2;y*=Math.SQRT1_2;}
+  // El joystick táctil es analógico: inclinarlo poco camina más despacio.
+  if(!x&&!y&&this.stick){const len=Math.hypot(this.stick.x,this.stick.y);if(len>.18){const scale=Math.min(1,(len-.18)/.55+.35)/len;x=this.stick.x*scale;y=this.stick.y*scale;}}
+  return[x,y];
  }
+ wantsToRun(){return this.keys.has('Shift')||this.runToggle;}
+ clearInput(){this.keys.clear();this.mouseHeld=false;this.stick={x:0,y:0};}
+ // En pantallas táctiles el ataque apunta solo al enemigo más cercano a tiro.
+ autoAim(range){
+  const p=this.player;let best=null,bestDistance=range;
+  for(const e of this.enemies){if(e.dead||e.latched>0||e.biome!==this.biome)continue;const d=distance(e,p);if(d<=bestDistance){best=e;bestDistance=d;}}
+  return best?{x:best.x,y:best.y-6}:null;
+ }
+ cycleWeapon(){const owned=['fists','bow','sword','stone'].filter(w=>this.player.weapons.includes(w));const next=owned[(owned.indexOf(this.player.weapon)+1)%owned.length];this.equip(next);return next;}
  updateMovement(dt,stats){
   const p=this.player;let[x,y]=this.movementInput();
   const before={x:p.x,y:p.y};let wantsRun=false;
   if(p.roll>0){const speed=Math.max(230,stats.moveSpeed*2.4);this.move(p,p.rollX*speed*dt,p.rollY*speed*dt,8);x=0;y=0;}
-  else{wantsRun=this.keys.has('Shift')&&(x||y)&&p.exhausted<=0&&p.stamina>0;this.move(p,x*stats.moveSpeed*(wantsRun?1.25:1)*dt,y*stats.moveSpeed*(wantsRun?1.25:1)*dt,8);}
+  else{wantsRun=this.wantsToRun()&&(x||y)&&p.exhausted<=0&&p.stamina>0;this.move(p,x*stats.moveSpeed*(wantsRun?1.25:1)*dt,y*stats.moveSpeed*(wantsRun?1.25:1)*dt,8);}
   p.moving=distance(before,p)>.01;p.running=!!wantsRun&&p.moving;if(x||y)p.dir=Math.abs(x)>Math.abs(y)?(x>0?'right':'left'):(y>0?'down':'up');
   if(p.moving){p.walk+=dt*(p.running?13:9);this.stepTime+=dt;if(this.stepTime>.36){this.stepTime=0;this.sound.play('step');if(p.running&&this.biome!=='village')this.effect(p.x-p.rollX*4,p.y,'dust',.4);}
    if(p.stoneAmmo===0){p.stoneWalkTime+=dt;if(p.stoneWalkTime>=2-1e-8){p.stoneAmmo=1;p.stoneWalkTime=0;this.emit('toast',{message:'Una piedra más para el camino.'});}}}
@@ -153,7 +166,8 @@ class Game {
  attack(){
   const p=this.player;if(this.state!=='playing'||p.attackCooldown>0||p.roll>0)return false;const stats=this.stats(),weapon=Z.WEAPON_TYPES[p.weapon];
   if(p.weapon==='stone'&&!p.stoneAmmo){if(!this.noAmmoNotice||this.time-this.noAmmoNotice>3){this.noAmmoNotice=this.time;this.emit('toast',{message:'Caminá 2 segundos para recoger otra piedra.'});}return false;}
-  let[dx,dy]=dirs[p.dir];if(this.aim){const len=distance(this.aim,p);if(len>0){dx=(this.aim.x-p.x)/len;dy=(this.aim.y-p.y)/len;p.dir=Math.abs(dx)>Math.abs(dy)?(dx>0?'right':'left'):(dy>0?'down':'up');}}
+  let[dx,dy]=dirs[p.dir];const aim=this.aim||(this.touchMode?this.autoAim(weapon.range+(p.weapon==='bow'||p.weapon==='stone'?0:30)):null);
+  if(aim){const len=distance(aim,p);if(len>0){dx=(aim.x-p.x)/len;dy=(aim.y-p.y)/len;p.dir=Math.abs(dx)>Math.abs(dy)?(dx>0?'right':'left'):(dy>0?'down':'up');}}
   p.attackCooldown=Math.max(stats.attackCooldown,p.weapon==='bow'?.7:0);p.attackAnim=.24;const damage=stats.strength*weapon.damageMultiplier*stats.damageMultiplier;
   if(p.weapon==='bow'||p.weapon==='stone'){
    this.projectiles.push({x:p.x+dx*12,y:p.y-7+dy*12,dx,dy,type:p.weapon,damage,traveled:0,range:weapon.range});
@@ -174,7 +188,7 @@ class Game {
    this.effect(e.x,e.y-8,'poof',.6,{seed:Math.random()*99});this.sound.play(definition.boss?'boss':'death');
    const levels=Z.grantXp(this.player,e.stats.xp,this.context());this.effect(e.x,e.y-38,'heal',1.1,{text:'+'+this.number(e.stats.xp*this.stats().xpMultiplier)+' EXP'});
    const[min,max]=definition.coins||[0,0];this.dropCoins(e.x,e.y,min+Math.floor(Math.random()*(max-min+1))+(e.level-1));
-   if(definition.boss){this.shake(6,.5);if(first){this.player.points+=1;this.emit('toast',{message:'¡Derrotaste a '+definition.name+'! Trofeo: +1 punto de mejora.'});}else this.emit('toast',{message:definition.name+' vuelve a caer.'});}
+   if(definition.boss){this.player.bossKills=(this.player.bossKills||0)+1;this.emit('progress');this.shake(6,.5);if(first){this.player.points+=1;this.emit('toast',{message:'¡Derrotaste a '+definition.name+'! Trofeo: +1 punto de mejora.'});}else this.emit('toast',{message:definition.name+' vuelve a caer.'});}
    if(this.player.characterId==='pepe'){this.heal(5);this.player.buffs.pepe=3;}if(levels)this.onLevel(levels);}
  }
  dropCoins(x,y,total){
@@ -191,7 +205,7 @@ class Game {
    return d.life>0;});
  }
  onLevel(){
-  this.sound.play('level');this.effect(this.player.x,this.player.y,'level',1.4,{radius:50});this.emit('toast',{message:'¡Nivel '+this.player.level+'! Tenés '+this.player.points+' punto(s) para mejorar. Presioná C.'});
+  this.sound.play('level');this.effect(this.player.x,this.player.y,'level',1.4,{radius:50});this.emit('progress');this.emit('toast',{message:'¡Nivel '+this.player.level+'! Tenés '+this.player.points+' punto(s) para mejorar. Presioná C.'});
   this.enemies.forEach(e=>{const stats=Z.enemyStats(e.type,this.player.level),ratio=e.hp/e.maxHp;e.stats=stats;e.level=stats.level;e.maxHp=stats.health;if(!e.dead)e.hp=Math.max(1,ratio*stats.health);});
  }
  updateEnemies(dt){
@@ -264,7 +278,7 @@ class Game {
   if(this.state!=='playing'||this.biome==='village')return false;const p=this.player;
   if(!poison&&p.roll>0){if(!this.lastDodge||this.time-this.lastDodge>.25){this.lastDodge=this.time;this.effect(p.x,p.y-29,'miss',.7,{text:'¡Esquivado!'});this.sound.play('dodge');}return false;}
   const damage=poison?raw:Z.damageAfterArmor(raw,this.stats().armor);
-  p.hp=Math.max(0,p.hp-damage);p.hitFlash=.22;this.hurtFlash=poison?.12:.3;this.effect(p.x,p.y-29,'hit',.8,{text:'-'+this.number(damage),poison});this.sound.play('hurt');if(!poison)this.shake(2.5,.18);
+  p.hp=Math.max(0,p.hp-damage);p.hitFlash=.22;this.hurtFlash=poison?.12:.3;this.effect(p.x,p.y-29,'hit',.8,{text:'-'+this.number(damage),poison});this.sound.play('hurt');if(!poison){this.shake(2.5,.18);this.vibrate(35);}
   if(p.hp<=0)this.knockout(source);return true;
  }
  knockout(source){
@@ -274,7 +288,7 @@ class Game {
   // Los chorros se llevan la guita de verdad; el resto se pierde en el apuro.
   const lost=Math.floor((p.coins||0)*(source==='thief'||source==='capo'?.3:.1));p.coins=Math.max(0,(p.coins||0)-lost);
   Object.assign(p,this.world.spawn,{hp:1,poison:null,slow:0,stamina:1,exhausted:0,restTime:0,attackCooldown:0,moving:false,roll:0,combo:0,comboTime:0});p.buffs={gero:0,pepe:0,paco:0,pacoAnimals:0,mate:0};this.biome='village';p.hp=this.stats().maxHealth;
-  this.enemies.forEach(e=>{if(!e.dead){e.x=e.homeX;e.y=e.homeY;if(isBoss(e))e.hp=e.maxHp;}e.latched=0;e.alert=false;e.telegraph=0;e.dash=0;});this.queuedWaves=[];this.projectiles=[];this.state='paused';this.keys.clear();this.mouseHeld=false;this.emit('knockout',{source,quote,lost});
+  this.enemies.forEach(e=>{if(!e.dead){e.x=e.homeX;e.y=e.homeY;if(isBoss(e))e.hp=e.maxHp;}e.latched=0;e.alert=false;e.telegraph=0;e.dash=0;});this.queuedWaves=[];this.projectiles=[];this.state='paused';this.clearInput();this.emit('knockout',{source,quote,lost});
  }
  heal(amount){const before=this.player.hp;this.player.hp=Math.min(this.stats().maxHealth,before+amount);if(this.player.hp>before)this.effect(this.player.x,this.player.y-30,'heal',.9,{text:'+'+this.number(this.player.hp-before)});}
  updateProjectiles(dt){
@@ -365,6 +379,7 @@ class Game {
   for(const k of ['kills','deaths','playTime','abilityCooldown','attackCooldown','stoneWalkTime','restTime','slow','exhausted'])p[k]=typeof source[k]==='number'&&Number.isFinite(source[k])?clamp(source[k],0,1e9):0;
   p.abilityCooldown=Math.min(p.abilityCooldown,30);p.attackCooldown=Math.min(p.attackCooldown,3);p.slow=Math.min(p.slow,4);p.exhausted=Math.min(p.exhausted,10);p.stamina=clamp(p.stamina,0,1);p.stoneWalkTime=clamp(p.stoneWalkTime,0,2);
   p.coins=Math.floor(clamp(Number(source.coins)||0,0,1e7));p.herbs=Math.floor(clamp(Number(source.herbs)||0,0,Z.HERB_BAG));p.sharpen=Math.floor(clamp(Number(source.sharpen)||0,0,5));p.lessons=Math.floor(clamp(Number(source.lessons)||0,0,1e4));
+  p.bossKills=Math.floor(clamp(Number(source.bossKills)||0,0,1e4));if(typeof source.runId==='string'&&/^[\w-]{6,64}$/.test(source.runId))p.runId=source.runId;
   p.weapon=source.weapon;p.weapons=[...new Set(source.weapons)];p.stoneAmmo=source.stoneAmmo===0?0:1;
   p.discovered=Array.isArray(source.discovered)?source.discovered.filter(z=>Object.hasOwn(names,z)):['village'];p.dir=Object.hasOwn(dirs,source.dir)?source.dir:'down';p.walk=0;p.moving=false;p.attackAnim=0;
   if(source.buffs)for(const key of ['gero','pepe','paco','pacoAnimals','mate'])p.buffs[key]=clamp(Number(source.buffs[key])||0,0,key==='pacoAnimals'?25:key==='mate'?30:10);
@@ -378,7 +393,7 @@ class Game {
    const e=this.makeEnemy(spawn),saved=data.enemies.find(i=>i&&i.id===e.id);if(saved){if(Number.isFinite(saved.hp))e.hp=clamp(saved.hp,0,e.maxHp);e.dead=saved.dead===true||e.hp<=0;e.respawn=clamp(Number(saved.respawn)||0,0,Z.ENEMY_TYPES[e.type].respawn||35);e.provoked=saved.provoked===true;e.cooldown=clamp(Number(saved.cooldown)||0,0,3);e.stun=clamp(Number(saved.stun)||0,0,7);e.charm=clamp(Number(saved.charm)||0,0,10);e.latched=clamp(Number(saved.latched)||0,0,3);e.latchRest=clamp(Number(saved.latchRest)||0,0,1.6);e.alert=saved.alert===true;if(this.biome==='village'||e.dead)e.latched=0;
     if(Number.isFinite(saved.x)&&Number.isFinite(saved.y)&&Z.biomeAt(saved.x,saved.y)===e.biome&&!Z.collides(this.world,saved.x,saved.y,7)){e.x=saved.x;e.y=saved.y;}}
    return e;});
-  this.effects=[];this.projectiles=[];this.drops=[];this.queuedWaves=Array.isArray(data.queuedWaves)&&p.characterId==='dante'?data.queuedWaves.slice(0,2).filter(w=>w&&Number.isFinite(w.delay)).map(w=>({delay:clamp(w.delay,0,1.1)})):[];this.currentSlot=slot;this.keys.clear();this.mouseHeld=false;this.aim=null;this.state='playing';this.renderer.resize(true);this.emit('start',{loaded:true});
+  this.effects=[];this.projectiles=[];this.drops=[];this.queuedWaves=Array.isArray(data.queuedWaves)&&p.characterId==='dante'?data.queuedWaves.slice(0,2).filter(w=>w&&Number.isFinite(w.delay)).map(w=>({delay:clamp(w.delay,0,1.1)})):[];this.currentSlot=slot;this.clearInput();this.aim=null;this.state='playing';this.renderer.resize(true);this.emit('start',{loaded:true});
  }
 }
 Z.Game=Game;

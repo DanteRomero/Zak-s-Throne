@@ -2,7 +2,10 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="theme-color" content="#172e28">
   <meta name="description" content="Zak's Throne: una aventura pixel art entre amigos, yuyos y un poquito de peligro.">
   <title>Zak's Throne — Los Aromos</title>
@@ -23,6 +26,7 @@
         <nav class="main-actions" aria-label="Menú principal">
           <button class="button primary" id="new-game"><span class="button-symbol">✦</span><span>Juego nuevo<small>Cada historia empieza en casa</small></span><span class="arrow">→</span></button>
           <button class="button secondary" id="load-game"><span class="button-symbol">▤</span><span>Cargar juego</span><span id="save-count" class="button-tag">0 / 3</span></button>
+          <button class="button quiet" id="ranking-button"><span class="button-symbol">♛</span><span>Ranking de amigos</span></button>
           <button class="button quiet" id="settings-button"><span class="button-symbol">⚙</span><span>Opciones y controles</span></button>
           <button class="exit-link" id="exit-game">Salir del juego <span>↗</span></button>
         </nav>
@@ -35,7 +39,7 @@
       <div class="page-heading"><button class="back-button" data-back="menu">← Volver</button><div class="eyebrow">TU HISTORIA, TU PERSONAJE</div><h2>¿Quién sale a la aventura?</h2><p>Cada amigo tiene su manera de arreglárselas.</p></div>
       <div id="character-grid" class="character-grid"></div>
       <div id="character-detail" class="character-detail"></div>
-      <div class="character-bottom"><span>Una partida nueva no modifica tus guardados.</span><button id="begin-adventure" class="button primary compact">Empezar la aventura <span>→</span></button></div>
+      <div class="character-bottom"><label class="ranking-name"><span>Tu nombre en el ranking</span><input id="player-name" maxlength="16" autocomplete="nickname" placeholder="Tu apodo" spellcheck="false"></label><button id="begin-adventure" class="button primary compact">Empezar la aventura <span>→</span></button></div>
     </section>
     <section id="hud" class="hidden" aria-label="Interfaz de juego">
       <div class="player-panel"><canvas id="hud-portrait" width="40" height="48"></canvas><div class="player-vitals"><div class="player-label"><strong id="hud-name">Dante</strong><span id="hud-level">NVL. 1</span></div><div class="meter health"><i id="health-fill"></i><span id="health-text"></span></div><div class="meter energy"><i id="energy-fill"></i><span id="energy-text"></span></div><div class="meter xp"><i id="xp-fill"></i></div><div class="purse"><span id="hud-coins" title="Monedas">◉ 0</span><button id="herb-button" class="purse-herbs" title="Usar hierba medicinal (R)">❦ <b id="hud-herbs">0/5</b> <kbd>R</kbd></button><span id="hud-combo" class="combo"></span></div></div></div>
@@ -43,13 +47,13 @@
       <div id="status-effects"></div><div id="quest-hint"><span>DIARIO DE VIAJE</span><strong id="quest-current">Encontrá el arco en la aldea</strong><small>J para abrir el diario</small></div>
       <div id="interaction-hint" class="hidden"></div>
       <div id="boss-bar" class="hidden" aria-live="polite"><span id="boss-name">Jefe</span><div class="boss-meter"><i id="boss-fill"></i></div><small id="boss-hint"></small></div>
-      <div class="bottom-hud"><button id="stats-button" class="hud-button" title="Personaje (C)">♙ <span>Personaje</span><b id="points-badge" class="hidden">0</b><kbd>C</kbd></button><div id="weapon-bar"></div><button id="ability-button" class="hud-button ability"><span id="ability-label">Habilidad</span><kbd>Q</kbd><i id="ability-cooldown"></i></button><button id="journal-button" class="hud-button" title="Diario (J)">▤ <kbd>J</kbd></button><button id="map-button" class="hud-button" title="Mapa (M)">⌖ <kbd>M</kbd></button><button id="pause-button" class="hud-button" title="Pausa (Esc)">Ⅱ <kbd>Esc</kbd></button></div>
-      <div id="touch-controls"><div class="dpad"><button data-touch="ArrowUp">▲</button><button data-touch="ArrowLeft">◀</button><button data-touch="ArrowDown">▼</button><button data-touch="ArrowRight">▶</button></div><div class="touch-actions"><button data-touch="Shift">Correr</button><button id="touch-herb">❦</button><button id="touch-roll">Rodar</button><button id="touch-interact">E</button><button id="touch-attack">Atacar</button></div></div>
+      <div class="bottom-hud"><button id="stats-button" class="hud-button" title="Personaje (C)">♙ <span>Personaje</span><b id="points-badge" class="hidden">0</b><kbd>C</kbd></button><div id="weapon-bar"></div><button id="ability-button" class="hud-button ability"><span id="ability-label">Habilidad</span><kbd>Q</kbd><i id="ability-cooldown"></i></button><button id="journal-button" class="hud-button" title="Diario (J)">▤ <kbd>J</kbd></button><button id="map-button" class="hud-button" title="Mapa (M)">⌖ <kbd>M</kbd></button><button id="pause-button" class="hud-button" title="Pausa (Esc)">Ⅱ <kbd>Esc</kbd></button><button id="fullscreen-button" class="hud-button" title="Pantalla completa" aria-label="Pantalla completa">⛶</button></div>
+      <div id="touch-controls"><div id="joystick-zone" aria-label="Joystick: arrastrá para moverte"><div class="stick-base"><div class="stick-knob"></div></div></div><div class="touch-actions"><button id="touch-attack" aria-label="Atacar">⚔</button><button id="touch-roll" aria-label="Rodar">⟲<small>Rodar</small></button><button id="touch-ability" aria-label="Habilidad">✦<small id="touch-ability-label">Hab.</small></button><button id="touch-interact" aria-label="Interactuar">E</button><button id="touch-herb" aria-label="Usar hierba">❦<small id="touch-herb-count">0</small></button><button id="touch-run" aria-label="Correr" aria-pressed="false">»<small>Correr</small></button><button id="touch-weapon" aria-label="Cambiar arma">✊<small>Arma</small></button></div></div>
     </section>
     <div id="toast-container" aria-live="polite"></div>
     <div id="modal-overlay" class="hidden"><section id="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title"><button id="close-modal" class="modal-close" aria-label="Cerrar">×</button><div id="modal-content"></div></section></div>
     <footer id="menu-footer"><span>HECHO DE PÍXELES Y BUENAS HISTORIAS</span><span><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> para moverte <i>·</i> <kbd>ESPACIO</kbd> para atacar <i>·</i> <kbd>F</kbd> para rodar</span><span>v1.1 <b>✦</b></span></footer>
   </main>
-  <script src="src/data.js"></script><script src="src/world.js"></script><script src="src/render.js"></script><script src="src/game.js"></script><script src="src/ui.js"></script>
+  <script src="src/config.js"></script><script src="src/data.js"></script><script src="src/world.js"></script><script src="src/render.js"></script><script src="src/game.js"></script><script src="src/ranking.js"></script><script src="src/ui.js"></script>
 </body>
 </html>

@@ -130,7 +130,7 @@
   }
   function showMenu() {
     hideModal(false); game.state = 'menu'; game.renderer.resize(false);
-    document.body.classList.remove('playing','exited');
+    document.body.classList.remove('playing','exited','choosing');
     $('menu-screen').classList.remove('hidden'); $('character-screen').classList.add('hidden'); $('hud').classList.add('hidden');
     updateSaveCount(); $('new-game').focus();
   }
@@ -139,7 +139,7 @@
   }
   function showCharacters() {
     hideModal(false); game.state = 'characters'; game.renderer.resize(false);
-    document.body.classList.remove('playing','exited');
+    document.body.classList.remove('playing','exited'); document.body.classList.add('choosing');
     $('menu-screen').classList.add('hidden'); $('character-screen').classList.remove('hidden'); $('hud').classList.add('hidden');
     renderCharacters();
   }
@@ -170,7 +170,9 @@
   }
   $('new-game').addEventListener('click', showCharacters);
   document.querySelectorAll('[data-back="menu"]').forEach(node => node.addEventListener('click', showMenu));
-  $('begin-adventure').addEventListener('click', () => { updateSound(); game.newGame(selected); });
+  $('player-name').value = Zak.Ranking.profile().name;
+  $('player-name').addEventListener('change', () => { $('player-name').value = Zak.Ranking.setName($('player-name').value); });
+  $('begin-adventure').addEventListener('click', () => { Zak.Ranking.setName($('player-name').value); updateSound(); game.newGame(selected); submitScore(); });
   function saveLabel(data) {
     const p = data.player || {};
     return character(p.characterId).name + ' · Nivel ' + Math.max(1,number(p.level));
@@ -194,7 +196,7 @@
       const data = imported || game.snapshot(); validate(data);
       const save = { ...data, savedAt: new Date().toISOString() };
       localStorage.setItem(SAVE_PREFIX + index,JSON.stringify(save));
-      if (!imported) game.currentSlot = index;
+      if (!imported) { game.currentSlot = index; submitScore(); }
       updateSaveCount(); toast((imported ? 'Partida importada' : 'Partida guardada') + ' en la ranura ' + index + '.');
       if (imported) showSlots('load'); else showPause();
     } catch (error) {
@@ -257,7 +259,7 @@
     openModal('Un respiro en el camino', 'PARTIDA EN PAUSA', parent => {
       if (game.player) paragraph(parent,saveLabel({player:game.player}) + ' · ' + (game.currentSlot ? 'Ranura ' + game.currentSlot : 'Todavía sin guardar'));
       const actions = el('div','modal-actions');
-      actions.append(button('Continuar la aventura', () => hideModal(), 'button primary'), button('Guardar partida', () => showSlots('save')), button('Opciones y controles',showSettings), button('Volver al inicio',requestMenu));
+      actions.append(button('Continuar la aventura', () => hideModal(), 'button primary'), button('Guardar partida', () => showSlots('save')), button('Ranking de amigos', () => showRanking('level', showPause)), button('Opciones y controles',showSettings), button('Volver al inicio',requestMenu));
       parent.append(actions); paragraph(parent,'La partida se guarda manualmente. Cerrá la pausa para seguir explorando.','hint');
     });
   }
@@ -325,10 +327,16 @@
   }
   function showTutorial() {
     openModal('Primero, los pies en la tierra', 'BIENVENIDO A LOS AROMOS', parent => {
-      paragraph(parent,'La aldea es tu refugio. Movete con WASD o flechas y buscá el arco: acercate a su brillo y presioná E.');
-      paragraph(parent,'Atacá con Espacio o clic: cada cuarto golpe seguido es crítico. F o clic derecho te hace rodar y esquivar cualquier golpe. Q activa tu habilidad; Fede y Pepe tienen habilidades pasivas. Shift te permite correr: cuidá la energía.');
-      paragraph(parent,'Los enemigos sueltan monedas. Gastalas en el puesto de El Almacén, al oeste de la plaza. Las hierbas van a tu bolsa y se usan con R.');
-      paragraph(parent,'C abre tus estadísticas; J, el diario; M, el mapa. Guardá manualmente en una de las tres ranuras desde Esc antes de irte.');
+      if (isTouch()) {
+        paragraph(parent,'La aldea es tu refugio. Apoyá el pulgar izquierdo en cualquier parte de la mitad izquierda y arrastralo para moverte. Buscá el arco y tocá E cerca de su brillo.');
+        paragraph(parent,'⚔ ataca y apunta solo al enemigo más cercano: cada cuarto golpe seguido es crítico. ⟲ te hace rodar y esquivar cualquier golpe. ✦ es tu habilidad, » activa o desactiva la carrera, ❦ usa una hierba y el botón de arma cambia entre las que tengas.');
+        paragraph(parent,'Los enemigos sueltan monedas: gastalas en el puesto de El Almacén, al oeste de la plaza. Arriba tenés la ficha, el diario, el mapa, la pausa para guardar y ⛶ para pantalla completa. Se juega mejor con el celular en horizontal.');
+      } else {
+        paragraph(parent,'La aldea es tu refugio. Movete con WASD o flechas y buscá el arco: acercate a su brillo y presioná E.');
+        paragraph(parent,'Atacá con Espacio o clic: cada cuarto golpe seguido es crítico. F o clic derecho te hace rodar y esquivar cualquier golpe. Q activa tu habilidad; Fede y Pepe tienen habilidades pasivas. Shift te permite correr: cuidá la energía.');
+        paragraph(parent,'Los enemigos sueltan monedas. Gastalas en el puesto de El Almacén, al oeste de la plaza. Las hierbas van a tu bolsa y se usan con R.');
+        paragraph(parent,'C abre tus estadísticas; J, el diario; M, el mapa. Guardá manualmente en una de las tres ranuras desde Esc antes de irte.');
+      }
       const actions = el('div','modal-actions'); actions.append(button('Ahora sí, a explorar',() => hideModal(),'button primary'),button('No mostrar este consejo otra vez',() => { game.settings.tutorial = false; persistSettings(); hideModal(); })); parent.append(actions);
     });
   }
@@ -348,8 +356,48 @@
       paragraph(parent,'Chorros y jefes dejan más monedas. Si un chorro te noquea, se lleva parte de tu guita.','hint');
     });
   }
+  // Publica el progreso como mucho cada 8 s; los pedidos que llegan antes se agrupan.
+  let submitTimer = null, lastSubmit = 0, lastKills = 0, submitWarned = false;
+  function submitScore() {
+    if (!game.player) return;
+    clearTimeout(submitTimer);
+    submitTimer = setTimeout(() => {
+      lastSubmit = Date.now(); lastKills = game.player.kills;
+      Zak.Ranking.submit(game).catch(error => { if (!submitWarned) { submitWarned = true; toast('No se pudo publicar en el ranking online: ' + error.message + '. Se guardó en este dispositivo.',true); } });
+    }, Math.max(0,8000 - (Date.now() - lastSubmit)));
+  }
+  const RANK_TABS = [['level','Nivel'],['kills','Enemigos'],['bosses','Jefes']];
+  function showRanking(sort = 'level', back = null) {
+    const own = Zak.Ranking.profile().id, version = modalVersion + 1;
+    if (game.player && game.state !== 'menu') Zak.Ranking.saveLocal(Zak.Ranking.entryFor(game));
+    openModal('Ranking de amigos', Zak.Ranking.online() ? 'EN LÍNEA · TODOS LOS DISPOSITIVOS' : 'SOLO ESTE DISPOSITIVO', parent => {
+      const tabs = el('div','rank-tabs');
+      RANK_TABS.forEach(([id,label]) => { const tab = button(label,() => showRanking(id,back),'rank-tab' + (sort === id ? ' selected' : '')); tab.setAttribute('aria-pressed',String(sort === id)); tabs.append(tab); });
+      parent.append(tabs);
+      const list = el('div','rank-list'); list.append(el('p','hint','Cargando…')); parent.append(list);
+      if (!Zak.Ranking.online()) paragraph(parent,'Para compartir el ranking con tus amigos hay que conectar Supabase en src/config.js (ver docs/RANKING.md). Mientras tanto se muestran las partidas jugadas en este dispositivo.','hint');
+      Zak.Ranking.list(sort).then(result => render(result.entries)).catch(error => {
+        if (version !== modalVersion) return;
+        list.replaceChildren(el('p','hint','No se pudo cargar el ranking online (' + error.message + '). Partidas de este dispositivo:'));
+        render(Zak.Ranking.local().sort(Zak.Ranking.SORTS[sort]),true);
+      });
+      function render(entries,append = false) {
+        if (version !== modalVersion) return;
+        if (!append) list.replaceChildren();
+        if (!entries.length) { list.append(el('p','hint','Todavía no hay partidas. ¡Salí a la aventura y estrená el ranking!')); return; }
+        const head = el('div','rank-row rank-head'); ['#','Jugador','Nvl.','Enemigos','Jefes'].forEach(label => head.append(el('span','',label))); list.append(head);
+        entries.slice(0,50).forEach((entry,index) => {
+          const row = el('div','rank-row' + (entry.player_id === own ? ' mine' : '') + (index < 3 ? ' top' : ''));
+          const who = el('span','rank-player'); who.append(el('strong','',entry.name),el('small','',character(entry.character).name + (entry.player_id === own ? ' · vos' : '')));
+          row.append(el('span','rank-pos',index < 3 ? ['♛','②','③'][index] : index + 1),who,el('span','',entry.level),el('span','',entry.kills),el('span','',entry.bosses));
+          list.append(row);
+        });
+      }
+    }, back);
+  }
+  $('ranking-button').addEventListener('click',() => showRanking());
   function showPlaying() {
-    document.body.classList.add('playing'); document.body.classList.remove('exited');
+    document.body.classList.add('playing'); document.body.classList.remove('exited','choosing');
     $('menu-screen').classList.add('hidden'); $('character-screen').classList.add('hidden'); $('hud').classList.remove('hidden');
     lastPortrait = ''; updateHud(true); $('world').focus();
   }
@@ -415,29 +463,67 @@
       const recharge = slot.querySelector('.weapon-recharge'); if (recharge) recharge.style.width = (p.weapon === id && p.attackCooldown > 0 ? Math.max(0,1 - p.attackCooldown / Math.max(s.attackCooldown,id === 'bow' ? .7 : 0)) * 100 : 100) + '%';
       slot.querySelector('.ammo').textContent = id === 'stone' && owned ? p.stoneAmmo ? '1' : 'caminar' : '';
     });
+    $('touch-ability').disabled = c.abilityPassive || cooldown > 0;
+    text('touch-ability-label',c.abilityPassive ? 'Pasiva' : cooldown > 0 ? Math.ceil(cooldown) + ' s' : c.ability);
+    text('touch-herb-count',p.herbs); $('touch-herb').disabled = p.herbs < 1;
+    $('touch-weapon').firstChild.textContent = ICONS[p.weapon]; $('touch-weapon').disabled = p.weapons.length < 2;
+    $('touch-run').classList.toggle('active',game.runToggle); $('touch-run').setAttribute('aria-pressed',String(game.runToggle));
     if (Zak.nearbyInteractable && game.world) {
       const nearby = Zak.nearbyInteractable(game.world,p.x,p.y,46);
+      $('touch-interact').classList.toggle('available',!!nearby);
       $('interaction-hint').classList.toggle('hidden',!nearby);
-      if (nearby) text('interaction-hint','E · ' + (nearby.label || nearby.name || (nearby.type === 'well' ? 'Recuperar vida en el pozo' : 'Recoger')));
+      if (nearby) text('interaction-hint',(isTouch() ? 'Tocá E · ' : 'E · ') + (nearby.label || nearby.name || (nearby.type === 'well' ? 'Recuperar vida en el pozo' : 'Recoger')));
     }
   }
   $('stats-button').addEventListener('click',showStats); $('journal-button').addEventListener('click',() => showJournal()); $('map-button').addEventListener('click',showMap); $('pause-button').addEventListener('click',showPause);
   $('ability-button').addEventListener('click',() => game.ability());
   $('herb-button').addEventListener('click',() => { game.useHerb(); $('world').focus(); });
-  function setTouchKey(key,pressed) {
-    if (game.keys && typeof game.keys.add === 'function') { if (pressed) game.keys.add(key); else game.keys.delete(key); }
-    else if (game.keys) game.keys[key] = pressed;
+  const isTouch = () => game.touchMode || (window.matchMedia && matchMedia('(pointer:coarse)').matches);
+  const capture = (node,id) => { try { node.setPointerCapture(id); } catch (_) {} };
+  function setTouchKey(key,pressed) { if (pressed) game.keys.add(key); else game.keys.delete(key); }
+  function touchButton(id,action) {
+    $(id).addEventListener('pointerdown',event => {
+      event.preventDefault(); if (game.state !== 'playing') return;
+      game.touchMode = true; game.sound.unlock(); action(event);
+    });
   }
-  document.querySelectorAll('[data-touch]').forEach(node => {
-    const key = node.dataset.touch;
-    node.addEventListener('pointerdown',event => { event.preventDefault(); if (game.state !== 'playing') return; node.setPointerCapture(event.pointerId); setTouchKey(key,true); });
-    ['pointerup','pointercancel','lostpointercapture'].forEach(type => node.addEventListener(type,event => { event.preventDefault(); setTouchKey(key,false); }));
+  const zone = $('joystick-zone'), base = zone.querySelector('.stick-base'), knob = zone.querySelector('.stick-knob');
+  let stickPointer = null, stickOrigin = null;
+  function stickMove(event) {
+    const max = 52, dx = event.clientX - stickOrigin.x, dy = event.clientY - stickOrigin.y, len = Math.hypot(dx,dy) || 1, clamped = Math.min(max,len);
+    knob.style.transform = 'translate(' + dx / len * clamped + 'px,' + dy / len * clamped + 'px)';
+    game.stick = { x: dx / len * clamped / max, y: dy / len * clamped / max };
+  }
+  function stickEnd() {
+    stickPointer = null; game.stick = { x: 0, y: 0 }; zone.classList.remove('active');
+    knob.style.transform = ''; base.style.left = ''; base.style.top = '';
+  }
+  zone.addEventListener('pointerdown',event => {
+    event.preventDefault(); if (game.state !== 'playing' || stickPointer !== null) return;
+    game.touchMode = true; game.sound.unlock(); stickPointer = event.pointerId; capture(zone,event.pointerId);
+    const bounds = zone.getBoundingClientRect(); stickOrigin = { x: event.clientX, y: event.clientY };
+    base.style.left = event.clientX - bounds.left + 'px'; base.style.top = event.clientY - bounds.top + 'px'; zone.classList.add('active'); stickMove(event);
   });
-  $('touch-interact').addEventListener('click',() => game.interact());
-  $('touch-roll').addEventListener('pointerdown',event => { event.preventDefault(); game.roll(); });
-  $('touch-herb').addEventListener('click',() => game.useHerb());
-  $('touch-attack').addEventListener('pointerdown',event => { event.preventDefault(); if (game.state !== 'playing') return; event.currentTarget.setPointerCapture(event.pointerId); setTouchKey(' ',true); if (game.attack) game.attack(); });
+  zone.addEventListener('pointermove',event => { if (event.pointerId === stickPointer) { event.preventDefault(); stickMove(event); } });
+  ['pointerup','pointercancel','lostpointercapture'].forEach(type => zone.addEventListener(type,event => { if (event.pointerId === stickPointer) stickEnd(); }));
+  touchButton('touch-attack',event => { capture($('touch-attack'),event.pointerId); setTouchKey(' ',true); game.attack(); });
   ['pointerup','pointercancel','lostpointercapture'].forEach(type => $('touch-attack').addEventListener(type,event => { event.preventDefault(); setTouchKey(' ',false); }));
+  touchButton('touch-roll',() => game.roll());
+  touchButton('touch-ability',() => game.ability());
+  touchButton('touch-interact',() => game.interact());
+  touchButton('touch-herb',() => game.useHerb());
+  touchButton('touch-weapon',() => game.cycleWeapon());
+  touchButton('touch-run',() => { game.runToggle = !game.runToggle; updateHud(true); });
+  $('fullscreen-button').addEventListener('click',() => {
+    const root = document.documentElement;
+    if (document.fullscreenElement) { document.exitFullscreen().catch(() => {}); return; }
+    if (!root.requestFullscreen) { toast('Este navegador no permite pantalla completa. Probá agregar el juego a la pantalla de inicio.'); return; }
+    root.requestFullscreen({ navigationUI: 'hide' }).then(() => {
+      if (screen.orientation && screen.orientation.lock) screen.orientation.lock('landscape').catch(() => {});
+    }).catch(() => toast('No se pudo activar la pantalla completa.'));
+    $('world').focus();
+  });
+  document.addEventListener('fullscreenchange',() => { game.renderer.resize(game.state === 'playing' || game.state === 'paused'); text('fullscreen-button',document.fullscreenElement ? '🗗' : '⛶'); });
   function exitGame() {
     suppressPause = true; try { if (game.player) game.pause(); } finally { suppressPause = false; }
     try { window.close(); } catch (_) {}
@@ -453,7 +539,7 @@
   $('exit-game').addEventListener('click',exitGame);
   document.querySelector('.brand').addEventListener('click',event => { event.preventDefault(); if (game.state === 'characters') showMenu(); });
   game.onEvent = (type, detail = {}) => {
-    if (type === 'tick') updateHud();
+    if (type === 'tick') { updateHud(); if (game.player && game.state === 'playing' && game.player.kills - lastKills >= 5) submitScore(); }
     else if (type === 'toast') toast(detail.message,detail.error);
     else if (type === 'start') {
       hasStarted = true;
@@ -465,6 +551,7 @@
     else if (type === 'map') showMap();
     else if (type === 'journal') showJournal();
     else if (type === 'shop') showShop();
+    else if (type === 'progress') submitScore();
     else if (type === 'boss') toast('☠ ' + detail.name + ' te vio. Mirá sus avisos y rodá a tiempo.',true);
     else if (type === 'biome') { updateHud(true); toast(detail.name + (detail.safe ? ' · Zona segura' : ' · Mirá por dónde pisás')); }
     else if (type === 'knockout') {
