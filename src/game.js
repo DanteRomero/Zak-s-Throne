@@ -7,6 +7,8 @@ const dirs = {down:[0,1],up:[0,-1],left:[-1,0],right:[1,0]};
 const names = Z.BIOME_NAMES = {village:'Palihue City',cave:'Cueva del Eco',weeds:'Los Yuyos',cave2:'Cueva Profunda',cave3:'Las Entrañas'};
 const isCave = biome => /^cave/.test(biome||'');
 const ROLL_TIME=.3,ROLL_COOLDOWN=.55,ROLL_COST=.2,COMBO_CRIT=4,CRIT_MULTIPLIER=1.75,HERB_REGROW=90,TAIL_RADIUS=62;
+// Guita por cada objetivo del diario: más difícil, más guita, sin romper la economía.
+const QUEST_REWARDS={bow:5,cave:5,stone:5,weeds:5,sword:10,shop:10,smith:15,bestiary:20,level5:25,deep:30,capo:40,yarara:40,deepest:50};
 const isBoss = e => !!(Z.ENEMY_TYPES[e.type]&&Z.ENEMY_TYPES[e.type].boss);
 class Sound {
  constructor(){this.enabled=false;this.ctx=null;this.ambientTime=0;this.lastCoin=0;}
@@ -453,7 +455,15 @@ class Game {
   {id:'deep',title:'Luz en la oscuridad',detail:'Con una antorcha, tomá la bajada del fondo de la Cueva del Eco hacia la Cueva Profunda.',done:this.player.discovered.includes('cave2')},
   {id:'deepest',title:'Las entrañas de la tierra',detail:'Encontrá la bajada de la Cueva Profunda y llegá a Las Entrañas. Llevá armas mejoradas.',done:this.player.discovered.includes('cave3')}
  ];}
- checkQuests(){for(const q of this.quests())if(q.done&&!this.questFlags['quest_'+q.id]){this.questFlags['quest_'+q.id]=true;this.emit('toast',{message:'Diario actualizado: '+q.title});this.sound.play('pickup');}if(this.quests().every(q=>q.done)&&!this.questFlags.complete){this.questFlags.complete=true;this.emit('complete');}}
+ questsWithRewards(){return this.quests().map(q=>({...q,reward:QUEST_REWARDS[q.id]||0,claimed:!!this.questFlags['claimed_'+q.id]}));}
+ unclaimedRewards(){return this.questsWithRewards().filter(q=>q.done&&!q.claimed&&q.reward>0);}
+ // Las recompensas se reclaman a mano: así también cobran quienes completaron objetivos antes de esta versión.
+ claimQuest(id){
+  const q=this.questsWithRewards().find(q=>q.id===id);if(!q)return{ok:false,message:'Ese objetivo no existe.'};
+  if(!q.done)return{ok:false,message:'Todavía no completaste: '+q.title+'.'};if(q.claimed)return{ok:false,message:'Esa recompensa ya la cobraste.'};
+  this.questFlags['claimed_'+id]=true;this.player.coins=(this.player.coins||0)+q.reward;this.sound.play('buy');return{ok:true,message:'+'+q.reward+' de guita por «'+q.title+'».'};
+ }
+ checkQuests(){for(const q of this.quests())if(q.done&&!this.questFlags['quest_'+q.id]){this.questFlags['quest_'+q.id]=true;this.emit('toast',{message:'Diario actualizado: '+q.title+(QUEST_REWARDS[q.id]?' · Reclamá ◉ '+QUEST_REWARDS[q.id]+' en el diario (J).':'')});this.sound.play('pickup');}if(this.quests().every(q=>q.done)&&!this.questFlags.complete){this.questFlags.complete=true;this.emit('complete');}}
  snapshot(){return JSON.parse(JSON.stringify({version:1,savedAt:new Date().toISOString(),player:this.player,time:this.time,queuedWaves:this.queuedWaves||[],questFlags:this.questFlags,collected:this.world.pickups.filter(p=>p.collected).map(p=>p.id),nodes:this.world.objects.filter(o=>o.harvested).map(o=>({id:o.id,regrow:o.regrow})),enemies:this.enemies.map(e=>({id:e.id,hp:e.hp,dead:e.dead,respawn:e.respawn,x:e.x,y:e.y,provoked:e.provoked,cooldown:e.cooldown,stun:e.stun,charm:e.charm,latched:e.latched,latchRest:e.latchRest,alert:e.alert}))}));}
  static validateSave(data){
   if(!data||data.version!==1||!data.player||!Array.isArray(data.collected)||!Array.isArray(data.enemies))throw new Error('El archivo no es una partida válida de Zak’s Throne.');
@@ -487,7 +497,7 @@ class Game {
   if(source.poison&&Number.isFinite(source.poison.damage))p.poison={time:clamp(Number(source.poison.time)||0,0,5),tick:clamp(Number(source.poison.tick)||1,.01,1),damage:clamp(source.poison.damage,0,100)};
   this.player=p;this.world=Z.createWorld();this.biome=Z.biomeAt(p.x,p.y);if(Z.collides(this.world,p.x,p.y,8)){Object.assign(p,this.world.spawn);this.biome='village';}
   if(this.biome==='village'){p.poison=null;p.slow=0;}this.time=Number.isFinite(data.time)?clamp(data.time,0,1e9):0;this.questFlags={};
-  if(data.questFlags&&typeof data.questFlags==='object')for(const k of Object.keys(data.questFlags))if(/^(quest_(bow|cave|stone|weeds|sword|shop|bestiary|level5|capo|yarara|smith|deep|deepest)|defeat_(thief|dog|snake|rat|bat|spider|worm|capo|yarara)|bought|crafted|gathered|complete)$/.test(k))this.questFlags[k]=data.questFlags[k]===true;
+  if(data.questFlags&&typeof data.questFlags==='object')for(const k of Object.keys(data.questFlags))if(/^((quest|claimed)_(bow|cave|stone|weeds|sword|shop|bestiary|level5|capo|yarara|smith|deep|deepest)|defeat_(thief|dog|snake|rat|bat|spider|worm|capo|yarara)|bought|crafted|gathered|complete)$/.test(k))this.questFlags[k]=data.questFlags[k]===true;
   if(!this.quests().every(q=>q.done))delete this.questFlags.complete;
   this.world.pickups.forEach(i=>{i.collected=data.collected.includes(i.id);if(i.collected&&i.type==='herb')i.regrow=HERB_REGROW;});
   for(const saved of data.nodes||[]){const o=saved&&this.world.objects.find(n=>n.id===saved.id&&(n.type==='ore'||n.type==='tree'));if(!o)continue;

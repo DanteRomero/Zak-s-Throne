@@ -118,3 +118,8 @@
 .smith-heading{font-weight:normal;color:var(--gold);font-size:15px;margin:16px 0 2px}
 .smith-cost{display:flex!important;flex-wrap:wrap;gap:5px;margin-top:6px}.smith-cost .need{font:10px 'Courier New',monospace;padding:2px 6px;border:1px solid #8ba78066;color:#bfe0a8}.smith-cost .need.missing{border-color:#cd817088;color:#e8a285}
 @media(max-width:700px),(max-height:520px){.smith-portrait{width:64px;height:88px}#modal .smith-bubble .smith-line{font-size:16px}}
+/* v1.5: recompensas del diario. */
+.journal-task>div{flex:1}.journal-task.done:has(.quest-claim){opacity:1}.journal-task.done:has(.quest-claim) strong{text-decoration:none}
+.quest-claim{align-self:center;min-width:auto;white-space:nowrap}.quest-reward{align-self:center;font:11px 'Courier New',monospace;color:#f2cb5b;white-space:nowrap}.quest-reward.claimed{color:var(--muted)}
+.journal-claim-all{justify-content:center;margin:4px 0 8px}
+#journal-badge{font-size:11px;padding:3px 4px;min-width:18px}

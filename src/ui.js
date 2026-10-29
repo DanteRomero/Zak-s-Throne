@@ -30,7 +30,8 @@
   function text(id, value) { const node = $(id); if (node && node.textContent !== String(value)) node.textContent = String(value); }
   function toast(message, error = false) {
     const node = el('div', 'toast' + (error ? ' error' : ''), message);
-    $('toast-container').append(node);
+    // Un solo aviso a la vez: el nuevo reemplaza al anterior en vez de apilarse.
+    $('toast-container').replaceChildren(node);
     setTimeout(() => { node.classList.add('leaving'); setTimeout(() => node.remove(), 350); }, error ? 6500 : 4300);
   }
   function safeSettings() {
@@ -345,13 +346,24 @@
       parent.append(summary); const benefits = el('div','traits'); benefits.style.marginTop = '20px'; traits(benefits,c); parent.append(benefits);
     });
   }
-  function showJournal(completed = false) {
+  function showJournal(completed = false, message = '') {
     if (!game.player) return;
     openModal(completed ? 'Los Aromos ya te conoce' : 'Cada paso deja una historia', 'DIARIO DE VIAJE', parent => {
-      paragraph(parent,completed ? 'Completaste los objetivos del diario. Podés seguir explorando, mejorar tu personaje y guardar tu aventura.' : 'Explorá a tu ritmo. Tu progreso queda registrado al guardar la partida.');
-      game.quests().forEach(quest => {
+      paragraph(parent,completed ? 'Completaste los objetivos del diario. Podés seguir explorando, mejorar tu personaje y guardar tu aventura.' : 'Explorá a tu ritmo. Cada objetivo cumplido da guita: reclamala acá.');
+      if (message) paragraph(parent,message,'hint shop-message');
+      const pending = game.unclaimedRewards();
+      if (pending.length > 1) {
+        const all = button('Reclamar todo · ◉ ' + pending.reduce((sum,q) => sum + q.reward,0),() => { pending.forEach(q => game.claimQuest(q.id)); showJournal(completed,'Cobraste todas las recompensas pendientes.'); updateHud(true); },'button primary journal-claim-all');
+        parent.append(all);
+      }
+      game.questsWithRewards().forEach(quest => {
         const row = el('div','journal-task' + (quest.done ? ' done' : '')), body = el('div');
-        body.append(el('strong','',quest.title),el('small','',quest.detail)); row.append(el('b','',quest.done ? '✓' : '◇'),body); parent.append(row);
+        body.append(el('strong','',quest.title),el('small','',quest.detail)); row.append(el('b','',quest.done ? '✓' : '◇'),body);
+        if (quest.done && !quest.claimed) {
+          const claim = button('Reclamar ◉ ' + quest.reward,() => { const result = game.claimQuest(quest.id); showJournal(completed,result.message); updateHud(true); },'shop-buy quest-claim');
+          claim.setAttribute('aria-label','Reclamar ' + quest.reward + ' de guita por ' + quest.title); row.append(claim);
+        } else row.append(el('span','quest-reward' + (quest.claimed ? ' claimed' : ''),(quest.claimed ? 'Cobrado ◉ ' : '◉ ') + quest.reward));
+        parent.append(row);
       });
       const heading = el('h3','','Bichos y malas juntas'); heading.style.fontWeight = 'normal'; heading.style.color = 'var(--gold)'; parent.append(heading);
       Object.entries(Zak.ENEMY_TYPES).forEach(([type,enemy]) => {
@@ -498,6 +510,7 @@
     text('energy-text',p.exhausted > 0 ? 'AGOTADO · ' + Math.ceil(p.exhausted) + ' s' : 'ENERGÍA');
     $('xp-fill').style.width = Math.min(100,p.xp / Zak.xpNeeded(p.level) * 100) + '%';
     text('points-badge',p.points); $('points-badge').classList.toggle('hidden',p.points < 1);
+    $('journal-badge').classList.toggle('hidden',game.unclaimedRewards().length < 1);
     const ctx = game.context(), biome = ctx.biome || 'village';
     text('hud-biome',Zak.BIOME_NAMES[biome] || biome); text('hud-safety',biome === 'village' ? 'ZONA SEGURA' : 'ZONA PELIGROSA');
     $('hud-safety').classList.toggle('danger',biome !== 'village');

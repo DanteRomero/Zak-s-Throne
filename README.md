@@ -2,7 +2,7 @@
 
 Una aventura de acción y exploración en pixel art, vista desde arriba. Elegí a uno de seis amigos, preparate en la aldea y salí a explorar la cueva y los Yuyos.
 
-Versión actual: **v1.4**. Los cambios de cada versión están en [CHANGELOG.md](CHANGELOG.md).
+Versión actual: **v1.5**. Los cambios de cada versión están en [CHANGELOG.md](CHANGELOG.md).
 
 ## Jugar
 
@@ -79,6 +79,19 @@ Al quedar noqueado volvés a la aldea. Si te vence un chorro aparece «Uhh... es
 Los enemigos sueltan monedas al caer: ratas 1–2, perros 2–4, serpientes 2–5, chorros 5–9 y jefes 40–60, más un extra según su nivel. Se recogen solas al pasar cerca y desaparecen a los 30 segundos.
 
 Las hierbas medicinales ahora van a una **bolsa de 5**. R usa una: cura **25 de vida o el 20% de la vida máxima**, lo que sea mayor, y quita el veneno. Si la bolsa está llena y estás herido, la hierba se come en el momento. Las hierbas del campo vuelven a crecer a los **90 segundos**.
+
+Cada objetivo del diario también da guita, una sola vez. Se reclama en el diario (J), y el botón del diario muestra ◉ cuando hay algo para cobrar. Si cumpliste objetivos antes de que existieran las recompensas, igual las podés reclamar.
+
+| Objetivo | Guita |
+| --- | ---: |
+| Arco, Cueva del Eco, piedras, Los Yuyos | 5 cada uno |
+| Espada, primera compra en El Almacén | 10 cada uno |
+| Primera herramienta del herrero | 15 |
+| Bestiario (los cuatro enemigos de la superficie) | 20 |
+| Nivel 5 | 25 |
+| Llegar a la Cueva Profunda | 30 |
+| Derrotar al Capo o a la Yarará | 40 cada uno |
+| Llegar a Las Entrañas | 50 |
 
 El puesto de El Almacén está al oeste de la plaza (E para comprar):
 

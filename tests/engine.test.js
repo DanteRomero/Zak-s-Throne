@@ -390,6 +390,23 @@
       const deep = game.snapshot(); deep.player.x = 105; deep.player.y = 1975; game.restore(deep, 1); equal(game.biome, 'cave2', 'Saving in a deep cave works');
     });
 
+    test('Journal goals pay coins once, harder goals pay more', () => {
+      const p = fixture(); p.coins = 0;
+      equal(game.claimQuest('bow').ok, false, 'Not done yet'); p.weapons.push('bow'); game.checkQuests();
+      equal(game.claimQuest('bow').ok, true); equal(p.coins, 5); equal(game.claimQuest('bow').ok, false, 'Only once'); equal(p.coins, 5);
+      const rewards = Object.fromEntries(game.questsWithRewards().map(q => [q.id, q.reward]));
+      ok(rewards.deepest > rewards.capo && rewards.capo > rewards.level5 && rewards.level5 > rewards.sword && rewards.sword > rewards.bow);
+      ok(Object.values(rewards).reduce((a, b) => a + b, 0) <= 300, 'Total stays modest');
+    });
+    test('Goals completed before rewards existed can still be claimed after loading', () => {
+      const p = fixture('gero', true); p.weapons.push('bow', 'sword'); game.questFlags.defeat_capo = true; game.checkQuests();
+      const save = game.snapshot(); Object.keys(save.questFlags).filter(k => k.startsWith('claimed_')).forEach(k => delete save.questFlags[k]);
+      game.newGame('tena'); game.restore(save, 1);
+      equal(game.unclaimedRewards().map(q => q.id).sort().join(','), 'bow,capo,sword');
+      game.claimQuest('capo'); equal(game.player.coins, 40);
+      const again = game.snapshot(); game.restore(again, 1); equal(game.questFlags.claimed_capo, true, 'Claims are saved'); equal(game.claimQuest('capo').ok, false);
+    });
+
     game.pause(); cancelAnimationFrame(game.frame);
     return {passed: results.filter(r=>r.pass).length, failed: results.filter(r=>!r.pass).length, results};
   };
