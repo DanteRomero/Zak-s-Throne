@@ -166,8 +166,8 @@
     test('Experience from kills levels the player and rescales existing enemies', () => {
       const p = fixture('dante'); p.xp=90; const thief=enemy('thief'), rat=enemy('rat');
       game.hitEnemy(rat,100); equal(p.level,2); equal(p.points,1); near(p.stats.health,112); near(p.stats.strength,9);
-      near(thief.level,1); p.xp=149; const another=enemy('rat'); game.hitEnemy(another,100);
-      equal(p.level,3); equal(p.points,2); near(thief.level,2); near(thief.maxHp,103); near(thief.hp,103);
+      near(thief.level,2); p.xp=149; const another=enemy('rat'); game.hitEnemy(another,100);
+      equal(p.level,3); equal(p.points,2); near(thief.level,3); near(thief.maxHp,103); near(thief.hp,103);
       ok(Z.upgradeStat(p,'strength')); near(p.stats.strength,11); equal(p.points,1);
     });
     test('Pause freezes damage, cooldowns, stamina and queued ability waves', () => {
@@ -198,7 +198,7 @@
       const mutations=[
         s=>s.version=999, s=>s.player.characterId='missing', s=>s.player.level=0,
         s=>s.player.xp=-1, s=>s.player.hp=NaN, s=>s.player.stats.speed=101,
-        s=>s.player.weapons=['unknown'], s=>s.player.x=-100, s=>s.collected=null
+        s=>s.player.weapons=['unknown'], s=>s.player.x=-1000, s=>s.collected=null
       ];
       mutations.forEach(mutate=>{const save=JSON.parse(JSON.stringify(valid)); mutate(save); let threw=false;
         try{game.restore(save);}catch(error){threw=true;} ok(threw,'Malformed data accepted'); equal(game.player,before);
@@ -368,6 +368,8 @@
     });
     test('Stairs down need a torch and lead to the deep caves', () => {
       const p = fixture('gero', true), down = game.world.objects.find(o => o.type === 'stairs' && o.to === 'cave2');
+      p.torch = true; ok(!game.takeStairs(down), 'The Capo guards the way down'); p.torch = false;
+      game.enemies.filter(e => e.type === 'capo' || e.type === 'vampire').forEach(e => { e.dead = true; e.respawn = 999; });
       ok(!game.takeStairs(down), 'Too dark without a torch'); p.torch = true; ok(game.takeStairs(down));
       advance(.1); equal(game.biome, 'cave2'); ok(p.discovered.includes('cave2'));
       equal(game.world.pickups.some(i => i.type === 'herb' && /cave[23]/.test(Z.biomeAt(i.x, i.y))), false, 'No healing herbs down here');
@@ -396,7 +398,8 @@
       equal(game.claimQuest('bow').ok, true); equal(p.coins, 5); equal(game.claimQuest('bow').ok, false, 'Only once'); equal(p.coins, 5);
       const rewards = Object.fromEntries(game.questsWithRewards().map(q => [q.id, q.reward]));
       ok(rewards.deepest > rewards.capo && rewards.capo > rewards.level5 && rewards.level5 > rewards.sword && rewards.sword > rewards.bow);
-      ok(Object.values(rewards).reduce((a, b) => a + b, 0) <= 300, 'Total stays modest');
+      ok(rewards.zak > rewards.cerbero && rewards.cerbero > rewards.golem && rewards.golem > rewards.vampire && rewards.vampire > rewards.deepest);
+      ok(Object.values(rewards).reduce((a, b) => a + b, 0) <= 1000, 'Total stays modest');
     });
     test('Goals completed before rewards existed can still be claimed after loading', () => {
       const p = fixture('gero', true); p.weapons.push('bow', 'sword'); game.questFlags.defeat_capo = true; game.checkQuests();
@@ -405,6 +408,110 @@
       equal(game.unclaimedRewards().map(q => q.id).sort().join(','), 'bow,capo,sword');
       game.claimQuest('capo'); equal(game.player.coins, 40);
       const again = game.snapshot(); game.restore(again, 1); equal(game.questFlags.claimed_capo, true, 'Claims are saved'); equal(game.claimQuest('capo').ok, false);
+    });
+
+    // Jefes nuevos, ofrendas, altar y Trono de Zak.
+    const killBoss = type => { const e = game.enemies.find(m => m.type === type && !m.summoned); e.dead = true; e.respawn = 999; return e; };
+    const collectDrops = () => { const p = game.player; game.drops.forEach(d => { d.delay = 0; d.x = p.x; d.y = p.y - 6; }); game.updateDrops(1 / 60); };
+    test('Bosses drop their offering and El Almacén buys it', () => {
+      const p = fixture(); const yarara = enemy('yarara', p.x + 30); game.hitEnemy(yarara, 1e6, true);
+      ok(yarara.dead); ok(game.drops.some(d => d.item === 'fang'), 'Fang dropped'); collectDrops(); equal(p.offerings.fang, 1);
+      const coins = p.coins; ok(game.sell('fang').ok); equal(p.offerings.fang, 0); equal(p.coins, coins + 500); equal(game.sell('fang').ok, false);
+    });
+    test('Rats latched on bite softer and slower', () => {
+      const p = fixture(); p.level = 40; p.stats.endurance = 0; const rat = enemy('rat', p.x + 5); rat.latched = 2; const hp = p.hp;
+      game.enemyAttack(rat); near(hp - p.hp, rat.stats.strength * .6, 'Latched bite is 60%'); ok(rat.cooldown >= .9);
+    });
+    test('The skeleton archer keeps its distance and shoots arrows', () => {
+      const p = fixture(); const archer = enemy('archer', p.x + 90); archer.cooldown = 0; const start = archer.x;
+      advance(.05); ok(game.projectiles.some(s => s.hostile && s.type === 'arrow'), 'Shoots'); advance(.3); ok(archer.x > start, 'Backs away');
+      game.hitEnemy(archer, 1); equal(archer.dead, true, 'One hit breaks it');
+    });
+    test('The skeleton shield sometimes blocks a hit', () => {
+      const p = fixture(); const skeleton = enemy('skeleton', p.x + 20); Math.random = () => .1; const hp = skeleton.hp;
+      game.hitEnemy(skeleton, 50); near(skeleton.hp, hp, 'Blocked'); Math.random = () => .9; game.hitEnemy(skeleton, 50); ok(skeleton.hp < hp);
+    });
+    test('The Golem has four lives, each one stronger, and a 5 second shield', () => {
+      const p = fixture(); const golem = enemy('golem', p.x + 200); golem.cd = {quake: 99, rock: 99, fortify: 99, ready: 1};
+      const first = golem.maxHp; game.hitEnemy(golem, 1e7, true); equal(golem.dead, false); equal(golem.act.id, 'rise');
+      game.hitEnemy(golem, 10, true); equal(golem.hp, 1, 'Invulnerable while rising'); advance(2.4);
+      equal(golem.life, 1); ok(golem.maxHp > first, 'Iron is tougher than stone'); near(golem.hp, golem.maxHp);
+      golem.hp = golem.maxHp * .25; advance(1 / 60); ok(golem.shield > 4.9, 'Low health triggers the shield at once');
+      const shielded = golem.hp; game.hitEnemy(golem, 1000, true); near(golem.hp, shielded);
+      for (let k = 0; k < 3; k++) { golem.shield = 0; game.hitEnemy(golem, 1e7, true); if (!golem.dead) advance(2.4); }
+      equal(golem.dead, true, 'Diamond is the last life');
+    });
+    test('Golem rock stuns for three seconds', () => {
+      const p = fixture(); const golem = enemy('golem', p.x + 150); golem.cd = {quake: 99, rock: 0, fortify: 99, ready: 1};
+      advance(.7); const rock = game.projectiles.find(s => s.type === 'boulder'); ok(rock, 'Throws a rock');
+      golem.cd.rock = 99; advance(1); ok(p.stunned > 2); const x = p.x; game.keys.add('d'); advance(.3); near(p.x, x, 'Cannot move while stunned'); game.keys.clear();
+    });
+    test('Cerbero digs to heal fully unless you hit him first', () => {
+      const p = fixture(); const cerbero = enemy('cerbero', p.x + 120); cerbero.hp = cerbero.maxHp * .5; cerbero.cd = {bite: 99, jump: 99, dig: 0, ready: 1};
+      advance(1 / 60); equal(cerbero.act.id, 'dig'); game.hitEnemy(cerbero, 5, true); equal(cerbero.act, null, 'A hit cancels the dig');
+      cerbero.cd.dig = 0; advance(1 / 60); equal(cerbero.act.id, 'dig'); advance(3.1); near(cerbero.hp, cerbero.maxHp, 'Healed in full');
+    });
+    test('Cerbero bite makes you bleed 5 per second for 5 seconds', () => {
+      const p = fixture(); p.stats.endurance = 100; const cerbero = enemy('cerbero', p.x + 30); cerbero.cd = {bite: 0, jump: 99, dig: 99, ready: 1};
+      advance(.4); ok(p.bleed, 'Bleeding'); const hp = p.hp; cerbero.stun = 99; advance(5.1); near(hp - p.hp, 25); equal(p.bleed, null);
+    });
+    test('The Bloodsucker grabs, drains and heals; then summons five bats', () => {
+      const p = fixture(); const vampire = enemy('vampire', p.x + 120); vampire.hp = vampire.maxHp * .5; vampire.cd = {swipe: 99, lunge: 0, summon: 99, ready: 1};
+      advance(1); ok(p.grabbed > 0, 'Grabbed'); const hp = vampire.hp; advance(1.8); ok(vampire.hp > hp, 'Heals by draining'); equal(p.grabbed, 0);
+      vampire.cd = {swipe: 99, lunge: 99, summon: 0, ready: 1}; advance(2); equal(game.enemies.filter(e => e.type === 'bat' && e.summoned).length, 5);
+      const save = game.snapshot(); ok(!save.enemies.some(e => /^summon-/.test(e.id)), 'Summons are not saved');
+    });
+    test('Guarded stairs: the Capo blocks the way down to the deep cave', () => {
+      const p = fixture('gero', true); p.torch = true; const down = game.world.objects.find(o => o.type === 'stairs' && o.to === 'cave2');
+      ok(!game.takeStairs(down)); killBoss('capo'); ok(game.takeStairs(down)); advance(.1); equal(game.biome, 'cave2');
+      const up = game.world.objects.find(o => o.type === 'stairs' && o.to === 'cave'); game.enemies.find(e => e.type === 'capo').dead = false; ok(game.takeStairs(up), 'Going up always works');
+    });
+    test('The altar takes one offering of each boss, keeps them and opens the portal', () => {
+      const p = fixture('gero', true); const altar = game.world.objects.find(o => o.type === 'altar');
+      Object.assign(p, {x: altar.x + altar.w / 2, y: altar.y + altar.h + 10}); game.biome = 'altar';
+      p.offerings = {fang: 3, ring: 1, claw: 0, elemental: 0, eye: 0}; ok(!game.useAltar(), 'Cerbero guards it');
+      killBoss('cerbero'); ok(game.useAltar()); equal(p.offerings.fang, 2, 'Only one of each'); equal(p.altar.fang, true); equal(p.altar.ring, true);
+      const save = game.snapshot(); game.restore(save, 1); const q = game.player; equal(q.altar.ring, true, 'Placed offerings are saved'); equal(q.portal, false);
+      killBoss('cerbero'); Object.assign(q.offerings, {claw: 1, elemental: 1, eye: 1}); ok(game.useAltar()); equal(q.portal, true); equal(Object.values(q.altar).some(Boolean), false, 'They break');
+      const portal = game.world.objects.find(o => o.type === 'portal'); Object.assign(q, {x: portal.x + portal.w / 2, y: portal.y + portal.h / 2}); game.biome = 'altar';
+      advance(.05); equal(game.biome, 'throne'); equal(q.portal, false); ok(q.discovered.includes('throne'));
+    });
+    test('During the storm only the stone hurts Zak, and a bolt kills', () => {
+      const p = fixture('gero', true); game.enterThrone(); const zak = game.enemies.find(e => e.type === 'zak');
+      zak.cd = {slash: 99, raise: 99, storm: 0, wrath: 99, purple: 99, major: 99, ready: 1}; advance(.05); equal(zak.act.id, 'storm');
+      const hp = zak.hp; game.hitEnemy(zak, 500, true, false, 'sword'); near(zak.hp, hp, 'Sword does nothing'); game.hitEnemy(zak, 500, true, false, 'stone'); ok(zak.hp < hp, 'Stone works');
+      game.bolts = [{x: p.x, y: p.y, t: .01, max: .85}]; advance(.05); equal(game.state, 'paused', 'Knocked out by lightning'); equal(game.biome, 'village');
+    });
+    test('Two Zak hits are enough to knock you out', () => {
+      const p = fixture('gero', true); p.stats.health = 400; p.hp = 400; p.stats.endurance = 100; game.enterThrone(); const zak = game.enemies.find(e => e.type === 'zak');
+      game.zakHit(zak, 1); ok(p.hp > 0 && p.hp <= 400 * .45 + 1e-6, 'One hit takes more than half'); game.zakHit(zak, 1); equal(game.state, 'paused');
+    });
+    test('Major summon: Zak sits on his throne and heals until the boss falls', () => {
+      const p = fixture('gero', true); game.enterThrone(); const zak = game.enemies.find(e => e.type === 'zak'); Math.random = () => 0;
+      zak.cd = {slash: 99, raise: 99, storm: 99, wrath: 99, purple: 99, major: 0, ready: 1}; zak.hp -= 500; advance(1.6);
+      const minion = game.enemies.find(e => e.summoned && e.major); ok(minion, 'A boss appears'); equal(minion.type, 'capo'); equal(zak.seated, true);
+      equal(minion.level, p.level, 'Same level as that boss'); const hp = zak.hp; advance(2); ok(zak.hp > hp + 5, 'Heals 3 per second');
+      game.hitEnemy(minion, 1e7, true); advance(.1); equal(zak.seated, false); ok(zak.cd.major >= 39 && zak.cd.major <= 80);
+    });
+    test('Beating Zak: he yields, opens a portal for 40 s and executes you if you stay', () => {
+      const p = fixture('gero', true); game.enterThrone(); const zak = game.enemies.find(e => e.type === 'zak');
+      p.coins = 900; p.materials.gold = 20; p.offerings.eye = 2; p.weapons.push('sword'); p.pickaxe = 3; zak.life = 2; game.hitEnemy(zak, 1e9, true);
+      ok(zak.yielding, 'He stops fighting'); equal(zak.dead, false); equal(game.questFlags.defeat_zak, true); collectDrops(); zak.x = Z.THRONE_SPOTS.seat.x; zak.y = Z.THRONE_SPOTS.seat.y;
+      advance(3.5); ok(game.exitPortal, 'Portal opens'); ok(game.exitPortal.time <= 40 && game.exitPortal.time > 37);
+      advance(41); equal(game.state, 'paused'); equal(game.biome, 'village'); equal(p.coins, 0); equal(p.materials.gold, 0); equal(p.offerings.eye, 0);
+      ok(p.weapons.includes('sword') && p.pickaxe === 3, 'Weapons and tools stay');
+    });
+    test('Taking the exit portal brings you home and resets Zak', () => {
+      const p = fixture('gero', true); game.enterThrone(); const zak = game.enemies.find(e => e.type === 'zak'); zak.life = 2; game.hitEnemy(zak, 1e9, true);
+      zak.x = Z.THRONE_SPOTS.seat.x; zak.y = Z.THRONE_SPOTS.seat.y; advance(3.5); Object.assign(p, {x: game.exitPortal.x, y: game.exitPortal.y}); advance(.05);
+      equal(game.biome, 'village'); equal(game.state, 'playing'); const fresh = game.enemies.find(e => e.type === 'zak'); equal(fresh.life, 0); ok(!fresh.yielding && !fresh.seated);
+    });
+    test('The Elemental Sword needs five Elemental Stones and hits harder than a maxed sword', () => {
+      const p = fixture(); p.weapons.push('sword'); p.weaponLevels.sword = 6; Object.assign(p.materials, {wood: 10, stone: 25, iron: 20, gold: 15, diamond: 10});
+      p.dir = 'right'; p.offerings.elemental = 4; equal(game.craft('elemental').ok, false); p.offerings.elemental = 5; ok(game.craft('elemental').ok);
+      ok(p.weapons.includes('elemental')); equal(p.offerings.elemental, 0); equal(p.materials.iron, 0);
+      const target = enemy('thief', p.x + 20); target.stats.armor = 0; p.weapon = 'sword'; p.attackCooldown = 0; p.combo = 0; game.attack(); const swordHit = target.maxHp - target.hp;
+      target.hp = target.maxHp; p.weapon = 'elemental'; p.attackCooldown = 0; p.combo = 0; game.attack(); ok(target.maxHp - target.hp > swordHit * 1.4, 'Much stronger');
     });
 
     game.pause(); cancelAnimationFrame(game.frame);

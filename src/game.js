@@ -4,11 +4,12 @@
 const Z = window.Zak, clamp = (v,a,b) => Math.max(a,Math.min(b,v));
 const distance = (a,b) => Math.hypot(a.x-b.x,a.y-b.y);
 const dirs = {down:[0,1],up:[0,-1],left:[-1,0],right:[1,0]};
-const names = Z.BIOME_NAMES = {village:'Palihue City',cave:'Cueva del Eco',weeds:'Los Yuyos',cave2:'Cueva Profunda',cave3:'Las Entrañas'};
+const names = Z.BIOME_NAMES = {village:'Palihue City',cave:'Cueva del Eco',weeds:'Los Yuyos',cave2:'Cueva Profunda',cave3:'Las Entrañas',altar:'Altar del gobernante',throne:'Trono de Zak'};
 const isCave = biome => /^cave/.test(biome||'');
 const ROLL_TIME=.3,ROLL_COOLDOWN=.55,ROLL_COST=.2,COMBO_CRIT=4,CRIT_MULTIPLIER=1.75,HERB_REGROW=90,TAIL_RADIUS=62;
 // Guita por cada objetivo del diario: más difícil, más guita, sin romper la economía.
-const QUEST_REWARDS={bow:5,cave:5,stone:5,weeds:5,sword:10,shop:10,smith:15,bestiary:20,level5:25,deep:30,capo:40,yarara:40,deepest:50};
+const QUEST_REWARDS={bow:5,cave:5,stone:5,weeds:5,sword:10,shop:10,smith:15,bestiary:20,level5:25,deep:30,capo:40,yarara:40,deepest:50,vampire:60,golem:80,cerbero:100,altar:60,elemental:100,zak:300};
+const WEAPON_ORDER=['fists','bow','sword','stone','elemental'];
 const isBoss = e => !!(Z.ENEMY_TYPES[e.type]&&Z.ENEMY_TYPES[e.type].boss);
 class Sound {
  constructor(){this.enabled=false;this.ctx=null;this.ambientTime=0;this.lastCoin=0;}
@@ -44,8 +45,15 @@ class Sound {
   if(kind==='mine'){this.tone(900+Math.random()*200,.05,'square',.02);this.tone(200,.08,'triangle',.04,0,120);}
   if(kind==='crumble')[180,140,100].forEach((n,i)=>this.tone(n,.12,'triangle',.05,i*.05,60));
   if(kind==='stairs')[392,330,262].forEach((n,i)=>this.tone(n,.15,'triangle',.04,i*.08));
+  if(kind==='slam'){this.tone(70,.35,'triangle',.11,0,30);this.tone(140,.2,'square',.03,0,60);}
+  if(kind==='bite')this.tone(240,.1,'sawtooth',.05,0,90);
+  if(kind==='drain')[300,260,220,180].forEach((n,i)=>this.tone(n,.2,'sine',.04,i*.12));
+  if(kind==='block')this.tone(820,.08,'square',.03,0,600);
+  if(kind==='thunder'){this.tone(60,.6,'sawtooth',.06,0,30);this.tone(900,.08,'square',.025,0,200);}
+  if(kind==='roar')[110,98,87].forEach((n,i)=>this.tone(n,.5,'sawtooth',.05,i*.15));
+  if(kind==='portal')[262,330,392,523,659].forEach((n,i)=>this.tone(n,.4,'sine',.05,i*.08));
  }
- update(dt,biome){if(!this.enabled)return;this.ambientTime-=dt;if(this.ambientTime<=0){this.ambientTime=3+Math.random()*3;if(isCave(biome))this.tone(biome==='cave'?65:52,2.5,'sine',.018);else{const n=[262,330,392,440,523][Math.floor(Math.random()*5)];this.tone(n,1.8,'sine',.016);this.tone(n*1.5,1.5,'sine',.009,.7);}}}
+ update(dt,biome){if(!this.enabled)return;this.ambientTime-=dt;if(this.ambientTime<=0){this.ambientTime=3+Math.random()*3;if(biome==='throne'||biome==='altar')this.tone(biome==='throne'?46:58,2.8,'sawtooth',.012);else if(isCave(biome))this.tone(biome==='cave'?65:52,2.5,'sine',.018);else{const n=[262,330,392,440,523][Math.floor(Math.random()*5)];this.tone(n,1.8,'sine',.016);this.tone(n*1.5,1.5,'sine',.009,.7);}}}
 }
 class Game {
  constructor(canvas){
@@ -54,7 +62,7 @@ class Game {
   this.onEvent=()=>{};this.aim=null;this.mouseHeld=false;this.stick={x:0,y:0};this.runToggle=false;this.touchMode=false;this.effects=[];this.projectiles=[];this.drops=[];this.shakeTime=0;this.shakePower=0;this.hurtFlash=0;
   this.world=Z.createWorld();this.player=Z.createPlayer('paco');
   Object.assign(this.player,{x:770,y:950,dir:'down',walk:0,moving:false,attackAnim:0});
-  this.biome='village';this.enemies=[];this.questFlags={};this.stepTime=0;this.last=0;this.accumulator=0;this.uiTimer=0;this.input();
+  this.biome='village';this.enemies=[];this.questFlags={};this.bolts=[];this.darkness=0;this.exitPortal=null;this.stepTime=0;this.last=0;this.accumulator=0;this.uiTimer=0;this.input();
   const loop=now=>{const dt=this.last?Math.min((now-this.last)/1000,.12):0;this.last=now;this.accumulator+=dt;
    while(this.accumulator>=1/60){this.update(1/60);this.accumulator-=1/60;}
    this.renderer.draw(this,dt);this.uiTimer+=dt;if(this.uiTimer>.09){this.uiTimer=0;this.emit('tick');}this.frame=requestAnimationFrame(loop);};
@@ -73,7 +81,7 @@ class Game {
    if(key==='Escape'){this.emit('escape');return;}if(this.state!=='playing')return;
    if(key==='e')this.interact();if(key==='q')this.ability();if(key==='f')this.roll();if(key==='r')this.useHerb();
    if(key==='c')this.emit('stats');if(key==='m')this.emit('map');if(key==='j')this.emit('journal');
-   if(['1','2','3','4'].includes(key))this.equip(['fists','bow','sword','stone'][+key-1]);
+   if(['1','2','3','4','5'].includes(key))this.equip(WEAPON_ORDER[+key-1]);
   });
   window.addEventListener('keyup',e=>this.keys.delete(e.key.length===1?e.key.toLowerCase():e.key));
   window.addEventListener('blur',()=>{this.clearInput();if(this.state==='playing')this.emit('pause');});
@@ -87,10 +95,10 @@ class Game {
  setAim(e){const r=this.canvas.getBoundingClientRect();this.aim={x:(e.clientX-r.left)/r.width*this.canvas.width+this.camera.x,y:(e.clientY-r.top)/r.height*this.canvas.height+this.camera.y};}
  newGame(id){
   this.world=Z.createWorld();this.player=Z.createPlayer(id);Object.assign(this.player,{...this.world.spawn,dir:'down',moving:false,walk:0,attackAnim:0,runId:(window.crypto&&crypto.randomUUID)?crypto.randomUUID():Date.now().toString(36)+Math.random().toString(36).slice(2,12)});
-  this.biome='village';this.time=0;this.effects=[];this.projectiles=[];this.drops=[];this.queuedWaves=[];this.questFlags={};this.currentSlot=null;
+  this.biome='village';this.time=0;this.effects=[];this.projectiles=[];this.drops=[];this.queuedWaves=[];this.questFlags={};this.currentSlot=null;this.bolts=[];this.darkness=0;this.exitPortal=null;
   this.enemies=this.world.enemySpawns.map(s=>this.makeEnemy(s));this.clearInput();this.aim=null;this.state='playing';this.renderer.resize(true);this.emit('start');
  }
- makeEnemy(s){const stats=Z.enemyStats(s.type,this.player.level);return{...s,homeX:s.x,homeY:s.y,biome:Z.biomeAt(s.x,s.y),stats,hp:stats.health,maxHp:stats.health,level:stats.level,dir:'down',walk:0,moving:false,dead:false,respawn:0,cooldown:.6,stun:0,charm:0,latched:0,latchRest:0,alert:false,provoked:false,hitFlash:0,special:2.5,telegraph:0,dash:0,aimX:0,aimY:1};}
+ makeEnemy(s){const stats=this.enemyStatsFor(s.type,0);return{...s,homeX:s.x,homeY:s.y,biome:Z.biomeAt(s.x,s.y),stats,hp:stats.health,maxHp:stats.health,level:stats.level,dir:'down',walk:0,moving:false,dead:false,respawn:0,cooldown:.6,stun:0,charm:0,latched:0,latchRest:0,alert:false,provoked:false,hitFlash:0,special:2.5,telegraph:0,dash:0,aimX:0,aimY:1,life:0,act:null,cd:{},shield:0,seated:false,yielding:null,air:false,lift:0,lowFortified:false,backoff:0};}
  pause(){if(this.state==='playing'){this.state='paused';this.clearInput();}}
  resume(){if(this.state==='paused'){this.state='playing';this.clearInput();}}
  vibrate(ms){if(this.touchMode&&this.settings.shake&&navigator.vibrate)try{navigator.vibrate(ms);}catch(_){}}
@@ -98,15 +106,18 @@ class Game {
  update(dt){
   if(this.state==='menu'||this.state==='characters'){this.time+=dt;this.updateNpcs(dt);return;}if(this.state!=='playing')return;
   this.time+=dt;const p=this.player;p.playTime+=dt;const stats=this.stats();p.hp=Math.min(p.hp,stats.maxHealth);
-  for(const k of ['attackCooldown','abilityCooldown','attackAnim','hitFlash','slow','dance','tobi','roll','rollCooldown','comboTime'])p[k]=Math.max(0,(p[k]||0)-dt);
+  for(const k of ['attackCooldown','abilityCooldown','attackAnim','hitFlash','slow','dance','tobi','roll','rollCooldown','comboTime','stunned','grabbed','heavySlow'])p[k]=Math.max(0,(p[k]||0)-dt);
+  this.darkness=Math.max(0,(this.darkness||0)-dt);
   if(p.comboTime<=0)p.combo=0;
   // Regeneración exacta: cinco pulsos en t=1,2,3,4,5, aun con delta fraccionado.
   if(p.buffs.gero>0){p.healClock=(p.healClock||0)+Math.min(dt,p.buffs.gero);if(p.healClock>=1-1e-8){p.healClock-=1;this.heal(5);}}
   for(const buff of ['gero','pepe','paco','mate'])p.buffs[buff]=Math.max(0,(p.buffs[buff]||0)-dt);
   if(p.poison){p.poison.time-=dt;p.poison.tick-=dt;if(p.poison.tick<=1e-8){p.poison.tick+=1;this.hurtPlayer(p.poison.damage,'snake',true);}if(p.poison&&p.poison.time<=.000001)p.poison=null;if(this.state!=='playing')return;}
-  this.updateMovement(dt,stats);this.updateGather(dt);if((this.keys.has(' ')||this.mouseHeld)&&p.roll<=0)this.attack();
+  // Desangrado (mordida de Cerbero): 5 de vida por segundo, ignora la armadura.
+  if(p.bleed){p.bleed.time-=dt;p.bleed.tick-=dt;if(p.bleed.tick<=1e-8){p.bleed.tick+=1;this.hurtPlayer(p.bleed.damage,'cerbero',true);}if(p.bleed&&p.bleed.time<=.000001)p.bleed=null;if(this.state!=='playing')return;}
+  this.updateMovement(dt,stats);this.updateGather(dt);if((this.keys.has(' ')||this.mouseHeld)&&p.roll<=0)this.attack();this.updatePortals(dt);if(this.state!=='playing')return;
   if(this.queuedWaves&&this.queuedWaves.length)this.queuedWaves=this.queuedWaves.filter(w=>{w.delay-=dt;if(w.delay>0)return true;this.wave();return false;});
-  this.updateNpcs(dt);this.updateEnemies(dt);if(this.state!=='playing')return;this.updateProjectiles(dt);if(this.state!=='playing')return;this.updateDrops(dt);
+  this.updateNpcs(dt);this.updateEnemies(dt);if(this.state!=='playing')return;this.updateBolts(dt);if(this.state!=='playing')return;this.updateProjectiles(dt);if(this.state!=='playing')return;this.updateDrops(dt);
   for(const item of this.world.pickups)if(item.type==='herb'&&item.collected&&item.regrow>0){item.regrow-=dt;if(item.regrow<=0)item.collected=false;}
   this.updateNodes(dt);
   this.effects.forEach(e=>e.life-=dt);this.effects=this.effects.filter(e=>e.life>0);this.sound.update(dt,this.biome);this.checkQuests();
@@ -126,9 +137,9 @@ class Game {
   for(const e of this.enemies){if(e.dead||e.latched>0||e.biome!==this.biome)continue;const d=distance(e,p);if(d<=bestDistance){best=e;bestDistance=d;}}
   return best?{x:best.x,y:best.y-6}:null;
  }
- cycleWeapon(){const owned=['fists','bow','sword','stone'].filter(w=>this.player.weapons.includes(w));const next=owned[(owned.indexOf(this.player.weapon)+1)%owned.length];this.equip(next);return next;}
+ cycleWeapon(){const owned=WEAPON_ORDER.filter(w=>this.player.weapons.includes(w));const next=owned[(owned.indexOf(this.player.weapon)+1)%owned.length];this.equip(next);return next;}
  updateMovement(dt,stats){
-  const p=this.player;let[x,y]=this.movementInput();
+  const p=this.player;let[x,y]=this.movementInput();if(p.stunned>0||p.grabbed>0){x=0;y=0;}
   const before={x:p.x,y:p.y};let wantsRun=false;
   if(p.roll>0){const speed=Math.max(230,stats.moveSpeed*2.4);this.move(p,p.rollX*speed*dt,p.rollY*speed*dt,8);x=0;y=0;}
   else{wantsRun=this.wantsToRun()&&(x||y)&&p.exhausted<=0&&p.stamina>0;this.move(p,x*stats.moveSpeed*(wantsRun?1.25:1)*dt,y*stats.moveSpeed*(wantsRun?1.25:1)*dt,8);}
@@ -141,10 +152,10 @@ class Game {
   const newBiome=Z.biomeAt(p.x,p.y);if(newBiome!==this.biome){const oldMax=this.stats().maxHealth;this.biome=newBiome;const newMax=this.stats().maxHealth;
    if(p.characterId==='paco')p.hp=clamp(p.hp*newMax/oldMax,0,newMax);if(!p.discovered.includes(newBiome))p.discovered.push(newBiome);
    this.emit('biome',{name:names[newBiome],safe:newBiome==='village'});
-   if(newBiome==='village'){p.poison=null;p.slow=0;this.projectiles=this.projectiles.filter(s=>!s.hostile);this.enemies.forEach(e=>{if(e.latched>0){e.x=e.homeX;e.y=e.homeY;}e.latched=0;e.alert=false;e.telegraph=0;e.dash=0;});}}
+   if(newBiome==='village'){p.poison=null;p.slow=0;p.bleed=null;p.heavySlow=0;p.stunned=0;p.grabbed=0;this.projectiles=this.projectiles.filter(s=>!s.hostile);this.enemies.forEach(e=>{if(e.latched>0){e.x=e.homeX;e.y=e.homeY;}e.latched=0;e.alert=false;e.telegraph=0;e.dash=0;});}}
  }
  roll(target=null){
-  const p=this.player;if(this.state!=='playing'||p.roll>0||p.rollCooldown>0)return false;
+  const p=this.player;if(this.state!=='playing'||p.roll>0||p.rollCooldown>0||p.stunned>0||p.grabbed>0)return false;
   if(p.exhausted>0||p.stamina<ROLL_COST){if(!this.noRollNotice||this.time-this.noRollNotice>2){this.noRollNotice=this.time;this.emit('toast',{message:'No te queda aire para rodar.'});}return false;}
   let[x,y]=this.movementInput();
   if(target){const len=distance(target,p);if(len>1){x=(target.x-p.x)/len;y=(target.y-p.y)/len;}}
@@ -172,7 +183,7 @@ class Game {
  // Cada golpe que conecta suma al combo; el cuarto seguido es crítico.
  landStrike(){const p=this.player;p.combo=(p.comboTime>0?p.combo:0)+1;p.comboTime=Math.max(1.6,this.stats().attackCooldown+.7);return p.combo%COMBO_CRIT===0;}
  attack(){
-  const p=this.player;if(this.state!=='playing'||p.attackCooldown>0||p.roll>0)return false;const stats=this.stats(),weapon=Z.WEAPON_TYPES[p.weapon];
+  const p=this.player;if(this.state!=='playing'||p.attackCooldown>0||p.roll>0||p.stunned>0||p.grabbed>0)return false;const stats=this.stats(),weapon=Z.WEAPON_TYPES[p.weapon];
   if(p.weapon==='stone'&&!p.stoneAmmo){if(!this.noAmmoNotice||this.time-this.noAmmoNotice>3){this.noAmmoNotice=this.time;this.emit('toast',{message:'Caminá 2 segundos para recoger otra piedra.'});}return false;}
   let[dx,dy]=dirs[p.dir];const aim=this.aim||(this.touchMode?this.autoAim(weapon.range+(p.weapon==='bow'||p.weapon==='stone'?0:30)):null);
   if(aim){const len=distance(aim,p);if(len>0){dx=(aim.x-p.x)/len;dy=(aim.y-p.y)/len;p.dir=Math.abs(dx)>Math.abs(dy)?(dx>0?'right':'left'):(dy>0?'down':'up');}}
@@ -182,21 +193,27 @@ class Game {
    if(p.weapon==='stone'){p.stoneAmmo=0;p.stoneWalkTime=0;}this.sound.play('bow');
   }else{
    this.effect(p.x+dx*22,p.y-7+dy*22,'slash',.2,{dir:p.dir,radius:weapon.range});
-   const targets=this.enemies.filter(e=>{if(e.dead||e.latched>0)return false;const ex=e.x-p.x,ey=e.y-p.y,len=Math.hypot(ex,ey),reach=weapon.range+(isBoss(e)?8:0);return len<=reach&&(len<14||(ex*dx+ey*dy)/len>.2);});
-   const crit=targets.length>0&&this.landStrike();targets.forEach(e=>this.hitEnemy(e,damage*(crit?CRIT_MULTIPLIER:1),false,crit));this.sound.play('swing');
+   const targets=this.enemies.filter(e=>{if(e.dead||e.latched>0||e.biome!==this.biome)return false;const ex=e.x-p.x,ey=e.y-p.y,len=Math.hypot(ex,ey),reach=weapon.range+(isBoss(e)?8:0);return len<=reach&&(len<14||(ex*dx+ey*dy)/len>.2);});
+   const crit=targets.length>0&&this.landStrike();targets.forEach(e=>this.hitEnemy(e,damage*(crit?CRIT_MULTIPLIER:1),false,crit,p.weapon));this.sound.play('swing');
   }return true;
  }
- hitEnemy(e,raw,exact=false,crit=false){
-  if(e.dead||e.latched>0)return;const damage=exact?raw:Z.damageAfterArmor(raw,e.stats.armor);e.hp-=damage;e.hitFlash=.16;e.provoked=true;e.alert=true;
+ hitEnemy(e,raw,exact=false,crit=false,source=null){
+  if(e.dead||e.latched>0)return;const definition=Z.ENEMY_TYPES[e.type];
+  // Escudos, refuerzos y momentos invulnerables de los jefes.
+  const immune=this.bossShield(e,source);if(immune){e.provoked=true;e.alert=true;this.effect(e.x,e.y-28,'miss',.7,{text:immune});this.sound.play('block');return;}
+  if(definition.block&&!exact&&Math.random()<definition.block){e.provoked=true;e.alert=true;this.effect(e.x,e.y-28,'miss',.7,{text:'¡Bloqueó!'});this.sound.play('block');return;}
+  const damage=exact?raw:Z.damageAfterArmor(raw,e.stats.armor);e.hp-=damage;e.hitFlash=.16;e.provoked=true;e.alert=true;this.bossHitReact(e);
   this.effect(e.x,e.y-23,'hit',.8,{text:(crit?'¡':'')+this.number(damage)+(crit?'!':''),crit});this.effect(e.x,e.y-10,'spark',.35,{seed:Math.random()*99,crit});
   this.sound.play(crit?'crit':'hit');if(crit)this.shake(3,.2);
-  const definition=Z.ENEMY_TYPES[e.type];
   if(definition.knockback&&!exact){const dx=e.x-this.player.x,dy=e.y-this.player.y,len=Math.hypot(dx,dy)||1;this.move(e,dx/len*18,dy/len*18,7,e.biome);}
+  // Gólem y Zak tienen varias vidas: al vaciar una, se levantan con la siguiente.
+  if(e.hp<=0&&this.bossNextLife(e))return;
   if(e.hp<=0){const first=!this.questFlags['defeat_'+e.type];e.hp=0;e.dead=true;e.respawn=definition.respawn||35;e.alert=false;e.telegraph=0;e.dash=0;this.player.kills++;this.questFlags['defeat_'+e.type]=true;
    this.effect(e.x,e.y-8,'poof',.6,{seed:Math.random()*99});this.sound.play(definition.boss?'boss':'death');
    const levels=Z.grantXp(this.player,e.stats.xp,this.context());this.effect(e.x,e.y-38,'heal',1.1,{text:'+'+this.number(e.stats.xp*this.stats().xpMultiplier)+' EXP'});
-   const[min,max]=definition.coins||[0,0];this.dropCoins(e.x,e.y,min+Math.floor(Math.random()*(max-min+1))+(e.level-1));
-   if(definition.boss){this.player.bossKills=(this.player.bossKills||0)+1;this.emit('progress');this.shake(6,.5);if(first){this.player.points+=1;this.emit('toast',{message:'¡Derrotaste a '+definition.name+'! Trofeo: +1 punto de mejora.'});}else this.emit('toast',{message:definition.name+' vuelve a caer.'});}
+   const[min,max]=definition.coins||[0,0];if(!e.summoned)this.dropCoins(e.x,e.y,min+Math.floor(Math.random()*(max-min+1))+Math.floor((e.level-1)/2));
+   if(definition.drop&&!e.summoned)this.dropOffering(e.x,e.y,definition.drop);
+   if(definition.boss&&!e.summoned){this.player.bossKills=(this.player.bossKills||0)+1;this.emit('progress');this.shake(6,.5);if(first){this.player.points+=1;this.emit('toast',{message:'¡Derrotaste a '+definition.name+'! Trofeo: +1 punto de mejora.'});}else this.emit('toast',{message:definition.name+' vuelve a caer.'});}
    if(this.player.characterId==='pepe'){this.heal(5);this.player.buffs.pepe=3;}if(levels)this.onLevel(levels);}
  }
  dropCoins(x,y,total){
@@ -204,41 +221,47 @@ class Game {
   for(let i=0;i<pieces;i++){const value=Math.floor(total/pieces)+(i<total%pieces?1:0),angle=Math.random()*Math.PI*2,speed=40+Math.random()*50;
    this.drops.push({x,y:y-4,vx:Math.cos(angle)*speed,vy:Math.sin(angle)*speed*.7,value,life:30,delay:.35,seed:i*1.7});}
  }
+ dropOffering(x,y,item){this.drops.push({x,y:y-4,vx:(Math.random()-.5)*60,vy:-30,item,value:0,life:180,delay:.6,seed:Math.random()*9});}
  updateDrops(dt){
   const p=this.player;this.drops=this.drops.filter(d=>{d.life-=dt;d.delay=Math.max(0,d.delay-dt);
    if(d.delay>0){d.x+=d.vx*dt;d.y+=d.vy*dt;d.vx*=.9;d.vy*=.9;return true;}
    const len=Math.hypot(p.x-d.x,p.y-6-d.y);
+   if(len<14&&d.item){const o=Z.OFFERINGS[d.item];p.offerings[d.item]=(p.offerings[d.item]||0)+1;this.sound.play('pickup');this.effect(p.x,p.y-30,'coin',1.2,{text:o.icon+' '+o.name});this.emit('toast',{message:'¡Conseguiste '+o.name+'! Es una ofrenda para el altar; en El Almacén te la compran por ◉ '+o.price+'.'});return false;}
    if(len<14){p.coins=(p.coins||0)+d.value;this.sound.play('coin');this.effect(p.x,p.y-30,'coin',.7,{text:'+'+d.value+' ◉'});return false;}
    if(len<75){const pull=Math.min(len,(260-len*1.6)*dt);d.x+=(p.x-d.x)/len*pull;d.y+=(p.y-6-d.y)/len*pull;}
    return d.life>0;});
  }
  onLevel(){
   this.sound.play('level');this.effect(this.player.x,this.player.y,'level',1.4,{radius:50});this.emit('progress');this.emit('toast',{message:'¡Nivel '+this.player.level+'! Tenés '+this.player.points+' punto(s) para mejorar. Presioná C.'});
-  this.enemies.forEach(e=>{const stats=Z.enemyStats(e.type,this.player.level),ratio=e.hp/e.maxHp;e.stats=stats;e.level=stats.level;e.maxHp=stats.health;if(!e.dead)e.hp=Math.max(1,ratio*stats.health);});
+  this.enemies.forEach(e=>{const stats=this.enemyStatsFor(e.type,e.life||0),ratio=e.hp/e.maxHp;e.stats=stats;e.level=stats.level;e.maxHp=stats.health;if(!e.dead)e.hp=Math.max(1,ratio*stats.health);});
  }
  updateEnemies(dt){
   const p=this.player;for(const e of this.enemies){
-   if(e.dead){e.respawn-=dt;if(e.respawn<=0&&distance({x:e.homeX,y:e.homeY},p)>230)Object.assign(e,this.makeEnemy({id:e.id,type:e.type,x:e.homeX,y:e.homeY}));continue;}
+   if(e.dead){if(e.summoned)continue;e.respawn-=dt;if(e.respawn<=0&&distance({x:e.homeX,y:e.homeY},p)>230)Object.assign(e,this.makeEnemy({id:e.id,type:e.type,x:e.homeX,y:e.homeY}));continue;}
    e.cooldown=Math.max(0,e.cooldown-dt);e.hitFlash=Math.max(0,e.hitFlash-dt);e.latchRest=Math.max(0,e.latchRest-dt);e.stun=Math.max(0,e.stun-dt);e.charm=Math.max(0,e.charm-dt);e.moving=false;
    if(e.stun>0){e.alert=false;e.telegraph=0;e.dash=0;e.backoff=0;continue;}const sameZone=e.biome===this.biome&&this.biome!=='village';
-   if(isBoss(e)){this.updateBoss(e,dt,sameZone);if(this.state!=='playing')break;continue;}
+   if(isBoss(e)){if(e.type==='capo'||e.type==='yarara')this.updateBoss(e,dt,sameZone);else this.updateBigBoss(e,dt,sameZone);if(this.state!=='playing')break;continue;}
    if(e.latched>0){
     if(!sameZone){e.latched=0;e.x=e.homeX;e.y=e.homeY;continue;}e.latched=Math.max(0,e.latched-dt);e.x=p.x+5;e.y=p.y-8;
     if(e.latched>1e-8&&e.cooldown<=0)this.enemyAttack(e);if(this.state!=='playing')break;
     if(e.latched<=1e-8){e.latched=0;e.latchRest=1.6;e.cooldown=.6;const[dx,dy]=dirs[p.dir];e.x=p.x;e.y=p.y;this.move(e,-dx*85,-dy*85,7,e.biome);if(distance(e,p)<28){e.x=e.homeX;e.y=e.homeY;}}continue;
    }
    const len=distance(e,p),ratFlees=e.type==='rat'&&p.characterId==='tena',ratIgnores=e.type==='rat'&&p.characterId==='gero'&&!e.provoked;
-   const fleeing=sameZone&&len<210&&(e.charm>0||ratFlees),wasAlert=e.alert;e.alert=sameZone&&!ratIgnores&&!fleeing&&(len<(e.type==='worm'?120:195)||(e.alert&&len<320));
+   const fleeing=sameZone&&len<210&&(e.charm>0||ratFlees),wasAlert=e.alert;e.alert=sameZone&&!ratIgnores&&!fleeing&&(e.summoned||len<(e.type==='worm'?120:e.type==='archer'?260:195)||(e.alert&&len<320));
    if(e.alert&&!wasAlert)this.sound.play('alert');
    let tx,ty,velocity=e.stats.moveSpeed;
    if(fleeing){tx=e.x+(e.x-p.x);ty=e.y+(e.y-p.y);}else if(e.alert){tx=p.x;ty=p.y;
     if(e.type==='bat'&&len>18){const wobble=Math.sin(this.time*5+e.homeX)*38;tx+=-(p.y-e.y)/(len||1)*wobble;ty+=(p.x-e.x)/(len||1)*wobble;}
-    if(e.type==='worm'&&!wasAlert)this.effect(e.x,e.y,'dust',.6);}
+    if(e.type==='worm'&&!wasAlert)this.effect(e.x,e.y,'dust',.6);
+    // El arquero mantiene la distancia: se aleja si te acercás y se acerca si te alejás.
+    if(e.type==='archer'){const ux=(e.x-p.x)/(len||1),uy=(e.y-p.y)/(len||1);if(len<150){tx=e.x+ux*60;ty=e.y+uy*60;}else if(len<230){tx=e.x-uy*40*Math.sin(this.time+e.homeX);ty=e.y+ux*40*Math.sin(this.time+e.homeX);velocity*=.5;}}}
    else if(e.type==='worm'){tx=e.x;ty=e.y;}else{tx=e.homeX+Math.sin(this.time*.2+e.homeX)*28;ty=e.homeY+Math.cos(this.time*.15+e.homeY)*22;velocity*=.28;}
    this.steer(e,tx,ty,velocity,dt,len);
+   if(e.type==='archer'){if(e.alert&&len<290&&e.cooldown<=0&&this.biome!=='village')this.shootArrow(e);if(this.state!=='playing')break;continue;}
    if(e.alert&&len<22&&e.cooldown<=0){if(e.type==='rat'){if(e.latchRest<=0&&p.roll<=0){e.latched=3;this.enemyAttack(e);this.emit('toast',{message:'¡Una rata se te prendió! Rodá (F) para sacártela.'});}}else this.enemyAttack(e);}
    if(this.state!=='playing')break;
   }
+  if(this.enemies.some(e=>e.summoned&&e.dead))this.enemies=this.enemies.filter(e=>!(e.summoned&&e.dead));
  }
  steer(e,tx,ty,velocity,dt,len){
   const dx=tx-e.x,dy=ty-e.y,targetDistance=Math.hypot(dx,dy);
@@ -249,10 +272,10 @@ class Game {
  // Los jefes anuncian su ataque especial: una línea para la embestida, un abanico para el veneno.
  updateBoss(e,dt,sameZone){
   const p=this.player,len=distance(e,p),wasAlert=e.alert;
-  e.alert=sameZone&&(len<230||(e.alert&&len<400));
+  e.alert=sameZone&&(e.summoned||len<230||(e.alert&&len<400));
   if(!e.alert){e.telegraph=0;e.dash=0;e.backoff=0;}
   e.tailCd=Math.max(0,(e.tailCd||0)-dt);
-  if(e.alert&&!wasAlert){this.sound.play('telegraph');this.emit('boss',{name:Z.ENEMY_TYPES[e.type].name});}
+  if(e.alert&&!wasAlert){this.sound.play('telegraph');if(!e.summoned)this.emit('boss',{name:Z.ENEMY_TYPES[e.type].name});}
   if(e.telegraph>0){e.telegraph-=dt;
    if(e.type==='capo'){const tl=Math.hypot(p.x-e.x,p.y-e.y)||1;if(e.telegraph>.35){e.aimX=(p.x-e.x)/tl;e.aimY=(p.y-e.y)/tl;}}
    if(e.telegraph<=0){e.telegraph=0;if(e.type==='capo'){e.dash=.5;e.dashHit=false;this.sound.play('swing');}else if(e.kind==='tail')this.tailSweep(e);else this.spit(e);}
@@ -289,40 +312,53 @@ class Game {
  }
  enemyAttack(e){
   if(this.biome==='village'||e.stun>0||e.charm>0)return;e.cooldown=e.stats.attackCooldown;const p=this.player;let raw=e.stats.strength;
+  if(e.type==='rat'&&e.latched>0){raw*=.6;e.cooldown=Math.max(.9,e.cooldown);}
   if(e.type==='dog'&&p.characterId==='pepe')raw*=1.1;if(!this.hurtPlayer(raw,e.type)||this.state!=='playing')return;
   if(e.type==='dog')p.slow=4;
   if(e.type==='snake'&&Math.random()<(p.characterId==='fede'?.15:.4))this.poisonPlayer(e.stats.poison);
   if(e.type==='spider'&&Math.random()<(p.characterId==='fede'?.05:.15))this.poisonPlayer(e.stats.poison);
  }
  poisonPlayer(damage){this.player.poison={time:5,tick:1,damage};this.emit('toast',{message:'Envenenado: '+damage+' de vida por segundo durante 5 s.',error:true});}
- hurtPlayer(raw,source,poison=false){
+ hurtPlayer(raw,source,poison=false,opts={}){
   if(this.state!=='playing'||this.biome==='village')return false;const p=this.player;
-  if(!poison&&p.roll>0){if(!this.lastDodge||this.time-this.lastDodge>.25){this.lastDodge=this.time;this.effect(p.x,p.y-29,'miss',.7,{text:'¡Esquivado!'});this.sound.play('dodge');}return false;}
-  const damage=poison?raw:Z.damageAfterArmor(raw,this.stats().armor);if(!poison)p.gather=null;
+  if(!poison&&!opts.unavoidable&&p.roll>0){if(!this.lastDodge||this.time-this.lastDodge>.25){this.lastDodge=this.time;this.effect(p.x,p.y-29,'miss',.7,{text:'¡Esquivado!'});this.sound.play('dodge');}return false;}
+  const damage=poison||opts.pierce?raw:Z.damageAfterArmor(raw,this.stats().armor);if(!poison)p.gather=null;
   p.hp=Math.max(0,p.hp-damage);p.hitFlash=.22;this.hurtFlash=poison?.12:.3;this.effect(p.x,p.y-29,'hit',.8,{text:'-'+this.number(damage),poison});this.sound.play('hurt');if(!poison){this.shake(2.5,.18);this.vibrate(35);}
   if(p.hp<=0)this.knockout(source);return true;
  }
  knockout(source){
   const p=this.player;p.deaths++;
-  const quotes={thief:'Uhh... este gil me sacó guita',dog:'¿Por qué Firulais? :c',snake:'La próxima miro dónde piso...',rat:'Me ganaron las ratas. No se lo cuenten a nadie.',capo:'El Capo me dejó en patas y sin un mango.',bat:'Un murciélago me dejó viendo estrellas.',spider:'Odio las arañas. Las odio.',worm:'Me comió un gusano. Literal.',yarara:'La Yarará Madre me mandó a dormir la siesta.'};
+  const quotes={thief:'Uhh... este gil me sacó guita',dog:'¿Por qué Firulais? :c',snake:'La próxima miro dónde piso...',rat:'Me ganaron las ratas. No se lo cuenten a nadie.',capo:'El Capo me dejó en patas y sin un mango.',bat:'Un murciélago me dejó viendo estrellas.',spider:'Odio las arañas. Las odio.',worm:'Me comió un gusano. Literal.',yarara:'La Yarará Madre me mandó a dormir la siesta.',
+   skeleton:'Me ganó uno que ni carne tiene.',archer:'Un flechazo... y no de amor.',vampire:'El Chupasangre me dejó seco.',golem:'Me aplastó una montaña con patas.',cerbero:'Tres cabezas y ninguna con piedad.',zak:'Zak ni se despeinó.',execute:'Eso por querer hacerle el poronga...'};
   const quote=quotes[source]||quotes.rat;
-  // Los chorros se llevan la guita de verdad; el resto se pierde en el apuro.
-  const lost=Math.floor((p.coins||0)*(source==='thief'||source==='capo'?.3:.1));p.coins=Math.max(0,(p.coins||0)-lost);
-  Object.assign(p,this.world.spawn,{hp:1,poison:null,slow:0,stamina:1,exhausted:0,restTime:0,attackCooldown:0,moving:false,roll:0,combo:0,comboTime:0,gather:null});p.buffs={gero:0,pepe:0,paco:0,pacoAnimals:0,mate:0};this.biome='village';p.hp=this.stats().maxHealth;
-  this.enemies.forEach(e=>{if(!e.dead){e.x=e.homeX;e.y=e.homeY;if(isBoss(e))e.hp=e.maxHp;}e.latched=0;e.alert=false;e.telegraph=0;e.dash=0;});this.queuedWaves=[];this.projectiles=[];this.state='paused';this.clearInput();this.emit('knockout',{source,quote,lost});
+  // Los chorros se llevan la guita de verdad; el resto se pierde en el apuro. Si Zak te ejecuta, te deja sin nada.
+  const execute=source==='execute',lost=execute?(p.coins||0):Math.floor((p.coins||0)*(source==='thief'||source==='capo'?.3:.1));p.coins=Math.max(0,(p.coins||0)-lost);
+  if(execute){p.materials=Z.emptyMaterials();p.offerings=Z.emptyOfferings();}
+  Object.assign(p,this.world.spawn,{hp:1,poison:null,slow:0,stamina:1,exhausted:0,restTime:0,attackCooldown:0,moving:false,roll:0,combo:0,comboTime:0,gather:null,bleed:null,stunned:0,grabbed:0,heavySlow:0});p.buffs={gero:0,pepe:0,paco:0,pacoAnimals:0,mate:0};this.biome='village';p.hp=this.stats().maxHealth;
+  this.enemies=this.enemies.filter(e=>!e.summoned);
+  this.enemies.forEach(e=>{if(!e.dead){if(isBoss(e))Object.assign(e,this.makeEnemy({id:e.id,type:e.type,x:e.homeX,y:e.homeY}));e.x=e.homeX;e.y=e.homeY;}e.latched=0;e.alert=false;e.telegraph=0;e.dash=0;});
+  this.queuedWaves=[];this.projectiles=[];this.bolts=[];this.darkness=0;this.exitPortal=null;this.state='paused';this.clearInput();this.emit('knockout',{source,quote,lost,execute});
  }
  heal(amount){const before=this.player.hp;this.player.hp=Math.min(this.stats().maxHealth,before+amount);if(this.player.hp>before)this.effect(this.player.x,this.player.y-30,'heal',.9,{text:'+'+this.number(this.player.hp-before)});}
  updateProjectiles(dt){
   const p=this.player;
-  this.projectiles=this.projectiles.filter(s=>{if(this.state!=='playing')return false;const speed=s.type==='bow'?330:s.type==='venom'?185:235,travel=speed*dt;s.x+=s.dx*travel;s.y+=s.dy*travel;s.traveled+=travel;
+  this.projectiles=this.projectiles.filter(s=>{if(this.state!=='playing')return false;const speed=s.type==='bow'||s.type==='arrow'?330:s.type==='venom'?185:s.type==='boulder'?215:235,travel=speed*dt;s.x+=s.dx*travel;s.y+=s.dy*travel;s.traveled+=travel;
    if(s.traveled>s.range||Z.collides(this.world,s.x,s.y,2))return false;
-   if(s.hostile){if(Math.hypot(p.x-s.x,p.y-8-s.y)<11){if(this.hurtPlayer(s.damage,s.source)&&this.state==='playing'&&Math.random()<(p.characterId==='fede'?.15:.5))this.poisonPlayer(s.poison);return p.roll>0;}return true;}
-   const enemy=this.enemies.find(e=>!e.dead&&!e.latched&&Math.hypot(e.x-s.x,e.y-6-s.y)<(isBoss(e)?18:14));
-   if(enemy){const crit=this.landStrike();this.hitEnemy(enemy,s.damage*(crit?CRIT_MULTIPLIER:1),false,crit);return false;}return true;});
+   if(s.hostile){if(Math.hypot(p.x-s.x,p.y-8-s.y)<(s.type==='boulder'?16:11)){const hit=this.hurtPlayer(s.damage,s.source);
+     if(hit&&this.state==='playing'&&s.type==='venom'&&Math.random()<(p.characterId==='fede'?.15:.5))this.poisonPlayer(s.poison);
+     if(hit&&this.state==='playing'&&s.stun){p.stunned=s.stun;p.gather=null;this.shake(5,.3);this.emit('toast',{message:'¡Piedrazo! Quedaste aturdido '+s.stun+' segundos.',error:true});}
+     return p.roll>0;}return true;}
+   const enemy=this.enemies.find(e=>!e.dead&&!e.latched&&!e.air&&e.biome===this.biome&&Math.hypot(e.x-s.x,e.y-6-s.y)<(isBoss(e)?(e.type==='zak'||e.type==='golem'||e.type==='cerbero'?26:18):14));
+   if(enemy){const crit=this.landStrike();this.hitEnemy(enemy,s.damage*(crit?CRIT_MULTIPLIER:1),false,crit,s.type);return false;}return true;});
+ }
+ shootArrow(e){
+  const p=this.player,len=distance(e,p)||1,dx=(p.x-e.x)/len,dy=(p.y-6-(e.y-8))/len;e.cooldown=1.7;e.dir=Math.abs(dx)>Math.abs(dy)?(dx>0?'right':'left'):(dy>0?'down':'up');
+  this.projectiles.push({x:e.x+dx*10,y:e.y-8+dy*10,dx,dy,type:'arrow',hostile:true,damage:e.stats.strength,source:e.type,traveled:0,range:340});this.sound.play('bow');
  }
  ability(){
   if(this.state!=='playing')return;const p=this.player,c=Z.CHARACTERS.find(c=>c.id===p.characterId);
   if(c.abilityPassive){this.emit('toast',{message:c.ability+' es una habilidad pasiva: se activa sola.'});return;}
+  if(p.stunned>0||p.grabbed>0)return;
   if(p.abilityCooldown>0){this.emit('toast',{message:c.ability+' estará lista en '+Math.ceil(p.abilityCooldown)+' s.'});return;}
   p.abilityCooldown=c.abilityCooldown;this.sound.play('ability');
   if(p.characterId==='gero'){p.buffs.gero=5;p.healClock=0;}
@@ -330,7 +366,7 @@ class Game {
   if(p.characterId==='tena'){this.enemies.forEach(e=>{if(!e.dead&&distance(e,p)<=c.abilityRadius&&e.biome===this.biome){e.stun=isBoss(e)?2.5:7;e.latched=0;e.alert=false;e.telegraph=0;e.dash=0;}});p.dance=7;this.effect(p.x,p.y,'wave',1,{radius:c.abilityRadius});}
   if(p.characterId==='dante'){this.wave();this.queuedWaves=[{delay:.55},{delay:1.1}];}this.emit('toast',{message:'✦ '+c.ability});
  }
- wave(){const p=this.player;p.attackAnim=.45;p.tobi=.45;this.effect(p.x,p.y,'wave',.65,{radius:165});this.sound.play('wave');this.shake(3,.2);this.enemies.forEach(e=>{if(!e.dead&&distance(e,p)<=165&&e.biome===this.biome)this.hitEnemy(e,10,true);});}
+ wave(){const p=this.player;p.attackAnim=.45;p.tobi=.45;this.effect(p.x,p.y,'wave',.65,{radius:165});this.sound.play('wave');this.shake(3,.2);this.enemies.forEach(e=>{if(!e.dead&&distance(e,p)<=165&&e.biome===this.biome)this.hitEnemy(e,10,true,false,'ability');});}
  equip(weapon){if(this.player.weapons.includes(weapon)){this.player.weapon=weapon;this.emit('tick');}else this.emit('toast',{message:'Todavía no encontraste esa arma.'});}
  useHerb(){
   if(this.state!=='playing')return false;const p=this.player;
@@ -342,6 +378,7 @@ class Game {
  interact(){
   if(this.state!=='playing')return;const p=this.player,item=Z.nearbyInteractable(this.world,p.x,p.y,46,p);if(!item)return;
   if(item.type==='forge'){this.emit('smith');return;}
+  if(item.type==='altar'){this.useAltar();return;}
   if(item.type==='stairs'){this.takeStairs(item);return;}
   if(item.type==='ore'||item.type==='tree'){this.startGather(item);return;}
   if(item.type==='well'){this.heal(this.stats().maxHealth);p.poison=null;p.stamina=1;p.exhausted=0;this.sound.play('pickup');this.emit('toast',{message:'Agua fresca, vida y energía renovadas.'});return;}
@@ -356,7 +393,8 @@ class Game {
  // Texto del aviso de interacción, con lo que falta para usar bajadas y vetas.
  nearbyAction(){
   const p=this.player,item=Z.nearbyInteractable(this.world,p.x,p.y,46,p);if(!item)return null;
-  if(item.type==='stairs')return{item,label:item.label+(item.dir==='down'&&!p.torch?' · necesitás antorcha':'')};
+  if(item.type==='stairs'){const guard=this.stairsGuard(item);return{item,label:item.label+(guard?' · la custodia '+Z.ENEMY_TYPES[guard.type].name:item.dir==='down'&&!p.torch?' · necesitás antorcha':'')};}
+  if(item.type==='altar'){const placed=Object.values(p.altar||{}).filter(Boolean).length;return{item,label:this.enemies.some(e=>e.type==='cerbero'&&!e.dead&&!e.summoned)?'Altar de ofrendas · lo custodia Cerbero':p.portal?'El portal ya está abierto':'Dejar ofrendas en el altar ('+placed+'/5)'};}
   if(item.type==='ore'||item.type==='tree'){const def=this.nodeDef(item),tool=Z.TOOLS[def.tool],have=p[def.tool]||0;
    if(have<def.tier)return{item,label:'Veta de '+def.name+' · necesitás '+tool.name.toLowerCase()+' de '+Z.TIER_NAMES[def.tier]+' o mejor'};
    if(p.gather&&p.gather.id===item.id)return{item,label:(def.tool==='axe'?'Talando… ':'Picando… ')+Math.round(p.gather.time/p.gather.total*100)+'%'};
@@ -392,15 +430,20 @@ class Game {
  }
  takeStairs(stairs){
   const p=this.player;
+  const guard=this.stairsGuard(stairs);
+  if(guard){this.emit('toast',{message:Z.ENEMY_TYPES[guard.type].name+' custodia la bajada. Derrotalo para pasar.',error:true});return false;}
   if(stairs.dir==='down'&&!p.torch){this.emit('toast',{message:'Abajo no se ve nada. Necesitás una antorcha: el herrero la hace con 1 de madera y 3 de carbón.',error:true});return false;}
   Object.assign(p,{x:stairs.arrive.x,y:stairs.arrive.y,gather:null,roll:0,moving:false});
   this.projectiles=[];this.enemies.forEach(e=>{if(e.latched>0){e.x=e.homeX;e.y=e.homeY;}e.latched=0;e.alert=false;e.telegraph=0;e.dash=0;});
   this.renderer.initialized=false;this.clearInput();this.sound.play('stairs');return true;
  }
+ // Las bajadas custodiadas no se abren mientras su jefe siga vivo. Subir siempre se puede.
+ stairsGuard(stairs){return stairs.guard&&stairs.dir==='down'?this.enemies.find(e=>e.type===stairs.guard&&!e.dead&&!e.summoned)||null:null;}
  // El Taller: antorcha, picos, hachas y mejoras de armas. Todo se paga con materiales y guita.
  missingFor(cost){const p=this.player,missing=[];
   if(p.coins<cost.coins)missing.push((cost.coins-p.coins)+' de guita');
   for(const [k,n] of Object.entries(cost.materials))if((p.materials[k]||0)<n)missing.push((n-(p.materials[k]||0))+' de '+Z.MATERIALS[k].name.toLowerCase());
+  for(const [k,n] of Object.entries(cost.offerings||{}))if((p.offerings[k]||0)<n)missing.push((n-(p.offerings[k]||0))+' '+Z.OFFERINGS[k].name);
   return missing;}
  craftOptions(){
   const p=this.player,list=[];
@@ -412,20 +455,28 @@ class Game {
   for(const w of ['fists','bow','sword','stone']){if(!p.weapons.includes(w))continue;const level=p.weaponLevels[w]||1,next=level+1,done=next>Z.MAX_WEAPON_LEVEL;
    list.push({id:'weapon:'+w,group:'weapons',icon:{fists:'✊',bow:'➶',sword:'⚔',stone:'◆'}[w],name:Z.WEAPON_TYPES[w].name+(done?' nvl '+level:' nvl '+next),
     detail:done?'Daño ×'+this.number(Z.weaponLevelMultiplier(level))+'.':'Daño ×'+this.number(Z.weaponLevelMultiplier(level))+' → ×'+this.number(Z.weaponLevelMultiplier(next))+'.',cost:done?null:Z.WEAPON_UPGRADES[next],done,doneText:'Nivel máximo'});}
+  const forged=p.weapons.includes('elemental');
+  list.push({id:'elemental',group:'weapons',icon:'✧',name:'Espada Elemental',detail:'Daño ×'+Z.WEAPON_TYPES.elemental.damageMultiplier+' (la espada común llega a ×'+this.number(Z.WEAPON_TYPES.sword.damageMultiplier*Z.weaponLevelMultiplier(Z.MAX_WEAPON_LEVEL))+' al máximo).',cost:forged?null:Z.ELEMENTAL_RECIPE,done:forged,doneText:'Ya la tenés'});
   return list.map(o=>({...o,missing:o.cost?this.missingFor(o.cost):[]}));
  }
  craft(id){
   const p=this.player,option=this.craftOptions().find(o=>o.id===id);if(!option)return{ok:false,message:'Eso no lo hago, pa.'};
   if(option.done)return{ok:false,message:option.doneText+'.'};
   if(option.missing.length)return{ok:false,message:'Te falta: '+option.missing.join(', ')+'.'};
-  p.coins-=option.cost.coins;for(const [k,n] of Object.entries(option.cost.materials))p.materials[k]-=n;
-  if(id==='torch')p.torch=true;else if(id==='pickaxe'||id==='axe')p[id]=(p[id]||0)+1;else{const w=id.slice(7);p.weaponLevels[w]=(p.weaponLevels[w]||1)+1;}
+  p.coins-=option.cost.coins;for(const [k,n] of Object.entries(option.cost.materials))p.materials[k]-=n;for(const [k,n] of Object.entries(option.cost.offerings||{}))p.offerings[k]-=n;
+  if(id==='elemental'){p.weapons.push('elemental');this.equip('elemental');this.questFlags.elemental=true;this.shake(4,.3);this.effect(p.x,p.y,'level',1.4,{radius:50,text:'¡ESPADA ELEMENTAL!'});}
+  else if(id==='torch')p.torch=true;else if(id==='pickaxe'||id==='axe')p[id]=(p[id]||0)+1;else{const w=id.slice(7);p.weaponLevels[w]=(p.weaponLevels[w]||1)+1;}
   this.questFlags.crafted=true;this.sound.play('buy');return{ok:true,message:option.name+': ¡listo!'};
  }
  shopItems(){const p=this.player;return Z.SHOP_ITEMS.map(item=>{
   const price=item.price(p),soldOut=(item.id==='herb'&&p.herbs>=Z.HERB_BAG)||(item.id==='sharpen'&&p.sharpen>=5);
   const note=item.id==='herb'?'En la bolsa: '+p.herbs+'/'+Z.HERB_BAG:item.id==='sharpen'?'Nivel '+p.sharpen+'/5':item.id==='lesson'?'Clases tomadas: '+p.lessons:item.id==='mate'&&p.buffs.mate>0?'Activo: '+Math.ceil(p.buffs.mate)+' s':'';
   return{...item,price,soldOut,affordable:p.coins>=price,note};});}
+ // El Almacén compra las ofrendas de los jefes.
+ sellOptions(){const p=this.player;return Object.entries(Z.OFFERINGS).map(([id,o])=>({id,...o,count:p.offerings[id]||0}));}
+ sell(id){const p=this.player,o=Z.OFFERINGS[id];if(!o)return{ok:false,message:'Eso no se compra acá.'};
+  if(!(p.offerings[id]>0))return{ok:false,message:'No tenés '+o.name+'.'};
+  p.offerings[id]--;p.coins+=o.price;this.sound.play('buy');return{ok:true,message:o.name+' vendido por ◉ '+o.price+'.'};}
  buy(id){
   const p=this.player,item=this.shopItems().find(i=>i.id===id);if(!item)return{ok:false,message:'Ese artículo no existe.'};
   if(item.soldOut)return{ok:false,message:item.id==='herb'?'La bolsa ya está llena.':'Ya no se puede mejorar más.'};
@@ -439,7 +490,7 @@ class Game {
  }
  effect(x,y,type,life,extra={}){if(!this.settings.particles&&!extra.text&&type!=='wave'&&type!=='slash')return;this.effects.push({x,y,type,life,maxLife:life,...extra});}
  number(n){return Number.isInteger(n)?String(n):n.toFixed(1).replace('.0','');}
- bossTarget(){return this.enemies.find(e=>isBoss(e)&&!e.dead&&e.alert&&e.biome===this.biome)||null;}
+ bossTarget(){const p=this.player;let best=null,bestDistance=Infinity;for(const e of this.enemies){if(!isBoss(e)||e.dead||!e.alert||e.biome!==this.biome)continue;const d=distance(e,p)+(e.type==='zak'&&!e.seated?-200:0);if(d<bestDistance){best=e;bestDistance=d;}}return best;}
  quests(){const flags=this.questFlags;return[
   {id:'bow',title:'Un regalo para el camino',detail:'Recogé el arco junto a la plaza de la aldea.',done:this.player.weapons.includes('bow')},
   {id:'cave',title:'Donde no llega el sol',detail:'Seguí el camino al norte y entrá a la Cueva del Eco.',done:this.player.discovered.includes('cave')},
@@ -449,11 +500,17 @@ class Game {
   {id:'shop',title:'Acá no se fía',detail:'Juntá monedas de los enemigos y comprá algo en el puesto de El Almacén.',done:!!flags.bought},
   {id:'bestiary',title:'Anécdotas para el fogón',detail:'Derrotá al menos un chorro, perro, serpiente y rata.',done:['thief','dog','snake','rat'].every(t=>flags['defeat_'+t])},
   {id:'level5',title:'Ya no sos el mismo',detail:'Llegá al nivel 5 con tu personaje.',done:this.player.level>=5},
-  {id:'capo',title:'El trono de la cueva',detail:'Alguien se sentó en el trono del fondo de la cueva. Derrotá al Capo del Eco. Recomendado: nivel 4.',done:!!flags.defeat_capo},
-  {id:'yarara',title:'La madre de todas las víboras',detail:'Derrotá a la Yarará Madre en el rincón noreste de Los Yuyos. Recomendado: nivel 4.',done:!!flags.defeat_yarara},
+  {id:'capo',title:'El trono de la cueva',detail:'El Capo del Eco se sentó junto a la bajada del fondo noroeste de la cueva y no deja pasar a nadie. Derrotalo. Recomendado: nivel 5.',done:!!flags.defeat_capo},
+  {id:'yarara',title:'La madre de todas las víboras',detail:'Recorré el camino de Los Yuyos hasta el rincón noreste y derrotá a la Yarará Madre. Recomendado: nivel 5.',done:!!flags.defeat_yarara},
   {id:'smith',title:'Acá todo con verdes',detail:'Visitá al herrero de El Taller, al sur de la aldea, y fabricá tu primera herramienta.',done:!!flags.crafted},
-  {id:'deep',title:'Luz en la oscuridad',detail:'Con una antorcha, tomá la bajada del fondo de la Cueva del Eco hacia la Cueva Profunda.',done:this.player.discovered.includes('cave2')},
-  {id:'deepest',title:'Las entrañas de la tierra',detail:'Encontrá la bajada de la Cueva Profunda y llegá a Las Entrañas. Llevá armas mejoradas.',done:this.player.discovered.includes('cave3')}
+  {id:'deep',title:'Luz en la oscuridad',detail:'Con una antorcha y el Capo fuera del camino, tomá la bajada del fondo de la Cueva del Eco hacia la Cueva Profunda.',done:this.player.discovered.includes('cave2')},
+  {id:'vampire',title:'Sangre en la oscuridad',detail:'Derrotá al Chupasangre, que custodia la bajada de la Cueva Profunda a Las Entrañas.',done:!!flags.defeat_vampire},
+  {id:'deepest',title:'Las entrañas de la tierra',detail:'Con el Chupasangre vencido, bajá a Las Entrañas. Llevá armas mejoradas.',done:this.player.discovered.includes('cave3')},
+  {id:'golem',title:'Cuatro vidas de piedra',detail:'Derrotá al Gólem Minero en Las Entrañas: piedra, hierro, oro y diamante.',done:!!flags.defeat_golem},
+  {id:'elemental',title:'El filo de los elementos',detail:'Con 5 Piedras Elementales y muchos materiales, pedile al herrero la Espada Elemental.',done:!!flags.elemental||this.player.weapons.includes('elemental')},
+  {id:'cerbero',title:'Tres cabezas, un guardián',detail:'Seguí la calle principal al oeste hasta el cementerio y derrotá a Cerbero, guardián del altar.',done:!!flags.defeat_cerbero},
+  {id:'altar',title:'Cinco ofrendas',detail:'Dejá en el altar una ofrenda de cada jefe: Colmillo Tóxico, Anillo de la mafia, Garra Sangrienta, Piedra Elemental y Ojo del alma.',done:!!flags.altar},
+  {id:'zak',title:'El Trono de Zak',detail:'Cruzá el portal violeta y vencé a Zak, el gobernante. Llevá todo lo que tengas.',done:!!flags.defeat_zak}
  ];}
  questsWithRewards(){return this.quests().map(q=>({...q,reward:QUEST_REWARDS[q.id]||0,claimed:!!this.questFlags['claimed_'+q.id]}));}
  unclaimedRewards(){return this.questsWithRewards().filter(q=>q.done&&!q.claimed&&q.reward>0);}
@@ -464,18 +521,19 @@ class Game {
   this.questFlags['claimed_'+id]=true;this.player.coins=(this.player.coins||0)+q.reward;this.sound.play('buy');return{ok:true,message:'+'+q.reward+' de guita por «'+q.title+'».'};
  }
  checkQuests(){for(const q of this.quests())if(q.done&&!this.questFlags['quest_'+q.id]){this.questFlags['quest_'+q.id]=true;this.emit('toast',{message:'Diario actualizado: '+q.title+(QUEST_REWARDS[q.id]?' · Reclamá ◉ '+QUEST_REWARDS[q.id]+' en el diario (J).':'')});this.sound.play('pickup');}if(this.quests().every(q=>q.done)&&!this.questFlags.complete){this.questFlags.complete=true;this.emit('complete');}}
- snapshot(){return JSON.parse(JSON.stringify({version:1,savedAt:new Date().toISOString(),player:this.player,time:this.time,queuedWaves:this.queuedWaves||[],questFlags:this.questFlags,collected:this.world.pickups.filter(p=>p.collected).map(p=>p.id),nodes:this.world.objects.filter(o=>o.harvested).map(o=>({id:o.id,regrow:o.regrow})),enemies:this.enemies.map(e=>({id:e.id,hp:e.hp,dead:e.dead,respawn:e.respawn,x:e.x,y:e.y,provoked:e.provoked,cooldown:e.cooldown,stun:e.stun,charm:e.charm,latched:e.latched,latchRest:e.latchRest,alert:e.alert}))}));}
+ snapshot(){return JSON.parse(JSON.stringify({version:1,savedAt:new Date().toISOString(),player:this.player,time:this.time,queuedWaves:this.queuedWaves||[],questFlags:this.questFlags,collected:this.world.pickups.filter(p=>p.collected).map(p=>p.id),nodes:this.world.objects.filter(o=>o.harvested).map(o=>({id:o.id,regrow:o.regrow})),enemies:this.enemies.filter(e=>!e.summoned).map(e=>({id:e.id,hp:e.hp,life:e.life||0,dead:e.dead,respawn:e.respawn,x:e.x,y:e.y,provoked:e.provoked,cooldown:e.cooldown,stun:e.stun,charm:e.charm,latched:e.latched,latchRest:e.latchRest,alert:e.alert}))}));}
  static validateSave(data){
   if(!data||data.version!==1||!data.player||!Array.isArray(data.collected)||!Array.isArray(data.enemies))throw new Error('El archivo no es una partida válida de Zak’s Throne.');
   const p=data.player,isNumber=n=>typeof n==='number'&&Number.isFinite(n);if(!Z.CHARACTERS.some(c=>c.id===p.characterId))throw new Error('Personaje desconocido.');
   for(const k of ['level','xp','points','hp','x','y','stamina'])if(!isNumber(p[k]))throw new Error('La partida tiene datos incompletos.');
-  if(!Number.isInteger(p.level)||p.level<1||!Number.isSafeInteger(p.level)||p.xp<0||p.xp>=Z.xpNeeded(p.level)||!Number.isInteger(p.points)||p.points<0||p.hp<=0||p.hp>500||p.x<10||p.x>2390||p.y<10||p.y>2490)throw new Error('La partida contiene valores fuera de rango.');
+  if(!Number.isInteger(p.level)||p.level<1||!Number.isSafeInteger(p.level)||p.xp<0||p.xp>=Z.xpNeeded(p.level)||!Number.isInteger(p.points)||p.points<0||p.hp<=0||p.hp>500||p.x<Z.WORLD_LEFT+10||p.x>2390||p.y<10||p.y>2490)throw new Error('La partida contiene valores fuera de rango.');
   if(!p.stats)throw new Error('Faltan las estadísticas.');
   for(const k of Object.keys(Z.STAT_LABELS))if(!isNumber(p.stats[k])||p.stats[k]<0||p.stats[k]>(k==='health'?500:k==='intelligence'?Number.MAX_SAFE_INTEGER:100))throw new Error('Estadísticas inválidas.');
   if(p.stats.health<1)throw new Error('La vida máxima debe ser positiva.');
   if(!Array.isArray(p.weapons)||!p.weapons.includes('fists')||!p.weapons.every(w=>Object.hasOwn(Z.WEAPON_TYPES,w))||!p.weapons.includes(p.weapon))throw new Error('Inventario inválido.');
   for(const k of ['coins','herbs','sharpen','lessons','axe','pickaxe'])if(p[k]!==undefined&&(!isNumber(p[k])||p[k]<0))throw new Error('Inventario inválido.');
   if(p.materials!==undefined&&(!p.materials||typeof p.materials!=='object'||Object.values(p.materials).some(n=>!isNumber(n)||n<0)))throw new Error('Inventario inválido.');
+  if(p.offerings!==undefined&&(!p.offerings||typeof p.offerings!=='object'||Object.values(p.offerings).some(n=>!isNumber(n)||n<0)))throw new Error('Inventario inválido.');
   if(p.weaponLevels!==undefined&&(!p.weaponLevels||typeof p.weaponLevels!=='object'||Object.values(p.weaponLevels).some(n=>!isNumber(n)||n<1||n>Z.MAX_WEAPON_LEVEL)))throw new Error('Inventario inválido.');
   if(data.nodes!==undefined&&(!Array.isArray(data.nodes)||data.nodes.length>1000))throw new Error('El archivo es demasiado grande.');
   if(data.enemies.length>100||data.collected.length>500)throw new Error('El archivo es demasiado grande.');return true;
@@ -488,6 +546,8 @@ class Game {
   p.coins=Math.floor(clamp(Number(source.coins)||0,0,1e7));p.herbs=Math.floor(clamp(Number(source.herbs)||0,0,Z.HERB_BAG));p.sharpen=Math.floor(clamp(Number(source.sharpen)||0,0,5));p.lessons=Math.floor(clamp(Number(source.lessons)||0,0,1e4));
   p.bossKills=Math.floor(clamp(Number(source.bossKills)||0,0,1e4));
   if(source.materials)for(const k of Object.keys(Z.MATERIALS))p.materials[k]=Math.floor(clamp(Number(source.materials[k])||0,0,1e6));
+  if(source.offerings)for(const k of Object.keys(Z.OFFERINGS))p.offerings[k]=Math.floor(clamp(Number(source.offerings[k])||0,0,1e4));
+  if(source.altar)for(const k of Object.keys(Z.OFFERINGS))p.altar[k]=source.altar[k]===true;p.portal=source.portal===true;
   for(const k of ['axe','pickaxe'])p[k]=Math.floor(clamp(Number(source[k])||0,0,5));p.torch=source.torch===true;
   if(source.weaponLevels)for(const w of Object.keys(p.weaponLevels))p.weaponLevels[w]=Math.floor(clamp(Number(source.weaponLevels[w])||1,1,Z.MAX_WEAPON_LEVEL));if(typeof source.runId==='string'&&/^[\w-]{6,64}$/.test(source.runId))p.runId=source.runId;
   p.weapon=source.weapon;p.weapons=[...new Set(source.weapons)];p.stoneAmmo=source.stoneAmmo===0?0:1;
@@ -497,15 +557,15 @@ class Game {
   if(source.poison&&Number.isFinite(source.poison.damage))p.poison={time:clamp(Number(source.poison.time)||0,0,5),tick:clamp(Number(source.poison.tick)||1,.01,1),damage:clamp(source.poison.damage,0,100)};
   this.player=p;this.world=Z.createWorld();this.biome=Z.biomeAt(p.x,p.y);if(Z.collides(this.world,p.x,p.y,8)){Object.assign(p,this.world.spawn);this.biome='village';}
   if(this.biome==='village'){p.poison=null;p.slow=0;}this.time=Number.isFinite(data.time)?clamp(data.time,0,1e9):0;this.questFlags={};
-  if(data.questFlags&&typeof data.questFlags==='object')for(const k of Object.keys(data.questFlags))if(/^((quest|claimed)_(bow|cave|stone|weeds|sword|shop|bestiary|level5|capo|yarara|smith|deep|deepest)|defeat_(thief|dog|snake|rat|bat|spider|worm|capo|yarara)|bought|crafted|gathered|complete)$/.test(k))this.questFlags[k]=data.questFlags[k]===true;
+  if(data.questFlags&&typeof data.questFlags==='object')for(const k of Object.keys(data.questFlags))if(/^((quest|claimed)_(bow|cave|stone|weeds|sword|shop|bestiary|level5|capo|yarara|smith|deep|deepest|vampire|golem|elemental|cerbero|altar|zak)|defeat_(thief|dog|snake|rat|bat|spider|worm|skeleton|archer|capo|yarara|vampire|golem|cerbero|zak)|bought|crafted|gathered|elemental|altar|complete)$/.test(k))this.questFlags[k]=data.questFlags[k]===true;
   if(!this.quests().every(q=>q.done))delete this.questFlags.complete;
   this.world.pickups.forEach(i=>{i.collected=data.collected.includes(i.id);if(i.collected&&i.type==='herb')i.regrow=HERB_REGROW;});
   for(const saved of data.nodes||[]){const o=saved&&this.world.objects.find(n=>n.id===saved.id&&(n.type==='ore'||n.type==='tree'));if(!o)continue;
    o.harvested=true;o.regrow=clamp(Number(saved.regrow)||0,0,this.nodeDef(o).regrow);if(o.type==='ore')o.solid=false;}this.enemies=this.world.enemySpawns.map(spawn=>{
-   const e=this.makeEnemy(spawn),saved=data.enemies.find(i=>i&&i.id===e.id);if(saved){if(Number.isFinite(saved.hp))e.hp=clamp(saved.hp,0,e.maxHp);e.dead=saved.dead===true||e.hp<=0;e.respawn=clamp(Number(saved.respawn)||0,0,Z.ENEMY_TYPES[e.type].respawn||35);e.provoked=saved.provoked===true;e.cooldown=clamp(Number(saved.cooldown)||0,0,3);e.stun=clamp(Number(saved.stun)||0,0,7);e.charm=clamp(Number(saved.charm)||0,0,10);e.latched=clamp(Number(saved.latched)||0,0,3);e.latchRest=clamp(Number(saved.latchRest)||0,0,1.6);e.alert=saved.alert===true;if(this.biome==='village'||e.dead)e.latched=0;
+   const e=this.makeEnemy(spawn),saved=data.enemies.find(i=>i&&i.id===e.id);if(saved){const lives=Z.ENEMY_TYPES[e.type].lives||1;if(e.type==='golem'&&Number.isInteger(saved.life)&&saved.life>0&&saved.life<lives){e.life=saved.life;e.stats=this.enemyStatsFor(e.type,e.life);e.maxHp=e.stats.health;}if(Number.isFinite(saved.hp))e.hp=clamp(saved.hp,0,e.maxHp);e.dead=saved.dead===true||e.hp<=0;e.respawn=clamp(Number(saved.respawn)||0,0,Z.ENEMY_TYPES[e.type].respawn||35);e.provoked=saved.provoked===true;e.cooldown=clamp(Number(saved.cooldown)||0,0,3);e.stun=clamp(Number(saved.stun)||0,0,7);e.charm=clamp(Number(saved.charm)||0,0,10);e.latched=clamp(Number(saved.latched)||0,0,3);e.latchRest=clamp(Number(saved.latchRest)||0,0,1.6);e.alert=saved.alert===true;if(this.biome==='village'||e.dead)e.latched=0;
     if(Number.isFinite(saved.x)&&Number.isFinite(saved.y)&&Z.biomeAt(saved.x,saved.y)===e.biome&&!Z.collides(this.world,saved.x,saved.y,7)){e.x=saved.x;e.y=saved.y;}}
    return e;});
-  this.effects=[];this.projectiles=[];this.drops=[];this.queuedWaves=Array.isArray(data.queuedWaves)&&p.characterId==='dante'?data.queuedWaves.slice(0,2).filter(w=>w&&Number.isFinite(w.delay)).map(w=>({delay:clamp(w.delay,0,1.1)})):[];this.currentSlot=slot;this.clearInput();this.aim=null;this.state='playing';this.renderer.resize(true);this.emit('start',{loaded:true});
+  this.effects=[];this.projectiles=[];this.drops=[];this.bolts=[];this.darkness=0;this.exitPortal=null;this.queuedWaves=Array.isArray(data.queuedWaves)&&p.characterId==='dante'?data.queuedWaves.slice(0,2).filter(w=>w&&Number.isFinite(w.delay)).map(w=>({delay:clamp(w.delay,0,1.1)})):[];this.currentSlot=slot;this.clearInput();this.aim=null;this.state='playing';this.renderer.resize(true);this.emit('start',{loaded:true});
  }
 }
 Z.Game=Game;

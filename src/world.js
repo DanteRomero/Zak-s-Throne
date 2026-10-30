@@ -5,15 +5,23 @@ const Z=window.Zak=window.Zak||{};
 // La superficie mide 2400×1800. Debajo, separadas por roca, están las cuevas profundas:
 // se llega solo por las bajadas, así que nunca se ven desde arriba.
 Z.SURFACE_HEIGHT=1800;
-Z.biomeAt=function(x,y){if(y>=Z.SURFACE_HEIGHT)return x<1200?'cave2':'cave3';return x<1000&&y<520?'cave':x>=1550?'weeds':'village';};
+// Al oeste de la aldea (x negativa) está el Altar del gobernante; debajo de él, aislado, el Trono de Zak.
+Z.WORLD_LEFT=-780;
+Z.biomeAt=function(x,y){if(y>=Z.SURFACE_HEIGHT)return x<0?'throne':x<1200?'cave2':'cave3';if(x<0)return'altar';return x<1000&&y<520?'cave':x>=1550?'weeds':'village';};
 Z.DEEP_ZONES={cave2:{x:0,y:1880,w:1180,h:620},cave3:{x:1220,y:1880,w:1180,h:620}};
+Z.ALTAR_ZONE={x:-780,y:520,w:780,h:1280};Z.THRONE_ZONE={x:-780,y:1880,w:760,h:620};
+// Zonas cerradas: la cámara no muestra nada fuera de ellas.
+Z.ENCLOSED_ZONES={...Z.DEEP_ZONES,throne:Z.THRONE_ZONE};
+Z.THRONE_SPOTS={arrive:{x:-400,y:2420},zak:{x:-400,y:2010},seat:{x:-400,y:1968},exit:{x:-400,y:2110}};
 Z.createWorld=function(){
- const world={width:2400,height:2500,spawn:{x:770,y:960},zones:[
+ const world={width:2400,height:2500,left:Z.WORLD_LEFT,spawn:{x:770,y:960},zones:[
   {id:'village',x:0,y:0,w:1550,h:1800,name:'Palihue City'},
   {id:'weeds',x:1550,y:0,w:850,h:1800,name:'Los Yuyos'},
   {id:'cave',x:0,y:0,w:1000,h:520,name:'Cueva del Eco'},
   {id:'cave2',...Z.DEEP_ZONES.cave2,name:'Cueva Profunda'},
-  {id:'cave3',...Z.DEEP_ZONES.cave3,name:'Las Entrañas'}
+  {id:'cave3',...Z.DEEP_ZONES.cave3,name:'Las Entrañas'},
+  {id:'altar',...Z.ALTAR_ZONE,name:'Altar del gobernante'},
+  {id:'throne',...Z.THRONE_ZONE,name:'Trono de Zak'}
  ],objects:[],npcs:[],pickups:[],enemySpawns:[],paths:[]};
  let serial=0,seed=1873;
  const random=()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296;};
@@ -143,22 +151,68 @@ Z.createWorld=function(){
   const x=400+Math.floor(random()*1060),y=560+Math.floor(random()*1110);
   if(!world.objects.some(o=>o.solid&&x>o.x-7&&x<o.x+o.w+7&&y>o.y-7&&y<o.y+o.h+7)&&!world.paths.some(o=>x>o.x&&x<o.x+o.w&&y>o.y&&y<o.y+o.h))object('flower',x,y,4,5,false,{variant:i%4});
  }
+ // El Capo custodia la bajada a la Cueva Profunda. Se reubica recién acá para no mover vetas ni árboles.
+ Object.assign(world.enemySpawns.find(s=>s.type==='capo'),{x:178,y:120});Object.assign(world.objects.find(o=>o.type==='throne'),{x:160,y:54});
+ world.objects.find(o=>o.type==='stairs'&&o.to==='cave2').guard='capo';
+ world.objects.find(o=>o.type==='stairs'&&o.to==='cave3').guard='vampire';
+ // El Chupasangre espera frente a la bajada a Las Entrañas; el Gólem Minero, en el fondo de Las Entrañas.
+ deep('vampire',990,2412);deep('golem',1850,2290);
  // Puntos de entrada, vecinos y recogibles siempre tienen espacio libre alrededor.
  const anchors=[world.spawn,...world.pickups,...world.npcs,...world.enemySpawns,...world.objects.filter(o=>o.type==='stairs').flatMap(o=>[o.arrive,{x:o.x+o.w/2,y:o.y+o.h+10}])];
  world.objects=world.objects.filter(o=>!o.solid||o.type==='forge'||!anchors.some(p=>{
   const nx=Math.max(o.x,Math.min(p.x,o.x+o.w)),ny=Math.max(o.y,Math.min(p.y,o.y+o.h));return Math.hypot(p.x-nx,p.y-ny)<18;
  }));
+ buildWest(world,object,path,(type,x,y)=>world.enemySpawns.push({id:'west-'+type+'-'+world.enemySpawns.length,type,x,y}));
  return world;
 };
+// Valla de Los Yuyos, Altar del gobernante y Trono de Zak. Se agregan al final para no cambiar
+// los identificadores de lo que ya existía (las partidas guardadas recuerdan vetas por id).
+function buildWest(world,object,path,spawn){
+ // Barrera invisible bajo la superficie: a las cuevas profundas y al trono solo se llega por bajadas y portales.
+ object('barrier',-780,1792,3180,84,true);
+ // La valla de Los Yuyos sigue hasta arriba de todo: a la Yarará se llega por el camino de los yuyos.
+ for(let y=14;y<638;y+=34)object('fence',1516,y,9,27,true,{variant:2});
+ // La calle principal sigue hacia el oeste hasta el portón del cementerio.
+ const gate={x:-170,y:986,w:560,h:88};
+ world.objects=world.objects.filter(o=>!o.solid||o.type==='forge'||!(o.x<gate.x+gate.w&&o.x+o.w>gate.x&&o.y<gate.y+gate.h&&o.y+o.h>gate.y));
+ path(-470,1002,460,56,'grave');path(-12,1002,384,56);path(-420,690,46,340,'grave');
+ // Muro del cementerio: arriba, abajo y del lado de la aldea, con el portón sobre la calle.
+ object('wall',-780,512,780,16,true);object('wall',-780,1774,780,16,true);
+ object('wall',-18,0,16,1000,true,{variant:1});object('wall',-18,1060,16,730,true,{variant:1});
+ object('arch',-52,1072,66,13,false,{label:'CEMENTERIO',variant:2});
+ object('sign',30,1080,16,12,true,{label:'Leer el cartel del cementerio',text:'← ALTAR DEL GOBERNANTE · Esqueletos y el Cerbero. Dicen que las ofrendas de los cinco jefes abren un portal.'});
+ object('altar',-432,640,64,34,true,{label:'Dejar ofrendas en el altar'});
+ object('portal',-412,700,28,28,false,{kind:'altar'});
+ const skeletons=[['skeleton',-250,1200],['skeleton',-600,900],['skeleton',-600,1420],['skeleton',-300,1560],['skeleton',-160,780],
+  ['archer',-680,700],['archer',-180,1400],['archer',-690,1200],['archer',-500,1660]];
+ skeletons.forEach(([type,x,y])=>spawn(type,x,y));spawn('cerbero',-398,820);
+ // Tumbas y árboles secos con semilla propia; dejan libres caminos, altar y esqueletos.
+ let seed=9187;const random=()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296;};
+ const free=(x,y,w,h)=>!world.paths.some(p=>x<p.x+p.w+14&&x+w>p.x-14&&y<p.y+p.h+14&&y+h>p.y-14)&&
+  !(x>-540&&x<-260&&y>600&&y<920)&&!world.enemySpawns.some(e=>Math.hypot(e.x-x,e.y-y)<46);
+ for(let gy=570;gy<1740;gy+=58)for(let gx=-750;gx<-40;gx+=64){
+  const x=gx+Math.floor(random()*30),y=gy+Math.floor(random()*22),roll=random();
+  if(roll<.16||!free(x,y,16,12))continue;
+  if(roll>.9)object('deadtree',x,y,16,12,true,{variant:Math.floor(random()*3)});else object('grave',x,y,14,10,true,{variant:Math.floor(random()*4)});
+ }
+ // Trono de Zak: ladrillo negro, columnas góticas y el trono al fondo. Sin enemigos, solo él.
+ const z=Z.THRONE_ZONE;
+ object('cliff',z.x,z.y,z.w,22,true,{dark:true});object('cliff',z.x,z.y+z.h-22,z.w,22,true,{dark:true});
+ object('cliff',z.x,z.y+22,19,z.h-44,true,{variant:1,dark:true});object('cliff',z.x+z.w-19,z.y+22,19,z.h-44,true,{variant:1,dark:true});
+ path(-425,1958,50,520,'carpet');
+ for(const [x,y] of [[-690,1990],[-128,1990],[-690,2190],[-128,2190],[-690,2390],[-128,2390]])object('pillar',x,y,18,14,true);
+ object('zakthrone',-432,1915,64,40,true);
+ spawn('zak',Z.THRONE_SPOTS.zak.x,Z.THRONE_SPOTS.zak.y);
+}
 Z.collides=function(world,x,y,radius=8,ignoreNpc=null){
- if(!Number.isFinite(x)||!Number.isFinite(y)||x-radius<12||y-radius<12||x+radius>world.width-12||y+radius>world.height-12)return true;
+ if(!Number.isFinite(x)||!Number.isFinite(y)||x-radius<(world.left||0)+12||y-radius<12||x+radius>world.width-12||y+radius>world.height-12)return true;
  for(const o of world.objects){if(!o.solid)continue;if(x+radius<o.x||x-radius>o.x+o.w||y+radius<o.y||y-radius>o.y+o.h)continue;
   const nx=Math.max(o.x,Math.min(x,o.x+o.w)),ny=Math.max(o.y,Math.min(y,o.y+o.h));if((x-nx)**2+(y-ny)**2<radius*radius)return true;}
  const ignoreId=typeof ignoreNpc==='object'&&ignoreNpc?ignoreNpc.id:ignoreNpc;
  for(const n of world.npcs){if(n.id===ignoreId)continue;if((x-n.x)**2+(y-n.y)**2<(radius+9)**2)return true;}
  return false;
 };
-const PLACES=['well','sign','stall','forge','stairs'];
+const PLACES=['well','sign','stall','forge','stairs','altar'];
 Z.nearbyInteractable=function(world,x,y,maxDistance=46,player=null){
  let nearest=null,best=maxDistance;
  for(const p of world.pickups){if(p.collected)continue;const d=Math.hypot(p.x-x,p.y-y);if(d<best){nearest=p;best=d;}}

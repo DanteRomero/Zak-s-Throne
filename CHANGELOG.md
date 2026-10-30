@@ -6,6 +6,29 @@ Cada versión lista sus cambios agrupados por tipo:
 - **Change:** algo que ya existía y ahora funciona distinto.
 - **Fix:** un error corregido.
 
+## v2.0 — 2026-10-30
+
+* Feature
+    - **El Chupasangre:** vampiro que custodia la bajada de la Cueva Profunda a Las Entrañas. Mientras esté vivo no se baja. Tiene tres ataques: la *Embestida sangrienta*, que si te agarra te chupa la sangre y lo cura; el *Manotazo*, dos golpes rápidos de corto alcance; y la *Invocación*, en la que se aleja y llama a cinco murciélagos. Suelta la **Garra Sangrienta**.
+    - **El Gólem Minero:** gigante de Las Entrañas con cuatro vidas: piedra, hierro, oro y diamante. Cada vida es más fuerte y se rearma con una animación del material nuevo. Usa el *Terremoto* (cuatro golpes al piso, cada uno avisado con un anillo), el *Piedrazo* (aturde 3 s) y el *Refuerzo* (invencible 5 s, cada 15 s, y al instante al bajar del 30% de vida). Suelta la **Piedra Elemental**.
+    - **Cerbero:** perro de tres cabezas, con mucha vida y velocidad. La *Mordida* desangra (5 de vida por segundo durante 5 s). En el *Jugueteo* salta, cae encima tuyo y te deja muy lento 5 s. Si lo dejás *Escarbar* 3 s sin pegarle, se cura entero. Tarda 10 minutos en volver y, mientras no está, el altar queda abierto. Suelta el **Ojo del alma**.
+    - **Zak:** el gobernante. Tiene tres vidas, una enorme cantidad de vida, y dos golpes suyos alcanzan para tumbarte. Ataca con el *Espadazo* (tres golpes en un abanico de 60°), la *Invocación* (dos esqueletos con espada y escudo y dos arqueros) y la *Invocación mayor*: trae a un jefe al azar con su nivel actual y se sienta en el trono a curarse 3 por segundo hasta que lo vencés. La repite cada 40 a 80 segundos. En la *Tormenta de agonía* caen rayos violetas que matan de un toque durante 10 s, y en ese tiempo solo la piedra le hace daño. En su última vida suma la *Ira del gobernante* (20 s de visión reducida) y el *Terremoto morado* (solo un círculo del mapa queda a salvo).
+    - **El final de Zak:** cuando lo vencés no muere. Vuelve al trono, dice «Dejémoslo acá y volvé a tu dimensión, mortal.» y abre un portal a la aldea. Si no lo cruzás en 40 segundos, te ejecuta: perdés toda la guita, los materiales y las ofrendas, y conservás armas y herramientas. Al morir aparece «Eso por querer hacerle el poronga...».
+    - **Altar del gobernante:** cementerio al oeste de Palihue City, con entrada por la calle principal. Lo pueblan esqueletos con espada y escudo (lentos, pegan fuerte y a veces bloquean) y esqueletos arqueros (disparan de lejos, mantienen la distancia y se rompen de un golpe).
+    - **El altar de ofrendas:** recibe una ofrenda de cada jefe. Las que dejás quedan guardadas aunque te vayas. Con las cinco, se rompen y se abre un portal violeta al **Trono de Zak**: una sala gótica de ladrillo negro, siempre de noche pero con buena visibilidad.
+    - **Ofrendas:** el Colmillo Tóxico (Yarará), el Anillo de la mafia (Capo), la Garra Sangrienta, la Piedra Elemental y el Ojo del alma. Además de servir para el altar, El Almacén las compra por 500, 1000, 1000, 2000 y 2000 de guita.
+    - **Espada Elemental:** se forja en El Taller con 5 Piedras Elementales, 10 de diamante, 15 de oro, 20 de hierro, 25 de piedra y 10 de madera. Hace ×4,5 de daño, contra ×3 de la espada al nivel máximo. Se equipa con la tecla 5.
+    - El diario suma seis objetivos con recompensa: el Chupasangre, el Gólem, la Espada Elemental, Cerbero, las cinco ofrendas y Zak.
+    - Nuevos estados en el HUD: aturdido, agarrado, desangrado, muy lento e Ira del gobernante. La barra de jefe muestra las vidas y avisa qué ataque viene.
+* Change
+    - **Jefes más difíciles:** el Capo pasa de 340 a 520 de vida y de 9 a 12 de fuerza; la Yarará, de 320 a 480 de vida y de 7 a 10 de fuerza. Los dos crecen más con el nivel.
+    - **El Capo del Eco** ahora custodia la bajada a la Cueva Profunda, con su trono al lado, y hasta vencerlo no se baja. Subir desde la Cueva Profunda siempre se puede, aunque haya vuelto a aparecer.
+    - **La Yarará Madre** ya no se alcanza directamente: la valla de la entrada de Los Yuyos sigue hasta arriba de todo y hay que pasar por el camino de los yuyos.
+    - **Final del juego más exigente:** los enemigos tienen el mismo nivel que tu personaje, y desde el nivel 8 ganan 6% de vida y 2% de fuerza extra por nivel. La vida de los enemigos ya no tiene tope de 500.
+    - **Ratas:** su fuerza crece mucho menos con el nivel, y prendidas muerden al 60% y como mucho una vez cada 0,9 s.
+* Fix
+    - Ya no se puede llegar caminando a las cuevas profundas por los huecos del borde sur del mapa (eso permitía saltear las bajadas).
+
 ## v1.5 — 2026-10-29
 
 * Feature

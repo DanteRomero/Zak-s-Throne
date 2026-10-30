@@ -66,61 +66,114 @@
     }
   ];
 
+  // Los enemigos tienen el mismo nivel que el personaje; los crecimientos son por nivel.
   Zak.ENEMY_TYPES = {
     thief: {
       name: 'Chorro', base: { health: 100, strength: 5, speed: 15, endurance: 10 },
-      growth: { health: 3, strength: 1, speed: 2, endurance: 2 },
+      growth: { health: 1.5, strength: 0.5, speed: 1, endurance: 1 },
       xp: 48, coins: [5, 9], color: '#bb707e', visionRange: 195, knockback: false,
       description: 'Persigue y ataca con su cuchillo. No retrocede al recibir golpes.'
     },
     dog: {
       name: 'Perro callejero', base: { health: 60, strength: 3, speed: 30, endurance: 20 },
-      growth: { health: 1.5, strength: 0.5, speed: 3, endurance: 2 },
+      growth: { health: 0.75, strength: 0.25, speed: 1.5, endurance: 1 },
       xp: 40, coins: [2, 4], color: '#b68a63', visionRange: 195, knockback: true,
       description: 'Su mordedura reduce 15% el movimiento durante 4 s.'
     },
     snake: {
       name: 'Serpiente', base: { health: 35, strength: 5, poison: 2, speed: 25, endurance: 5 },
-      growth: { health: 1, strength: 2, poison: 1, speed: 2, endurance: 0.5 },
+      growth: { health: 0.5, strength: 1, poison: 0.5, speed: 1, endurance: 0.25 },
       xp: 28, coins: [2, 5], color: '#83b35b', visionRange: 195, knockback: true,
       description: '40% de probabilidad de aplicar veneno durante 5 s. El veneno ignora la armadura.'
     },
     rat: {
       name: 'Rata', base: { health: 10, strength: 1, speed: 40, endurance: 0 },
-      growth: { health: 0.5, strength: 2, speed: 2, endurance: 0.5 },
+      growth: { health: 0.25, strength: 0.4, speed: 1, endurance: 0.25 },
       xp: 16, coins: [1, 2], color: '#a6a0b7', visionRange: 195, knockback: true,
-      description: 'Se prende del cuerpo durante 3 s y después salta para volver a acercarse.'
+      description: 'Se prende del cuerpo durante 3 s y después salta para volver a acercarse. Prendida muerde más despacio y más suave.'
     },
     bat: {
       name: 'Murciélago', base: { health: 40, strength: 6, speed: 45, endurance: 15 },
-      growth: { health: 3, strength: 1, speed: 2, endurance: 1 },
+      growth: { health: 1.5, strength: 0.5, speed: 1, endurance: 0.5 },
       xp: 50, coins: [4, 8], color: '#7d6f96', visionRange: 210, knockback: true,
       description: 'Vuela en zigzag y muerde rápido. Vive en la Cueva Profunda.'
     },
     spider: {
       name: 'Araña', base: { health: 75, strength: 8, poison: 4, speed: 26, endurance: 35 },
-      growth: { health: 4, strength: 1, poison: 1, speed: 1, endurance: 2 },
+      growth: { health: 2, strength: 0.5, poison: 0.5, speed: 0.5, endurance: 1 },
       xp: 70, coins: [6, 10], color: '#6b5a52', visionRange: 195, knockback: true,
       description: '15% de probabilidad de envenenar durante 5 s. Caparazón duro: conviene un arma mejorada.'
     },
     worm: {
       name: 'Gusano de tierra', base: { health: 100, strength: 10, speed: 18, endurance: 62 },
-      growth: { health: 8, strength: 1.5, speed: 1, endurance: 2 },
+      growth: { health: 4, strength: 0.75, speed: 0.5, endurance: 1 },
       xp: 140, coins: [12, 20], color: '#b87a6a', visionRange: 170, knockback: false, respawn: 90,
       description: 'Espera enterrado y sale cuando te acercás. Muy fuerte y blindado: entrá con armas de hierro o mejores.'
     },
+    skeleton: {
+      name: 'Esqueleto con escudo', base: { health: 100, strength: 14, speed: 8, endurance: 35 },
+      growth: { health: 1.5, strength: 0.8, speed: 0.2, endurance: 1 },
+      xp: 60, coins: [5, 9], color: '#d8d2bd', visionRange: 195, knockback: false, block: 0.15,
+      description: 'Lento, pero pega fuerte. Tiene 15% de probabilidad de bloquear tu golpe con el escudo.'
+    },
+    archer: {
+      name: 'Esqueleto arquero', base: { health: 1, strength: 7, speed: 30, endurance: 0 },
+      growth: { health: 0, strength: 0.5, speed: 0.5, endurance: 0 },
+      xp: 30, coins: [2, 4], color: '#cfc8b0', visionRange: 260, knockback: true, ranged: true, fixedHealth: true,
+      description: 'Dispara flechas y siempre trata de mantener la distancia. Se rompe de un golpe.'
+    },
     capo: {
-      name: 'El Capo del Eco', boss: true, base: { health: 340, strength: 9, speed: 20, endurance: 30 },
-      growth: { health: 40, strength: 2, speed: 2, endurance: 3 },
-      xp: 240, coins: [45, 60], color: '#c99a5c', visionRange: 230, knockback: false, respawn: 180,
-      description: 'Jefe de la cueva. Avisa con una línea roja y embiste: rodá hacia un costado.'
+      name: 'El Capo del Eco', boss: true, base: { health: 520, strength: 12, speed: 22, endurance: 35 },
+      growth: { health: 30, strength: 0.8, speed: 1, endurance: 1.5 },
+      xp: 260, coins: [45, 60], color: '#c99a5c', visionRange: 230, knockback: false, respawn: 180, drop: 'ring',
+      description: 'Custodia la bajada a la Cueva Profunda: mientras esté vivo no se baja. Avisa con una línea roja y embiste: rodá hacia un costado.'
     },
     yarara: {
-      name: 'La Yarará Madre', boss: true, base: { health: 320, strength: 7, poison: 4, speed: 25, endurance: 15 },
-      growth: { health: 36, strength: 2, poison: 1, speed: 2, endurance: 2 },
-      xp: 220, coins: [40, 55], color: '#9d7fc4', visionRange: 230, knockback: false, respawn: 180,
+      name: 'La Yarará Madre', boss: true, base: { health: 480, strength: 10, poison: 5, speed: 28, endurance: 20 },
+      growth: { health: 28, strength: 0.8, poison: 0.5, speed: 1, endurance: 1 },
+      xp: 240, coins: [40, 55], color: '#9d7fc4', visionRange: 230, knockback: false, respawn: 180, drop: 'fang',
       description: 'Jefa de Los Yuyos. Te persigue y da colazos alrededor suyo; antes de escupir tres chorros de veneno, retrocede un poco.'
+    },
+    vampire: {
+      name: 'El Chupasangre', boss: true, base: { health: 900, strength: 15, speed: 35, endurance: 40 },
+      growth: { health: 40, strength: 0.9, speed: 0.8, endurance: 1 },
+      xp: 420, coins: [70, 95], color: '#a13a4a', visionRange: 240, knockback: false, respawn: 240, drop: 'claw',
+      description: 'Custodia la bajada a Las Entrañas. Embestida sangrienta: si te agarra te chupa la sangre y se cura. Manotazo doble de cerca. Se aleja e invoca cinco murciélagos.'
+    },
+    golem: {
+      name: 'El Gólem Minero', boss: true, base: { health: 420, strength: 22, speed: 10, endurance: 65 },
+      growth: { health: 28, strength: 1, speed: 0.2, endurance: 0.8 },
+      xp: 600, coins: [90, 120], color: '#8a8f96', visionRange: 230, knockback: false, respawn: 300, drop: 'elemental', lives: 4,
+      description: 'Cuatro vidas: piedra, hierro, oro y diamante, cada una más fuerte. Terremoto de cuatro golpes, piedrazo que aturde 3 s y refuerzo invencible por 5 s.'
+    },
+    cerbero: {
+      name: 'Cerbero', boss: true, base: { health: 1600, strength: 20, speed: 62, endurance: 50 },
+      growth: { health: 70, strength: 0.9, speed: 0.5, endurance: 1 },
+      xp: 800, coins: [120, 160], color: '#5a4652', visionRange: 250, knockback: false, respawn: 600, drop: 'eye',
+      description: 'Custodia el altar de ofrendas: mientras vive, el altar está cerrado. Su mordida desangra; salta y aterriza encima tuyo; si escarba 3 s sin que le pegues, se cura entero.'
+    },
+    zak: {
+      name: 'Zak', boss: true, base: { health: 10000, strength: 40, speed: 22, endurance: 85 },
+      growth: { health: 200, strength: 1.5, speed: 0.2, endurance: 0.3 },
+      xp: 3000, coins: [300, 400], color: '#6d4ba0', visionRange: 2000, knockback: false, respawn: 0, lives: 3, noLate: true,
+      description: 'El gobernante. Tres vidas, la Espada del Caos y dos golpes alcanzan para tumbarte. Espadazos, esqueletos, jefes invocados y la Tormenta de agonía (solo la piedra lo daña). En su última vida: la Ira del gobernante y el Terremoto morado.'
     }
+  };
+  // Ofrendas: las sueltan los jefes, se venden en El Almacén y abren el portal del altar.
+  Zak.OFFERINGS = {
+    fang: { name: 'Colmillo Tóxico', icon: '🦷', price: 500, boss: 'yarara' },
+    ring: { name: 'Anillo de la mafia', icon: '💍', price: 1000, boss: 'capo' },
+    claw: { name: 'Garra Sangrienta', icon: '🩸', price: 1000, boss: 'vampire' },
+    elemental: { name: 'Piedra Elemental', icon: '🔮', price: 2000, boss: 'golem' },
+    eye: { name: 'Ojo del alma', icon: '👁', price: 2000, boss: 'cerbero' }
+  };
+  Zak.emptyOfferings = () => ({ fang: 0, ring: 0, claw: 0, elemental: 0, eye: 0 });
+  Zak.emptyAltar = () => ({ fang: false, ring: false, claw: false, elemental: false, eye: false });
+  Zak.ELEMENTAL_RECIPE = { coins: 0, materials: { wood: 10, stone: 25, iron: 20, gold: 15, diamond: 10 }, offerings: { elemental: 5 } };
+  // Desde el nivel 8 los enemigos ganan vida y fuerza extra: así el final del juego no se vuelve un paseo.
+  Zak.lateFactor = function (level) {
+    const extra = Math.max(0, Math.floor(Number(level) || 1) - 8);
+    return { health: 1 + 0.06 * extra, strength: 1 + 0.02 * extra };
   };
 
   // Precios de El Almacén. Las mejoras permanentes encarecen con cada compra.
@@ -171,7 +224,8 @@
     fists: { name: 'Puños', damageMultiplier: 1, range: 36, description: 'Un buen golpe a corta distancia.' },
     sword: { name: 'Espada', damageMultiplier: 1.5, range: 55, biome: 'weeds', description: '50% de daño adicional y mayor alcance.' },
     bow: { name: 'Arco', damageMultiplier: 1, range: 350, chargeTime: 0.7, biome: 'village', description: 'Dispara a distancia. Hay que tensarlo entre flechas.' },
-    stone: { name: 'Piedra', damageMultiplier: 1, range: 220, walkToReload: 2, biome: 'cave', description: 'Una munición; caminar durante 2 s recarga el siguiente tiro.' }
+    stone: { name: 'Piedra', damageMultiplier: 1, range: 220, walkToReload: 2, biome: 'cave', description: 'Una munición; caminar durante 2 s recarga el siguiente tiro.' },
+    elemental: { name: 'Espada Elemental', damageMultiplier: 4.5, range: 62, crafted: true, description: 'Forjada con cinco Piedras Elementales. Mucho más daño que la espada mejorada al máximo.' }
   };
 
   Zak.speedBand = function (speed) {
@@ -205,6 +259,8 @@
       playTime: 0, discovered: ['village'],
       coins: 0, herbs: 0, sharpen: 0, lessons: 0,
       materials: Zak.emptyMaterials(), axe: 0, pickaxe: 0, torch: false,
+      offerings: Zak.emptyOfferings(), altar: Zak.emptyAltar(), portal: false,
+      stunned: 0, grabbed: 0, bleed: null, heavySlow: 0,
       weaponLevels: { fists: 1, bow: 1, sword: 1, stone: 1 }, gather: null,
       combo: 0, comboTime: 0, roll: 0, rollCooldown: 0, rollX: 0, rollY: 1
     };
@@ -248,6 +304,7 @@
     const temporaryMovementFactor = id === 'gero' || baseSpeed === 0 ? 1 : speed / baseSpeed;
     let moveSpeed = movementBase * temporaryMovementFactor * (id === 'dante' ? 0.9 : 1);
     if (finite(player.slow) > 0) moveSpeed *= (id === 'pepe' ? 0.8 : 0.85);
+    if (finite(player.heavySlow) > 0) moveSpeed *= 0.5;
     if (finite(buffs.mate) > 0) moveSpeed *= 1.1;
     return {
       maxHealth: Math.min(500, health), strength, speed, endurance, intelligence,
@@ -262,17 +319,24 @@
   Zak.enemyStats = function (type, playerLevel) {
     const definition = Zak.ENEMY_TYPES[type];
     if (!definition) throw new Error('Tipo de enemigo desconocido: ' + type);
-    const level = 1 + Math.floor((Math.max(1, Math.floor(finite(playerLevel, 1))) - 1) / 2);
+    const level = Math.max(1, Math.floor(finite(playerLevel, 1)));
     const increases = level - 1;
     const stats = { level, intelligence: 0 };
+    // La vida de los enemigos no tiene techo; fuerza, velocidad y resistencia sí.
     Object.keys(definition.base).forEach(key => {
-      stats[key] = Math.min(key === 'poison' ? 100 : caps[key] || Infinity, definition.base[key] + definition.growth[key] * increases);
+      const cap = key === 'poison' ? 100 : key === 'health' ? Infinity : caps[key] || Infinity;
+      stats[key] = Math.min(cap, definition.base[key] + definition.growth[key] * increases);
     });
+    if (!definition.noLate) {
+      const late = Zak.lateFactor(level);
+      if (!definition.fixedHealth) stats.health *= late.health;
+      stats.strength *= late.strength;
+    }
     stats.maxHealth = stats.health;
     stats.moveSpeed = Zak.speedBand(stats.speed).moveSpeed;
     stats.attackCooldown = Zak.speedBand(stats.speed).attackCooldown;
     stats.armor = Zak.enduranceBand(stats.endurance).armor;
-    stats.xp = definition.xp + increases * Math.ceil(definition.xp * 0.15);
+    stats.xp = definition.xp + increases * Math.ceil(definition.xp * 0.075);
     return stats;
   };
 

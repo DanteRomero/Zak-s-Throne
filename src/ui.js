@@ -7,8 +7,8 @@
   $('world').tabIndex = 0;
   const SAVE_PREFIX = 'zak.throne.save.';
   const SETTINGS_KEY = 'zak.throne.settings.v1';
-  const WEAPONS = ['fists', 'bow', 'sword', 'stone'];
-  const ICONS = { fists: '✊', bow: '➶', sword: '⚔', stone: '◆' };
+  const WEAPONS = ['fists', 'bow', 'sword', 'stone', 'elemental'];
+  const ICONS = { fists: '✊', bow: '➶', sword: '⚔', stone: '◆', elemental: '✧' };
   let selected = 'gero', modalResume = false, modalBack = null, lastFocus = null, modalVersion = 0, suppressPause = false;
   let lastPortrait = '', lastHud = 0, hasStarted = false;
   const number = value => Number.isFinite(Number(value)) ? Number(value) : 0;
@@ -315,7 +315,7 @@
       },'toggle');
       sizeToggle.setAttribute('aria-label','Tamaño de los controles táctiles'); sizeRow.append(sizeToggle); parent.append(sizeRow);
       const help = el('div','help-grid');
-      [['Moverte','WASD / flechas'],['Talar o picar','E, quieto'],['Correr','Shift'],['Atacar','Espacio / clic'],['Rodar','F / clic derecho'],['Habilidad','Q'],['Interactuar','E'],['Usar hierba','R'],['Armas','1 — 4'],['Personaje','C'],['Diario','J'],['Mapa','M'],['Pausa','Esc']].forEach(([action,key]) => { const row = el('div'); row.append(el('span','',action),el('kbd','',key)); help.append(row); });
+      [['Moverte','WASD / flechas'],['Talar o picar','E, quieto'],['Correr','Shift'],['Atacar','Espacio / clic'],['Rodar','F / clic derecho'],['Habilidad','Q'],['Interactuar','E'],['Usar hierba','R'],['Armas','1 — 5'],['Personaje','C'],['Diario','J'],['Mapa','M'],['Pausa','Esc']].forEach(([action,key]) => { const row = el('div'); row.append(el('span','',action),el('kbd','',key)); help.append(row); });
       parent.append(help);
       paragraph(parent,'Los controles táctiles aparecen en pantallas compatibles. En un teléfono, giralo horizontalmente para ver mejor. El sonido se activa después de tu primera interacción.','hint');
     },returnToPause ? showPause : null);
@@ -341,8 +341,9 @@
        'Monedas: ' + fmt(p.coins) + ' · Hierbas: ' + p.herbs + ' / ' + Zak.HERB_BAG + ' · Derrotas: ' + p.kills,
        'Próximo nivel: ' + fmt(p.xp) + ' / ' + Zak.xpNeeded(p.level) + ' XP',
        'Materiales: ' + Object.entries(Zak.MATERIALS).map(([k,m]) => m.name + ' ' + (p.materials[k] || 0)).join(' · '),
+       'Ofrendas: ' + Object.entries(Zak.OFFERINGS).map(([k,o]) => o.icon + ' ' + o.name + ' ' + (p.offerings[k] || 0)).join(' · '),
        'Pico: ' + (p.pickaxe ? Zak.TIER_NAMES[p.pickaxe] : 'no') + ' · Hacha: ' + (p.axe ? Zak.TIER_NAMES[p.axe] : 'no') + ' · Antorcha: ' + (p.torch ? 'sí' : 'no'),
-       'Armas: ' + p.weapons.map(w => Zak.WEAPON_TYPES[w].name + ' nvl ' + (p.weaponLevels[w] || 1)).join(' · ')].forEach(line => summary.append(el('div','',line)));
+       'Armas: ' + p.weapons.map(w => Zak.WEAPON_TYPES[w].name + (w === 'elemental' ? '' : ' nvl ' + (p.weaponLevels[w] || 1))).join(' · ')].forEach(line => summary.append(el('div','',line)));
       parent.append(summary); const benefits = el('div','traits'); benefits.style.marginTop = '20px'; traits(benefits,c); parent.append(benefits);
     });
   }
@@ -378,7 +379,7 @@
     openModal('Los caminos de los Aromos', 'MAPA DE LA REGIÓN', parent => {
       const canvas = el('canvas','map-canvas'); canvas.width = 500; canvas.height = 300; canvas.setAttribute('aria-label','Mapa: aldea segura, cueva y Yuyos. Un punto marca tu posición.');
       parent.append(canvas); Zak.drawMinimap(canvas,game);
-      const legend = el('div','map-legend'); ['● Vos','$ Almacén','⚒ Herrero','▼ Bajada','☠ Jefe','Aldea · segura'].forEach(label => legend.append(el('span','',label))); parent.append(legend);
+      const legend = el('div','map-legend'); ['● Vos','$ Almacén','⚒ Herrero','▼ Bajada','☠ Jefe','✝ Altar','Aldea · segura'].forEach(label => legend.append(el('span','',label))); parent.append(legend);
       paragraph(parent,'Los enemigos no pueden entrar en la aldea. El pozo te espera cuando necesites recuperar vida.','hint');
     });
   }
@@ -402,6 +403,7 @@
     const need = (label,ok) => line.append(el('span','need' + (ok ? '' : ' missing'),label));
     if (option.cost.coins) need('◉ ' + option.cost.coins,p.coins >= option.cost.coins);
     Object.entries(option.cost.materials).forEach(([k,n]) => need(n + ' ' + Zak.MATERIALS[k].name.toLowerCase() + ' (' + (p.materials[k] || 0) + ')',(p.materials[k] || 0) >= n));
+    Object.entries(option.cost.offerings || {}).forEach(([k,n]) => need(n + ' ' + Zak.OFFERINGS[k].name + ' (' + (p.offerings[k] || 0) + ')',(p.offerings[k] || 0) >= n));
     return line;
   }
   function showSmith(message) {
@@ -422,13 +424,13 @@
           const row = el('div','shop-item' + (option.done ? ' sold-out' : '')), body = el('div');
           body.append(el('strong','',option.icon + ' ' + option.name),el('small','',option.detail));
           if (option.cost) body.append(costLine(option));
-          const action = option.id === 'torch' || (option.group === 'tools' && !p[option.id]) ? 'Fabricar' : 'Mejorar';
+          const action = option.id === 'elemental' ? 'Forjar' : option.id === 'torch' || (option.group === 'tools' && !p[option.id]) ? 'Fabricar' : 'Mejorar';
           const go = button(option.done ? option.doneText : action,() => { const result = game.craft(option.id); showSmith(result.message); updateHud(true); },'shop-buy');
           go.disabled = option.done || option.missing.length > 0; go.setAttribute('aria-label',action + ' ' + option.name);
           row.append(body,go); parent.append(row);
         });
       });
-      paragraph(parent,'La madera sale de los árboles (con hacha). Piedra y carbón, de la Cueva del Eco; hierro y oro, de la Cueva Profunda; diamante, de Las Entrañas. Cada veta necesita un pico de cierto nivel.','hint');
+      paragraph(parent,'La madera sale de los árboles (con hacha). Piedra y carbón, de la Cueva del Eco; hierro y oro, de la Cueva Profunda; diamante, de Las Entrañas. Cada veta necesita un pico de cierto nivel. La Piedra Elemental la suelta el Gólem Minero.','hint');
     });
   }
   function showShop(message) {
@@ -443,6 +445,15 @@
         const buy = button(item.soldOut ? 'Agotado' : '◉ ' + item.price, () => { const result = game.buy(item.id); showShop(result.message); updateHud(true); },'shop-buy');
         buy.disabled = item.soldOut || !item.affordable; buy.setAttribute('aria-label','Comprar ' + item.name + ' por ' + item.price + ' monedas');
         row.append(body,buy); parent.append(row);
+      });
+      const sell = game.sellOptions();
+      parent.append(el('h3','smith-heading','Vender ofrendas'));
+      sell.forEach(item => {
+        const row = el('div','shop-item' + (item.count ? '' : ' sold-out')), body = el('div');
+        body.append(el('strong','',item.icon + ' ' + item.name),el('small','','La suelta ' + Zak.ENEMY_TYPES[item.boss].name + '. También sirve de ofrenda para el altar.'),el('small','shop-note','Tenés: ' + item.count));
+        const go = button('Vender ◉ ' + item.price, () => { const result = game.sell(item.id); showShop(result.message); updateHud(true); },'shop-buy');
+        go.disabled = !item.count; go.setAttribute('aria-label','Vender ' + item.name + ' por ' + item.price + ' monedas');
+        row.append(body,go); parent.append(row);
       });
       paragraph(parent,'Chorros y jefes dejan más monedas. Si un chorro te noquea, se lleva parte de tu guita.','hint');
     });
@@ -521,6 +532,11 @@
     if (p.poison) statuses.push('☠ Veneno');
     if (p.slow > 0) statuses.push('↓ Mordedura ' + Math.ceil(p.slow) + ' s');
     if (p.exhausted > 0) statuses.push('Sin aliento ' + Math.ceil(p.exhausted) + ' s');
+    if (p.stunned > 0) statuses.push('✦ Aturdido ' + Math.ceil(p.stunned) + ' s');
+    if (p.grabbed > 0) statuses.push('✊ Agarrado');
+    if (p.bleed) statuses.push('🩸 Desangrado');
+    if (p.heavySlow > 0) statuses.push('↓↓ Muy lento ' + Math.ceil(p.heavySlow) + ' s');
+    if (game.darkness > 0 && biome === 'throne') statuses.push('☾ Ira del gobernante ' + Math.ceil(game.darkness) + ' s');
     if (p.buffs.gero > 0) statuses.push('✦ Fé Judía ' + Math.ceil(p.buffs.gero) + ' s');
     if (p.buffs.paco > 0) statuses.push('♥ ' + p.buffs.pacoAnimals + ' animales encantados');
     if (p.buffs.pepe > 0) statuses.push('✦ DeboraMundos');
@@ -538,10 +554,11 @@
     const boss = game.bossTarget();
     $('boss-bar').classList.toggle('hidden',!boss);
     if (boss) {
-      text('boss-name',Zak.ENEMY_TYPES[boss.type].name + ' · Nivel ' + boss.level);
+      const lives = Zak.ENEMY_TYPES[boss.type].lives, warning = bossWarning(boss);
+      text('boss-name',Zak.ENEMY_TYPES[boss.type].name + ' · Nivel ' + boss.level + (lives ? ' · Vida ' + ((boss.life || 0) + 1) + '/' + lives + (boss.type === 'golem' ? ' (' + Zak.GOLEM_LIVES[boss.life || 0].name + ')' : '') : ''));
       $('boss-fill').style.width = Math.max(0,boss.hp / boss.maxHp * 100) + '%';
-      text('boss-hint',boss.telegraph > 0 ? (boss.type === 'capo' ? '¡VA A EMBESTIR! RODÁ (F)' : boss.kind === 'tail' ? '¡COLAZO! ALEJATE O RODÁ (F)' : '¡VENENO! RODÁ (F)') : fmt(boss.hp) + ' / ' + fmt(boss.maxHp));
-      $('boss-bar').classList.toggle('warning',boss.telegraph > 0);
+      text('boss-hint',warning || fmt(boss.hp) + ' / ' + fmt(boss.maxHp));
+      $('boss-bar').classList.toggle('warning',!!warning);
     }
     const quests = game.quests(), next = quests.find(quest => !quest.done); text('quest-current',next ? next.title : 'Todos los caminos recorridos');
     const cooldown = Math.max(0,number(p.abilityCooldown));
@@ -565,6 +582,25 @@
       $('interaction-hint').classList.toggle('hidden',!nearby || !game.settings.tips);
       if (nearby) text('interaction-hint',(isTouch() ? 'Tocá E · ' : 'E · ') + nearby.label);
     }
+  }
+  // Qué está por hacer el jefe, en pocas palabras y con la forma de esquivarlo.
+  function bossWarning(boss) {
+    if (boss.telegraph > 0) return boss.type === 'capo' ? '¡VA A EMBESTIR! RODÁ (F)' : boss.kind === 'tail' ? '¡COLAZO! ALEJATE O RODÁ (F)' : '¡VENENO! RODÁ (F)';
+    if (boss.yielding) return game.exitPortal ? 'PORTAL A LA ALDEA · ' + Math.ceil(game.exitPortal.time) + ' s' : 'ZAK DEJA DE PELEAR';
+    if (boss.seated) return 'SE CURA EN EL TRONO: VENCÉ AL JEFE INVOCADO';
+    const a = boss.act;
+    if (boss.shield > 0 && !a) return 'REFUERZO: INVENCIBLE ' + Math.ceil(boss.shield) + ' s';
+    if (!a) return '';
+    const hints = {
+      rise: boss.type === 'golem' ? 'SE REARMA CON OTRO MATERIAL…' : 'SE VUELVE A LEVANTAR…',
+      lunge: '¡EMBESTIDA SANGRIENTA! RODÁ (F)', swipe: '¡MANOTAZO DOBLE! ALEJATE', drain: '¡TE CHUPA LA SANGRE!',
+      retreat: 'SE ALEJA PARA INVOCAR MURCIÉLAGOS', summon: '¡INVOCA MURCIÉLAGOS!',
+      quake: '¡TERREMOTO! SALÍ DEL CÍRCULO', throw: '¡PIEDRAZO! RODÁ (F)',
+      bite: '¡MORDIDA! DESANGRA', jump: '¡SALTA! SALÍ DEL CÍRCULO ROJO', dig: '¡ESCARBA! PEGALE ANTES DE 3 s',
+      slash: '¡ESPADAZOS! ALEJATE O RODÁ (F)', raise: 'INVOCA ESQUELETOS', major: 'INVOCA A UN JEFE',
+      storm: 'TORMENTA: ESQUIVÁ LOS RAYOS · SOLO LA PIEDRA LO DAÑA', roar: 'IRA DEL GOBERNANTE', purple: '¡PARATE EN EL CÍRCULO CLARO!'
+    };
+    return hints[a.id] || '';
   }
   $('stats-button').addEventListener('click',showStats); $('journal-button').addEventListener('click',() => showJournal()); $('map-button').addEventListener('click',showMap); $('pause-button').addEventListener('click',showPause);
   $('ability-button').addEventListener('click',() => game.ability());
@@ -661,7 +697,8 @@
       openModal('De vuelta en casa', 'UN TROPIEZO EN EL CAMINO',parent => {
         paragraph(parent,detail.quote || 'Un respiro, y volvemos a intentarlo.','death-quote');
         paragraph(parent,'Volviste a la aldea. Tu experiencia, mejoras y armas siguen con vos. El pozo puede ayudarte a recuperar vida.');
-        if (detail.lost > 0) paragraph(parent,'En el tropiezo perdiste ◉ ' + detail.lost + ' monedas.','hint');
+        if (detail.execute) paragraph(parent,'Zak se quedó con toda tu guita (◉ ' + detail.lost + '), tus materiales y tus ofrendas. Las armas y las herramientas siguen con vos.','hint');
+        else if (detail.lost > 0) paragraph(parent,'En el tropiezo perdiste ◉ ' + detail.lost + ' monedas.','hint');
         const actions = el('div','modal-actions'); actions.append(button('Levantarme y seguir',() => hideModal(),'button primary')); parent.append(actions);
       });
     } else if (type === 'complete') showJournal(true);

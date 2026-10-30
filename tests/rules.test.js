@@ -10,6 +10,7 @@
     const equal = (actual, expected, message = '') => {
       if (actual !== expected) throw new Error(message + ': esperado ' + expected + ', recibido ' + actual);
     };
+    const ok = (value, message = 'Falló la condición') => { if (!value) throw new Error(message); };
     const near = (actual, expected, message = '') => {
       if (Math.abs(actual - expected) > 1e-8) throw new Error(message + ': esperado ' + expected + ', recibido ' + actual);
     };
@@ -117,8 +118,8 @@
       const p=Zak.createPlayer('gero'); p.slow=4; near(Zak.getStats(p).moveSpeed,92*.85); equal(Zak.getStats(p).attackCooldown,2);
       const pepe=Zak.createPlayer('pepe'); pepe.slow=4; near(Zak.getStats(pepe).moveSpeed,92*.8);
     });
-    test('Enemigos escalan cada dos niveles del personaje', () => {
-      [1,2,3,4,5].forEach((level,index) => equal(Zak.enemyStats('thief',level).level,[1,1,2,2,3][index]));
+    test('Enemigos tienen el mismo nivel que el personaje', () => {
+      [1,2,3,4,5].forEach(level => equal(Zak.enemyStats('thief',level).level,level));
       const thief=Zak.enemyStats('thief',3);
       equal(thief.health,103); equal(thief.strength,6); equal(thief.speed,17); equal(thief.endurance,12);
     });
@@ -126,12 +127,29 @@
       const dog=Zak.enemyStats('dog',3), snake=Zak.enemyStats('snake',3), rat=Zak.enemyStats('rat',3);
       equal(dog.health,61.5); equal(dog.strength,3.5); equal(dog.speed,33); equal(dog.endurance,22);
       equal(snake.health,36); equal(snake.strength,7); equal(snake.poison,3); equal(snake.speed,27); equal(snake.endurance,5.5);
-      equal(rat.health,10.5); equal(rat.strength,3); equal(rat.speed,42); equal(rat.endurance,.5);
+      equal(rat.health,10.5); near(rat.strength,1.8); equal(rat.speed,42); equal(rat.endurance,.5);
+    });
+    test('Desde el nivel 8 los enemigos ganan vida y fuerza extra', () => {
+      const base=Zak.enemyStats('thief',8), late=Zak.enemyStats('thief',20);
+      near(base.health,110.5); near(base.strength,8.5);
+      near(late.health,(100+1.5*19)*1.72); near(late.strength,(5+.5*19)*1.24);
+      equal(Zak.enemyStats('archer',40).health,1,'El arquero siempre se rompe de un golpe');
+      equal(Zak.enemyStats('zak',40).health,10000+200*39,'Zak no usa el escalado tardío');
+    });
+    test('Las ratas ya no son letales en el final del juego', () => {
+      ok(Zak.enemyStats('rat',40).strength<Zak.enemyStats('thief',40).strength,'Una rata pega menos que un chorro');
+      ok(Zak.enemyStats('rat',40).strength<40);
     });
     test('Enemigos respetan los máximos incluso a niveles muy altos', () => {
       Object.keys(Zak.ENEMY_TYPES).forEach(type => {
-        const s=Zak.enemyStats(type,100000); equal(s.health,500); equal(s.strength,100); equal(s.speed,100); equal(s.endurance,100);
+        const s=Zak.enemyStats(type,100000); ok(s.strength<=100*Zak.lateFactor(100000).strength); ok(s.speed<=100); ok(s.endurance<=100);
       });
+    });
+    test('Cada jefe suelta su ofrenda y El Almacén la paga', () => {
+      const prices={fang:500,ring:1000,claw:1000,elemental:2000,eye:2000};
+      Object.entries(prices).forEach(([id,price]) => { equal(Zak.OFFERINGS[id].price,price); equal(Zak.ENEMY_TYPES[Zak.OFFERINGS[id].boss].drop,id); });
+      equal(Zak.ELEMENTAL_RECIPE.offerings.elemental,5); equal(Zak.ELEMENTAL_RECIPE.materials.iron,20);
+      ok(Zak.WEAPON_TYPES.elemental.damageMultiplier>Zak.WEAPON_TYPES.sword.damageMultiplier*Zak.weaponLevelMultiplier(6));
     });
     test('El veneno respeta el máximo de fuerza', () => { equal(Zak.enemyStats('snake',100000).poison,100); });
     test('Armadura resta daño y conserva mínimo de un punto', () => {

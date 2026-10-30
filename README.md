@@ -2,7 +2,7 @@
 
 Una aventura de acción y exploración en pixel art, vista desde arriba. Elegí a uno de seis amigos, preparate en la aldea y salí a explorar la cueva y los Yuyos.
 
-Versión actual: **v1.5**. Los cambios de cada versión están en [CHANGELOG.md](CHANGELOG.md).
+Versión actual: **v1.6**. Los cambios de cada versión están en [CHANGELOG.md](CHANGELOG.md).
 
 ## Jugar
 
@@ -23,10 +23,10 @@ El juego funciona directamente desde sus archivos: no requiere servidor, instala
 | Atacar | Espacio o clic en el mundo |
 | Rodar y esquivar | F o clic derecho (hacia el puntero) |
 | Habilidad activa | Q |
-| Recoger / usar el pozo / comprar / hablar con el herrero / bajar y subir | E |
+| Recoger / usar el pozo / comprar / hablar con el herrero / bajar y subir / dejar ofrendas en el altar | E |
 | Talar o picar | E cerca del árbol o la veta, y quedarse quieto |
 | Usar hierba de la bolsa | R |
-| Cambiar arma | 1, 2, 3 y 4; también sus botones |
+| Cambiar arma | 1 a 5; también sus botones |
 | Ficha y mejoras | C |
 | Diario de viaje | J |
 | Mapa | M |
@@ -59,14 +59,16 @@ Los guardados se conservan en el almacenamiento local del navegador usado para j
 ## El mundo
 
 - **Palihue City:** zona completamente segura, con casas, árboles, flores y vecinos que caminan y tienen colisión. Los enemigos no pueden entrar. El pozo permite recuperar vida y el puesto de **El Almacén** vende provisiones. Acá se encuentra el arco.
-- **Cueva:** zona oscura habitada por chorros y perros callejeros. La piedra se encuentra en su interior. En el fondo oeste, sentado en un trono, espera **El Capo del Eco**.
-- **Yuyos:** pastos altos, serpientes y ratas. Acá se encuentra la espada y Paco recibe su bonificación de Campesino. En el rincón noreste anida **La Yarará Madre**.
-- **Cueva Profunda (Nvl 2):** se baja por la escalera del fondo noroeste de la Cueva del Eco y **hace falta una antorcha**. Está a oscuras: ves lo que alumbra la antorcha. Hay murciélagos, arañas, hierro y oro, y **no crecen hierbas medicinales**. En su extremo sureste baja otra escalera.
-- **Las Entrañas (Nvl 3):** pocos gusanos de tierra, enterrados hasta que te acercás, y las únicas vetas de diamante.
+- **Cueva:** zona oscura habitada por chorros y perros callejeros. La piedra se encuentra en su interior. En el fondo noroeste, sentado en su trono junto a la bajada, **El Capo del Eco** no deja pasar a nadie.
+- **Yuyos:** pastos altos, serpientes y ratas. Acá se encuentra la espada y Paco recibe su bonificación de Campesino. En el rincón noreste anida **La Yarará Madre**. La valla del límite con la aldea llega hasta arriba de todo: al nido se llega por el camino de los yuyos.
+- **Cueva Profunda (Nvl 2):** se baja por la escalera del fondo noroeste de la Cueva del Eco; **hace falta una antorcha y haber vencido al Capo**. Está a oscuras: ves lo que alumbra la antorcha. Hay murciélagos, arañas, hierro y oro, y **no crecen hierbas medicinales**. En su extremo sureste baja otra escalera, custodiada por **El Chupasangre**.
+- **Las Entrañas (Nvl 3):** pocos gusanos de tierra, enterrados hasta que te acercás, las únicas vetas de diamante y **El Gólem Minero**.
+- **Altar del gobernante:** un cementerio al oeste de la aldea; se entra por el portón al final de la calle principal. Lo pueblan esqueletos con escudo y esqueletos arqueros. **Cerbero** custodia el altar de ofrendas.
+- **Trono de Zak:** sala gótica de ladrillo negro, siempre de noche pero bien visible. Se llega solo por el portal del altar. No hay enemigos: solo **Zak** y su trono.
 
-El mapa marca el almacén ($), el herrero (⚒), las bajadas (▼ ▲) y las guaridas de los jefes (☠). Dentro de una cueva profunda, el mapa muestra ese nivel. El diario de exploración, los avisos de interacción y las pistas iniciales ayudan a orientarte. Los enemigos vuelven a aparecer después de **35 segundos**; los jefes, después de **3 minutos**.
+Las bajadas custodiadas no se abren mientras su jefe esté vivo; si reaparece mientras estás abajo, subir siempre se puede. El mapa marca el almacén ($), el herrero (⚒), las bajadas (▼ ▲), el altar (✝) y las guaridas de los jefes (☠). Dentro de una cueva profunda o del trono, el mapa muestra esa zona. Los enemigos vuelven a aparecer después de **35 segundos**; el Capo y la Yarará, después de **3 minutos**; el Chupasangre, de 4; el Gólem, de 5; y Cerbero, de 10.
 
-Al quedar noqueado volvés a la aldea. Si te vence un chorro aparece «Uhh... este gil me sacó guita»… y es literal: un chorro o el Capo se llevan el **30%** de tus monedas. Cualquier otra derrota cuesta el **10%**.
+Al quedar noqueado volvés a la aldea. Si te vence un chorro aparece «Uhh... este gil me sacó guita»… y es literal: un chorro o el Capo se llevan el **30%** de tus monedas. Cualquier otra derrota cuesta el **10%**. Si Zak te ejecuta, perdés toda la guita, los materiales y las ofrendas (ver [El Trono de Zak](#el-trono-de-zak)).
 
 ## Combate
 
@@ -92,6 +94,12 @@ Cada objetivo del diario también da guita, una sola vez. Se reclama en el diari
 | Llegar a la Cueva Profunda | 30 |
 | Derrotar al Capo o a la Yarará | 40 cada uno |
 | Llegar a Las Entrañas | 50 |
+| Derrotar al Chupasangre | 60 |
+| Dejar las cinco ofrendas en el altar | 60 |
+| Derrotar al Gólem Minero | 80 |
+| Forjar la Espada Elemental | 100 |
+| Derrotar a Cerbero | 100 |
+| Vencer a Zak | 300 |
 
 El puesto de El Almacén está al oeste de la plaza (E para comprar):
 
@@ -101,6 +109,16 @@ El puesto de El Almacén está al oeste de la plaza (E para comprar):
 | Mate cebado | 6 | Energía al máximo y +10% de movimiento durante 30 s |
 | Afilar y tensar | 30, 60, 90… | +10% de daño con todas las armas, hasta 5 veces |
 | Clase con Beto | 60, 100, 140… | +1 punto de mejora |
+
+El Almacén también **compra las ofrendas** de los jefes, una por vez:
+
+| Ofrenda | La suelta | Te pagan |
+| --- | --- | ---: |
+| 🦷 Colmillo Tóxico | La Yarará Madre | 500 |
+| 💍 Anillo de la mafia | El Capo del Eco | 1000 |
+| 🩸 Garra Sangrienta | El Chupasangre | 1000 |
+| 🔮 Piedra Elemental | El Gólem Minero | 2000 |
+| 👁 Ojo del alma | Cerbero | 2000 |
 
 ## Materiales, herramientas y El Taller
 
@@ -141,18 +159,44 @@ La **antorcha** cuesta 1 de madera y 3 de carbón. Se fabrica una sola vez y hab
 | 5 | 15 oro + 75 |
 | 6 | 15 diamante + 90 |
 
-Los materiales, las herramientas, las mejoras y las vetas recién picadas se guardan con la partida. La ficha del personaje (C) muestra tu bolsa de materiales.
+**Espada Elemental.** Se forja con **5 Piedras Elementales, 10 de diamante, 15 de oro, 20 de hierro, 25 de piedra y 10 de madera**. Multiplica la fuerza por **4,5**, contra ×3 de la espada al nivel 6, y no se mejora. Se equipa con la tecla 5.
+
+Los materiales, las herramientas, las mejoras, las ofrendas y las vetas recién picadas se guardan con la partida. La ficha del personaje (C) muestra tu bolsa de materiales.
 
 ## Jefes
 
-Ambos escalan con tu nivel como el resto de los enemigos, no retroceden con los golpes, no se pueden encantar y el Baile del 7-0 solo los frena 2,5 s. La primera victoria contra cada uno otorga **un punto de mejora** de trofeo. Si te noquean, recuperan toda su vida.
+Escalan con tu nivel como el resto de los enemigos, no retroceden con los golpes, no se pueden encantar y el Baile del 7-0 solo los frena 2,5 s. La primera victoria contra cada uno otorga **un punto de mejora** de trofeo, y cada vez que caen sueltan su ofrenda. Si te noquean, recuperan toda su vida (y todas sus vidas). La barra de vida del jefe muestra sus vidas y avisa qué ataque viene.
 
-| Jefe | Vida | Fuerza | Velocidad | Resistencia | Ataque especial |
-| --- | ---: | ---: | ---: | ---: | --- |
-| El Capo del Eco | 340 | 9 | 20 | 30 | Marca una línea roja y embiste: 160% de su fuerza y frena 1,5 s |
-| La Yarará Madre | 320 | 7 | 25 | 15 | Te persigue. Colazo en anillo alrededor suyo (marca un círculo rosado: rodá o alejate). Antes de escupir el abanico de veneno retrocede un poco y marca tres líneas (50% de envenenar; 15% contra Fede) |
+| Jefe | Dónde | Vida | Fuerza | Velocidad | Resistencia |
+| --- | --- | ---: | ---: | ---: | ---: |
+| El Capo del Eco | Junto a la bajada al Nvl 2 | 520 | 12 | 22 | 35 |
+| La Yarará Madre | Rincón noreste de Los Yuyos | 480 | 10 | 28 | 20 |
+| El Chupasangre | Junto a la bajada al Nvl 3 | 900 | 15 | 35 | 40 |
+| El Gólem Minero | Las Entrañas | 420 por vida (×1; ×1,15; ×1,3; ×1,5) | 22 | 10 | 65 |
+| Cerbero | Altar del gobernante | 1600 | 20 | 62 | 50 |
+| Zak | Trono de Zak | 10000 por vida, 3 vidas | — | 22 | 85 |
 
-Mientras peleás aparece una barra de vida del jefe que avisa cuándo viene el ataque especial. Se recomienda llegar al nivel 4.
+Son los valores en nivel 1; todos crecen con tu nivel.
+
+- **El Capo del Eco:** marca una línea roja y embiste: 160% de su fuerza y frena 1,5 s.
+- **La Yarará Madre:** te persigue. Colazo en anillo alrededor suyo (marca un círculo rosado: rodá o alejate). Antes de escupir el abanico de veneno retrocede un poco y marca tres líneas (50% de envenenar; 15% contra Fede).
+- **El Chupasangre:** *Embestida sangrienta* (línea roja; si te alcanza te agarra 1,7 s, te chupa la sangre tres veces y se cura 4% de su vida por mordida), *Manotazo* (dos golpes rápidos de corto alcance) e *Invocación* (se aleja y llama a cinco murciélagos).
+- **El Gólem Minero:** cuatro vidas, de piedra, hierro, oro y diamante; cada una tiene más vida y fuerza y se rearma con una animación del material. *Terremoto*: cuatro golpes al piso, cada uno avisado con un anillo naranja 0,75 s antes, con mucho daño en área. *Piedrazo*: aturde 3 s. *Refuerzo*: invencible 5 s cada 15 s, y al instante al bajar del 30% de vida (una vez por vida).
+- **Cerbero:** *Mordida* que desangra (5 de vida por segundo durante 5 s, ignora la armadura). *Jugueteo*: salta, sigue tu posición y aterriza en el círculo rojo; si te alcanza vas a la mitad de velocidad 5 s. Mientras está en el aire no se le puede pegar. *Escarbar*: si en 3 s no le pegás, se cura entero.
+
+### El Trono de Zak
+
+En el altar del cementerio se deja **una ofrenda de cada jefe** (E). Si tenés varias del mismo tipo, toma una sola; las que dejás quedan guardadas aunque te vayas. Mientras Cerbero esté vivo, el altar está cerrado. Con las cinco, se rompen y se abre un **portal violeta**: tocalo para entrar al Trono de Zak. Cada visita gasta un juego completo de ofrendas.
+
+Cualquier golpe de Zak se lleva más de la mitad de tu vida máxima, sin importar la armadura: dos golpes alcanzan.
+
+- **Espadazo:** tres golpes hacia adelante en un abanico de 60°.
+- **Invocación:** dos esqueletos con espada y escudo y dos arqueros.
+- **Invocación mayor:** trae a uno de los cinco jefes al azar, con el mismo nivel que tiene ese jefe en tu partida. Mientras siga en pie, Zak se sienta en el trono y se cura 3 por segundo (con el Gólem, hasta que pierda sus cuatro vidas). La repite entre 40 y 80 segundos después de que cae el invocado.
+- **Tormenta de agonía:** durante 10 s caen rayos violetas alrededor tuyo; cada uno se marca antes de caer y **mata de un toque**. Mientras dura, **solo la piedra** le hace daño.
+- **En su tercera vida** suma la **Ira del gobernante** (20 s en los que solo ves a tu alrededor, mientras sigue atacando) y el **Terremoto morado**: todo el mapa tiembla menos un círculo claro; si no estás adentro cuando clava la espada, perdés mucha vida.
+
+Al vencerlo, Zak no muere: vuelve al trono, dice «Dejémoslo acá y volvé a tu dimensión, mortal.», golpea dos veces el piso y abre un portal a la aldea. **Tenés 40 segundos para cruzarlo.** Si no, dice «¿Sabés lo que le pasa al que no sigue mis órdenes? Muere...» y te ejecuta: perdés toda la guita, los materiales y las ofrendas; las armas y herramientas se quedan. El mensaje de la derrota es «Eso por querer hacerle el poronga...».
 
 ## Personajes
 
@@ -218,25 +262,29 @@ Paco recibe el **90%** de la duración y protección de su banda; Fede, el **80%
 
 ## Enemigos
 
-Todos comparten un radio de detección de **195 píxeles**. Su nivel es `1 + floor((nivel del jugador - 1) / 2)`: niveles 1 y 2 del jugador enfrentan nivel 1; niveles 3 y 4, nivel 2; y así sucesivamente. No corren ni gastan energía.
+Casi todos comparten un radio de detección de **195 píxeles**. Tienen **el mismo nivel que tu personaje** y no corren ni gastan energía. Desde el nivel 8, además, cada nivel les suma **6% de vida y 2% de fuerza** (`vida × (1 + 0,06 × (nivel − 8))`, `fuerza × (1 + 0,02 × (nivel − 8))`). Así el final del juego sigue siendo exigente. La vida de los enemigos no tiene tope; fuerza, velocidad y resistencia sí (100 antes del extra).
 
 | Enemigo | Vida | Fuerza | Velocidad | Resistencia | Aumento por nivel: V / F / Vel / R |
 | --- | ---: | ---: | ---: | ---: | --- |
-| Chorro | 100 | 5 | 15 | 10 | +3 / +1 / +2 / +2 |
-| Perro | 60 | 3 | 30 | 20 | +1,5 / +0,5 / +3 / +2 |
-| Serpiente | 35 | 5 | 25 | 5 | +1 / +2 / +2 / +0,5 |
-| Rata | 10 | 1 | 40 | 0 | +0,5 / +2 / +2 / +0,5 |
-| Murciélago | 40 | 6 | 45 | 15 | +3 / +1 / +2 / +1 |
-| Araña | 75 | 8 | 26 | 35 | +4 / +1 / +1 / +2 |
-| Gusano de tierra | 100 | 10 | 18 | 62 | +8 / +1,5 / +1 / +2 |
+| Chorro | 100 | 5 | 15 | 10 | +1,5 / +0,5 / +1 / +1 |
+| Perro | 60 | 3 | 30 | 20 | +0,75 / +0,25 / +1,5 / +1 |
+| Serpiente | 35 | 5 | 25 | 5 | +0,5 / +1 / +1 / +0,25 |
+| Rata | 10 | 1 | 40 | 0 | +0,25 / +0,4 / +1 / +0,25 |
+| Murciélago | 40 | 6 | 45 | 15 | +1,5 / +0,5 / +1 / +0,5 |
+| Araña | 75 | 8 | 26 | 35 | +2 / +0,5 / +0,5 / +1 |
+| Gusano de tierra | 100 | 10 | 18 | 62 | +4 / +0,75 / +0,5 / +1 |
+| Esqueleto con escudo | 100 | 14 | 8 | 35 | +1,5 / +0,8 / +0,2 / +1 |
+| Esqueleto arquero | 1 | 7 | 30 | 0 | +0 / +0,5 / +0,5 / +0 |
 
 - Los **chorros** atacan con cuchillo y no retroceden al recibir golpes.
 - Los **perros** reducen el movimiento un 15% durante 4 segundos; contra Pepe, un 20%.
 - Las **serpientes** tienen 40% de probabilidad de envenenar, salvo el 15% contra Fede. El veneno causa 2 de daño por segundo durante 5 segundos; aumenta 1 por nivel de serpiente. Una nueva aplicación reinicia los 5 segundos.
-- Las **ratas** se prenden del cuerpo por 3 segundos, atacan con su intervalo correspondiente y luego saltan hacia atrás antes de intentar prenderse otra vez.
+- Las **ratas** se prenden del cuerpo por 3 segundos y luego saltan hacia atrás antes de intentar prenderse otra vez. Prendidas muerden al 60% de su fuerza y como mucho una vez cada 0,9 s.
 - Los **murciélagos** (Cueva Profunda) vuelan en zigzag y muerden rápido.
 - Las **arañas** (Cueva Profunda) tienen 15% de probabilidad de envenenar como las serpientes (5% contra Fede). Su caparazón absorbe 4 de daño por golpe.
 - Los **gusanos de tierra** (Las Entrañas) esperan enterrados, salen cuando te acercás a unos 120 píxeles y absorben 6 de daño por golpe. Reaparecen a los 90 segundos. Para pelear cómodo en los niveles profundos conviene llevar armas mejoradas.
+- Los **esqueletos con escudo** (cementerio) son lentos, pegan fuerte y tienen 15% de probabilidad de bloquear cada golpe.
+- Los **esqueletos arqueros** (cementerio) te ven desde 260 píxeles, disparan flechas cada 1,7 s y se alejan si te acercás. Se rompen de un golpe.
 
 Los ataques empujan a perros, serpientes y ratas; las ratas prendidas deben terminar su agarre. Los aumentos propios de vida de cada enemigo se aplican según la tabla, sin sumarles los 2 de vida automáticos del jugador. El daño de veneno también respeta el límite de fuerza de 100.
 
@@ -247,7 +295,8 @@ Los ataques empujan a perros, serpientes y ratas; las ratas prendidas deben term
 | Puños | Desde el comienzo | Daño igual a fuerza, corto alcance |
 | Espada | Yuyos | Fuerza ×1,5 y mayor alcance |
 | Arco | Aldea | Proyectil a distancia; necesita 0,7 s de carga y respeta el intervalo de ataque |
-| Piedra | Cueva | Proyectil a distancia; caminar 2 s recarga la munición |
+| Piedra | Cueva | Proyectil a distancia; caminar 2 s recarga la munición. Es lo único que lastima a Zak durante la Tormenta de agonía |
+| Espada Elemental | El Taller | Fuerza ×4,5 y alcance de espada; se forja con 5 Piedras Elementales y materiales |
 
 Se interpretó «aumenta el daño en un ×0,5» como **50% adicional**, por lo que la espada multiplica por **1,5**.
 
@@ -259,6 +308,7 @@ Implementado con **HTML, CSS y JavaScript**, sin paquetes externos. El mundo se 
 - `src/world.js`: mapa, biomas, objetos, colisiones y vecinos.
 - `src/render.js`: sprites, terreno, cámara y efectos visuales.
 - `src/game.js`: simulación, movimiento, combate, esquiva, combos, monedas, tienda, jefes y habilidades.
+- `src/bosses.js`: el Chupasangre, el Gólem Minero, Cerbero y Zak; altar de ofrendas, portales e invocaciones.
 - `src/ui.js`: menús, HUD, tienda, ranking, guardados y controles táctiles.
 - `src/ranking.js` y `src/config.js`: ranking local u online (Supabase).
 - `tests/rules.test.js`: 30 pruebas de reglas y casos límite.

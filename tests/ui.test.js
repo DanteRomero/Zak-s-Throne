@@ -38,7 +38,7 @@
   g.player.points=1;document.getElementById('stats-button').click();const strength=g.player.stats.strength;document.querySelector('[aria-label="Mejorar Fuerza"]').click();
   assert('Mejorar atributo consume un punto',g.player.stats.strength===strength+1&&g.player.points===0);close();
   document.getElementById('map-button').click();assert('Mapa renderizado',!!document.querySelector('.map-canvas'));close();
-  document.getElementById('journal-button').click();assert('Diario y bestiario visibles',document.querySelectorAll('.journal-task').length===22);close();
+  document.getElementById('journal-button').click();assert('Diario y bestiario visibles',document.querySelectorAll('.journal-task').length===34);close();
   const coins=g.player.coins;assert('Hay recompensas para reclamar',!document.getElementById('journal-badge').classList.contains('hidden')||g.unclaimedRewards().length>0);
   document.getElementById('journal-button').click();const claim=document.querySelector('.quest-claim');claim.click();
   assert('Reclamar en el diario suma guita',g.player.coins>coins&&document.querySelector('.shop-message').textContent.includes('guita'));close();
