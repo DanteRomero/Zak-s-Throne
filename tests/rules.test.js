@@ -21,7 +21,7 @@
       a.stats.health = 1; equal(b.stats.health, 105); equal(Zak.CHARACTERS[0].stats.health, 105);
     });
     test('Velocidad: límites exactos de todas las bandas', () => {
-      [[0,3,72],[14.99,3,72],[15,2,92],[29.99,2,92],[30,1,118],[59.99,1,118],[60,.5,148],[100,.5,148],[125,.25,178]].forEach(([speed, cooldown, movement]) => {
+      [[0,3,72],[14.99,3,72],[15,2,92],[29.99,2,92],[30,1,118],[59.99,1,118],[60,.5,148],[100,.5,148],[200,.375,163],[400,.3125,170.5]].forEach(([speed, cooldown, movement]) => {
         const s = Zak.speedBand(speed); equal(s.attackCooldown,cooldown); equal(s.moveSpeed,movement);
       });
     });
@@ -59,14 +59,24 @@
       equal(p.stats.strength,10); equal(p.points,2);
       equal(Zak.upgradeStat(p,'strength'),true); equal(p.stats.strength,11); equal(p.points,1);
     });
-    test('Vida automática y mejoras respetan el máximo de 500', () => {
+    test('Vida, fuerza, velocidad y resistencia no tienen tope', () => {
       const p=Zak.createPlayer('tena'); p.stats.health=499; p.hp=499; Zak.grantXp(p,100);
-      equal(p.stats.health,500); equal(p.hp,500); equal(Zak.upgradeStat(p,'health'),false); equal(p.points,1);
+      equal(p.stats.health,501); equal(p.hp,501); equal(Zak.upgradeStat(p,'health'),true); equal(p.stats.health,506); equal(Zak.getStats(p).maxHealth,506);
+      p.stats.strength=150; p.stats.speed=200; p.stats.endurance=150; const s=Zak.getStats(p);
+      equal(s.strength,150); equal(s.speed,200); equal(s.attackCooldown,.375); equal(s.armor,13);
     });
-    test('Las mejoras no gastan puntos si son inválidas o están al máximo', () => {
+    test('Las mejoras no gastan puntos si son inválidas', () => {
       const p=Zak.createPlayer('tena'); p.points=2; p.stats.speed=100;
-      equal(Zak.upgradeStat(p,'speed'),false); equal(Zak.upgradeStat(p,'notAStat'),false); equal(Zak.upgradeStat(p,'toString'),false); equal(p.points,2);
-      equal(Zak.upgradeStat(p,'health'),true); equal(p.stats.health,105); equal(p.hp,105); equal(p.points,1);
+      equal(Zak.upgradeStat(p,'notAStat'),false); equal(Zak.upgradeStat(p,'toString'),false); equal(p.points,2);
+      equal(Zak.upgradeStat(p,'speed'),true); equal(p.stats.speed,101); equal(p.points,1);
+      equal(Zak.upgradeStat(p,'health'),true); equal(p.stats.health,105); equal(p.hp,105); equal(p.points,0);
+      equal(Zak.upgradeStat(p,'health'),false);
+    });
+    test('Veteranía: desde el nivel 8 el daño crece como la vida extra de los enemigos', () => {
+      const p=Zak.createPlayer('dante'); p.level=8; near(Zak.getStats(p).damageMultiplier,1);
+      p.level=20; near(Zak.getStats(p).veteran,1.48); p.sharpen=2; near(Zak.getStats(p).damageMultiplier,1.2*1.48);
+      near(Zak.getStats(p).veteran,Zak.lateFactor(20).health);
+      near(Zak.getStats(p).maxHealth,p.stats.health*1.06,'La vida crece como la fuerza extra de los enemigos');
     });
     test('Mejorar vida conserva la vida temporal de Paco en Yuyos', () => {
       const p=Zak.createPlayer('paco'); p.hp=115; p.points=1;

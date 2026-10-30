@@ -328,16 +328,17 @@
     openModal(c.name + ' · Nivel ' + p.level, 'FICHA DEL PERSONAJE', parent => {
       paragraph(parent,p.points ? p.points + ' punto' + (p.points === 1 ? '' : 's') + ' para mejorar. Vida suma 5; las otras estadísticas suman 1.' : 'Al subir de nivel recibís 2 de vida y un punto para mejorar.');
       Object.keys(Zak.STAT_LABELS).forEach(key => {
-        const row = el('div','stats-upgrade'), cap = key === 'health' ? 500 : key === 'intelligence' ? Infinity : 100;
-        row.append(el('span','',Zak.STAT_LABELS[key]),el('b','',fmt(p.stats[key]) + (cap < Infinity ? ' / ' + cap : '')));
+        const row = el('div','stats-upgrade');
+        row.append(el('span','',Zak.STAT_LABELS[key]),el('b','',fmt(p.stats[key])));
         const upgrade = button('+',() => { if (Zak.upgradeStat(p,key)) { showStats(); updateHud(true); } },'upgrade-button');
-        upgrade.setAttribute('aria-label','Mejorar ' + Zak.STAT_LABELS[key]); upgrade.disabled = p.points < 1 || p.stats[key] >= cap; row.append(upgrade); parent.append(row);
+        upgrade.setAttribute('aria-label','Mejorar ' + Zak.STAT_LABELS[key]); upgrade.disabled = p.points < 1; row.append(upgrade); parent.append(row);
       });
       const summary = el('div','stats-summary');
       ['Vida efectiva: ' + fmt(s.maxHealth), 'Fuerza efectiva: ' + fmt(s.strength) + ' · Armadura: ' + fmt(s.armor),
        'Movimiento: ' + fmt(s.moveSpeed) + ' px/s · Golpe cada ' + fmt(s.attackCooldown) + ' s',
        'Carrera: ' + fmt(s.runDuration) + ' s · Experiencia: ×' + fmt(s.xpMultiplier),
-       'Daño de armas: ×' + fmt(s.damageMultiplier) + ' · Cuarto golpe seguido: crítico ×1,75',
+       'Daño de armas: ×' + fmt(s.damageMultiplier) + (s.veteran > 1 ? ' (veteranía ×' + fmt(s.veteran) + ')' : '') + ' · Cuarto golpe seguido: crítico ×1,75',
+       'Velocidad: ' + s.speedLabel.toLowerCase() + ' · Movimiento ' + fmt(s.moveSpeed) + ' px/s',
        'Monedas: ' + fmt(p.coins) + ' · Hierbas: ' + p.herbs + ' / ' + Zak.HERB_BAG + ' · Derrotas: ' + p.kills,
        'Próximo nivel: ' + fmt(p.xp) + ' / ' + Zak.xpNeeded(p.level) + ' XP',
        'Materiales: ' + Object.entries(Zak.MATERIALS).map(([k,m]) => m.name + ' ' + (p.materials[k] || 0)).join(' · '),

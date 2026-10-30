@@ -526,9 +526,9 @@ class Game {
   if(!data||data.version!==1||!data.player||!Array.isArray(data.collected)||!Array.isArray(data.enemies))throw new Error('El archivo no es una partida válida de Zak’s Throne.');
   const p=data.player,isNumber=n=>typeof n==='number'&&Number.isFinite(n);if(!Z.CHARACTERS.some(c=>c.id===p.characterId))throw new Error('Personaje desconocido.');
   for(const k of ['level','xp','points','hp','x','y','stamina'])if(!isNumber(p[k]))throw new Error('La partida tiene datos incompletos.');
-  if(!Number.isInteger(p.level)||p.level<1||!Number.isSafeInteger(p.level)||p.xp<0||p.xp>=Z.xpNeeded(p.level)||!Number.isInteger(p.points)||p.points<0||p.hp<=0||p.hp>500||p.x<Z.WORLD_LEFT+10||p.x>2390||p.y<10||p.y>2490)throw new Error('La partida contiene valores fuera de rango.');
+  if(!Number.isInteger(p.level)||p.level<1||!Number.isSafeInteger(p.level)||p.xp<0||p.xp>=Z.xpNeeded(p.level)||!Number.isInteger(p.points)||p.points<0||p.hp<=0||p.hp>Number.MAX_SAFE_INTEGER||p.x<Z.WORLD_LEFT+10||p.x>2390||p.y<10||p.y>2490)throw new Error('La partida contiene valores fuera de rango.');
   if(!p.stats)throw new Error('Faltan las estadísticas.');
-  for(const k of Object.keys(Z.STAT_LABELS))if(!isNumber(p.stats[k])||p.stats[k]<0||p.stats[k]>(k==='health'?500:k==='intelligence'?Number.MAX_SAFE_INTEGER:100))throw new Error('Estadísticas inválidas.');
+  for(const k of Object.keys(Z.STAT_LABELS))if(!isNumber(p.stats[k])||p.stats[k]<0||p.stats[k]>Number.MAX_SAFE_INTEGER)throw new Error('Estadísticas inválidas.');
   if(p.stats.health<1)throw new Error('La vida máxima debe ser positiva.');
   if(!Array.isArray(p.weapons)||!p.weapons.includes('fists')||!p.weapons.every(w=>Object.hasOwn(Z.WEAPON_TYPES,w))||!p.weapons.includes(p.weapon))throw new Error('Inventario inválido.');
   for(const k of ['coins','herbs','sharpen','lessons','axe','pickaxe'])if(p[k]!==undefined&&(!isNumber(p[k])||p[k]<0))throw new Error('Inventario inválido.');

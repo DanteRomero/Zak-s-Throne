@@ -197,7 +197,7 @@
       fixture('gero',true); const valid=game.snapshot(), before=game.player;
       const mutations=[
         s=>s.version=999, s=>s.player.characterId='missing', s=>s.player.level=0,
-        s=>s.player.xp=-1, s=>s.player.hp=NaN, s=>s.player.stats.speed=101,
+        s=>s.player.xp=-1, s=>s.player.hp=NaN, s=>s.player.stats.speed=-1,
         s=>s.player.weapons=['unknown'], s=>s.player.x=-1000, s=>s.collected=null
       ];
       mutations.forEach(mutate=>{const save=JSON.parse(JSON.stringify(valid)); mutate(save); let threw=false;

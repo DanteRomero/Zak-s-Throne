@@ -2,7 +2,7 @@
 
 Una aventura de acción y exploración en pixel art, vista desde arriba. Elegí a uno de seis amigos, preparate en la aldea y salí a explorar la cueva y los Yuyos.
 
-Versión actual: **v2.1**. Los cambios de cada versión están en [CHANGELOG.md](CHANGELOG.md).
+Versión actual: **v2.2**. Los cambios de cada versión están en [CHANGELOG.md](CHANGELOG.md).
 
 ## Jugar
 
@@ -209,7 +209,7 @@ Al vencerlo, Zak no muere: vuelve al trono, dice «Dejémoslo acá y volvé a tu
 | Tena | 100 | 2 | 20 | 5 | 5 |
 | Dante | 110 | 8 | 5 | 20 | 15 |
 
-- **Gero — Fé Judía:** recupera 5 de vida por segundo y gana 25 de velocidad durante 5 segundos. Puede alcanzar 125 de velocidad. Las ratas lo ignoran hasta que las golpea. Su experiencia parte de ×0,75.
+- **Gero — Fé Judía:** recupera 5 de vida por segundo y gana 25 de velocidad durante 5 segundos. Si con el bono supera 100 de velocidad, salta a la banda Extraordinaria. Las ratas lo ignoran hasta que las golpea. Su experiencia parte de ×0,75.
 - **Paco — Afecto animal:** encanta animales cercanos durante 10 segundos; se apartan y le dan 2 de fuerza por animal. En los Yuyos sus estadísticas aumentan 15%. Obtiene 10% menos de los beneficios de resistencia.
 - **Fede — Último aliento, pasiva:** con 30% de vida o menos gana 15% de velocidad y resistencia. Las serpientes tienen solo 15% de probabilidad de envenenarlo. Obtiene 20% menos de los beneficios de resistencia.
 - **Pepe — DeboraMundos, pasiva:** derrotar un enemigo recupera 5 de vida y da 15% de velocidad por 3 segundos. Gana 50% más de experiencia. Los perros le hacen 10% más de daño y lo ralentizan 20%.
@@ -222,11 +222,18 @@ Las habilidades activas tienen enfriamiento: Gero **25 s**, Paco **30 s**, Tena 
 
 ## Estadísticas y progresión
 
-La vida máxima tiene un límite de **500**. Fuerza, velocidad y resistencia base tienen límite de **100**. Inteligencia y nivel del personaje no tienen un máximo.
+**Ninguna estadística del personaje tiene tope**: vida, fuerza, velocidad, resistencia, inteligencia y nivel pueden crecer sin límite. La velocidad y la resistencia rinden cada vez menos pasado 100 (ver sus tablas).
+
+**Veteranía.** Desde el nivel 8, los enemigos ganan vida y fuerza extra por nivel; tu personaje crece al mismo ritmo para que el juego nunca se vuelva imposible:
+
+- Tu **daño** se multiplica por `1 + 0,04 × (nivel − 8)`, lo mismo que la vida extra de los enemigos.
+- Tu **vida máxima** se multiplica por `1 + 0,005 × (nivel − 8)`, lo mismo que su fuerza extra.
+
+En nivel 20 pegás ×1,48 y tenés ×1,06 de vida; en nivel 40, ×2,28 y ×1,16. La ficha (C) muestra tu veteranía.
 
 El nivel 2 requiere **100 XP**. Cada nivel siguiente requiere 50 adicionales: **150, 200, 250…**. La experiencia sobrante se conserva, incluso si una recompensa permite subir varios niveles.
 
-Cada nivel concede **2 de vida máxima** y **un punto de mejora**. Un punto suma 1 a fuerza, velocidad, resistencia o inteligencia, o 5 a vida. Dante gana además 1 de fuerza automático; si elige fuerza también, obtiene 2 en total. Las mejoras que ya están al máximo no consumen puntos.
+Cada nivel concede **2 de vida máxima** y **un punto de mejora**. Un punto suma 1 a fuerza, velocidad, resistencia o inteligencia, o 5 a vida. Dante gana además 1 de fuerza automático; si elige fuerza también, obtiene 2 en total.
 
 La inteligencia aporta un escalón cada 10 puntos:
 
@@ -242,9 +249,10 @@ Gero reemplaza la base 1 por 0,75. Pepe multiplica el resultado completo por 1,5
 | 15 a menos de 30 | 2 s | Moderado |
 | 30 a menos de 60 | 1 s | Normal |
 | 60 a 100 | 0,5 s | Rápido |
+| Más de 100 | `0,25 + 25 / velocidad` s (200: 0,375 s) | Veloz: `178 − 3000 / velocidad` px/s (200: 163) |
 | Más de 100, durante Fé Judía | 0,25 s | Extraordinario |
 
-Las bandas establecen pasos base de 72, 92, 118 y 148 píxeles por segundo. La banda extraordinaria de Gero suma la misma diferencia que la anterior: **178 píxeles por segundo**. Los cambios porcentuales temporales afectan directamente al movimiento para que se sientan incluso dentro de una banda; el intervalo de ataque sigue la banda de velocidad efectiva.
+Las bandas establecen pasos base de 72, 92, 118 y 148 píxeles por segundo. Pasado 100, cada punto sigue sumando pero cada vez menos: el golpe se acerca a 0,25 s y el paso a 178 sin llegar nunca. La banda extraordinaria de Gero llega directo a **178 píxeles por segundo** y 0,25 s. Los cambios porcentuales temporales afectan directamente al movimiento para que se sientan incluso dentro de una banda; el intervalo de ataque sigue la banda de velocidad efectiva.
 
 Correr aumenta el movimiento **25%**. Tras dejar de correr durante **2 segundos**, la energía comienza a recuperarse. Agotarla por completo bloquea la carrera por **10 segundos**, mientras la barra vuelve a llenarse.
 
@@ -257,6 +265,7 @@ Correr aumenta el movimiento **25%**. Tras dejar de correr durante **2 segundos*
 | 30 a menos de 60 | 7 s | 4 |
 | 60 a menos de 80 | 10 s | 6 |
 | 80 a 100 | 12 s | 8 |
+| Más de 100 | 12 s | 8 + 1 cada 10 puntos (150: 13) |
 
 Paco recibe el **90%** de la duración y protección de su banda; Fede, el **80%**. La armadura conserva un mínimo de **1 de daño por golpe**. El veneno ignora por completo esta protección.
 

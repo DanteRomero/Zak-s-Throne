@@ -6,6 +6,16 @@ Cada versión lista sus cambios agrupados por tipo:
 - **Change:** algo que ya existía y ahora funciona distinto.
 - **Fix:** un error corregido.
 
+## v2.2 — 2026-10-30
+
+* Feature
+    - **Veteranía:** desde el nivel 8, tu personaje crece al mismo ritmo que los enemigos. Tu daño sube un 4% por nivel (lo mismo que su vida extra) y tu vida máxima, un 0,5% por nivel (lo mismo que su fuerza extra). En nivel 20 pegás ×1,48 y tenés ×1,06 de vida. La ficha (C) lo muestra.
+* Change
+    - **Sin topes para el personaje:** la vida ya no se frena en 500; la fuerza, la velocidad y la resistencia ya no se frenan en 100. Los botones de mejora nunca se bloquean por llegar a un máximo.
+    - **Velocidad más allá de 100:** sigue mejorando, cada vez menos. El golpe se acerca a 0,25 s y el paso a 178 px/s sin llegar nunca (con 200: 0,375 s y 163 px/s). La Fé Judía de Gero sigue saltando directo a la banda Extraordinaria (0,25 s y 178 px/s) cuando supera 100.
+    - **Resistencia más allá de 100:** cada 10 puntos suman 1 de armadura (con 150: 13 de armadura). La carrera sigue llegando a un máximo de 12 s.
+    - La ficha muestra la banda de velocidad y el movimiento.
+
 ## v2.1 — 2026-10-30
 
 * Change

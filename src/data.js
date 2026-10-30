@@ -4,7 +4,8 @@
   const Zak = root.Zak = root.Zak || {};
   const clamp = (n, min, max) => Math.max(min, Math.min(max, n));
   const finite = (n, fallback = 0) => Number.isFinite(Number(n)) ? Number(n) : fallback;
-  const caps = { health: 500, strength: 100, speed: 100, endurance: 100, intelligence: Infinity };
+  // Topes solo para los enemigos: el personaje no tiene máximos en ninguna estadística.
+  const caps = { strength: 100, speed: 100, endurance: 100 };
 
   Zak.STAT_LABELS = { health: 'Vida', strength: 'Fuerza', speed: 'Velocidad', endurance: 'Resistencia', intelligence: 'Inteligencia' };
   Zak.CHARACTERS = [
@@ -235,22 +236,27 @@
     elemental: { name: 'Espada Elemental', damageMultiplier: 4.5, range: 62, crafted: true, description: 'Forjada con cinco Piedras Elementales. Mucho más daño que la espada mejorada al máximo.' }
   };
 
-  Zak.speedBand = function (speed) {
+  Zak.speedBand = function (speed, burst = false) {
     speed = Math.max(0, finite(speed));
     if (speed < 15) return { tier: 0, moveSpeed: 72, attackCooldown: 3, label: 'Lenta' };
     if (speed < 30) return { tier: 1, moveSpeed: 92, attackCooldown: 2, label: 'Moderada' };
     if (speed < 60) return { tier: 2, moveSpeed: 118, attackCooldown: 1, label: 'Normal' };
     if (speed <= 100) return { tier: 3, moveSpeed: 148, attackCooldown: 0.5, label: 'Rápida' };
-    return { tier: 4, moveSpeed: 178, attackCooldown: 0.25, label: 'Extraordinaria' };
+    // La Fé Judía de Gero salta directo a la banda extraordinaria.
+    if (burst) return { tier: 4, moveSpeed: 178, attackCooldown: 0.25, label: 'Extraordinaria' };
+    // Más allá de 100 sigue mejorando, cada vez menos: el golpe tiende a 0,25 s y el paso a 178.
+    const rest = 100 / speed;
+    return { tier: 4, moveSpeed: 178 - 30 * rest, attackCooldown: 0.25 + 0.25 * rest, label: 'Veloz' };
   };
 
   Zak.enduranceBand = function (endurance) {
-    endurance = clamp(finite(endurance), 0, 100);
+    endurance = Math.max(0, finite(endurance));
     if (endurance < 15) return { tier: 0, runDuration: 3, armor: 0 };
     if (endurance < 30) return { tier: 1, runDuration: 5, armor: 2 };
     if (endurance < 60) return { tier: 2, runDuration: 7, armor: 4 };
     if (endurance < 80) return { tier: 3, runDuration: 10, armor: 6 };
-    return { tier: 4, runDuration: 12, armor: 8 };
+    // Pasado 100, cada 10 puntos suman 1 de armadura.
+    return { tier: 4, runDuration: 12, armor: 8 + Math.max(0, endurance - 100) / 10 };
   };
 
   Zak.createPlayer = function (id) {
@@ -278,11 +284,14 @@
     const s = player.stats || {};
     const buffs = player.buffs || {};
     const biome = context.biome || 'village';
-    let health = clamp(finite(s.health, 100), 1, 500);
-    let strength = clamp(finite(s.strength, 1), 0, 100);
-    let speed = clamp(finite(s.speed, 1), 0, 100);
+    // Veteranía: desde el nivel 8 el personaje crece al mismo ritmo que los enemigos.
+    // El daño sube como la vida extra de ellos y la vida, como su fuerza extra.
+    const late = Zak.lateFactor(player.level);
+    let health = Math.max(1, finite(s.health, 100)) * late.strength;
+    let strength = Math.max(0, finite(s.strength, 1));
+    let speed = Math.max(0, finite(s.speed, 1));
     const baseSpeed = speed;
-    let endurance = clamp(finite(s.endurance), 0, 100);
+    let endurance = Math.max(0, finite(s.endurance));
     let intelligence = Math.max(0, finite(s.intelligence));
 
     if (id === 'paco' && (biome === 'weeds' || biome === 'yuyos')) {
@@ -291,35 +300,34 @@
     if (id === 'tena' && finite(context.pursuers) >= 3) {
       strength *= 0.9; speed *= 0.9; endurance *= 0.9; intelligence *= 0.9;
     }
-    if (id === 'fede' && finite(player.hp) <= Math.min(500, health) * 0.3) {
+    if (id === 'fede' && finite(player.hp) <= health * 0.3) {
       speed *= 1.15; endurance *= 1.15;
     }
     if (id === 'pepe' && finite(buffs.pepe) > 0) speed *= 1.15;
     if (id === 'paco' && finite(buffs.paco) > 0) strength += Math.max(0, finite(buffs.pacoAnimals)) * 2;
-    strength = Math.min(100, strength);
-    speed = Math.min(100, speed);
-    endurance = Math.min(100, endurance);
-    if (id === 'gero' && finite(buffs.gero) > 0) speed += 25;
-    const movement = Zak.speedBand(speed);
+    const geroBurst = id === 'gero' && finite(buffs.gero) > 0;
+    if (geroBurst) speed += 25;
+    const movement = Zak.speedBand(speed, geroBurst);
     const resistance = Zak.enduranceBand(endurance);
     const resistanceFactor = id === 'paco' ? 0.9 : id === 'fede' ? 0.8 : 1;
     const intelligenceBonus = Math.floor(intelligence / 10) * 0.2;
+    const veteran = late.health;
     const xpMultiplier = (id === 'gero' ? 0.75 + intelligenceBonus : 1 + intelligenceBonus) * (id === 'pepe' ? 1.5 : 1);
     // Las bandas fijan el paso base. Los porcentajes temporales afectan directamente
     // al movimiento, incluso cuando el valor de velocidad sigue en la misma banda.
-    const movementBase = Zak.speedBand(baseSpeed + (id === 'gero' && finite(buffs.gero) > 0 ? 25 : 0)).moveSpeed;
+    const movementBase = Zak.speedBand(baseSpeed + (geroBurst ? 25 : 0), geroBurst).moveSpeed;
     const temporaryMovementFactor = id === 'gero' || baseSpeed === 0 ? 1 : speed / baseSpeed;
     let moveSpeed = movementBase * temporaryMovementFactor * (id === 'dante' ? 0.9 : 1);
     if (finite(player.slow) > 0) moveSpeed *= (id === 'pepe' ? 0.8 : 0.85);
     if (finite(player.heavySlow) > 0) moveSpeed *= 0.5;
     if (finite(buffs.mate) > 0) moveSpeed *= 1.1;
     return {
-      maxHealth: Math.min(500, health), strength, speed, endurance, intelligence,
+      maxHealth: health, strength, speed, endurance, intelligence,
       moveSpeed, attackCooldown: movement.attackCooldown,
       runDuration: resistance.runDuration * resistanceFactor,
       armor: resistance.armor * resistanceFactor,
       xpMultiplier, speedTier: movement.tier, speedLabel: movement.label,
-      damageMultiplier: 1 + 0.1 * clamp(Math.floor(finite(player.sharpen)), 0, 5)
+      veteran, damageMultiplier: (1 + 0.1 * clamp(Math.floor(finite(player.sharpen)), 0, 5)) * veteran
     };
   };
 
@@ -362,8 +370,8 @@
       player.xp = Math.max(0, player.xp - Zak.xpNeeded(player.level));
       player.level += 1;
       player.points += 1;
-      player.stats.health = Math.min(500, player.stats.health + 2);
-      if (player.characterId === 'dante') player.stats.strength = Math.min(100, player.stats.strength + 1);
+      player.stats.health += 2;
+      if (player.characterId === 'dante') player.stats.strength += 1;
       player.hp = Math.min(Zak.getStats(player, context).maxHealth, player.hp + 2);
       gained += 1;
     }
@@ -371,13 +379,12 @@
   };
 
   Zak.upgradeStat = function (player, key) {
-    if (!(key in caps) || !Object.prototype.hasOwnProperty.call(caps, key) || player.points < 1) return false;
+    if (!Object.prototype.hasOwnProperty.call(Zak.STAT_LABELS, key) || player.points < 1) return false;
     const old = finite(player.stats[key]);
-    if (old >= caps[key]) return false;
     const increase = key === 'health' ? 5 : 1;
-    player.stats[key] = Math.min(caps[key], old + increase);
+    player.stats[key] = old + increase;
     player.points -= 1;
-    if (key === 'health') player.hp = Math.min(500, player.hp + player.stats.health - old);
+    if (key === 'health') player.hp += increase;
     return true;
   };
 
