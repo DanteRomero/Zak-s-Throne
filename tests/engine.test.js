@@ -284,11 +284,11 @@
     test('The Capo telegraphs, dashes and can be dodged by rolling', () => {
       const p = fixture(); const capo = enemy('capo', p.x + 60); capo.special = 0;
       game.update(1 / 60); ok(capo.telegraph > 0, 'Boss must telegraph before dashing'); const hp = p.hp;
-      advance(.75); ok(capo.dash > 0 || capo.telegraph > 0); ok(game.roll()); p.rollX = 0; p.rollY = 0;
+      advance(1.1); ok(capo.dash > 0 || capo.telegraph > 0); ok(game.roll()); p.rollX = 0; p.rollY = 0;
       advance(.45); near(p.hp, hp, 'Invulnerable while the dash passes through'); ok(capo.x < p.x, 'Capo dashed past the player');
       ok(capo.special > 3);
       const other = fixture(); const second = enemy('capo', other.x + 60); second.special = 0; const full = other.hp;
-      game.update(1 / 60); advance(1.1); ok(other.hp < full, 'Standing still in the dash line hurts');
+      game.update(1 / 60); advance(1.5); ok(other.hp < full, 'Standing still in the dash line hurts');
     });
     test('The Yarara chases instead of fleeing', () => {
       const p = fixture(); const yarara = enemy('yarara', p.x + 200); yarara.special = 99; yarara.alert = true;
@@ -302,13 +302,13 @@
     test('The Yarara tail sweep hits around her and can be rolled through', () => {
       const p = fixture(); const yarara = enemy('yarara', p.x, p.y - 40); yarara.special = 99; yarara.alert = true;
       game.update(1 / 60); ok(yarara.telegraph > 0 && yarara.kind === 'tail', 'Tail sweep is telegraphed'); const hp = p.hp;
-      advance(.65); ok(p.hp < hp, 'Standing in the ring hurts'); ok(Math.hypot(p.x - yarara.x, p.y - yarara.y) > 40, 'Knocked outward');
+      advance(.9); ok(p.hp < hp, 'Standing in the ring hurts'); ok(Math.hypot(p.x - yarara.x, p.y - yarara.y) > 40, 'Knocked outward');
       const q = fixture(); const second = enemy('yarara', q.x, q.y - 40); second.special = 99; second.alert = true; const full = q.hp;
-      game.update(1 / 60); advance(.45); q.rollCooldown = 0; ok(game.roll()); q.rollX = 0; q.rollY = 0; advance(.2); near(q.hp, full, 'Rolling dodges the sweep');
+      game.update(1 / 60); advance(.7); q.rollCooldown = 0; ok(game.roll()); q.rollX = 0; q.rollY = 0; advance(.2); near(q.hp, full, 'Rolling dodges the sweep');
     });
     test('The Yarara spits a three-way venom fan that hurts the player', () => {
       const p = fixture(); const yarara = enemy('yarara', p.x + 150); yarara.special = 0; Math.random = () => .99;
-      game.update(1 / 60); ok(yarara.backoff > 0); advance(.45); ok(yarara.telegraph > 0); advance(.7);
+      game.update(1 / 60); ok(yarara.backoff > 0); advance(.45); ok(yarara.telegraph > 0); advance(.85);
       ok(game.projectiles.filter(s => s.hostile).length >= 2, 'Venom fan spawned'); const hp = p.hp;
       advance(1.2); ok(p.hp < hp, 'Venom must reach the player');
     });
@@ -443,7 +443,7 @@
     });
     test('Golem rock stuns for three seconds', () => {
       const p = fixture(); const golem = enemy('golem', p.x + 150); golem.cd = {quake: 99, rock: 0, fortify: 99, ready: 1};
-      advance(.7); const rock = game.projectiles.find(s => s.type === 'boulder'); ok(rock, 'Throws a rock');
+      advance(1); const rock = game.projectiles.find(s => s.type === 'boulder'); ok(rock, 'Throws a rock');
       golem.cd.rock = 99; advance(1); ok(p.stunned > 2); const x = p.x; game.keys.add('d'); advance(.3); near(p.x, x, 'Cannot move while stunned'); game.keys.clear();
     });
     test('Cerbero digs to heal fully unless you hit him first', () => {
@@ -453,11 +453,11 @@
     });
     test('Cerbero bite makes you bleed 5 per second for 5 seconds', () => {
       const p = fixture(); p.stats.endurance = 100; const cerbero = enemy('cerbero', p.x + 30); cerbero.cd = {bite: 0, jump: 99, dig: 99, ready: 1};
-      advance(.4); ok(p.bleed, 'Bleeding'); const hp = p.hp; cerbero.stun = 99; advance(5.1); near(hp - p.hp, 25); equal(p.bleed, null);
+      advance(.6); ok(p.bleed, 'Bleeding'); const hp = p.hp; cerbero.stun = 99; advance(5.1); near(hp - p.hp, 25); equal(p.bleed, null);
     });
     test('The Bloodsucker grabs, drains and heals; then summons five bats', () => {
       const p = fixture(); const vampire = enemy('vampire', p.x + 120); vampire.hp = vampire.maxHp * .5; vampire.cd = {swipe: 99, lunge: 0, summon: 99, ready: 1};
-      advance(1); ok(p.grabbed > 0, 'Grabbed'); const hp = vampire.hp; advance(1.8); ok(vampire.hp > hp, 'Heals by draining'); equal(p.grabbed, 0);
+      advance(1.35); ok(p.grabbed > 0, 'Grabbed'); const hp = vampire.hp; advance(1.8); ok(vampire.hp > hp, 'Heals by draining'); equal(p.grabbed, 0);
       vampire.cd = {swipe: 99, lunge: 99, summon: 0, ready: 1}; advance(2); equal(game.enemies.filter(e => e.type === 'bat' && e.summoned).length, 5);
       const save = game.snapshot(); ok(!save.enemies.some(e => /^summon-/.test(e.id)), 'Summons are not saved');
     });

@@ -99,8 +99,8 @@
       description: 'Vuela en zigzag y muerde rápido. Vive en la Cueva Profunda.'
     },
     spider: {
-      name: 'Araña', base: { health: 75, strength: 8, poison: 4, speed: 26, endurance: 35 },
-      growth: { health: 2, strength: 0.5, poison: 0.5, speed: 0.5, endurance: 1 },
+      name: 'Araña', base: { health: 35, strength: 6, poison: 4, speed: 26, endurance: 35 },
+      growth: { health: 0.5, strength: 0.4, poison: 0.5, speed: 0.5, endurance: 1 },
       xp: 70, coins: [6, 10], color: '#6b5a52', visionRange: 195, knockback: true,
       description: '15% de probabilidad de envenenar durante 5 s. Caparazón duro: conviene un arma mejorada.'
     },
@@ -175,10 +175,12 @@
   Zak.ENEMY_DAMAGE = 0.72;
   Zak.BOSS_DAMAGE = 0.68;
   Zak.BOSS_PACE = 0.7;
+  // Los jefes (menos Zak) tienen un 15% menos de vida.
+  Zak.BOSS_HEALTH = 0.85;
   // Desde el nivel 8 los enemigos ganan vida y fuerza extra: así el final del juego no se vuelve un paseo.
   Zak.lateFactor = function (level) {
     const extra = Math.max(0, Math.floor(Number(level) || 1) - 8);
-    return { health: 1 + 0.05 * extra, strength: 1 + 0.01 * extra };
+    return { health: 1 + 0.04 * extra, strength: 1 + 0.005 * extra };
   };
 
   // Precios de El Almacén. Las mejoras permanentes encarecen con cada compra.
@@ -334,7 +336,7 @@
     });
     if (!definition.noLate) {
       const late = Zak.lateFactor(level);
-      if (!definition.fixedHealth) stats.health *= late.health;
+      if (!definition.fixedHealth) stats.health *= late.health * (definition.boss ? Zak.BOSS_HEALTH : 1);
       stats.strength *= late.strength;
     }
     stats.strength *= definition.boss ? Zak.BOSS_DAMAGE : Zak.ENEMY_DAMAGE;

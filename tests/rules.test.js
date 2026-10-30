@@ -132,7 +132,7 @@
     test('Desde el nivel 8 los enemigos ganan vida y fuerza extra', () => {
       const base=Zak.enemyStats('thief',8), late=Zak.enemyStats('thief',20);
       near(base.health,110.5); near(base.strength,8.5*.72);
-      near(late.health,(100+1.5*19)*1.6); near(late.strength,(5+.5*19)*1.12*.72);
+      near(late.health,(100+1.5*19)*1.48); near(late.strength,(5+.5*19)*1.06*.72);
       equal(Zak.enemyStats('archer',40).health,1,'El arquero siempre se rompe de un golpe');
       equal(Zak.enemyStats('zak',40).health,10000+180*39,'Zak no usa el escalado tardío');
     });

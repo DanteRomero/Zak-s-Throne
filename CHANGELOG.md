@@ -10,8 +10,11 @@ Cada versión lista sus cambios agrupados por tipo:
 
 * Change
     - **Jefes más lentos:** todos caminan un 30% más despacio. La embestida del Capo y la del Chupasangre son más lentas, el Chupasangre se aleja más despacio antes de invocar y el salto de Cerbero tarda más en caer, así hay más tiempo para esquivar.
-    - **Enemigos comunes más blandos:** pegan un 28% menos (hacen el 72% de su fuerza como daño). Desde el nivel 8 la fuerza extra por nivel baja de 2% a 1% y la vida extra, de 6% a 5%. En nivel 40, un chorro pasa de unos 460 a 410 de vida.
-    - **Jefes un poco más blandos:** pegan un 32% menos (hacen el 68% de su fuerza como daño). Desde el nivel 8 ganan 5% de vida extra por nivel en vez de 6%. En nivel 40, por ejemplo, el Capo pasa de unos 4900 a 4400 de vida.
+    - **Más tiempo para esquivar:** los jefes esperan más entre el aviso y el golpe. La embestida del Capo pasa de 0,8 a 1,1 s; el colazo de la Yarará, de 0,6 a 0,85 s y su veneno, de 0,55 a 0,8 s. La embestida del Chupasangre pasa de 0,7 a 1 s y su manotazo, de 0,3 a 0,5 s. Cada golpe del Terremoto del Gólem pasa de 0,75 a 1 s y el piedrazo, de 0,6 a 0,9 s. La mordida de Cerbero pasa de 0,35 a 0,55 s y su salto deja quieto el círculo 0,7 s antes de caer. Zak no cambia.
+    - **Enemigos comunes más blandos:** pegan un 28% menos (hacen el 72% de su fuerza como daño).
+    - **Final del juego más llevadero:** desde el nivel 8, la vida extra por nivel baja de 6% a 4% y la fuerza extra, de 2% a 0,5%. En nivel 40, un chorro pasa de unos 460 a 360 de vida.
+    - **Arañas:** tienen la misma vida que una serpiente (35, +0,5 por nivel) y pegan menos: 6 de fuerza, +0,4 por nivel.
+    - **Jefes más blandos (menos Zak):** tienen un 15% menos de vida y pegan un 32% menos (hacen el 68% de su fuerza como daño). En nivel 40, por ejemplo, el Capo pasa de unos 4900 a 3300 de vida.
     - **Zak:** cada nivel le suma 180 de vida por vida en vez de 200, y cada golpe saca el 52% de tu vida máxima en vez del 55%. Dos golpes siguen alcanzando.
     - **Más visión en las minas:** la antorcha ilumina un círculo más grande en la Cueva Profunda y Las Entrañas, y la Cueva del Eco es un poco menos oscura.
 
