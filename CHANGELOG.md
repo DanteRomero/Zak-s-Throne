@@ -6,6 +6,15 @@ Cada versión lista sus cambios agrupados por tipo:
 - **Change:** algo que ya existía y ahora funciona distinto.
 - **Fix:** un error corregido.
 
+## v2.1 — 2026-10-30
+
+* Change
+    - **Jefes más lentos:** todos caminan un 30% más despacio. La embestida del Capo y la del Chupasangre son más lentas, el Chupasangre se aleja más despacio antes de invocar y el salto de Cerbero tarda más en caer, así hay más tiempo para esquivar.
+    - **Enemigos comunes más blandos:** pegan un 28% menos (hacen el 72% de su fuerza como daño). Desde el nivel 8 la fuerza extra por nivel baja de 2% a 1% y la vida extra, de 6% a 5%. En nivel 40, un chorro pasa de unos 460 a 410 de vida.
+    - **Jefes un poco más blandos:** pegan un 32% menos (hacen el 68% de su fuerza como daño). Desde el nivel 8 ganan 5% de vida extra por nivel en vez de 6%. En nivel 40, por ejemplo, el Capo pasa de unos 4900 a 4400 de vida.
+    - **Zak:** cada nivel le suma 180 de vida por vida en vez de 200, y cada golpe saca el 52% de tu vida máxima en vez del 55%. Dos golpes siguen alcanzando.
+    - **Más visión en las minas:** la antorcha ilumina un círculo más grande en la Cueva Profunda y Las Entrañas, y la Cueva del Eco es un poco menos oscura.
+
 ## v2.0 — 2026-10-30
 
 * Feature

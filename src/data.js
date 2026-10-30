@@ -154,7 +154,7 @@
     },
     zak: {
       name: 'Zak', boss: true, base: { health: 10000, strength: 40, speed: 22, endurance: 85 },
-      growth: { health: 200, strength: 1.5, speed: 0.2, endurance: 0.3 },
+      growth: { health: 180, strength: 1.5, speed: 0.2, endurance: 0.3 },
       xp: 3000, coins: [300, 400], color: '#6d4ba0', visionRange: 2000, knockback: false, respawn: 0, lives: 3, noLate: true,
       description: 'El gobernante. Tres vidas, la Espada del Caos y dos golpes alcanzan para tumbarte. Espadazos, esqueletos, jefes invocados y la Tormenta de agonía (solo la piedra lo daña). En su última vida: la Ira del gobernante y el Terremoto morado.'
     }
@@ -170,10 +170,15 @@
   Zak.emptyOfferings = () => ({ fang: 0, ring: 0, claw: 0, elemental: 0, eye: 0 });
   Zak.emptyAltar = () => ({ fang: false, ring: false, claw: false, elemental: false, eye: false });
   Zak.ELEMENTAL_RECIPE = { coins: 0, materials: { wood: 10, stone: 25, iron: 20, gold: 15, diamond: 10 }, offerings: { elemental: 5 } };
+  // Parte de la fuerza que se convierte en daño: 72% para los enemigos comunes y 68% para los jefes.
+  // Los jefes caminan un 30% más lento que su banda de velocidad.
+  Zak.ENEMY_DAMAGE = 0.72;
+  Zak.BOSS_DAMAGE = 0.68;
+  Zak.BOSS_PACE = 0.7;
   // Desde el nivel 8 los enemigos ganan vida y fuerza extra: así el final del juego no se vuelve un paseo.
   Zak.lateFactor = function (level) {
     const extra = Math.max(0, Math.floor(Number(level) || 1) - 8);
-    return { health: 1 + 0.06 * extra, strength: 1 + 0.02 * extra };
+    return { health: 1 + 0.05 * extra, strength: 1 + 0.01 * extra };
   };
 
   // Precios de El Almacén. Las mejoras permanentes encarecen con cada compra.
@@ -332,8 +337,9 @@
       if (!definition.fixedHealth) stats.health *= late.health;
       stats.strength *= late.strength;
     }
+    stats.strength *= definition.boss ? Zak.BOSS_DAMAGE : Zak.ENEMY_DAMAGE;
     stats.maxHealth = stats.health;
-    stats.moveSpeed = Zak.speedBand(stats.speed).moveSpeed;
+    stats.moveSpeed = Zak.speedBand(stats.speed).moveSpeed * (definition.boss ? Zak.BOSS_PACE : 1);
     stats.attackCooldown = Zak.speedBand(stats.speed).attackCooldown;
     stats.armor = Zak.enduranceBand(stats.endurance).armor;
     stats.xp = definition.xp + increases * Math.ceil(definition.xp * 0.075);

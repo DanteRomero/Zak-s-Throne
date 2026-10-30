@@ -280,7 +280,7 @@ class Game {
    if(e.type==='capo'){const tl=Math.hypot(p.x-e.x,p.y-e.y)||1;if(e.telegraph>.35){e.aimX=(p.x-e.x)/tl;e.aimY=(p.y-e.y)/tl;}}
    if(e.telegraph<=0){e.telegraph=0;if(e.type==='capo'){e.dash=.5;e.dashHit=false;this.sound.play('swing');}else if(e.kind==='tail')this.tailSweep(e);else this.spit(e);}
    return;}
-  if(e.dash>0){e.dash-=dt;const before={x:e.x,y:e.y};this.move(e,e.aimX*360*dt,e.aimY*360*dt,7,e.biome);e.moving=true;e.walk+=dt*16;
+  if(e.dash>0){e.dash-=dt;const before={x:e.x,y:e.y};this.move(e,e.aimX*300*dt,e.aimY*300*dt,7,e.biome);e.moving=true;e.walk+=dt*16;
    if(this.time%.06<dt)this.effect(e.x,e.y,'dust',.35);
    if(!e.dashHit&&distance(e,p)<22){e.dashHit=true;if(this.hurtPlayer(e.stats.strength*1.6,e.type)){this.shake(5,.3);p.slow=Math.max(p.slow,1.5);}}
    if(distance(before,e)<1)e.dash=0;return;}

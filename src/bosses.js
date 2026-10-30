@@ -101,7 +101,7 @@ Object.assign(Z.Game.prototype, {
     if(a.t>.95)e.act=null;return;}
    if(a.id==='lunge'){
     if(a.t<.7){if(a.t<.45)this.aimAt(e);return;}
-    if(a.t<1.15){const before={x:e.x,y:e.y};this.move(e,e.aimX*400*dt,e.aimY*400*dt,9,e.biome);e.moving=true;e.walk+=dt*16;
+    if(a.t<1.25){const before={x:e.x,y:e.y};this.move(e,e.aimX*330*dt,e.aimY*330*dt,9,e.biome);e.moving=true;e.walk+=dt*16;
      if(this.time%.06<dt)this.effect(e.x,e.y,'dust',.35);
      if(distance(e,p)<24&&p.roll<=0){e.act={id:'drain',t:0,ticks:0};p.grabbed=1.7;p.gather=null;this.sound.play('drain');this.emit('toast',{message:'¡El Chupasangre te agarró y te chupa la sangre!',error:true});return;}
      if(distance(before,e)<1)e.act=null;return;}
@@ -113,7 +113,7 @@ Object.assign(Z.Game.prototype, {
      if(this.state!=='playing')return;}
     if(a.t>=1.7){e.act=null;p.grabbed=0;}return;}
    if(a.id==='retreat'){
-    const ox=(e.x-p.x)/(len||1),oy=(e.y-p.y)/(len||1);this.steer(e,e.x+ox*50,e.y+oy*50,e.stats.moveSpeed*1.8,dt,len);
+    const ox=(e.x-p.x)/(len||1),oy=(e.y-p.y)/(len||1);this.steer(e,e.x+ox*50,e.y+oy*50,e.stats.moveSpeed*1.5,dt,len);
     if(a.t>.9){e.act={id:'summon',t:0};this.sound.play('telegraph');}return;}
    if(a.id==='summon'){
     if(a.t>.8){for(let i=0;i<5;i++){const ang=i*Math.PI*2/5;this.summon('bat',e.x+Math.cos(ang)*42,e.y+Math.sin(ang)*30,e);}
@@ -158,8 +158,8 @@ Object.assign(Z.Game.prototype, {
     if(a.t>.6)e.act=null;return;}
    if(a.id==='jump'){
     if(a.t<.85){a.tx=p.x;a.ty=p.y;}
-    const k=clamp(a.t/1.25,0,1);e.air=true;e.x=a.sx+(a.tx-a.sx)*k;e.y=a.sy+(a.ty-a.sy)*k;e.lift=Math.sin(k*Math.PI)*70;e.moving=false;
-    if(a.t>=1.25){e.air=false;e.lift=0;
+    const k=clamp(a.t/1.45,0,1);e.air=true;e.x=a.sx+(a.tx-a.sx)*k;e.y=a.sy+(a.ty-a.sy)*k;e.lift=Math.sin(k*Math.PI)*70;e.moving=false;
+    if(a.t>=1.45){e.air=false;e.lift=0;
      if(Z.collides(this.world,e.x,e.y,9)||Z.biomeAt(e.x,e.y)!==e.biome)Object.assign(e,this.freeSpot(a.tx,a.ty,e.biome));
      this.sound.play('slam');this.shake(6,.35);this.effect(e.x,e.y,'wave',.45,{radius:72});
      if(this.inRadius(e,72)&&this.hurtPlayer(e.stats.strength*1.4,e.type)&&this.state==='playing'){p.heavySlow=5;this.emit('toast',{message:'¡Te aplastó! Vas mucho más lento durante 5 s.',error:true});}
@@ -175,9 +175,9 @@ Object.assign(Z.Game.prototype, {
   if(len<48&&e.cd.bite<=0){e.act={id:'bite',t:0};e.cd.bite=1.3;return;}
   this.steer(e,p.x,p.y,e.stats.moveSpeed*.95,dt,len);
  },
- // Cualquier golpe de Zak se lleva más de la mitad de tu vida máxima: con dos alcanza.
+ // Cualquier golpe de Zak se lleva un poco más de la mitad de tu vida máxima: con dos alcanza.
  zakHit(e,mult=1,opts={}){
-  const raw=Math.max(e.stats.strength*mult,this.stats().maxHealth*.55*mult);
+  const raw=Math.max(e.stats.strength*mult,this.stats().maxHealth*.52*mult);
   return this.hurtPlayer(raw,'zak',false,{pierce:true,...opts});
  },
  zakAI(e,dt,len){

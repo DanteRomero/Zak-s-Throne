@@ -381,7 +381,7 @@
       p.poison = null; Math.random = () => .2; spider.cooldown = 0; game.enemyAttack(spider); equal(p.poison, null, '0.2 > 15%');
       game.enemies = []; const worm = enemy('worm', p.x + 150); const x = worm.x; advance(1); equal(worm.alert, false); near(worm.x, x, 'Buried worm does not wander');
       worm.x = p.x + 100; advance(.1); ok(worm.alert, 'Worm emerges when you get close');
-      equal(Z.enemyStats('worm', 1).health, 100); equal(Z.enemyStats('worm', 1).strength, 10);
+      equal(Z.enemyStats('worm', 1).health, 100); near(Z.enemyStats('worm', 1).strength, 7.2, 'Worm damage is 72%');
     });
     test('Materials, tools, upgrades and harvested nodes survive a save round trip', () => {
       const p = fixture('gero', true); Object.assign(p, {axe: 2, pickaxe: 3, torch: true}); p.materials.gold = 7; p.weaponLevels.fists = 4;
@@ -484,7 +484,7 @@
     });
     test('Two Zak hits are enough to knock you out', () => {
       const p = fixture('gero', true); p.stats.health = 400; p.hp = 400; p.stats.endurance = 100; game.enterThrone(); const zak = game.enemies.find(e => e.type === 'zak');
-      game.zakHit(zak, 1); ok(p.hp > 0 && p.hp <= 400 * .45 + 1e-6, 'One hit takes more than half'); game.zakHit(zak, 1); equal(game.state, 'paused');
+      game.zakHit(zak, 1); ok(p.hp > 0 && p.hp <= 400 * .48 + 1e-6, 'One hit takes more than half'); game.zakHit(zak, 1); equal(game.state, 'paused');
     });
     test('Major summon: Zak sits on his throne and heals until the boss falls', () => {
       const p = fixture('gero', true); game.enterThrone(); const zak = game.enemies.find(e => e.type === 'zak'); Math.random = () => 0;

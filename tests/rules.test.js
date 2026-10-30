@@ -121,20 +121,20 @@
     test('Enemigos tienen el mismo nivel que el personaje', () => {
       [1,2,3,4,5].forEach(level => equal(Zak.enemyStats('thief',level).level,level));
       const thief=Zak.enemyStats('thief',3);
-      equal(thief.health,103); equal(thief.strength,6); equal(thief.speed,17); equal(thief.endurance,12);
+      equal(thief.health,103); near(thief.strength,6*.72); equal(thief.speed,17); equal(thief.endurance,12);
     });
     test('Crecimientos fraccionarios y daño de veneno se conservan', () => {
       const dog=Zak.enemyStats('dog',3), snake=Zak.enemyStats('snake',3), rat=Zak.enemyStats('rat',3);
-      equal(dog.health,61.5); equal(dog.strength,3.5); equal(dog.speed,33); equal(dog.endurance,22);
-      equal(snake.health,36); equal(snake.strength,7); equal(snake.poison,3); equal(snake.speed,27); equal(snake.endurance,5.5);
-      equal(rat.health,10.5); near(rat.strength,1.8); equal(rat.speed,42); equal(rat.endurance,.5);
+      equal(dog.health,61.5); near(dog.strength,3.5*.72); equal(dog.speed,33); equal(dog.endurance,22);
+      equal(snake.health,36); near(snake.strength,7*.72); equal(snake.poison,3); equal(snake.speed,27); equal(snake.endurance,5.5);
+      equal(rat.health,10.5); near(rat.strength,1.8*.72); equal(rat.speed,42); equal(rat.endurance,.5);
     });
     test('Desde el nivel 8 los enemigos ganan vida y fuerza extra', () => {
       const base=Zak.enemyStats('thief',8), late=Zak.enemyStats('thief',20);
-      near(base.health,110.5); near(base.strength,8.5);
-      near(late.health,(100+1.5*19)*1.72); near(late.strength,(5+.5*19)*1.24);
+      near(base.health,110.5); near(base.strength,8.5*.72);
+      near(late.health,(100+1.5*19)*1.6); near(late.strength,(5+.5*19)*1.12*.72);
       equal(Zak.enemyStats('archer',40).health,1,'El arquero siempre se rompe de un golpe');
-      equal(Zak.enemyStats('zak',40).health,10000+200*39,'Zak no usa el escalado tardío');
+      equal(Zak.enemyStats('zak',40).health,10000+180*39,'Zak no usa el escalado tardío');
     });
     test('Las ratas ya no son letales en el final del juego', () => {
       ok(Zak.enemyStats('rat',40).strength<Zak.enemyStats('thief',40).strength,'Una rata pega menos que un chorro');

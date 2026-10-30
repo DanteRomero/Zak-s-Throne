@@ -2,7 +2,7 @@
 
 Una aventura de acción y exploración en pixel art, vista desde arriba. Elegí a uno de seis amigos, preparate en la aldea y salí a explorar la cueva y los Yuyos.
 
-Versión actual: **v1.6**. Los cambios de cada versión están en [CHANGELOG.md](CHANGELOG.md).
+Versión actual: **v2.1**. Los cambios de cada versión están en [CHANGELOG.md](CHANGELOG.md).
 
 ## Jugar
 
@@ -174,9 +174,9 @@ Escalan con tu nivel como el resto de los enemigos, no retroceden con los golpes
 | El Chupasangre | Junto a la bajada al Nvl 3 | 900 | 15 | 35 | 40 |
 | El Gólem Minero | Las Entrañas | 420 por vida (×1; ×1,15; ×1,3; ×1,5) | 22 | 10 | 65 |
 | Cerbero | Altar del gobernante | 1600 | 20 | 62 | 50 |
-| Zak | Trono de Zak | 10000 por vida, 3 vidas | — | 22 | 85 |
+| Zak | Trono de Zak | 10000 por vida (+180 por nivel), 3 vidas | — | 22 | 85 |
 
-Son los valores en nivel 1; todos crecen con tu nivel.
+Son los valores en nivel 1; todos crecen con tu nivel. Hacen el **68%** de su fuerza como daño (los enemigos comunes, el 72%). Desde el nivel 8 ganan **5%** de vida extra por nivel, como el resto. Caminan un **30% más lento** que lo que indica su velocidad (embestidas y saltos incluidos, también son más lentos).
 
 - **El Capo del Eco:** marca una línea roja y embiste: 160% de su fuerza y frena 1,5 s.
 - **La Yarará Madre:** te persigue. Colazo en anillo alrededor suyo (marca un círculo rosado: rodá o alejate). Antes de escupir el abanico de veneno retrocede un poco y marca tres líneas (50% de envenenar; 15% contra Fede).
@@ -188,7 +188,7 @@ Son los valores en nivel 1; todos crecen con tu nivel.
 
 En el altar del cementerio se deja **una ofrenda de cada jefe** (E). Si tenés varias del mismo tipo, toma una sola; las que dejás quedan guardadas aunque te vayas. Mientras Cerbero esté vivo, el altar está cerrado. Con las cinco, se rompen y se abre un **portal violeta**: tocalo para entrar al Trono de Zak. Cada visita gasta un juego completo de ofrendas.
 
-Cualquier golpe de Zak se lleva más de la mitad de tu vida máxima, sin importar la armadura: dos golpes alcanzan.
+Cualquier golpe de Zak se lleva el **52%** de tu vida máxima, sin importar la armadura: dos golpes alcanzan.
 
 - **Espadazo:** tres golpes hacia adelante en un abanico de 60°.
 - **Invocación:** dos esqueletos con espada y escudo y dos arqueros.
@@ -262,7 +262,7 @@ Paco recibe el **90%** de la duración y protección de su banda; Fede, el **80%
 
 ## Enemigos
 
-Casi todos comparten un radio de detección de **195 píxeles**. Tienen **el mismo nivel que tu personaje** y no corren ni gastan energía. Desde el nivel 8, además, cada nivel les suma **6% de vida y 2% de fuerza** (`vida × (1 + 0,06 × (nivel − 8))`, `fuerza × (1 + 0,02 × (nivel − 8))`). Así el final del juego sigue siendo exigente. La vida de los enemigos no tiene tope; fuerza, velocidad y resistencia sí (100 antes del extra).
+Casi todos comparten un radio de detección de **195 píxeles**. Tienen **el mismo nivel que tu personaje** y no corren ni gastan energía. Desde el nivel 8, además, cada nivel les suma **5% de vida y 1% de fuerza** (`vida × (1 + 0,05 × (nivel − 8))`, `fuerza × (1 + 0,01 × (nivel − 8))`). El daño de los enemigos comunes es el **72%** de su fuerza final; el de los jefes, el **68%**. Así el final del juego sigue siendo exigente. La vida de los enemigos no tiene tope; fuerza, velocidad y resistencia sí (100 antes del extra).
 
 | Enemigo | Vida | Fuerza | Velocidad | Resistencia | Aumento por nivel: V / F / Vel / R |
 | --- | ---: | ---: | ---: | ---: | --- |

@@ -1110,10 +1110,10 @@
         const px=p.x-ox,py=p.y-oy-10,dark=c.createRadialGradient(px,py,120,px,py,340);dark.addColorStop(0,"rgba(10,8,16,0)");dark.addColorStop(1,"rgba(10,8,16,.55)");c.fillStyle=dark;c.fillRect(0,0,W,H);
       } else if(isCaveZone(game.biome)&&game.biome!=="cave"&&!menu){
         const px=p.x-ox,py=p.y-oy-10,flicker=Math.sin(time*13)*3+Math.sin(time*7)*2;
-        const dark=c.createRadialGradient(px,py,34,px,py,175+flicker);
-        dark.addColorStop(0,"rgba(12,10,8,0)");dark.addColorStop(.55,"rgba(10,9,10,.45)");dark.addColorStop(1,"rgba(5,6,9,.93)");
+        const dark=c.createRadialGradient(px,py,55,px,py,235+flicker);
+        dark.addColorStop(0,"rgba(12,10,8,0)");dark.addColorStop(.55,"rgba(10,9,10,.36)");dark.addColorStop(1,"rgba(5,6,9,.88)");
         c.fillStyle=dark;c.fillRect(0,0,W,H);
-        const warm=c.createRadialGradient(px,py,4,px,py,110);warm.addColorStop(0,"rgba(255,170,80,.16)");warm.addColorStop(1,"rgba(255,170,80,0)");
+        const warm=c.createRadialGradient(px,py,4,px,py,145);warm.addColorStop(0,"rgba(255,170,80,.16)");warm.addColorStop(1,"rgba(255,170,80,0)");
         c.fillStyle=warm;c.fillRect(0,0,W,H);
         const fx=Math.round(px+8),fy=Math.round(py-2);rect(c,fx,fy,2,7,"#6b4f33");rect(c,fx-1,fy-4,4,4,"#f2a541");rect(c,fx,fy-6-(flicker>0?1:0),2,3,"#ffe08a");
         for(const o of objects)if(o.type==="ore"&&!o.harvested&&(o.ore==="gold"||o.ore==="diamond")&&visible(o.x,o.y,20)&&Math.sin(time*2.5+o.x)>.6){
@@ -1121,8 +1121,8 @@
         }
       } else if(game.biome==="cave"&&!menu){
         const px=p.x-ox,py=p.y-oy-10;
-        const dark=c.createRadialGradient(px,py,38,px,py,220);
-        dark.addColorStop(0,"rgba(17,23,31,0)");dark.addColorStop(.6,"rgba(15,20,28,.22)");dark.addColorStop(1,"rgba(10,15,23,.70)");
+        const dark=c.createRadialGradient(px,py,50,px,py,270);
+        dark.addColorStop(0,"rgba(17,23,31,0)");dark.addColorStop(.6,"rgba(15,20,28,.18)");dark.addColorStop(1,"rgba(10,15,23,.60)");
         c.fillStyle=dark;c.fillRect(0,0,W,H);
         for(const o of objects)if(o.type==="lantern"&&visible(o.x,o.y,60)){
           const glow=c.createRadialGradient(o.x-ox+o.w/2,o.y-oy-20,1,o.x-ox+o.w/2,o.y-oy-20,38);
