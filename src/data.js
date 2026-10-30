@@ -176,8 +176,9 @@
   Zak.ENEMY_DAMAGE = 0.72;
   Zak.BOSS_DAMAGE = 0.68;
   Zak.BOSS_PACE = 0.7;
-  // Los jefes (menos Zak) tienen un 15% menos de vida.
-  Zak.BOSS_HEALTH = 0.85;
+  // Vida final respecto de la ficha: los enemigos comunes tienen un 20% más y los jefes (Zak incluido), un 10% más.
+  Zak.ENEMY_HEALTH = 1.2;
+  Zak.BOSS_HEALTH = 1.1;
   // Desde el nivel 8 los enemigos ganan vida y fuerza extra: así el final del juego no se vuelve un paseo.
   Zak.lateFactor = function (level) {
     const extra = Math.max(0, Math.floor(Number(level) || 1) - 8);
@@ -344,9 +345,10 @@
     });
     if (!definition.noLate) {
       const late = Zak.lateFactor(level);
-      if (!definition.fixedHealth) stats.health *= late.health * (definition.boss ? Zak.BOSS_HEALTH : 1);
+      if (!definition.fixedHealth) stats.health *= late.health;
       stats.strength *= late.strength;
     }
+    if (!definition.fixedHealth) stats.health *= definition.boss ? Zak.BOSS_HEALTH : Zak.ENEMY_HEALTH;
     stats.strength *= definition.boss ? Zak.BOSS_DAMAGE : Zak.ENEMY_DAMAGE;
     stats.maxHealth = stats.health;
     stats.moveSpeed = Zak.speedBand(stats.speed).moveSpeed * (definition.boss ? Zak.BOSS_PACE : 1);

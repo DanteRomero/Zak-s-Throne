@@ -169,19 +169,19 @@ Escalan con tu nivel como el resto de los enemigos, no retroceden con los golpes
 
 | Jefe | Dónde | Vida | Fuerza | Velocidad | Resistencia |
 | --- | --- | ---: | ---: | ---: | ---: |
-| El Capo del Eco | Junto a la bajada al Nvl 2 | 442 | 12 | 22 | 35 |
-| La Yarará Madre | Rincón noreste de Los Yuyos | 408 | 10 | 28 | 20 |
-| El Chupasangre | Junto a la bajada al Nvl 3 | 765 | 15 | 35 | 40 |
-| El Gólem Minero | Las Entrañas | 357 por vida (×1; ×1,15; ×1,3; ×1,5) | 22 | 10 | 65 |
-| Cerbero | Altar del gobernante | 1360 | 20 | 62 | 50 |
-| Zak | Trono de Zak | 10000 por vida (+180 por nivel), 3 vidas | — | 22 | 85 |
+| El Capo del Eco | Junto a la bajada al Nvl 2 | 572 | 12 | 22 | 35 |
+| La Yarará Madre | Rincón noreste de Los Yuyos | 528 | 10 | 28 | 20 |
+| El Chupasangre | Junto a la bajada al Nvl 3 | 990 | 15 | 35 | 40 |
+| El Gólem Minero | Las Entrañas | 462 por vida (×1; ×1,15; ×1,3; ×1,5) | 22 | 10 | 65 |
+| Cerbero | Altar del gobernante | 1760 | 20 | 62 | 50 |
+| Zak | Trono de Zak | 11000 por vida (+198 por nivel), 3 vidas | — | 22 | 85 |
 
-Son los valores en nivel 1; todos crecen con tu nivel. Hacen el **68%** de su fuerza como daño (los enemigos comunes, el 72%) y, salvo Zak, tienen un **15% menos de vida** que la base de su ficha. Desde el nivel 8 ganan **4%** de vida extra por nivel, como el resto. Entre el aviso y el golpe hay tiempo de reaccionar: alrededor de un segundo para embestidas, saltos y golpes al piso, y medio segundo para los golpes cortos. Caminan un **30% más lento** que lo que indica su velocidad (embestidas y saltos incluidos, también son más lentos).
+Son los valores en nivel 1; todos crecen con tu nivel. Hacen el **68%** de su fuerza como daño (los enemigos comunes, el 72%) y tienen un **10% más de vida** que la base de su ficha (los enemigos comunes, un 20% más). La tabla ya incluye ese extra. Desde el nivel 8 ganan **4%** de vida extra por nivel, como el resto. Entre el aviso y el golpe hay tiempo de reaccionar: entre 0,6 y 1 s para embestidas, saltos y golpes al piso, y menos de medio segundo para los golpes cortos. Caminan un **30% más lento** que lo que indica su velocidad (embestidas y saltos incluidos, también son más lentos).
 
 - **El Capo del Eco:** marca una línea roja y embiste: 160% de su fuerza y frena 1,5 s.
 - **La Yarará Madre:** te persigue. Colazo en anillo alrededor suyo (marca un círculo rosado: rodá o alejate). Antes de escupir el abanico de veneno retrocede un poco y marca tres líneas (50% de envenenar; 15% contra Fede).
 - **El Chupasangre:** *Embestida sangrienta* (línea roja; si te alcanza te agarra 1,7 s, te chupa la sangre tres veces y se cura 4% de su vida por mordida), *Manotazo* (dos golpes rápidos de corto alcance) e *Invocación* (se aleja y llama a cinco murciélagos).
-- **El Gólem Minero:** cuatro vidas, de piedra, hierro, oro y diamante; cada una tiene más vida y fuerza y se rearma con una animación del material. *Terremoto*: cuatro golpes al piso, cada uno avisado con un anillo naranja 1 s antes, con mucho daño en área. *Piedrazo*: aturde 3 s. *Refuerzo*: invencible 5 s cada 15 s, y al instante al bajar del 30% de vida (una vez por vida).
+- **El Gólem Minero:** cuatro vidas, de piedra, hierro, oro y diamante; cada una tiene más vida y fuerza y se rearma con una animación del material. *Terremoto*: cuatro golpes al piso, cada uno avisado con un anillo naranja 0,9 s antes, con mucho daño en área. *Piedrazo*: aturde 3 s. *Refuerzo*: invencible 5 s cada 15 s, y al instante al bajar del 30% de vida (una vez por vida).
 - **Cerbero:** *Mordida* que desangra (5 de vida por segundo durante 5 s, ignora la armadura). *Jugueteo*: salta, sigue tu posición y aterriza en el círculo rojo; si te alcanza vas a la mitad de velocidad 5 s. Mientras está en el aire no se le puede pegar. *Escarbar*: si en 3 s no le pegás, se cura entero.
 
 ### El Trono de Zak
@@ -271,7 +271,7 @@ Paco recibe el **90%** de la duración y protección de su banda; Fede, el **80%
 
 ## Enemigos
 
-Casi todos comparten un radio de detección de **195 píxeles**. Tienen **el mismo nivel que tu personaje** y no corren ni gastan energía. Desde el nivel 8, además, cada nivel les suma **4% de vida y 0,5% de fuerza** (`vida × (1 + 0,04 × (nivel − 8))`, `fuerza × (1 + 0,005 × (nivel − 8))`). El daño de los enemigos comunes es el **72%** de su fuerza final; el de los jefes, el **68%**. Así el final del juego sigue siendo exigente. La vida de los enemigos no tiene tope; fuerza, velocidad y resistencia sí (100 antes del extra).
+Casi todos comparten un radio de detección de **195 píxeles**. Tienen **el mismo nivel que tu personaje** y no corren ni gastan energía. Su vida final es un **20% más** que la de esta tabla. Desde el nivel 8, además, cada nivel les suma **4% de vida y 0,5% de fuerza** (`vida × (1 + 0,04 × (nivel − 8))`, `fuerza × (1 + 0,005 × (nivel − 8))`). El daño de los enemigos comunes es el **72%** de su fuerza final; el de los jefes, el **68%**. Así el final del juego sigue siendo exigente. La vida de los enemigos no tiene tope; fuerza, velocidad y resistencia sí (100 antes del extra).
 
 | Enemigo | Vida | Fuerza | Velocidad | Resistencia | Aumento por nivel: V / F / Vel / R |
 | --- | ---: | ---: | ---: | ---: | --- |

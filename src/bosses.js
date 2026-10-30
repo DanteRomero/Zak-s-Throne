@@ -95,13 +95,13 @@ Object.assign(Z.Game.prototype, {
   const p=this.player,a=e.act;
   if(a){a.t+=dt;
    if(a.id==='swipe'){
-    if(a.t<.5)return;
-    if(a.hits<2&&a.t>=.5+a.hits*.28){a.hits++;this.sound.play('swing');this.effect(e.x+e.aimX*22,e.y-10+e.aimY*22,'slash',.2,{radius:40});
+    if(a.t<.42)return;
+    if(a.hits<2&&a.t>=.42+a.hits*.28){a.hits++;this.sound.play('swing');this.effect(e.x+e.aimX*22,e.y-10+e.aimY*22,'slash',.2,{radius:40});
      if(this.inFront(e,54,.3))this.hurtPlayer(e.stats.strength*.85,e.type);}
-    if(a.t>1.15)e.act=null;return;}
+    if(a.t>1.07)e.act=null;return;}
    if(a.id==='lunge'){
-    if(a.t<1){if(a.t<.7)this.aimAt(e);return;}
-    if(a.t<1.55){const before={x:e.x,y:e.y};this.move(e,e.aimX*330*dt,e.aimY*330*dt,9,e.biome);e.moving=true;e.walk+=dt*16;
+    if(a.t<.9){if(a.t<.62)this.aimAt(e);return;}
+    if(a.t<1.45){const before={x:e.x,y:e.y};this.move(e,e.aimX*330*dt,e.aimY*330*dt,9,e.biome);e.moving=true;e.walk+=dt*16;
      if(this.time%.06<dt)this.effect(e.x,e.y,'dust',.35);
      if(distance(e,p)<24&&p.roll<=0){e.act={id:'drain',t:0,ticks:0};p.grabbed=1.7;p.gather=null;this.sound.play('drain');this.emit('toast',{message:'¡El Chupasangre te agarró y te chupa la sangre!',error:true});return;}
      if(distance(before,e)<1)e.act=null;return;}
@@ -131,13 +131,13 @@ Object.assign(Z.Game.prototype, {
    if(e.hp<=e.maxHp*.3)e.lowFortified=true;e.shield=5;e.cd.fortify=15;this.sound.play('block');this.effect(e.x,e.y-48,'miss',1.4,{text:'¡REFUERZO!'});}
   if(a){a.t+=dt;
    if(a.id==='quake'){
-    const slam=Math.floor(a.t/1.25),phase=a.t-slam*1.25;a.slam=slam;
+    const slam=Math.floor(a.t/1.15),phase=a.t-slam*1.15;a.slam=slam;
     if(slam>=4){e.act=null;e.cd.quake=7;return;}
-    if(phase>=1&&a.done!==slam){a.done=slam;this.sound.play('slam');this.shake(5,.25);this.effect(e.x,e.y,'wave',.4,{radius:100});
+    if(phase>=.9&&a.done!==slam){a.done=slam;this.sound.play('slam');this.shake(5,.25);this.effect(e.x,e.y,'wave',.4,{radius:100});
      if(this.inRadius(e,100))this.hurtPlayer(e.stats.strength*1.7,e.type);}
     return;}
    if(a.id==='throw'){
-    if(a.t<.9){this.aimAt(e);return;}
+    if(a.t<.8){this.aimAt(e);return;}
     const p2=this.player,dx=p2.x-e.x,dy=p2.y-6-(e.y-20),l=Math.hypot(dx,dy)||1;
     this.projectiles.push({x:e.x+dx/l*14,y:e.y-20+dy/l*14,dx:dx/l,dy:dy/l,type:'boulder',hostile:true,damage:e.stats.strength,stun:3,source:e.type,traveled:0,range:360});
     this.sound.play('swing');e.act=null;e.cd.rock=4.5;return;}
@@ -152,14 +152,14 @@ Object.assign(Z.Game.prototype, {
   const p=this.player,a=e.act;
   if(a){a.t+=dt;
    if(a.id==='bite'){
-    if(a.t<.55){this.aimAt(e);return;}
+    if(a.t<.47){this.aimAt(e);return;}
     if(!a.done){a.done=true;this.sound.play('bite');this.effect(e.x+e.aimX*24,e.y-12+e.aimY*24,'slash',.2,{radius:30});
      if(this.inFront(e,58,.2)&&this.hurtPlayer(e.stats.strength*1.1,e.type)&&this.state==='playing'){p.bleed={time:5,tick:1,damage:5};this.emit('toast',{message:'Te estás desangrando: 5 de vida por segundo durante 5 s.',error:true});}}
-    if(a.t>.8)e.act=null;return;}
+    if(a.t>.72)e.act=null;return;}
    if(a.id==='jump'){
     if(a.t<.9){a.tx=p.x;a.ty=p.y;}
-    const k=clamp(a.t/1.6,0,1);e.air=true;e.x=a.sx+(a.tx-a.sx)*k;e.y=a.sy+(a.ty-a.sy)*k;e.lift=Math.sin(k*Math.PI)*70;e.moving=false;
-    if(a.t>=1.6){e.air=false;e.lift=0;
+    const k=clamp(a.t/1.5,0,1);e.air=true;e.x=a.sx+(a.tx-a.sx)*k;e.y=a.sy+(a.ty-a.sy)*k;e.lift=Math.sin(k*Math.PI)*70;e.moving=false;
+    if(a.t>=1.5){e.air=false;e.lift=0;
      if(Z.collides(this.world,e.x,e.y,9)||Z.biomeAt(e.x,e.y)!==e.biome)Object.assign(e,this.freeSpot(a.tx,a.ty,e.biome));
      this.sound.play('slam');this.shake(6,.35);this.effect(e.x,e.y,'wave',.45,{radius:72});
      if(this.inRadius(e,72)&&this.hurtPlayer(e.stats.strength*1.4,e.type)&&this.state==='playing'){p.heavySlow=5;this.emit('toast',{message:'¡Te aplastó! Vas mucho más lento durante 5 s.',error:true});}

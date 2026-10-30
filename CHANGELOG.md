@@ -6,6 +6,18 @@ Cada versión lista sus cambios agrupados por tipo:
 - **Change:** algo que ya existía y ahora funciona distinto.
 - **Fix:** un error corregido.
 
+## v2.3 — 2026-10-30
+
+* Change
+    - **Jefes con más vida:** todos, Zak incluido, tienen un 10% más de vida que la base de su ficha (antes, 15% menos). El Capo pasa de 442 a 572 en nivel 1 y de unos 3300 a 4240 en nivel 40; Zak, de 10000 a 11000 por vida en nivel 1.
+    - **Enemigos comunes con más vida:** tienen un 20% más de vida que la base de su ficha. Un chorro pasa de 100 a 120 en nivel 1 y de unos 360 a 430 en nivel 40.
+    - **Un poco menos de tiempo para esquivar** (Zak no cambia):
+        - Embestida del Capo: de 1,1 a 1 s.
+        - Colazo de la Yarará: de 0,85 a 0,75 s. Su veneno: de 0,8 a 0,7 s.
+        - Embestida del Chupasangre: de 1 a 0,9 s. Su manotazo: de 0,5 a 0,42 s.
+        - Cada golpe del Terremoto del Gólem: de 1 a 0,9 s. Su piedrazo: de 0,9 a 0,8 s.
+        - Mordida de Cerbero: de 0,55 a 0,47 s. En su salto, el círculo queda quieto 0,6 s antes de caer (antes, 0,7 s).
+
 ## v2.2 — 2026-10-30
 
 * Feature

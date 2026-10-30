@@ -31,10 +31,13 @@
       const e = game.makeEnemy({id: 'test-' + game.enemies.length, type, x, y});
       game.enemies.push(e); return e;
     }
+    // Las pruebas del motor miden daño contra la vida de la ficha: los multiplicadores de vida
+    // (ENEMY_HEALTH y BOSS_HEALTH) se prueban aparte en las reglas.
     function test(name, fn) {
+      const health = [Z.ENEMY_HEALTH, Z.BOSS_HEALTH]; Z.ENEMY_HEALTH = 1; Z.BOSS_HEALTH = 1;
       try { fn(); results.push({name, pass: true}); }
       catch (error) { results.push({name, pass: false, error: error.message, stack: error.stack}); }
-      finally { Z.biomeAt = original.biomeAt; Z.collides = original.collides; Math.random = original.random; game.pause(); }
+      finally { Z.biomeAt = original.biomeAt; Z.collides = original.collides; Math.random = original.random; [Z.ENEMY_HEALTH, Z.BOSS_HEALTH] = health; game.pause(); }
     }
 
     test('Poison ticks five times in five seconds and bypasses armor', () => {

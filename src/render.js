@@ -263,7 +263,7 @@
       c.beginPath();c.moveTo(x,y-6);c.lineTo(x+e.aimX*180,y-6+e.aimY*180);c.stroke();
     }else if(e.kind==="tail"){
       // El anillo del colazo coincide con la zona que golpea (elipse en perspectiva).
-      const r=62,grow=1-Math.max(0,e.telegraph)/.85;
+      const r=62,grow=1-Math.max(0,e.telegraph)/.75;
       c.fillStyle="#b04a6a";c.globalAlpha=pulse*.28;c.beginPath();c.ellipse(x,y-3,r,r*.65,0,0,Math.PI*2);c.fill();
       c.globalAlpha=pulse;c.strokeStyle="#e98fb0";c.lineWidth=2;c.setLineDash([6,5]);c.beginPath();c.ellipse(x,y-3,r,r*.65,0,0,Math.PI*2);c.stroke();
       c.setLineDash([]);c.globalAlpha=.6;c.beginPath();c.ellipse(x,y-3,r*grow,r*grow*.65,0,0,Math.PI*2);c.stroke();
@@ -344,7 +344,7 @@
   }
   function drawGolem(c, e, time, walk) {
     const life=(Z.GOLEM_LIVES||[])[e.life||0]||{color:"#8a8f96"}, col=life.color;
-    const raise=e.act&&e.act.id==="quake"&&(e.act.t%1.25)<1?-5:0, rising=e.act&&e.act.id==="rise";
+    const raise=e.act&&e.act.id==="quake"&&(e.act.t%1.15)<.9?-5:0, rising=e.act&&e.act.id==="rise";
     if(rising){
       const k=Math.min(1,e.act.t/2.2), next=(Z.GOLEM_LIVES||[])[Math.min(3,(e.life||0)+1)]||life;
       for(let i=0;i<14;i++){const a=i*0.9+time*2,r=22*(1-k)+4;rect(c,Math.cos(a)*r-2,-14+Math.sin(a)*r*.6-k*6,4,4,i%2?next.color:col);}
@@ -360,7 +360,7 @@
     if(e.act&&e.act.id==="throw"){rect(c,-6,-50,12,10,"#4a4d52");rect(c,-5,-49,10,8,"#8a8f96");}
   }
   function drawCerbero(c, e, time, walk) {
-    const a=e.act||{}, bite=a.id==="bite"&&a.t>=.5&&a.t<.7, dig=a.id==="dig";
+    const a=e.act||{}, bite=a.id==="bite"&&a.t>=.42&&a.t<.62, dig=a.id==="dig";
     rect(c,-19,-16-Math.abs(Math.sin(time*6))*2,6,3,"#2c2228");
     rect(c,-15,-17,26,11,P.ink);rect(c,-14,-16,24,9,"#3d2f37");rect(c,-14,-16,24,3,"#55434d");
     for(let k=0;k<4;k++)rect(c,-12+k*7,-17,2,2,"#8a7a6a");
@@ -402,13 +402,13 @@
     const line=(len,color)=>{c.strokeStyle=color;c.lineWidth=12;c.lineCap="round";c.globalAlpha=pulse*.35;c.beginPath();c.moveTo(x,y-6);c.lineTo(x+e.aimX*len,y-6+e.aimY*len);c.stroke();c.globalAlpha=pulse;c.lineWidth=2;c.setLineDash([6,5]);c.beginPath();c.moveTo(x,y-6);c.lineTo(x+e.aimX*len,y-6+e.aimY*len);c.stroke();c.setLineDash([]);};
     let warn=true;
     if(e.type==="vampire"){
-      if(a.id==="lunge"&&a.t<1)line(190,"#e0574b");else if(a.id==="swipe"&&a.t<.5)cone(54,1.2,"#e0574b");
+      if(a.id==="lunge"&&a.t<.9)line(190,"#e0574b");else if(a.id==="swipe"&&a.t<.42)cone(54,1.2,"#e0574b");
       else if(a.id==="retreat"||a.id==="summon")ring(48+Math.sin(time*8)*4,"#8a4fb0",.15);else warn=false;
     } else if(e.type==="golem"){
-      if(a.id==="quake"){const ph=a.t%1.25;if(ph<1){ring(100,"#e0874b");c.globalAlpha=.7;c.strokeStyle="#ffd0a0";c.beginPath();c.ellipse(x,y-3,100*ph,75*ph,0,0,Math.PI*2);c.stroke();}else warn=false;}
-      else if(a.id==="throw"&&a.t<.9)line(220,"#c8a060");else warn=false;
+      if(a.id==="quake"){const ph=a.t%1.15;if(ph<.9){ring(100,"#e0874b");c.globalAlpha=.7;c.strokeStyle="#ffd0a0";c.beginPath();c.ellipse(x,y-3,100*ph/.9,75*ph/.9,0,0,Math.PI*2);c.stroke();}else warn=false;}
+      else if(a.id==="throw"&&a.t<.8)line(220,"#c8a060");else warn=false;
     } else if(e.type==="cerbero"){
-      if(a.id==="bite"&&a.t<.55)cone(58,1.3,"#e0574b");
+      if(a.id==="bite"&&a.t<.47)cone(58,1.3,"#e0574b");
       else if(a.id==="jump"){const tx=Math.round(a.tx),ty=Math.round(a.ty);c.globalAlpha=pulse*.3;c.fillStyle="#e0574b";c.beginPath();c.ellipse(tx,ty-3,72,54,0,0,Math.PI*2);c.fill();c.globalAlpha=pulse;c.strokeStyle="#ffb09a";c.lineWidth=2;c.setLineDash([6,5]);c.beginPath();c.ellipse(tx,ty-3,72,54,0,0,Math.PI*2);c.stroke();c.setLineDash([]);c.restore();pixelText(c,"!!",tx,ty-20,"#ff8f7a",12);return;}
       else if(a.id==="dig"){const k=Math.min(1,a.t/3);c.globalAlpha=.9;c.strokeStyle="#3a2a20";c.lineWidth=5;c.beginPath();c.arc(x,y-54,9,0,Math.PI*2);c.stroke();c.strokeStyle="#9ad16a";c.lineWidth=3;c.beginPath();c.arc(x,y-54,9,-Math.PI/2,-Math.PI/2+k*Math.PI*2);c.stroke();}
       else warn=false;
@@ -425,7 +425,7 @@
     const x=Math.round(e.x), y=Math.round(e.y), scale={vampire:1.45,golem:1.75,cerbero:1.6,zak:2.3}[e.type]||1.5;
     const walk=e.moving?Math.round(Math.sin(time*10+x)*1.5):0;
     drawBigTelegraph(c,e,time);
-    if(e.act&&e.act.id==="lunge"&&e.act.t>=1){c.save();c.globalAlpha=.25;for(let k=1;k<4;k++){c.save();c.translate(x-e.aimX*k*11,y-e.aimY*k*11);c.scale(scale,scale);rect(c,-7,-28,14,26,"#5a1b2a");c.restore();}c.restore();}
+    if(e.act&&e.act.id==="lunge"&&e.act.t>=.9){c.save();c.globalAlpha=.25;for(let k=1;k<4;k++){c.save();c.translate(x-e.aimX*k*11,y-e.aimY*k*11);c.scale(scale,scale);rect(c,-7,-28,14,26,"#5a1b2a");c.restore();}c.restore();}
     c.save();c.translate(x,y);
     shadow(c,0,0,(e.type==="zak"?44:e.type==="golem"?42:e.type==="cerbero"?44:30)*(e.lift?Math.max(.45,1-e.lift/90):1),7);
     if(e.hitFlash>0&&Math.floor(time*18)%2===0)c.globalAlpha=.55;

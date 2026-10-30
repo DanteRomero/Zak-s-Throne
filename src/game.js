@@ -277,7 +277,7 @@ class Game {
   e.tailCd=Math.max(0,(e.tailCd||0)-dt);
   if(e.alert&&!wasAlert){this.sound.play('telegraph');if(!e.summoned)this.emit('boss',{name:Z.ENEMY_TYPES[e.type].name});}
   if(e.telegraph>0){e.telegraph-=dt;
-   if(e.type==='capo'){const tl=Math.hypot(p.x-e.x,p.y-e.y)||1;if(e.telegraph>.5){e.aimX=(p.x-e.x)/tl;e.aimY=(p.y-e.y)/tl;}}
+   if(e.type==='capo'){const tl=Math.hypot(p.x-e.x,p.y-e.y)||1;if(e.telegraph>.45){e.aimX=(p.x-e.x)/tl;e.aimY=(p.y-e.y)/tl;}}
    if(e.telegraph<=0){e.telegraph=0;if(e.type==='capo'){e.dash=.5;e.dashHit=false;this.sound.play('swing');}else if(e.kind==='tail')this.tailSweep(e);else this.spit(e);}
    return;}
   if(e.dash>0){e.dash-=dt;const before={x:e.x,y:e.y};this.move(e,e.aimX*300*dt,e.aimY*300*dt,7,e.biome);e.moving=true;e.walk+=dt*16;
@@ -285,17 +285,17 @@ class Game {
    if(!e.dashHit&&distance(e,p)<22){e.dashHit=true;if(this.hurtPlayer(e.stats.strength*1.6,e.type)){this.shake(5,.3);p.slow=Math.max(p.slow,1.5);}}
    if(distance(before,e)<1)e.dash=0;return;}
   if(e.backoff>0){e.backoff-=dt;const ox=(e.x-p.x)/(len||1),oy=(e.y-p.y)/(len||1);this.steer(e,e.x+ox*40,e.y+oy*40,e.stats.moveSpeed*1.5,dt,len);
-   if(e.backoff<=0){e.backoff=0;e.kind='spit';e.telegraph=.8;e.aimX=(p.x-e.x)/(len||1);e.aimY=(p.y-e.y)/(len||1);this.sound.play('telegraph');}
+   if(e.backoff<=0){e.backoff=0;e.kind='spit';e.telegraph=.7;e.aimX=(p.x-e.x)/(len||1);e.aimY=(p.y-e.y)/(len||1);this.sound.play('telegraph');}
    return;}
   e.special=Math.max(0,e.special-dt);
   let tx=e.homeX,ty=e.homeY,velocity=e.stats.moveSpeed*(e.type==='yarara'?.95:.8);
   if(e.alert){tx=p.x;ty=p.y;}else velocity*=.35;
   if(!e.alert&&Math.hypot(tx-e.x,ty-e.y)<4){e.moving=false;}else this.steer(e,tx,ty,velocity,dt,len);
   if(e.type==='yarara'&&e.alert){
-   if(len<TAIL_RADIUS&&e.tailCd<=0){e.kind='tail';e.telegraph=.85;e.tailCd=3;this.sound.play('telegraph');return;}
+   if(len<TAIL_RADIUS&&e.tailCd<=0){e.kind='tail';e.telegraph=.75;e.tailCd=3;this.sound.play('telegraph');return;}
    if(e.special<=0&&len<260){e.special=3.8;e.backoff=.4;return;}
   }else if(e.alert&&e.special<=0&&len<260){
-   e.kind='dash';e.telegraph=1.1;e.special=4.2;e.aimX=(p.x-e.x)/(len||1);e.aimY=(p.y-e.y)/(len||1);
+   e.kind='dash';e.telegraph=1;e.special=4.2;e.aimX=(p.x-e.x)/(len||1);e.aimY=(p.y-e.y)/(len||1);
    this.sound.play('telegraph');return;}
   if(e.alert&&len<26&&e.cooldown<=0)this.enemyAttack(e);
  }
