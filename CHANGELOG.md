@@ -6,6 +6,19 @@ Cada versión lista sus cambios agrupados por tipo:
 - **Change:** algo que ya existía y ahora funciona distinto.
 - **Fix:** un error corregido.
 
+## v2.4 — 2026-11-01
+
+* Feature
+    - **Bumeranes de energía de Zak:** si estás lejos, golpea el piso y lanza tres bumeranes violetas en abanico que vuelven a su mano. Pegan a la ida y a la vuelta (31% de tu vida máxima cada uno).
+    - **Aviso de rebalanceo:** al abrir el juego, las partidas guardadas bajan a la mitad de nivel (una sola vez) y reciben ◉ 10.000 de compensación. Un mensaje en el menú lo explica. Las estadísticas y los puntos no cambian. Lo mismo pasa al importar un respaldo viejo.
+* Change
+    - **Zak con muchísima más vida:** 22000 por vida en nivel 1 (antes 11000), +440 por nivel (antes +198) y ahora también gana la vida extra de veteranía desde el nivel 8. En nivel 40: unos 89 000 por vida (antes unos 18 700).
+    - **Poder de golpe:** la fuerza cuenta entera hasta 10 y después rinde cada vez menos (raíz cuadrada). 100 de fuerza pegan como 40,8.
+    - **Subir de nivel cuesta mucho más:** `(100 + 50·n + 5·n²)` XP, y desde el nivel 50, ×1,03 por nivel. Nivel 10: 955 XP (antes 550); nivel 50: 14 555 (antes 2550); nivel 100: unos 237 000 (antes 5050).
+    - **Jefes con mucha más experiencia:** base ×2,5 y crecen 12% por nivel; los enemigos comunes, 6% (antes 7,5% para todos).
+    - **Esqueletos más peligrosos:** el de escudo pasa a 18 de fuerza (+1 por nivel); el arquero, a 18 (+1 por nivel) y sus flechas pegan ×1,75, incluso por encima del tope.
+    - **Jefes más rápidos:** todo lo hacen a un ritmo 20% mayor (avisos, ataques, recargas y movimiento) y caminan al 75% de su banda (antes 70%).
+
 ## v2.3 — 2026-10-30
 
 * Change

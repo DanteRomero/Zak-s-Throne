@@ -14,7 +14,7 @@ const OPENING = {
  vampire:{swipe:0,lunge:2,summon:10},
  golem:{quake:2,rock:1.5,fortify:15},
  cerbero:{bite:0,jump:3,dig:12},
- zak:{slash:0,raise:8,storm:18,wrath:6,purple:12}
+ zak:{slash:0,raise:8,storm:18,wrath:6,purple:12,boomerang:3}
 };
 const LINES = {
  yield:'Dejémoslo acá y volvé a tu dimensión, mortal.',
@@ -213,6 +213,14 @@ Object.assign(Z.Game.prototype, {
    if(a.id==='roar'){
     if(a.t>.9){this.darkness=20;e.act=null;e.cd.wrath=40;this.emit('toast',{message:'Ira del gobernante: todo se oscurece durante 20 segundos.',error:true});}
     return;}
+   // Golpe al piso: tres bumeranes de energía en abanico que vuelven a su mano.
+   if(a.id==='boomerang'){
+    if(a.t<.75){this.aimAt(e);return;}
+    this.sound.play('slam');this.shake(5,.3);this.effect(e.x,e.y,'wave',.4,{radius:70});
+    const base=Math.atan2(p.y-6-(e.y-14),p.x-e.x),damage=Math.max(e.stats.strength*.6,this.stats().maxHealth*.52*.6);
+    for(const offset of [-.38,0,.38]){const ang=base+offset;
+     this.projectiles.push({x:e.x+Math.cos(ang)*18,y:e.y-14+Math.sin(ang)*18,dx:Math.cos(ang),dy:Math.sin(ang),type:'boomerang',hostile:true,pierce:true,damage,source:'zak',owner:e.id,traveled:0,range:300,back:false,hitCd:0});}
+    this.sound.play('spit');e.act=null;e.cd.boomerang=5.5;return;}
    if(a.id==='purple'){
     if(a.t>=2.8){
      this.sound.play('slam');this.shake(10,.7);this.effect(e.x,e.y,'wave',.6,{radius:220});
@@ -227,7 +235,18 @@ Object.assign(Z.Game.prototype, {
   if(third&&e.cd.wrath<=0&&this.darkness<=0){e.act={id:'roar',t:0};this.sound.play('roar');return;}
   if(e.cd.raise<=0&&this.summonsOf(e,m=>!m.major)<6){e.act={id:'raise',t:0};this.sound.play('telegraph');return;}
   if(len<90&&e.cd.slash<=0){this.aimAt(e);e.act={id:'slash',t:0,done:-1,swing:0};this.sound.play('telegraph');return;}
+  if(len>160&&e.cd.boomerang<=0){this.aimAt(e);e.act={id:'boomerang',t:0};this.sound.play('telegraph');return;}
   this.steer(e,p.x,p.y,e.stats.moveSpeed,dt,len);
+ },
+ // Los bumeranes atraviesan paredes: van hasta su alcance y vuelven a Zak, y pueden pegarte a la ida y a la vuelta.
+ updateBoomerang(s,dt){
+  const p=this.player,owner=this.enemies.find(m=>m.id===s.owner&&!m.dead),travel=230*dt;
+  if(!owner||this.biome!=='throne')return false;
+  if(!s.back&&s.traveled>=s.range)s.back=true;
+  if(s.back){const dx=owner.x-s.x,dy=owner.y-14-s.y,l=Math.hypot(dx,dy)||1;if(l<20||s.traveled>s.range*3)return false;s.dx=dx/l;s.dy=dy/l;}
+  s.x+=s.dx*travel;s.y+=s.dy*travel;s.traveled+=travel;s.spin=(s.spin||0)+dt*16;s.hitCd=Math.max(0,s.hitCd-dt);
+  if(s.hitCd<=0&&Math.hypot(p.x-s.x,p.y-8-s.y)<13){s.hitCd=.6;this.hurtPlayer(s.damage,s.source,false,{pierce:true});}
+  return this.state==='playing';
  },
  // Única zona sin daño del Terremoto morado: lejos, pero a tiro de una corrida.
  safeSpot(){

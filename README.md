@@ -174,9 +174,9 @@ Escalan con tu nivel como el resto de los enemigos, no retroceden con los golpes
 | El Chupasangre | Junto a la bajada al Nvl 3 | 990 | 15 | 35 | 40 |
 | El Gólem Minero | Las Entrañas | 462 por vida (×1; ×1,15; ×1,3; ×1,5) | 22 | 10 | 65 |
 | Cerbero | Altar del gobernante | 1760 | 20 | 62 | 50 |
-| Zak | Trono de Zak | 11000 por vida (+198 por nivel), 3 vidas | — | 22 | 85 |
+| Zak | Trono de Zak | 22000 por vida (+440 por nivel, y la vida extra desde el nivel 8), 3 vidas | — | 22 | 85 |
 
-Son los valores en nivel 1; todos crecen con tu nivel. Hacen el **68%** de su fuerza como daño (los enemigos comunes, el 72%) y tienen un **10% más de vida** que la base de su ficha (los enemigos comunes, un 20% más). La tabla ya incluye ese extra. Desde el nivel 8 ganan **4%** de vida extra por nivel, como el resto. Entre el aviso y el golpe hay tiempo de reaccionar: entre 0,6 y 1 s para embestidas, saltos y golpes al piso, y menos de medio segundo para los golpes cortos. Caminan un **30% más lento** que lo que indica su velocidad (embestidas y saltos incluidos, también son más lentos).
+Son los valores en nivel 1; todos crecen con tu nivel. Hacen el **68%** de su fuerza como daño (los enemigos comunes, el 72%) y tienen un **10% más de vida** que la base de su ficha (los enemigos comunes, un 20% más). La tabla ya incluye ese extra. Desde el nivel 8 ganan **4%** de vida extra por nivel, como el resto. Entre el aviso y el golpe hay tiempo de reaccionar: entre 0,6 y 1 s para embestidas, saltos y golpes al piso, y menos de medio segundo para los golpes cortos. Caminan un **25% más lento** que lo que indica su velocidad, pero hacen todo a un **ritmo 20% mayor**: preparan, atacan, se mueven y recargan sus ataques antes (los tiempos de aviso de esta sección ya son más cortos en la práctica).
 
 - **El Capo del Eco:** marca una línea roja y embiste: 160% de su fuerza y frena 1,5 s.
 - **La Yarará Madre:** te persigue. Colazo en anillo alrededor suyo (marca un círculo rosado: rodá o alejate). Antes de escupir el abanico de veneno retrocede un poco y marca tres líneas (50% de envenenar; 15% contra Fede).
@@ -191,6 +191,7 @@ En el altar del cementerio se deja **una ofrenda de cada jefe** (E). Si tenés v
 Cualquier golpe de Zak se lleva el **52%** de tu vida máxima, sin importar la armadura: dos golpes alcanzan.
 
 - **Espadazo:** tres golpes hacia adelante en un abanico de 60°.
+- **Bumeranes de energía:** si estás lejos, levanta la espada, golpea el piso y lanza tres bumeranes violetas en abanico (marca tres líneas). Atraviesan paredes, van unos 300 píxeles y vuelven a su mano; pueden pegarte a la ida y a la vuelta. Cada uno se lleva el 31% de tu vida máxima.
 - **Invocación:** dos esqueletos con espada y escudo y dos arqueros.
 - **Invocación mayor:** trae a uno de los cinco jefes al azar, con el mismo nivel que tiene ese jefe en tu partida. Mientras siga en pie, Zak se sienta en el trono y se cura 3 por segundo (con el Gólem, hasta que pierda sus cuatro vidas). La repite entre 40 y 80 segundos después de que cae el invocado.
 - **Tormenta de agonía:** durante 10 s caen rayos violetas alrededor tuyo; cada uno se marca antes de caer y **mata de un toque**. Mientras dura, **solo la piedra** le hace daño.
@@ -231,7 +232,11 @@ Las habilidades activas tienen enfriamiento: Gero **25 s**, Paco **30 s**, Tena 
 
 En nivel 20 pegás ×1,48 y tenés ×1,06 de vida; en nivel 40, ×2,28 y ×1,16. La ficha (C) muestra tu veteranía.
 
-El nivel 2 requiere **100 XP**. Cada nivel siguiente requiere 50 adicionales: **150, 200, 250…**. La experiencia sobrante se conserva, incluso si una recompensa permite subir varios niveles.
+**Poder de golpe.** La fuerza cuenta entera hasta 10; después rinde cada vez menos: `10 + 4 × (√(fuerza − 6) − 2)`. Con 20 de fuerza pegás como con 17; con 50, como con 28,5; con 100, como con 40,8. Todas las armas parten del poder de golpe. La ficha (C) lo muestra.
+
+Cada nivel cuesta más que el anterior: `(100 + 50·n + 5·n²)` XP, con `n = nivel − 1`, y desde el nivel 50 además ×1,03 por nivel. El nivel 2 requiere **100 XP**, el 3 **155**, el 10 **955**, el 50 **14 555** y el 100 unas **237 000**. La experiencia sobrante se conserva, incluso si una recompensa permite subir varios niveles.
+
+Los enemigos comunes suman un 6% de su experiencia base por nivel; los jefes, un 12%, y su base es mucho mayor (Capo 650, Yarará 600, Chupasangre 1100, Gólem 1500, Cerbero 2000, Zak 8000).
 
 Cada nivel concede **2 de vida máxima** y **un punto de mejora**. Un punto suma 1 a fuerza, velocidad, resistencia o inteligencia, o 5 a vida. Dante gana además 1 de fuerza automático; si elige fuerza también, obtiene 2 en total.
 
@@ -282,8 +287,8 @@ Casi todos comparten un radio de detección de **195 píxeles**. Tienen **el mis
 | Murciélago | 40 | 6 | 45 | 15 | +1,5 / +0,5 / +1 / +0,5 |
 | Araña | 35 | 6 | 26 | 35 | +0,5 / +0,4 / +0,5 / +1 |
 | Gusano de tierra | 100 | 10 | 18 | 62 | +4 / +0,75 / +0,5 / +1 |
-| Esqueleto con escudo | 100 | 14 | 8 | 35 | +1,5 / +0,8 / +0,2 / +1 |
-| Esqueleto arquero | 1 | 7 | 30 | 0 | +0 / +0,5 / +0,5 / +0 |
+| Esqueleto con escudo | 100 | 18 | 8 | 35 | +1,5 / +1 / +0,2 / +1 |
+| Esqueleto arquero | 1 | 18 | 30 | 0 | +0 / +1 / +0,5 / +0 |
 
 - Los **chorros** atacan con cuchillo y no retroceden al recibir golpes.
 - Los **perros** reducen el movimiento un 15% durante 4 segundos; contra Pepe, un 20%.
@@ -293,7 +298,7 @@ Casi todos comparten un radio de detección de **195 píxeles**. Tienen **el mis
 - Las **arañas** (Cueva Profunda) tienen 15% de probabilidad de envenenar como las serpientes (5% contra Fede). Su caparazón absorbe 4 de daño por golpe.
 - Los **gusanos de tierra** (Las Entrañas) esperan enterrados, salen cuando te acercás a unos 120 píxeles y absorben 6 de daño por golpe. Reaparecen a los 90 segundos. Para pelear cómodo en los niveles profundos conviene llevar armas mejoradas.
 - Los **esqueletos con escudo** (cementerio) son lentos, pegan fuerte y tienen 15% de probabilidad de bloquear cada golpe.
-- Los **esqueletos arqueros** (cementerio) te ven desde 260 píxeles, disparan flechas cada 1,7 s y se alejan si te acercás. Se rompen de un golpe.
+- Los **esqueletos arqueros** (cementerio) te ven desde 260 píxeles, disparan flechas cada 1,7 s y se alejan si te acercás. Sus flechas pegan un **75% más** que su fuerza (también por encima del tope de 100). Se rompen de un golpe.
 
 Los ataques empujan a perros, serpientes y ratas; las ratas prendidas deben terminar su agarre. Los aumentos propios de vida de cada enemigo se aplican según la tabla, sin sumarles los 2 de vida automáticos del jugador. El daño de veneno también respeta el límite de fuerza de 100.
 

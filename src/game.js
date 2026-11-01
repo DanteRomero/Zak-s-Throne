@@ -9,6 +9,8 @@ const isCave = biome => /^cave/.test(biome||'');
 const ROLL_TIME=.3,ROLL_COOLDOWN=.55,ROLL_COST=.2,COMBO_CRIT=4,CRIT_MULTIPLIER=1.75,HERB_REGROW=90,TAIL_RADIUS=62;
 // Guita por cada objetivo del diario: más difícil, más guita, sin romper la economía.
 const QUEST_REWARDS={bow:5,cave:5,stone:5,weeds:5,sword:10,shop:10,smith:15,bestiary:20,level5:25,deep:30,capo:40,yarara:40,deepest:50,vampire:60,golem:80,cerbero:100,altar:60,elemental:100,zak:300};
+// Versión del balance de las partidas guardadas y la compensación por el rebalanceo de niveles.
+const BALANCE=2,REBALANCE_GIFT=Z.REBALANCE_GIFT=10000;
 const WEAPON_ORDER=['fists','bow','sword','stone','elemental'];
 const isBoss = e => !!(Z.ENEMY_TYPES[e.type]&&Z.ENEMY_TYPES[e.type].boss);
 class Sound {
@@ -187,7 +189,7 @@ class Game {
   if(p.weapon==='stone'&&!p.stoneAmmo){if(!this.noAmmoNotice||this.time-this.noAmmoNotice>3){this.noAmmoNotice=this.time;this.emit('toast',{message:'Caminá 2 segundos para recoger otra piedra.'});}return false;}
   let[dx,dy]=dirs[p.dir];const aim=this.aim||(this.touchMode?this.autoAim(weapon.range+(p.weapon==='bow'||p.weapon==='stone'?0:30)):null);
   if(aim){const len=distance(aim,p);if(len>0){dx=(aim.x-p.x)/len;dy=(aim.y-p.y)/len;p.dir=Math.abs(dx)>Math.abs(dy)?(dx>0?'right':'left'):(dy>0?'down':'up');}}
-  p.gather=null;p.attackCooldown=Math.max(stats.attackCooldown,p.weapon==='bow'?.7:0);p.attackAnim=.24;const damage=stats.strength*weapon.damageMultiplier*stats.damageMultiplier*this.weaponLevelMultiplier();
+  p.gather=null;p.attackCooldown=Math.max(stats.attackCooldown,p.weapon==='bow'?.7:0);p.attackAnim=.24;const damage=stats.power*weapon.damageMultiplier*stats.damageMultiplier*this.weaponLevelMultiplier();
   if(p.weapon==='bow'||p.weapon==='stone'){
    this.projectiles.push({x:p.x+dx*12,y:p.y-7+dy*12,dx,dy,type:p.weapon,damage,traveled:0,range:weapon.range});
    if(p.weapon==='stone'){p.stoneAmmo=0;p.stoneWalkTime=0;}this.sound.play('bow');
@@ -238,9 +240,9 @@ class Game {
  updateEnemies(dt){
   const p=this.player;for(const e of this.enemies){
    if(e.dead){if(e.summoned)continue;e.respawn-=dt;if(e.respawn<=0&&distance({x:e.homeX,y:e.homeY},p)>230)Object.assign(e,this.makeEnemy({id:e.id,type:e.type,x:e.homeX,y:e.homeY}));continue;}
-   e.cooldown=Math.max(0,e.cooldown-dt);e.hitFlash=Math.max(0,e.hitFlash-dt);e.latchRest=Math.max(0,e.latchRest-dt);e.stun=Math.max(0,e.stun-dt);e.charm=Math.max(0,e.charm-dt);e.moving=false;
+   e.cooldown=Math.max(0,e.cooldown-dt*(isBoss(e)?Z.BOSS_TEMPO:1));e.hitFlash=Math.max(0,e.hitFlash-dt);e.latchRest=Math.max(0,e.latchRest-dt);e.stun=Math.max(0,e.stun-dt);e.charm=Math.max(0,e.charm-dt);e.moving=false;
    if(e.stun>0){e.alert=false;e.telegraph=0;e.dash=0;e.backoff=0;continue;}const sameZone=e.biome===this.biome&&this.biome!=='village';
-   if(isBoss(e)){if(e.type==='capo'||e.type==='yarara')this.updateBoss(e,dt,sameZone);else this.updateBigBoss(e,dt,sameZone);if(this.state!=='playing')break;continue;}
+   if(isBoss(e)){const bossDt=dt*Z.BOSS_TEMPO;if(e.type==='capo'||e.type==='yarara')this.updateBoss(e,bossDt,sameZone);else this.updateBigBoss(e,bossDt,sameZone);if(this.state!=='playing')break;continue;}
    if(e.latched>0){
     if(!sameZone){e.latched=0;e.x=e.homeX;e.y=e.homeY;continue;}e.latched=Math.max(0,e.latched-dt);e.x=p.x+5;e.y=p.y-8;
     if(e.latched>1e-8&&e.cooldown<=0)this.enemyAttack(e);if(this.state!=='playing')break;
@@ -342,7 +344,8 @@ class Game {
  heal(amount){const before=this.player.hp;this.player.hp=Math.min(this.stats().maxHealth,before+amount);if(this.player.hp>before)this.effect(this.player.x,this.player.y-30,'heal',.9,{text:'+'+this.number(this.player.hp-before)});}
  updateProjectiles(dt){
   const p=this.player;
-  this.projectiles=this.projectiles.filter(s=>{if(this.state!=='playing')return false;const speed=s.type==='bow'||s.type==='arrow'?330:s.type==='venom'?185:s.type==='boulder'?215:235,travel=speed*dt;s.x+=s.dx*travel;s.y+=s.dy*travel;s.traveled+=travel;
+  this.projectiles=this.projectiles.filter(s=>{if(this.state!=='playing')return false;if(s.type==='boomerang')return this.updateBoomerang(s,dt);
+   const speed=s.type==='bow'||s.type==='arrow'?330:s.type==='venom'?185:s.type==='boulder'?215:235,travel=speed*dt;s.x+=s.dx*travel;s.y+=s.dy*travel;s.traveled+=travel;
    if(s.traveled>s.range||Z.collides(this.world,s.x,s.y,2))return false;
    if(s.hostile){if(Math.hypot(p.x-s.x,p.y-8-s.y)<(s.type==='boulder'?16:11)){const hit=this.hurtPlayer(s.damage,s.source);
      if(hit&&this.state==='playing'&&s.type==='venom'&&Math.random()<(p.characterId==='fede'?.15:.5))this.poisonPlayer(s.poison);
@@ -521,7 +524,7 @@ class Game {
   this.questFlags['claimed_'+id]=true;this.player.coins=(this.player.coins||0)+q.reward;this.sound.play('buy');return{ok:true,message:'+'+q.reward+' de guita por «'+q.title+'».'};
  }
  checkQuests(){for(const q of this.quests())if(q.done&&!this.questFlags['quest_'+q.id]){this.questFlags['quest_'+q.id]=true;this.emit('toast',{message:'Diario actualizado: '+q.title+(QUEST_REWARDS[q.id]?' · Reclamá ◉ '+QUEST_REWARDS[q.id]+' en el diario (J).':'')});this.sound.play('pickup');}if(this.quests().every(q=>q.done)&&!this.questFlags.complete){this.questFlags.complete=true;this.emit('complete');}}
- snapshot(){return JSON.parse(JSON.stringify({version:1,savedAt:new Date().toISOString(),player:this.player,time:this.time,queuedWaves:this.queuedWaves||[],questFlags:this.questFlags,collected:this.world.pickups.filter(p=>p.collected).map(p=>p.id),nodes:this.world.objects.filter(o=>o.harvested).map(o=>({id:o.id,regrow:o.regrow})),enemies:this.enemies.filter(e=>!e.summoned).map(e=>({id:e.id,hp:e.hp,life:e.life||0,dead:e.dead,respawn:e.respawn,x:e.x,y:e.y,provoked:e.provoked,cooldown:e.cooldown,stun:e.stun,charm:e.charm,latched:e.latched,latchRest:e.latchRest,alert:e.alert}))}));}
+ snapshot(){return JSON.parse(JSON.stringify({version:1,balance:BALANCE,savedAt:new Date().toISOString(),player:this.player,time:this.time,queuedWaves:this.queuedWaves||[],questFlags:this.questFlags,collected:this.world.pickups.filter(p=>p.collected).map(p=>p.id),nodes:this.world.objects.filter(o=>o.harvested).map(o=>({id:o.id,regrow:o.regrow})),enemies:this.enemies.filter(e=>!e.summoned).map(e=>({id:e.id,hp:e.hp,life:e.life||0,dead:e.dead,respawn:e.respawn,x:e.x,y:e.y,provoked:e.provoked,cooldown:e.cooldown,stun:e.stun,charm:e.charm,latched:e.latched,latchRest:e.latchRest,alert:e.alert}))}));}
  static validateSave(data){
   if(!data||data.version!==1||!data.player||!Array.isArray(data.collected)||!Array.isArray(data.enemies))throw new Error('El archivo no es una partida válida de Zak’s Throne.');
   const p=data.player,isNumber=n=>typeof n==='number'&&Number.isFinite(n);if(!Z.CHARACTERS.some(c=>c.id===p.characterId))throw new Error('Personaje desconocido.');
@@ -537,6 +540,12 @@ class Game {
   if(p.weaponLevels!==undefined&&(!p.weaponLevels||typeof p.weaponLevels!=='object'||Object.values(p.weaponLevels).some(n=>!isNumber(n)||n<1||n>Z.MAX_WEAPON_LEVEL)))throw new Error('Inventario inválido.');
   if(data.nodes!==undefined&&(!Array.isArray(data.nodes)||data.nodes.length>1000))throw new Error('El archivo es demasiado grande.');
   if(data.enemies.length>100||data.collected.length>500)throw new Error('El archivo es demasiado grande.');return true;
+ }
+ // Partidas de antes del rebalanceo: el nivel baja a la mitad y se compensa con guita. Las estadísticas no se tocan.
+ static migrateSave(data){
+  if(!data||!data.player||data.balance>=BALANCE)return false;const p=data.player,level=Math.max(1,Math.ceil(p.level/2));
+  p.level=level;p.xp=Math.min(Math.max(0,p.xp),Z.xpNeeded(level)-1);p.coins=Math.floor(Math.max(0,Number(p.coins)||0)+REBALANCE_GIFT);
+  p.hp=Math.max(1,Math.min(p.hp,Z.getStats(p).maxHealth));data.balance=BALANCE;return true;
  }
  restore(data,slot=null){
   Game.validateSave(data);const source=data.player,p=Z.createPlayer(source.characterId);

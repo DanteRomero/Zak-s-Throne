@@ -30,8 +30,22 @@
         const s = Zak.enduranceBand(value); equal(s.runDuration,seconds); equal(s.armor,armor);
       });
     });
-    test('Experiencia por nivel crece 50 y no tiene límite artificial', () => {
-      equal(Zak.xpNeeded(1),100); equal(Zak.xpNeeded(2),150); equal(Zak.xpNeeded(3),200); equal(Zak.xpNeeded(10000),500050);
+    test('Experiencia por nivel: cada vez más cara y sin límite artificial', () => {
+      equal(Zak.xpNeeded(1),100); equal(Zak.xpNeeded(2),155); equal(Zak.xpNeeded(3),220); equal(Zak.xpNeeded(50),14555);
+      ok(Zak.xpNeeded(100) > 230000, 'El nivel 100 es extremadamente caro');
+      for (let level = 1; level < 300; level++) ok(Zak.xpNeeded(level + 1) - Zak.xpNeeded(level) > Zak.xpNeeded(level) - Zak.xpNeeded(level - 1 || 1) - 1e-9, 'Cada salto cuesta más: ' + level);
+      ok(Number.isFinite(Zak.xpNeeded(10000)));
+    });
+    test('Los jefes dan mucha más experiencia que los enemigos comunes', () => {
+      [1, 50, 100].forEach(level => { const common = Math.max(...['thief','worm','spider','skeleton'].map(t => Zak.enemyStats(t, level).xp));
+        ['capo','yarara','vampire','golem','cerbero','zak'].forEach(t => ok(Zak.enemyStats(t, level).xp >= common * 4, t + ' en nivel ' + level)); });
+    });
+    test('La fuerza rinde cada vez menos en el poder de golpe', () => {
+      near(Zak.strikePower(5), 5); near(Zak.strikePower(10), 10); ok(Zak.strikePower(100) < 45 && Zak.strikePower(100) > Zak.strikePower(50));
+      ok(Zak.strikePower(50) - Zak.strikePower(40) < Zak.strikePower(20) - Zak.strikePower(10));
+    });
+    test('El arquero pega mucho más que el esqueleto con escudo', () => {
+      [1, 30, 80].forEach(level => ok(Zak.enemyStats('archer', level).strength > Zak.enemyStats('skeleton', level).strength * 1.4, 'Nivel ' + level));
     });
     test('Inteligencia usa escalones de 10', () => {
       const p = Zak.createPlayer('tena');
@@ -48,14 +62,14 @@
     });
     test('Subir varios niveles conserva el sobrante y entrega puntos', () => {
       const p=Zak.createPlayer('tena'); equal(Zak.grantXp(p,280),2);
-      equal(p.level,3); equal(p.xp,30); equal(p.points,2); equal(p.stats.health,104); equal(p.hp,104);
+      equal(p.level,3); equal(p.xp,25); equal(p.points,2); equal(p.stats.health,104); equal(p.hp,104);
     });
     test('Experiencia fraccionaria no pierde un ascenso en el límite', () => {
       const p=Zak.createPlayer('tena'); for(let i=0;i<1000;i++) Zak.grantXp(p,.1);
       equal(p.level,2); near(p.xp,0);
     });
     test('Dante obtiene fuerza automática y una elección independiente', () => {
-      const p=Zak.createPlayer('dante'); p.stats.intelligence=0; equal(Zak.grantXp(p,250),2);
+      const p=Zak.createPlayer('dante'); p.stats.intelligence=0; equal(Zak.grantXp(p,255),2);
       equal(p.stats.strength,10); equal(p.points,2);
       equal(Zak.upgradeStat(p,'strength'),true); equal(p.stats.strength,11); equal(p.points,1);
     });
@@ -144,7 +158,8 @@
       near(base.health,110.5*1.2); near(base.strength,8.5*.72);
       near(late.health,(100+1.5*19)*1.48*1.2); near(late.strength,(5+.5*19)*1.06*.72);
       equal(Zak.enemyStats('archer',40).health,1,'El arquero siempre se rompe de un golpe');
-      near(Zak.enemyStats('zak',40).health,(10000+180*39)*1.1,'Zak no usa el escalado tardío');
+      near(Zak.enemyStats('zak',40).health,(20000+400*39)*2.28*1.1,'Zak gana la vida tardía');
+      near(Zak.enemyStats('zak',40).strength,(40+1.5*39)*.68,'pero no la fuerza tardía');
     });
     test('Las ratas ya no son letales en el final del juego', () => {
       ok(Zak.enemyStats('rat',40).strength<Zak.enemyStats('thief',40).strength,'Una rata pega menos que un chorro');
@@ -152,7 +167,7 @@
     });
     test('Enemigos respetan los máximos incluso a niveles muy altos', () => {
       Object.keys(Zak.ENEMY_TYPES).forEach(type => {
-        const s=Zak.enemyStats(type,100000); ok(s.strength<=100*Zak.lateFactor(100000).strength); ok(s.speed<=100); ok(s.endurance<=100);
+        const s=Zak.enemyStats(type,100000); ok(s.strength<=100*Zak.lateFactor(100000).strength*(Zak.ENEMY_TYPES[type].power||1),type); ok(s.speed<=100); ok(s.endurance<=100);
       });
     });
     test('Cada jefe suelta su ofrenda y El Almacén la paga', () => {

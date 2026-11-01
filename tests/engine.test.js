@@ -287,7 +287,7 @@
     test('The Capo telegraphs, dashes and can be dodged by rolling', () => {
       const p = fixture(); const capo = enemy('capo', p.x + 60); capo.special = 0;
       game.update(1 / 60); ok(capo.telegraph > 0, 'Boss must telegraph before dashing'); const hp = p.hp;
-      advance(1.1); ok(capo.dash > 0 || capo.telegraph > 0); ok(game.roll()); p.rollX = 0; p.rollY = 0;
+      advance(.9); ok(capo.dash > 0 || capo.telegraph > 0); ok(game.roll()); p.rollX = 0; p.rollY = 0;
       advance(.45); near(p.hp, hp, 'Invulnerable while the dash passes through'); ok(capo.x < p.x, 'Capo dashed past the player');
       ok(capo.special > 3);
       const other = fixture(); const second = enemy('capo', other.x + 60); second.special = 0; const full = other.hp;
@@ -307,7 +307,7 @@
       game.update(1 / 60); ok(yarara.telegraph > 0 && yarara.kind === 'tail', 'Tail sweep is telegraphed'); const hp = p.hp;
       advance(.9); ok(p.hp < hp, 'Standing in the ring hurts'); ok(Math.hypot(p.x - yarara.x, p.y - yarara.y) > 40, 'Knocked outward');
       const q = fixture(); const second = enemy('yarara', q.x, q.y - 40); second.special = 99; second.alert = true; const full = q.hp;
-      game.update(1 / 60); advance(.7); q.rollCooldown = 0; ok(game.roll()); q.rollX = 0; q.rollY = 0; advance(.2); near(q.hp, full, 'Rolling dodges the sweep');
+      game.update(1 / 60); advance(.55); q.rollCooldown = 0; ok(game.roll()); q.rollX = 0; q.rollY = 0; advance(.2); near(q.hp, full, 'Rolling dodges the sweep');
     });
     test('The Yarara spits a three-way venom fan that hurts the player', () => {
       const p = fixture(); const yarara = enemy('yarara', p.x + 150); yarara.special = 0; Math.random = () => .99;
@@ -424,6 +424,21 @@
     test('Rats latched on bite softer and slower', () => {
       const p = fixture(); p.level = 40; p.stats.endurance = 0; const rat = enemy('rat', p.x + 5); rat.latched = 2; const hp = p.hp;
       game.enemyAttack(rat); near(hp - p.hp, rat.stats.strength * .6, 'Latched bite is 60%'); ok(rat.cooldown >= .9);
+    });
+    test('Zak slams the ground and throws three boomerangs that come back', () => {
+      const p = fixture('gero', true); p.stats.health = 400; p.hp = 400; game.enterThrone(); const zak = game.enemies.find(e => e.type === 'zak');
+      zak.cd = {slash: 99, raise: 99, storm: 99, wrath: 99, purple: 99, major: 99, boomerang: 0, ready: 1}; Object.assign(zak, {x: p.x + 220, y: p.y});
+      advance(.05); equal(zak.act.id, 'boomerang'); advance(.7);
+      const thrown = game.projectiles.filter(s => s.type === 'boomerang'); equal(thrown.length, 3); ok(thrown.every(s => s.hostile && s.pierce));
+      const hurt = game.hurtPlayer; let hits = 0; game.hurtPlayer = () => { hits++; return true; };
+      try { advance(1.4); ok(game.projectiles.some(s => s.type === 'boomerang' && s.back), 'They turn around'); advance(3); equal(game.projectiles.filter(s => s.type === 'boomerang').length, 0, 'They return to Zak'); ok(hits > 0, 'They hit on the way'); }
+      finally { game.hurtPlayer = hurt; }
+    });
+    test('Old saves drop to half their level once and get compensation', () => {
+      const p = fixture('gero', true); p.level = 41; p.xp = 2000; p.coins = 50; p.points = 7; p.stats.strength = 33; const save = game.snapshot();
+      equal(save.balance >= 2, true, 'New saves are already balanced'); delete save.balance;
+      ok(Z.Game.migrateSave(save)); equal(save.player.level, 21); equal(save.player.coins, 50 + Z.REBALANCE_GIFT); equal(save.player.points, 7); equal(save.player.stats.strength, 33);
+      ok(Z.Game.validateSave(save)); equal(Z.Game.migrateSave(save), false, 'Only once');
     });
     test('The skeleton archer keeps its distance and shoots arrows', () => {
       const p = fixture(); const archer = enemy('archer', p.x + 90); archer.cooldown = 0; const start = archer.x;

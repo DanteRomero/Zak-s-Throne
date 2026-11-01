@@ -388,7 +388,7 @@
       rect(c,-2,-28,4,30,"#1a1720");rect(c,1,-28,1,30,VIOLET);rect(c,-6,-30,12,3,"#5a3a8a");rect(c,-1,-36,2,6,"#3a2a52");
       c.globalAlpha=.35+Math.sin(time*10)*.15;rect(c,-14,-2,28,4,VIOLET);c.globalAlpha=1;
     } else {
-      const swing=a.id==="slash"&&a.t-Math.floor(a.t/.7)*.7>=.45?.9:0;
+      const swing=a.id==="slash"&&a.t-Math.floor(a.t/.7)*.7>=.45?.9:a.id==="boomerang"?-1.1:0;
       c.save();c.translate(13,-14);c.rotate(-.25+swing);
       rect(c,-2,-40,5,38,"#0f0d14");rect(c,-1,-41,3,38,"#1a1720");rect(c,1,-41,1,37,VIOLET);rect(c,-1,-44,2,3,"#1a1720");
       rect(c,-6,-3,13,3,"#5a3a8a");rect(c,-1,0,3,6,"#2a1e3a");rect(c,-2,6,5,2,"#7b4fc0");c.restore();
@@ -416,6 +416,7 @@
       if(a.id==="slash"&&a.t-Math.floor(a.t/.7)*.7<.45)cone(105,Math.PI/6,"#b05cff");
       else if(a.id==="raise"||a.id==="major"){c.globalAlpha=.6;c.strokeStyle=VIOLET;c.lineWidth=2;for(let k=0;k<2;k++){c.beginPath();c.ellipse(x,y-2,40+k*16+Math.sin(time*6)*3,(40+k*16)*.6,time*(k?1:-1),0,Math.PI*2);c.stroke();}}
       else if(a.id==="roar"){ring(60+a.t*80,"#5a2a8a",.15);}
+      else if(a.id==="boomerang"){const base=Math.atan2(e.aimY,e.aimX);c.strokeStyle="#b05cff";c.lineCap="round";for(const o of[-.38,0,.38]){const dx=Math.cos(base+o)*150,dy=Math.sin(base+o)*150;c.globalAlpha=pulse*.3;c.lineWidth=10;c.beginPath();c.moveTo(x,y-14);c.lineTo(x+dx,y-14+dy);c.stroke();c.globalAlpha=pulse;c.lineWidth=2;c.setLineDash([6,5]);c.beginPath();c.moveTo(x,y-14);c.lineTo(x+dx,y-14+dy);c.stroke();c.setLineDash([]);}}
       else warn=false;
     } else warn=false;
     c.restore();
@@ -1054,6 +1055,10 @@
         c.save();c.translate(Math.round(x),Math.round(y));
         if(projectile.type==="stone"){rect(c,-3,-3,6,5,"#577073");rect(c,-2,-3,4,3,"#aebdb2");}
         else if(projectile.type==="boulder"){const r=time*8;c.rotate(r);rect(c,-7,-6,14,12,"#3f4247");rect(c,-6,-5,12,9,"#8a8f96");rect(c,-4,-4,5,3,"#b0b4ba");c.rotate(-r);}
+        else if(projectile.type==="boomerang"){
+          c.globalAlpha=.3;c.fillStyle=VIOLET;c.beginPath();c.arc(0,0,11,0,Math.PI*2);c.fill();c.globalAlpha=1;
+          c.rotate(projectile.spin||0);rect(c,-9,-2,11,4,"#4a1d7a");rect(c,-2,-9,4,11,"#4a1d7a");rect(c,-8,-1,9,2,"#c99bff");rect(c,-1,-8,2,9,"#c99bff");rect(c,-2,-2,4,4,"#f1e2ff");
+        }
         else if(projectile.type==="venom"){
           const w=Math.sin(time*20)>0?1:0;c.globalAlpha=.35;rect(c,-projectile.dx*8-2,-projectile.dy*8-2,4,4,"#9fdc72");c.globalAlpha=1;
           rect(c,-4-w,-3,8+w*2,6,"#3c5a2a");rect(c,-3,-2-w,6,4+w*2,"#94d36a");rect(c,-1,-2,2,2,"#e4ffc4");

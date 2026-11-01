@@ -284,7 +284,9 @@
       try {
         const file = input.files[0]; if (!file) return;
         if (file.size > 1024 * 1024) throw new Error('El archivo supera el máximo de 1 MB.');
-        const data = validate(JSON.parse(await file.text())); showSlots('import',data);
+        const data = validate(JSON.parse(await file.text()));
+        if (Zak.Game.migrateSave(data)) { validate(data); toast('Partida anterior al rebalanceo: el nivel bajó a la mitad y recibís ◉ ' + Zak.REBALANCE_GIFT.toLocaleString('es-AR') + ' de compensación.'); }
+        showSlots('import',data);
       } catch (error) { toast('No se importó el archivo: ' + error.message,true); }
       finally { input.remove(); }
     });
@@ -334,7 +336,7 @@
         upgrade.setAttribute('aria-label','Mejorar ' + Zak.STAT_LABELS[key]); upgrade.disabled = p.points < 1; row.append(upgrade); parent.append(row);
       });
       const summary = el('div','stats-summary');
-      ['Vida efectiva: ' + fmt(s.maxHealth), 'Fuerza efectiva: ' + fmt(s.strength) + ' · Armadura: ' + fmt(s.armor),
+      ['Vida efectiva: ' + fmt(s.maxHealth), 'Fuerza efectiva: ' + fmt(s.strength) + ' · Poder de golpe: ' + fmt(s.power) + ' · Armadura: ' + fmt(s.armor),
        'Movimiento: ' + fmt(s.moveSpeed) + ' px/s · Golpe cada ' + fmt(s.attackCooldown) + ' s',
        'Carrera: ' + fmt(s.runDuration) + ' s · Experiencia: ×' + fmt(s.xpMultiplier),
        'Daño de armas: ×' + fmt(s.damageMultiplier) + (s.veteran > 1 ? ' (veteranía ×' + fmt(s.veteran) + ')' : '') + ' · Cuarto golpe seguido: crítico ×1,75',
@@ -704,7 +706,31 @@
       });
     } else if (type === 'complete') showJournal(true);
   };
+  // Rebalanceo de niveles: las partidas guardadas bajan a la mitad de nivel una sola vez, con compensación.
+  function migrateSlots() {
+    const migrated = [];
+    [1,2,3].forEach(index => {
+      const slot = readSlot(index);
+      if (slot.state !== 'valid' || !Zak.Game.migrateSave(slot.data)) return;
+      try { validate(slot.data); localStorage.setItem(SAVE_PREFIX + index, JSON.stringify(slot.data)); migrated.push(slot.data); } catch (_) {}
+    });
+    // El ranking muestra el nivel nuevo aunque la partida no se vuelva a cargar.
+    migrated.forEach(data => { if (data.player.runId) Zak.Ranking.submit({ player: data.player }).catch(() => {}); });
+    return migrated;
+  }
+  function showApology(migrated) {
+    openModal('Te pedimos disculpas', 'AVISO IMPORTANTE', parent => {
+      paragraph(parent, 'Rebalanceamos la experiencia del juego: subir de nivel era demasiado fácil y los jefes caían en pocos golpes. Para que la aventura vuelva a ser un desafío, bajamos el nivel de tus partidas guardadas a la mitad.');
+      const list = el('ul','apology-list');
+      migrated.forEach(data => list.append(el('li','',saveLabel(data))));
+      parent.append(list);
+      paragraph(parent, 'Tus estadísticas, puntos de mejora, armas y materiales quedan intactos. Como compensación, cada partida recibió ◉ ' + Zak.REBALANCE_GIFT.toLocaleString('es-AR') + ' de guita. ¡Gracias por la paciencia!');
+      const actions = el('div','modal-actions'); actions.append(button('Entendido, a seguir jugando',() => hideModal(false),'button primary')); parent.append(actions);
+    });
+  }
   renderWeapons(); updateSound(); updateSaveCount();
+  const migrated = migrateSlots();
+  if (migrated.length) showApology(migrated);
   window.addEventListener('beforeunload',event => {
     if (hasStarted && game.player && game.state !== 'menu') { event.preventDefault(); event.returnValue = ''; }
   });
