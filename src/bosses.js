@@ -18,7 +18,64 @@ const OPENING = {
 };
 const LINES = {
  yield:'Dejémoslo acá y volvé a tu dimensión, mortal.',
- execute:'¿Sabés lo que le pasa al que no sigue mis órdenes? Muere...'
+ execute:'¿Sabés lo que le pasa al que no sigue mis órdenes?',
+ die:'Muere...',
+ who:'¿Y vos quién sos?',
+ what:'¿Qué hacés acá?',
+ toy:'No importa… ahora vas a ser mi juguete por un rato.',
+ altar:'Las cinco ofrendas se rompieron. El portal al Trono de Zak está abierto.'
+};
+// Letras por segundo de los diálogos (también las usa render.js).
+const CPS = Z.CUTSCENE_CPS = 32;
+// Momentos de la escena del altar (render.js los usa para dibujar).
+const ALTAR_SCENE = Z.ALTAR_SCENE = {lit:[.6,.95,1.3,1.65,2],converge:2.4,burst:3.9,open:4.3};
+// Escenas: pasos con `at` (segundos) que se ejecutan en orden. Los pasos con `skip` son los
+// puntos a los que salta el jugador al apretar E, Espacio, Enter o tocar la pantalla.
+const SCENES = {
+ zakIntro:{steps:[
+  {at:.7,run(s){const z=this.zakEntity();s.focus={x:z.x,y:z.y-34};z.dir='down';this.sound.play('telegraph');}},
+  {at:1.8,skip:true,run(s){this.say(s,'Zak',LINES.who);}},
+  {at:4.6,skip:true,run(s){this.say(s,'Zak',LINES.what);}},
+  {at:7.2,skip:true,run(s){const z=this.zakEntity();z.pose='raise';this.say(s,'Zak',LINES.toy);this.sound.play('roar');this.shake(7,.7);
+   this.effect(z.x,z.y,'wave',.7,{radius:130});for(let k=0;k<4;k++){const a=k*Math.PI/2+.5;this.effect(z.x+Math.cos(a)*95,z.y+Math.sin(a)*60,'bolt',.4);}this.sound.play('thunder');}},
+  {at:11,skip:true,run(){this.zakEntity().pose=null;this.endCutscene();}}
+ ]},
+ // No cruzaste el portal a tiempo: Zak lo cierra, se levanta del trono y te ejecuta.
+ execute:{steps:[
+  {at:0,run(s){const z=this.zakEntity();s.focus={x:z.x,y:z.y-34};this.say(s,'Zak',LINES.execute);this.sound.play('thunder');}},
+  {at:3.4,skip:true,run(s){const z=this.zakEntity(),ex=this.exitPortal;s.line=null;s.closing=s.t;z.pose='raise';this.sound.play('close');this.shake(3,.5);
+   if(ex)s.focus={x:(z.x+ex.x)/2,y:(z.y+ex.y)/2-20};}},
+  {at:4.7,run(){const ex=this.exitPortal;if(ex)this.effect(ex.x,ex.y-14,'poof',.7,{seed:3});this.exitPortal=null;this.sound.play('thunder');}},
+  {at:5.2,skip:true,run(s){const z=this.zakEntity();z.yielding=null;z.seated=false;s.focus={x:z.x,y:z.y-34};
+   this.say(s,'Zak',LINES.die);this.sound.play('roar');this.shake(6,.5);this.effect(z.x,z.y,'wave',.5,{radius:70});}},
+  {at:6.8,run(s){this.zakEntity().pose=null;s.chase=true;}},
+  {at:8.6,skip:true,run(s){const z=this.zakEntity(),p=this.player,l=distance(z,p)||1;
+   if(l>30){z.x=p.x-(p.x-z.x)/l*26;z.y=p.y-(p.y-z.y)/l*26;}this.aimAt(z);s.chase=false;s.line=null;z.moving=false;z.act={id:'slash',t:.5};
+   this.effect(p.x,p.y-8,'slash',.35,{radius:70});this.effect(p.x,p.y-29,'hit',1,{text:'-'+this.number(Math.ceil(p.hp))});
+   this.sound.play('thunder');this.sound.play('hurt');this.shake(12,.8);this.hurtFlash=1;s.flashAt=s.t;s.flashColor='170,20,30';p.hp=0;}},
+  {at:10,run(){this.endCutscene();this.resetZak();this.knockout('execute');}}
+ ],tick(s,dt){
+  const z=this.zakEntity(),p=this.player;if(!z)return;
+  p.dir=Math.abs(z.x-p.x)>Math.abs(z.y-p.y)?(z.x>p.x?'right':'left'):(z.y>p.y?'down':'up');
+  if(!s.chase)return;const dx=p.x-z.x,dy=p.y-z.y,l=Math.hypot(dx,dy)||1,step=Math.min(Math.max(0,l-26),330*dt);
+  if(step>0){this.move(z,dx/l*step,dy/l*step,10,z.biome);z.moving=true;z.walk+=dt*16;if(this.time%.08<dt)this.effect(z.x,z.y,'dust',.35);}else z.moving=false;
+  z.dir=Math.abs(dx)>Math.abs(dy)?(dx>0?'right':'left'):(dy>0?'down':'up');s.focus={x:z.x,y:z.y-34};
+ }},
+ // Las cinco ofrendas suben, giran, chocan en el centro y abren el portal violeta.
+ altar:{steps:[
+  {at:0,run(){this.sound.play('telegraph');}},
+  ...ALTAR_SCENE.lit.map((at,i)=>({at,run(s){const a=s.altar;this.sound.play('pickup');this.effect(a.x+10+i*12,a.y-8,'spark',.5,{seed:i*13,crit:true});}})),
+  {at:ALTAR_SCENE.converge,skip:true,run(){this.sound.play('roar');}},
+  {at:ALTAR_SCENE.burst,skip:true,run(s){const a=s.altar,cx=a.x+a.w/2;this.sound.play('slam');this.sound.play('thunder');this.shake(11,.9);s.flashAt=s.t;s.flashColor='244,236,255';
+   this.effect(cx,a.y+a.h,'wave',.9,{radius:190});this.effect(cx,a.y+a.h,'wave',.6,{radius:110});for(let k=0;k<5;k++)this.effect(cx+(k-2)*16,a.y-50,'poof',.9,{seed:k*7});}},
+  {at:ALTAR_SCENE.open,run(){this.sound.play('portal');}},
+  {at:5.8,skip:true,run(s){this.say(s,'',LINES.altar);}},
+  {at:9.6,skip:true,run(){this.endCutscene();}}
+ ],tick(s,dt){
+  const t=s.t;if(t<ALTAR_SCENE.converge||t>=ALTAR_SCENE.burst)return;
+  const k=(t-ALTAR_SCENE.converge)/(ALTAR_SCENE.burst-ALTAR_SCENE.converge),a=s.altar,cx=a.x+a.w/2;this.shake(1+k*5,.15);
+  s.nextBolt=(s.nextBolt||0)-dt;if(s.nextBolt<=0){s.nextBolt=.24-k*.12;const ang=Math.random()*Math.PI*2,r=60+Math.random()*90;this.effect(cx+Math.cos(ang)*r,a.y+20+Math.sin(ang)*r*.6,'bolt',.3);if(Math.random()<.5)this.sound.play('thunder');}
+ }}
 };
 Object.assign(Z.Game.prototype, {
  enemyStatsFor(type,life=0){
@@ -291,6 +348,30 @@ Object.assign(Z.Game.prototype, {
   this.enemies=this.enemies.filter(m=>!m.summoned);this.bolts=[];this.darkness=0;this.exitPortal=null;
   const zak=this.enemies.find(m=>m.type==='zak');if(zak)Object.assign(zak,this.makeEnemy({id:zak.id,type:'zak',x:zak.homeX,y:zak.homeY}));
  },
+ zakEntity(){return this.enemies.find(m=>m.type==='zak'&&!m.summoned);},
+ // Escenas: el jugador no se mueve, los enemigos se congelan y la cámara mira a `focus`.
+ startCutscene(id,extra={}){
+  const p=this.player;this.cutscene={id,t:0,done:0,line:null,focus:{x:p.x,y:p.y},...extra};
+  Object.assign(p,{moving:false,running:false,roll:0,gather:null,attackAnim:0});this.clearInput();this.aim=null;this.projectiles=[];this.bolts=[];
+ },
+ say(s,speaker,text){s.line={speaker,text,at:s.t,shown:0};},
+ updateCutscene(dt){
+  const s=this.cutscene,scene=SCENES[s.id];s.t+=dt;
+  while(s.done<scene.steps.length&&scene.steps[s.done].at<=s.t){scene.steps[s.done++].run.call(this,s);if(this.cutscene!==s)return;}
+  if(scene.tick)scene.tick.call(this,s,dt);
+  // Cada dos letras nuevas suena la voz de quien habla.
+  const l=s.line;if(l){const shown=Math.min(l.text.length,Math.floor((s.t-l.at)*CPS));if(shown>l.shown){if(Math.floor(shown/2)>Math.floor(l.shown/2)&&shown<l.text.length)this.sound.play(l.speaker==='Zak'?'voice':'blip');l.shown=shown;}}
+ },
+ // Primero completa el texto que se está escribiendo; si ya está completo, salta al siguiente momento.
+ advanceCutscene(force=false){
+  const s=this.cutscene;if(!s||(!force&&s.t<.35))return;
+  const l=s.line;if(l&&(s.t-l.at)*CPS<l.text.length){l.at=s.t-l.text.length/CPS;return;}
+  const steps=SCENES[s.id].steps,next=steps.slice(s.done).find(step=>step.skip&&step.at>s.t)||steps[steps.length-1];
+  if(next.at>s.t)this.updateCutscene(next.at-s.t);
+ },
+ // Termina la escena de una (lo usan las pruebas).
+ finishCutscene(){for(let guard=0;this.cutscene&&guard<40;guard++){if(this.cutscene.line)this.cutscene.line.at=-99;this.advanceCutscene(true);}},
+ endCutscene(){this.cutscene=null;this.cutsceneFade=.5;this.clearInput();},
  // El altar recibe una ofrenda de cada jefe. Lo que ya dejaste queda guardado aunque te vayas.
  useAltar(){
   const p=this.player;
@@ -300,9 +381,9 @@ Object.assign(Z.Game.prototype, {
   for(const [k,o] of Object.entries(Z.OFFERINGS))if(!p.altar[k]&&p.offerings[k]>0){p.offerings[k]--;p.altar[k]=true;placed.push(o.name);}
   const missing=Object.entries(Z.OFFERINGS).filter(([k])=>!p.altar[k]).map(([,o])=>o.name);
   if(!missing.length){
-   p.altar=Z.emptyAltar();p.portal=true;this.questFlags.altar=true;this.sound.play('portal');this.shake(6,.5);
-   const altar=this.world.objects.find(o=>o.type==='altar');if(altar)for(let k=0;k<5;k++)this.effect(altar.x+8+k*12,altar.y-6,'poof',.9,{seed:k*7});
-   this.emit('toast',{message:'Las cinco ofrendas se rompen y se abre un portal violeta. Tocalo para ir al Trono de Zak.'});return true;}
+   // El estado cambia ya (así un guardado a mitad de la escena queda bien); la escena solo lo muestra.
+   p.altar=Z.emptyAltar();p.portal=true;this.questFlags.altar=true;
+   const altar=this.world.objects.find(o=>o.type==='altar');this.startCutscene('altar',{altar:{x:altar.x,y:altar.y,w:altar.w,h:altar.h},focus:{x:altar.x+altar.w/2,y:altar.y+20}});return true;}
   if(placed.length)this.sound.play('pickup');
   this.emit('toast',{message:(placed.length?'Dejaste: '+placed.join(', ')+'. ':'No tenés ofrendas nuevas para el altar. ')+'Faltan: '+missing.join(', ')+'.',error:!placed.length});
   return placed.length>0;
@@ -314,9 +395,7 @@ Object.assign(Z.Game.prototype, {
   if(this.exitPortal&&this.biome==='throne'){
    const ex=this.exitPortal;ex.time-=dt;
    if(Math.hypot(p.x-ex.x,p.y-ex.y)<22){this.leaveThrone();return;}
-   if(ex.time<=0){this.exitPortal=null;const zak=this.enemies.find(m=>m.type==='zak');
-    if(zak)this.effect(zak.x,zak.y-70,'speech',3,{text:LINES.execute});this.emit('toast',{message:'Zak: «'+LINES.execute+'»',error:true});
-    this.sound.play('thunder');this.resetZak();this.knockout('execute');}
+   if(ex.time<=0){ex.time=0;this.startCutscene('execute');}
   }
  },
  travel(spot,biome){
@@ -325,7 +404,7 @@ Object.assign(Z.Game.prototype, {
   this.biome=biome;if(!p.discovered.includes(biome))p.discovered.push(biome);
   this.renderer.initialized=false;this.clearInput();this.emit('biome',{name:Z.BIOME_NAMES[biome],safe:biome==='village'});
  },
- enterThrone(){const p=this.player;p.portal=false;this.resetZak();this.sound.play('portal');this.travel(Z.THRONE_SPOTS.arrive,'throne');},
+ enterThrone(){const p=this.player;p.portal=false;this.resetZak();this.sound.play('portal');this.travel(Z.THRONE_SPOTS.arrive,'throne');this.startCutscene('zakIntro');},
  leaveThrone(){const p=this.player;this.resetZak();p.poison=null;p.bleed=null;p.slow=0;p.heavySlow=0;this.sound.play('portal');this.travel(this.world.spawn,'village');}
 });
 })();

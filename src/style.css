@@ -123,3 +123,5 @@
 .quest-claim{align-self:center;min-width:auto;white-space:nowrap}.quest-reward{align-self:center;font:11px 'Courier New',monospace;color:#f2cb5b;white-space:nowrap}.quest-reward.claimed{color:var(--muted)}
 .journal-claim-all{justify-content:center;margin:4px 0 8px}
 #journal-badge{font-size:11px;padding:3px 4px;min-width:18px}
+/* Escenas: el HUD se esconde y no se puede tocar mientras dura el diálogo. */
+#hud{transition:opacity .4s}body.cutscene #hud{opacity:0}body.cutscene #hud *{pointer-events:none!important}

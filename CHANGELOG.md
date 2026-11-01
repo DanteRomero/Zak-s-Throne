@@ -6,10 +6,19 @@ Cada versión lista sus cambios agrupados por tipo:
 - **Change:** algo que ya existía y ahora funciona distinto.
 - **Fix:** un error corregido.
 
+## v2.5 — 2026-11-01
+
+* Feature
+    - **Escenas con diálogo:** franjas de cine, cuadro de diálogo con texto que se va escribiendo y voz, la cámara enfocada en Zak o en el altar, y el jugador quieto. E, Espacio, Enter o tocar la pantalla completan el texto o pasan al siguiente.
+    - **Presentación de Zak:** al entrar al trono pregunta «¿Y vos quién sos?», «¿Qué hacés acá?» y «No importa… ahora vas a ser mi juguete por un rato.», levanta la espada entre rayos y recién ahí empieza la pelea.
+    - **Apertura épica del portal:** las cinco ofrendas suben de a una con su color, giran sobre el altar, chocan entre rayos y temblores, estallan con un destello y el portal violeta crece desde la nada.
+* Change
+    - **Ejecución de Zak:** si no cruzás el portal de salida a tiempo, dice «¿Sabés lo que le pasa al que no sigue mis órdenes?», cierra el portal, se levanta del trono con un «Muere...», corre hacia vos y te mata de un espadazo (antes era instantáneo).
+
 ## v2.4 — 2026-11-01
 
 * Feature
-    - **Bumeranes de energía de Zak:** si estás lejos, golpea el piso y lanza tres bumeranes violetas en abanico que vuelven a su mano. Pegan a la ida y a la vuelta (31% de tu vida máxima cada uno).
+    - **Bumeranes de energía de Zak:** si estás lejos, golpea el piso y lanza tres bumeranes violetas en abanico que vuelven a su mano. Pegan a la ida y a la vuelta (31% de tu vida máxima cada uno). La barra del jefe avisa «¡BUMERANES! RODÁ (F)».
     - **Aviso de rebalanceo:** al abrir el juego, las partidas guardadas bajan a la mitad de nivel (una sola vez) y reciben ◉ 10.000 de compensación. Un mensaje en el menú lo explica. Las estadísticas y los puntos no cambian. Lo mismo pasa al importar un respaldo viejo.
 * Change
     - **Zak con muchísima más vida:** 22000 por vida en nivel 1 (antes 11000), +440 por nivel (antes +198) y ahora también gana la vida extra de veteranía desde el nivel 8. En nivel 40: unos 89 000 por vida (antes unos 18 700).

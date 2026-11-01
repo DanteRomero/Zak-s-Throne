@@ -186,7 +186,7 @@ Son los valores en nivel 1; todos crecen con tu nivel. Hacen el **68%** de su fu
 
 ### El Trono de Zak
 
-En el altar del cementerio se deja **una ofrenda de cada jefe** (E). Si tenés varias del mismo tipo, toma una sola; las que dejás quedan guardadas aunque te vayas. Mientras Cerbero esté vivo, el altar está cerrado. Con las cinco, se rompen y se abre un **portal violeta**: tocalo para entrar al Trono de Zak. Cada visita gasta un juego completo de ofrendas.
+En el altar del cementerio se deja **una ofrenda de cada jefe** (E). Si tenés varias del mismo tipo, toma una sola; las que dejás quedan guardadas aunque te vayas. Mientras Cerbero esté vivo, el altar está cerrado. Con las cinco, una escena muestra cómo las ofrendas suben, giran, chocan entre rayos y abren un **portal violeta**: tocalo para entrar al Trono de Zak. Al entrar, Zak te recibe con una escena («¿Y vos quién sos?»…) y recién después empieza la pelea. Cada visita gasta un juego completo de ofrendas.
 
 Cualquier golpe de Zak se lleva el **52%** de tu vida máxima, sin importar la armadura: dos golpes alcanzan.
 
@@ -197,7 +197,9 @@ Cualquier golpe de Zak se lleva el **52%** de tu vida máxima, sin importar la a
 - **Tormenta de agonía:** durante 10 s caen rayos violetas alrededor tuyo; cada uno se marca antes de caer y **mata de un toque**. Mientras dura, **solo la piedra** le hace daño.
 - **En su tercera vida** suma la **Ira del gobernante** (20 s en los que solo ves a tu alrededor, mientras sigue atacando) y el **Terremoto morado**: todo el mapa tiembla menos un círculo claro; si no estás adentro cuando clava la espada, perdés mucha vida.
 
-Al vencerlo, Zak no muere: vuelve al trono, dice «Dejémoslo acá y volvé a tu dimensión, mortal.», golpea dos veces el piso y abre un portal a la aldea. **Tenés 40 segundos para cruzarlo.** Si no, dice «¿Sabés lo que le pasa al que no sigue mis órdenes? Muere...» y te ejecuta: perdés toda la guita, los materiales y las ofrendas; las armas y herramientas se quedan. El mensaje de la derrota es «Eso por querer hacerle el poronga...».
+**Escenas.** Durante las escenas no te podés mover ni atacar, los enemigos se quedan quietos y la cámara mira a Zak (o al altar). **E**, **Espacio**, **Enter** o tocar la pantalla completa el texto o pasa al siguiente diálogo.
+
+Al vencerlo, Zak no muere: vuelve al trono, dice «Dejémoslo acá y volvé a tu dimensión, mortal.», golpea dos veces el piso y abre un portal a la aldea. **Tenés 40 segundos para cruzarlo.** Si no, dice «¿Sabés lo que le pasa al que no sigue mis órdenes? Muere...» y, en una escena, cierra el portal, se levanta del trono y te ejecuta: perdés toda la guita, los materiales y las ofrendas; las armas y herramientas se quedan. El mensaje de la derrota es «Eso por querer hacerle el poronga...».
 
 ## Personajes
 

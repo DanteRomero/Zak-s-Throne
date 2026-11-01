@@ -426,7 +426,7 @@
       game.enemyAttack(rat); near(hp - p.hp, rat.stats.strength * .6, 'Latched bite is 60%'); ok(rat.cooldown >= .9);
     });
     test('Zak slams the ground and throws three boomerangs that come back', () => {
-      const p = fixture('gero', true); p.stats.health = 400; p.hp = 400; game.enterThrone(); const zak = game.enemies.find(e => e.type === 'zak');
+      const p = fixture('gero', true); p.stats.health = 400; p.hp = 400; game.enterThrone(); game.finishCutscene(); const zak = game.enemies.find(e => e.type === 'zak');
       zak.cd = {slash: 99, raise: 99, storm: 99, wrath: 99, purple: 99, major: 99, boomerang: 0, ready: 1}; Object.assign(zak, {x: p.x + 220, y: p.y});
       advance(.05); equal(zak.act.id, 'boomerang'); advance(.7);
       const thrown = game.projectiles.filter(s => s.type === 'boomerang'); equal(thrown.length, 3); ok(thrown.every(s => s.hostile && s.pierce));
@@ -491,36 +491,52 @@
       killBoss('cerbero'); ok(game.useAltar()); equal(p.offerings.fang, 2, 'Only one of each'); equal(p.altar.fang, true); equal(p.altar.ring, true);
       const save = game.snapshot(); game.restore(save, 1); const q = game.player; equal(q.altar.ring, true, 'Placed offerings are saved'); equal(q.portal, false);
       killBoss('cerbero'); Object.assign(q.offerings, {claw: 1, elemental: 1, eye: 1}); ok(game.useAltar()); equal(q.portal, true); equal(Object.values(q.altar).some(Boolean), false, 'They break');
+      equal(game.cutscene && game.cutscene.id, 'altar', 'Epic scene plays'); game.finishCutscene(); equal(game.cutscene, null);
       const portal = game.world.objects.find(o => o.type === 'portal'); Object.assign(q, {x: portal.x + portal.w / 2, y: portal.y + portal.h / 2}); game.biome = 'altar';
-      advance(.05); equal(game.biome, 'throne'); equal(q.portal, false); ok(q.discovered.includes('throne'));
+      advance(.05); equal(game.biome, 'throne'); equal(q.portal, false); ok(q.discovered.includes('throne')); equal(game.cutscene.id, 'zakIntro');
     });
     test('During the storm only the stone hurts Zak, and a bolt kills', () => {
-      const p = fixture('gero', true); game.enterThrone(); const zak = game.enemies.find(e => e.type === 'zak');
+      const p = fixture('gero', true); game.enterThrone(); game.finishCutscene(); const zak = game.enemies.find(e => e.type === 'zak');
       zak.cd = {slash: 99, raise: 99, storm: 0, wrath: 99, purple: 99, major: 99, ready: 1}; advance(.05); equal(zak.act.id, 'storm');
       const hp = zak.hp; game.hitEnemy(zak, 500, true, false, 'sword'); near(zak.hp, hp, 'Sword does nothing'); game.hitEnemy(zak, 500, true, false, 'stone'); ok(zak.hp < hp, 'Stone works');
       game.bolts = [{x: p.x, y: p.y, t: .01, max: .85}]; advance(.05); equal(game.state, 'paused', 'Knocked out by lightning'); equal(game.biome, 'village');
     });
     test('Two Zak hits are enough to knock you out', () => {
-      const p = fixture('gero', true); p.stats.health = 400; p.hp = 400; p.stats.endurance = 100; game.enterThrone(); const zak = game.enemies.find(e => e.type === 'zak');
+      const p = fixture('gero', true); p.stats.health = 400; p.hp = 400; p.stats.endurance = 100; game.enterThrone(); game.finishCutscene(); const zak = game.enemies.find(e => e.type === 'zak');
       game.zakHit(zak, 1); ok(p.hp > 0 && p.hp <= 400 * .48 + 1e-6, 'One hit takes more than half'); game.zakHit(zak, 1); equal(game.state, 'paused');
     });
     test('Major summon: Zak sits on his throne and heals until the boss falls', () => {
-      const p = fixture('gero', true); game.enterThrone(); const zak = game.enemies.find(e => e.type === 'zak'); Math.random = () => 0;
+      const p = fixture('gero', true); game.enterThrone(); game.finishCutscene(); const zak = game.enemies.find(e => e.type === 'zak'); Math.random = () => 0;
       zak.cd = {slash: 99, raise: 99, storm: 99, wrath: 99, purple: 99, major: 0, ready: 1}; zak.hp -= 500; advance(1.6);
       const minion = game.enemies.find(e => e.summoned && e.major); ok(minion, 'A boss appears'); equal(minion.type, 'capo'); equal(zak.seated, true);
       equal(minion.level, p.level, 'Same level as that boss'); const hp = zak.hp; advance(2); ok(zak.hp > hp + 5, 'Heals 3 per second');
       game.hitEnemy(minion, 1e7, true); advance(.1); equal(zak.seated, false); ok(zak.cd.major >= 39 && zak.cd.major <= 80);
     });
     test('Beating Zak: he yields, opens a portal for 40 s and executes you if you stay', () => {
-      const p = fixture('gero', true); game.enterThrone(); const zak = game.enemies.find(e => e.type === 'zak');
+      const p = fixture('gero', true); game.enterThrone(); game.finishCutscene(); const zak = game.enemies.find(e => e.type === 'zak');
       p.coins = 900; p.materials.gold = 20; p.offerings.eye = 2; p.weapons.push('sword'); p.pickaxe = 3; zak.life = 2; game.hitEnemy(zak, 1e9, true);
       ok(zak.yielding, 'He stops fighting'); equal(zak.dead, false); equal(game.questFlags.defeat_zak, true); collectDrops(); zak.x = Z.THRONE_SPOTS.seat.x; zak.y = Z.THRONE_SPOTS.seat.y;
       advance(3.5); ok(game.exitPortal, 'Portal opens'); ok(game.exitPortal.time <= 40 && game.exitPortal.time > 37);
-      advance(41); equal(game.state, 'paused'); equal(game.biome, 'village'); equal(p.coins, 0); equal(p.materials.gold, 0); equal(p.offerings.eye, 0);
+      advance(40.5); equal(game.cutscene && game.cutscene.id, 'execute', 'Zak closes the portal in a scene'); equal(game.biome, 'throne');
+      const x = p.x; game.keys.add('d'); advance(1); equal(p.x, x, 'The player cannot move'); game.keys.clear(); ok(!game.roll() && !game.attack(), 'Nor roll or attack');
+      advance(3); equal(game.exitPortal, null, 'The portal is closed'); advance(6); equal(game.state, 'paused'); equal(game.biome, 'village'); equal(p.coins, 0); equal(p.materials.gold, 0); equal(p.offerings.eye, 0);
       ok(p.weapons.includes('sword') && p.pickaxe === 3, 'Weapons and tools stay');
     });
+    test('Before the fight Zak asks who you are; you cannot move and the camera looks at him', () => {
+      const p = fixture('gero', true); game.enterThrone(); const zak = game.enemies.find(e => e.type === 'zak'), said = [];
+      const x = p.x, y = p.y; game.keys.add('w'); game.keys.add(' ');
+      for (let i = 0; i < 60 * 12 && game.cutscene; i++) { game.update(1 / 60); const l = game.cutscene && game.cutscene.line; if (l && !said.includes(l.text)) said.push(l.text); }
+      game.keys.clear(); equal(game.cutscene, null, 'The scene ends by itself');
+      equal(said.join(' | '), '¿Y vos quién sos? | ¿Qué hacés acá? | No importa… ahora vas a ser mi juguete por un rato.');
+      equal(p.x, x); equal(p.y, y); ok(zak.hp === zak.maxHp && !zak.act, 'Zak waits'); advance(.1); ok(zak.alert, 'Then the fight starts');
+      game.enterThrone(); advance(1); near(game.cutscene.focus.x, zak.x); ok(game.cutscene.focus.y < zak.y, 'The camera looks at Zak');
+      advance(1.2); const line = game.cutscene.line; ok((game.cutscene.t - line.at) * Z.CUTSCENE_CPS < line.text.length, 'Still typing');
+      game.advanceCutscene(); ok((game.cutscene.t - line.at) * Z.CUTSCENE_CPS >= line.text.length, 'E completes the line'); equal(game.cutscene.line, line);
+      game.advanceCutscene();
+      equal(game.cutscene.line.text, '¿Qué hacés acá?', 'E skips to the next line');
+    });
     test('Taking the exit portal brings you home and resets Zak', () => {
-      const p = fixture('gero', true); game.enterThrone(); const zak = game.enemies.find(e => e.type === 'zak'); zak.life = 2; game.hitEnemy(zak, 1e9, true);
+      const p = fixture('gero', true); game.enterThrone(); game.finishCutscene(); const zak = game.enemies.find(e => e.type === 'zak'); zak.life = 2; game.hitEnemy(zak, 1e9, true);
       zak.x = Z.THRONE_SPOTS.seat.x; zak.y = Z.THRONE_SPOTS.seat.y; advance(3.5); Object.assign(p, {x: game.exitPortal.x, y: game.exitPortal.y}); advance(.05);
       equal(game.biome, 'village'); equal(game.state, 'playing'); const fresh = game.enemies.find(e => e.type === 'zak'); equal(fresh.life, 0); ok(!fresh.yielding && !fresh.seated);
     });

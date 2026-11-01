@@ -388,7 +388,7 @@
       rect(c,-2,-28,4,30,"#1a1720");rect(c,1,-28,1,30,VIOLET);rect(c,-6,-30,12,3,"#5a3a8a");rect(c,-1,-36,2,6,"#3a2a52");
       c.globalAlpha=.35+Math.sin(time*10)*.15;rect(c,-14,-2,28,4,VIOLET);c.globalAlpha=1;
     } else {
-      const swing=a.id==="slash"&&a.t-Math.floor(a.t/.7)*.7>=.45?.9:a.id==="boomerang"?-1.1:0;
+      const swing=a.id==="slash"&&a.t-Math.floor(a.t/.7)*.7>=.45?.9:a.id==="boomerang"||e.pose==="raise"?-1.1:0;
       c.save();c.translate(13,-14);c.rotate(-.25+swing);
       rect(c,-2,-40,5,38,"#0f0d14");rect(c,-1,-41,3,38,"#1a1720");rect(c,1,-41,1,37,VIOLET);rect(c,-1,-44,2,3,"#1a1720");
       rect(c,-6,-3,13,3,"#5a3a8a");rect(c,-1,0,3,6,"#2a1e3a");rect(c,-2,6,5,2,"#7b4fc0");c.restore();
@@ -483,7 +483,11 @@
     if(o.type==="portal"){
       const g=currentGame,open=o.kind==="altar"?g&&g.player&&g.player.portal:false;
       if(!open)return true;
-      drawPortal(c,x+w/2,y+h/2,time,"#a77bff");return true;
+      // En la escena del altar el portal aparece recién después de la explosión y crece con rebote.
+      const s=g.cutscene&&g.cutscene.id==="altar"?g.cutscene:null,start=(Z.ALTAR_SCENE||{}).open||0;
+      if(s&&s.t<start)return true;
+      const k=s?Math.min(1,(s.t-start)/1.2):1,grow=k<1?1+2.7*Math.pow(k-1,3)+1.7*Math.pow(k-1,2):1;
+      c.save();c.translate(x+w/2,y+h/2);c.scale(grow,grow);drawPortal(c,0,0,time*(s?1+(1-k)*3:1),"#a77bff");c.restore();return true;
     }
     if(o.type==="pillar"){
       shadow(c,x+w/2,y+h,w+10,6);
@@ -1002,12 +1006,15 @@
       if(this.worldRef!==world||!this.background)this.makeBackground(world);
       const p=game.player||{x:770,y:960,characterId:"dante"};currentGame=game;
       const menu=["menu","title","character","characters","select","load","exited"].includes(game.state);
-      const tx=menu?770+Math.sin(time*.07)*22:p.x,ty=menu?955+Math.cos(time*.055)*12:p.y;
-      const area=viewArea(world,menu?"village":game.biome);
-      const clampX=v=>Math.max(area.x,Math.min(area.x+area.w-W,v)),clampY=v=>Math.max(area.y,Math.min(area.y+area.h-H,v));
+      // En las escenas la cámara mira a lo que indique la escena (Zak, el altar) y se mueve más lento.
+      const scene=!menu&&game.cutscene,focus=scene&&scene.focus;
+      const tx=menu?770+Math.sin(time*.07)*22:focus?focus.x:p.x,ty=menu?955+Math.cos(time*.055)*12:focus?focus.y:p.y;
+      const area=viewArea(world,menu?"village":game.biome),cinema=!menu&&(game.cutscene||game.cutsceneFade>0)?Math.round(H*.1):0;
+      // En las escenas la cámara puede pasarse del borde lo que miden las franjas negras: esa parte queda tapada.
+      const clampX=v=>Math.max(area.x,Math.min(area.x+area.w-W,v)),clampY=v=>Math.max(area.y-cinema,Math.min(area.y+area.h-H+cinema,v));
       const cx=clampX(tx-(W/2)),cy=clampY(ty-(H/2+4));
-      const smoothing=menu?.018:.16;
-      if(!this.initialized||Math.hypot(cx-this.camera.x,cy-this.camera.y)>H){this.camera.x=cx;this.camera.y=cy;this.initialized=true;}
+      const smoothing=menu?.018:scene?.06:game.cutsceneFade>0?.08:.16;
+      if(!this.initialized||(!scene&&!(game.cutsceneFade>0)&&Math.hypot(cx-this.camera.x,cy-this.camera.y)>H)){this.camera.x=cx;this.camera.y=cy;this.initialized=true;}
       else{this.camera.x+=(cx-this.camera.x)*smoothing;this.camera.y+=(cy-this.camera.y)*smoothing;}
       let ox=Math.round(this.camera.x),oy=Math.round(this.camera.y);
       game.camera={x:ox,y:oy};
@@ -1079,6 +1086,7 @@
         rect(c,bx-1,by-1,30,6,"#1b2621");rect(c,bx,by,28,4,"#33463c");rect(c,bx,by,28*k,4,g.tool==="axe"?"#c49a5a":"#a9c3d0");
       }
       if(!menu)this.drawThroneHazards(c,game,time);
+      if(scene&&scene.id==="altar")this.drawAltarScene(c,scene,time);
       for(const effect of game.effects||[])this.drawEffect(c,effect,time);
       // A few moving grass tips keep the prairie alive without hiding combat.
       if(game.settings?.particles!==false){
@@ -1165,14 +1173,62 @@
         danger.addColorStop(0,"rgba(136,45,42,0)");danger.addColorStop(1,"rgba(136,45,42,"+(.14+Math.sin(time*3)*.035)+")");
         c.fillStyle=danger;c.fillRect(0,0,W,H);
       }
+      if(!menu&&(scene||game.cutsceneFade>0))this.drawCutsceneOverlay(c,game,W,H,time);
+    }
+    // Ofrendas de la escena del altar: suben de sus huecos, giran, se juntan y estallan.
+    drawAltarScene(c,s,time) {
+      const A=Z.ALTAR_SCENE,a=s.altar,cx=a.x+a.w/2,cy=a.y-52,t=s.t,colors=["#9ad16a","#f2c94c","#c43a4a","#7fe6f2","#e9e3ea"];
+      c.save();
+      if(t<A.burst){
+        const k=Math.max(0,Math.min(1,(t-A.converge)/(A.burst-A.converge))),pull=Math.min(1,Math.max(0,(t-A.converge)/.4));
+        if(t>=A.converge){const r=4+k*14+Math.sin(time*20)*2;c.globalAlpha=.25+k*.35;c.fillStyle="#a77bff";c.beginPath();c.arc(cx,cy,r*2.2,0,Math.PI*2);c.fill();c.globalAlpha=.9;c.fillStyle="#f1e2ff";c.beginPath();c.arc(cx,cy,r*.6,0,Math.PI*2);c.fill();}
+        A.lit.forEach((at,i)=>{
+          if(t<at)return;const rise=1-Math.pow(1-Math.min(1,(t-at)/.5),3),sx=a.x+10+i*12,sy=a.y-6,lx=sx,ly=sy-34*rise;
+          const ang=i*Math.PI*2/5+Math.max(0,t-A.converge)*(3+k*9),rad=38*(1-k),ox=cx+Math.cos(ang)*rad*1.3,oy=cy+Math.sin(ang)*rad*.7;
+          const x=lx+(ox-lx)*pull,y=ly+(oy-ly)*pull;
+          if(pull<1){c.globalAlpha=.22*(1-pull);rect(c,sx-3,y,6,sy-y,colors[i]);}
+          c.globalAlpha=.35;c.fillStyle=colors[i];c.beginPath();c.arc(x,y,8+Math.sin(time*9+i)*1.5,0,Math.PI*2);c.fill();
+          c.globalAlpha=1;rect(c,x-4,y-4,8,8,"#1c1a22");rect(c,x-3,y-3,6,6,colors[i]);rect(c,x-1,y-2,2,2,"#ffffff");
+        });
+      } else {
+        // Columna de luz y anillo violeta tras la explosión.
+        const k=Math.min(1,(t-A.burst)/1.6);c.globalAlpha=(1-k)*.55;c.fillStyle="#e6d6ff";c.fillRect(cx-14+k*10,cy-260,28-k*20,330);
+        c.globalAlpha=(1-k)*.8;c.strokeStyle="#a77bff";c.lineWidth=3;c.beginPath();c.ellipse(cx,a.y+a.h,20+k*260,(20+k*260)*.6,0,0,Math.PI*2);c.stroke();
+      }
+      c.restore();
+    }
+    // Franjas de cine, destellos y el cuadro de diálogo con efecto de máquina de escribir.
+    drawCutsceneOverlay(c,game,W,H,time) {
+      const s=game.cutscene,k=s?Math.min(1,s.t/.5):Math.min(1,game.cutsceneFade/.5),bar=Math.round(H*.1*(1-(1-k)*(1-k)));
+      c.save();
+      if(s&&s.id==="altar"){const A=Z.ALTAR_SCENE,dim=s.t<A.burst?Math.max(0,Math.min(1,(s.t-A.converge)/1.2))*.4:0;if(dim>0){c.fillStyle="rgba(20,8,40,"+dim+")";c.fillRect(0,0,W,H);}}
+      if(s&&s.flashAt!==undefined){const f=1-(s.t-s.flashAt)/.9;if(f>0){c.fillStyle="rgba("+s.flashColor+","+f+")";c.fillRect(0,0,W,H);}}
+      if(bar>0){rect(c,0,0,W,bar,"#050308");rect(c,0,H-bar,W,bar,"#050308");}
+      const l=s&&s.line;
+      if(l){
+        const shown=Math.min(l.text.length,Math.max(0,Math.floor((s.t-l.at)*(Z.CUTSCENE_CPS||32)))),zak=l.speaker==="Zak";
+        const bw=Math.min(W-32,470),bh=44,bx=Math.round((W-bw)/2),by=H-bar-bh-10,accent=zak?"#a77bff":"#e7be72";
+        c.globalAlpha=.94;rect(c,bx-2,by-2,bw+4,bh+4,"#050308");rect(c,bx,by,bw,bh,"#1a1424");c.globalAlpha=1;rect(c,bx,by,bw,2,accent);
+        if(l.speaker){c.font='bold 8px "Trebuchet MS", sans-serif';const nw=c.measureText(l.speaker.toUpperCase()).width+14;rect(c,bx+10,by-9,nw,13,"#050308");rect(c,bx+11,by-8,nw-2,11,accent);pixelText(c,l.speaker.toUpperCase(),bx+17,by-2,"#120f18",8,"left");}
+        c.font='9px "Trebuchet MS", sans-serif';const words=l.text.slice(0,shown).split(" "),lines=[""];
+        for(const word of words){const test=lines[lines.length-1]?lines[lines.length-1]+" "+word:word;if(c.measureText(test).width>bw-28&&lines[lines.length-1])lines.push(word);else lines[lines.length-1]=test;}
+        lines.slice(0,2).forEach((text,i)=>pixelText(c,text,bx+13,by+(lines.length>1?15:22)+i*14,"#f1e8d4",9,"left"));
+        if(shown>=l.text.length&&Math.sin(time*6)>0)pixelText(c,"▸",bx+bw-12,by+bh-9,accent,9);
+      }
+      c.restore();
     }
     // Rayos de la Tormenta de agonía y portal de salida del trono.
     drawThroneHazards(c,game,time) {
       for(const b of game.bolts||[]){const k=1-b.t/b.max,pulse=.4+Math.abs(Math.sin(time*16))*.4;
         c.save();c.globalAlpha=.25+k*.35;c.fillStyle="#7b3fd0";c.beginPath();c.ellipse(b.x,b.y,24,18,0,0,Math.PI*2);c.fill();
         c.globalAlpha=pulse;c.strokeStyle="#e6d6ff";c.lineWidth=2;c.beginPath();c.ellipse(b.x,b.y,24*k,18*k,0,0,Math.PI*2);c.stroke();c.restore();}
-      const ex=game.exitPortal;
-      if(ex){drawPortal(c,ex.x,ex.y,time,"#7fe6f2");pixelText(c,Math.ceil(ex.time)+" s",ex.x,ex.y-46,ex.time<10?"#ff8f7a":"#e6f7ff",9);}
+      const ex=game.exitPortal,s=game.cutscene;
+      if(ex){
+        // Cuando Zak lo cierra, el portal se encoge girando cada vez más rápido.
+        const k=s&&s.closing!==undefined?Math.max(0,1-(s.t-s.closing)/1.2):1;
+        if(k>0){c.save();c.translate(ex.x,ex.y);c.scale(k,k);drawPortal(c,0,0,time*(1+(1-k)*5),"#7fe6f2");c.restore();}
+        if(!s)pixelText(c,Math.ceil(ex.time)+" s",ex.x,ex.y-46,ex.time<10?"#ff8f7a":"#e6f7ff",9);
+      }
     }
     drawEffect(c,e,time) {
       const max=e.maxLife||e.duration||.6;

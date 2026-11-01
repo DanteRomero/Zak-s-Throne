@@ -600,7 +600,7 @@
       retreat: 'SE ALEJA PARA INVOCAR MURCIÉLAGOS', summon: '¡INVOCA MURCIÉLAGOS!',
       quake: '¡TERREMOTO! SALÍ DEL CÍRCULO', throw: '¡PIEDRAZO! RODÁ (F)',
       bite: '¡MORDIDA! DESANGRA', jump: '¡SALTA! SALÍ DEL CÍRCULO ROJO', dig: '¡ESCARBA! PEGALE ANTES DE 3 s',
-      slash: '¡ESPADAZOS! ALEJATE O RODÁ (F)', raise: 'INVOCA ESQUELETOS', major: 'INVOCA A UN JEFE',
+      slash: '¡ESPADAZOS! ALEJATE O RODÁ (F)', boomerang: '¡BUMERANES! RODÁ (F)', raise: 'INVOCA ESQUELETOS', major: 'INVOCA A UN JEFE',
       storm: 'TORMENTA: ESQUIVÁ LOS RAYOS · SOLO LA PIEDRA LO DAÑA', roar: 'IRA DEL GOBERNANTE', purple: '¡PARATE EN EL CÍRCULO CLARO!'
     };
     return hints[a.id] || '';
@@ -680,7 +680,7 @@
   $('exit-game').addEventListener('click',exitGame);
   document.querySelector('.brand').addEventListener('click',event => { event.preventDefault(); if (game.state === 'characters') showMenu(); });
   game.onEvent = (type, detail = {}) => {
-    if (type === 'tick') { updateHud(); if (game.player && game.state === 'playing' && game.player.kills - lastKills >= 5) submitScore(); }
+    if (type === 'tick') { document.body.classList.toggle('cutscene', !!game.cutscene && game.state === 'playing'); updateHud(); if (game.player && game.state === 'playing' && game.player.kills - lastKills >= 5) submitScore(); }
     else if (type === 'toast') { if (game.settings.notices || detail.error) toast(detail.message,detail.error); }
     else if (type === 'start') {
       hasStarted = true;
