@@ -41,6 +41,20 @@
     assert('Publica con upsert por partida', post.url === 'https://demo.supabase.co/rest/v1/scores?on_conflict=run_id' && post.options.headers.Prefer.includes('merge-duplicates'));
     assert('La clave publishable va en apikey y sin Bearer', post.options.headers.apikey === 'sb_publishable_demo' && !post.options.headers.Authorization);
     assert('Envía nivel, enemigos y jefes', body.level === 4 && body.kills === 12 && body.bosses === 1 && body.character === 'tena');
+    assert('Sin récord contra Zak no manda la columna', !('zak_time' in body));
+    g.player.zakBest = 95.4; sent.length = 0; await Z.Ranking.submit(g);
+    assert('Con récord manda zak_time en segundos', JSON.parse(sent.find(r => r.options.method === 'POST').options.body).zak_time === 95);
+    // Servidor sin la columna nueva: responde 400 y se reintenta sin zak_time.
+    const okFetch = window.fetch; sent.length = 0;
+    window.fetch = async (url, options = {}) => { sent.push({url, options}); if ((options.method || 'GET') === 'POST') return new Response(null, {status: String(options.body).includes('zak_time') ? 400 : 201}); return okFetch(url, options); };
+    await Z.Ranking.submit(g); const posts = sent.filter(r => r.options.method === 'POST');
+    assert('Sin la columna en Supabase reintenta sin zak_time', posts.length === 2 && !posts[1].options.body.includes('zak_time'));
+    window.fetch = okFetch; g.player.zakBest = 0;
+    document.getElementById('ranking-button').click(); await wait(50);
+    [...document.querySelectorAll('.rank-tab')].find(b => b.textContent === 'Récord Zak').click(); await wait(50);
+    assert('La pestaña Récord Zak pide solo quienes lo vencieron, del más rápido al más lento', sent.some(r => String(r.url).includes('zak_time=not.is.null') && String(r.url).includes('order=zak_time.asc')));
+    assert('Sin récords muestra un aviso', document.querySelector('.rank-list').textContent.includes('nadie venció a Zak'));
+    close();
     document.getElementById('ranking-button').click(); await wait(50);
     assert('Con configuración el ranking es en línea', document.querySelector('.modal-eyebrow').textContent.includes('EN LÍNEA'));
     assert('Descarta filas inválidas y ordena por nivel', rows().length === 2 && rows()[0].textContent.includes('Paco'));

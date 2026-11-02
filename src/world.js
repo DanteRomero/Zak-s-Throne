@@ -7,21 +7,32 @@ const Z=window.Zak=window.Zak||{};
 Z.SURFACE_HEIGHT=1800;
 // Al oeste de la aldea (x negativa) está el Altar del gobernante; debajo de él, aislado, el Trono de Zak.
 Z.WORLD_LEFT=-780;
-Z.biomeAt=function(x,y){if(y>=Z.SURFACE_HEIGHT)return x<0?'throne':x<1200?'cave2':'cave3';if(x<0)return'altar';return x<1000&&y<520?'cave':x>=1550?'weeds':'village';};
+// Debajo de todo, aislada, la dimensión de Zak: el Santuario (zona segura) y, al norte, el Pueblo Mágico.
+Z.WORLD_HEIGHT=3700;Z.DIMENSION_TOP=2540;Z.SANCTUM_TOP=3320;
+Z.biomeAt=function(x,y){if(y>=Z.DIMENSION_TOP)return y>=Z.SANCTUM_TOP?'sanctum':'magic';if(y>=Z.SURFACE_HEIGHT)return x<0?'throne':x<1200?'cave2':'cave3';if(x<0)return'altar';return x<1000&&y<520?'cave':x>=1550?'weeds':'village';};
 Z.DEEP_ZONES={cave2:{x:0,y:1880,w:1180,h:620},cave3:{x:1220,y:1880,w:1180,h:620}};
 Z.ALTAR_ZONE={x:-780,y:520,w:780,h:1280};Z.THRONE_ZONE={x:-780,y:1880,w:760,h:620};
 // Zonas cerradas: la cámara no muestra nada fuera de ellas.
-Z.ENCLOSED_ZONES={...Z.DEEP_ZONES,throne:Z.THRONE_ZONE};
+Z.DIMENSION_ZONE={x:0,y:2580,w:1200,h:1100};Z.MAGIC_ZONE={x:0,y:2580,w:1200,h:740};Z.SANCTUM_ZONE={x:0,y:3320,w:1200,h:360};
+Z.ENCLOSED_ZONES={...Z.DEEP_ZONES,throne:Z.THRONE_ZONE,dimension:Z.DIMENSION_ZONE,magic:Z.MAGIC_ZONE,sanctum:Z.SANCTUM_ZONE};
+// El Santuario y el Pueblo Mágico se recorren como un solo lugar: la cámara usa toda la dimensión.
+Z.VIEW_ZONES={magic:'dimension',sanctum:'dimension'};
+// Zonas seguras: no hay daño y se curan los estados.
+Z.SAFE_ZONES={village:true,sanctum:true};Z.isSafe=biome=>!!Z.SAFE_ZONES[biome];
+Z.DIMENSION_SPOTS={arrive:{x:600,y:3610}};
 Z.THRONE_SPOTS={arrive:{x:-400,y:2420},zak:{x:-400,y:2010},seat:{x:-400,y:1968},exit:{x:-400,y:2110}};
 Z.createWorld=function(){
- const world={width:2400,height:2500,left:Z.WORLD_LEFT,spawn:{x:770,y:960},zones:[
+ const world={width:2400,height:Z.WORLD_HEIGHT,left:Z.WORLD_LEFT,spawn:{x:770,y:960},zones:[
   {id:'village',x:0,y:0,w:1550,h:1800,name:'Palihue City'},
   {id:'weeds',x:1550,y:0,w:850,h:1800,name:'Los Yuyos'},
   {id:'cave',x:0,y:0,w:1000,h:520,name:'Cueva del Eco'},
   {id:'cave2',...Z.DEEP_ZONES.cave2,name:'Cueva Profunda'},
   {id:'cave3',...Z.DEEP_ZONES.cave3,name:'Las Entrañas'},
   {id:'altar',...Z.ALTAR_ZONE,name:'Altar del gobernante'},
-  {id:'throne',...Z.THRONE_ZONE,name:'Trono de Zak'}
+  {id:'throne',...Z.THRONE_ZONE,name:'Trono de Zak'},
+  {id:'dimension',...Z.DIMENSION_ZONE,name:'Dimensión de Zak'},
+  {id:'magic',...Z.MAGIC_ZONE,name:'Pueblo Mágico'},
+  {id:'sanctum',...Z.SANCTUM_ZONE,name:'Santuario'}
  ],objects:[],npcs:[],pickups:[],enemySpawns:[],paths:[]};
  let serial=0,seed=1873;
  const random=()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296;};
@@ -163,6 +174,7 @@ Z.createWorld=function(){
   const nx=Math.max(o.x,Math.min(p.x,o.x+o.w)),ny=Math.max(o.y,Math.min(p.y,o.y+o.h));return Math.hypot(p.x-nx,p.y-ny)<18;
  }));
  buildWest(world,object,path,(type,x,y)=>world.enemySpawns.push({id:'west-'+type+'-'+world.enemySpawns.length,type,x,y}));
+ buildDimension(world,object,path,(type,x,y)=>world.enemySpawns.push({id:'dim-'+type+'-'+world.enemySpawns.length,type,x,y}));
  return world;
 };
 // Valla de Los Yuyos, Altar del gobernante y Trono de Zak. Se agregan al final para no cambiar
@@ -204,6 +216,32 @@ function buildWest(world,object,path,spawn){
  object('zakthrone',-432,1915,64,40,true);
  spawn('zak',Z.THRONE_SPOTS.zak.x,Z.THRONE_SPOTS.zak.y);
 }
+// Dimensión de Zak: se llega por el portal del altar y solo se sale venciendo o perdiendo contra Zak.
+// Va al final de todo para no cambiar los identificadores de lo anterior.
+function buildDimension(world,object,path,spawn){
+ const d=Z.DIMENSION_ZONE,top=Z.SANCTUM_TOP;
+ object('barrier',-780,2500,3180,80,true);
+ object('cliff',d.x,d.y,d.w,22,true,{dark:true});object('cliff',d.x,d.y+d.h-22,d.w,22,true,{dark:true});
+ object('cliff',d.x,d.y+22,19,d.h-44,true,{variant:1,dark:true});object('cliff',d.x+d.w-19,d.y+22,19,d.h-44,true,{variant:1,dark:true});
+ // Muro entre el Santuario y el Pueblo Mágico, con un paso en el medio.
+ object('cliff',19,top-14,537,22,true,{dark:true});object('cliff',644,top-14,537,22,true,{dark:true});
+ // Santuario: la fuente cura como el pozo de la aldea.
+ path(575,top+8,50,330,'carpet');
+ object('well',680,3452,27,23,true,{dark:true,label:'Beber de la fuente del Santuario',text:'El agua violeta te devuelve la vida y el aire.'});
+ for(const [x,y] of [[120,3420],[1060,3420],[120,3600],[1060,3600],[380,3420],[800,3420]])object('pillar',x,y,18,14,true);
+ object('sign',500,3590,16,12,true,{label:'Leer la inscripción',text:'SANTUARIO · Acá nada te lastima. ↑ Pueblo Mágico. La puerta del trono solo se abre con la llave del Rey Mago.'});
+ // Pueblo Mágico: carpas, fogatas que queman, magos, armaduras y el Rey Mago frente a la puerta del trono.
+ path(575,2640,50,top-2640,'rune');path(80,2950,1040,40,'rune');
+ for(const [x,y] of [[150,2700],[330,2780],[820,2700],[1000,2780],[170,3080],[380,3180],[800,3170],[1010,3070]])object('tent',x,y,44,30,true,{variant:Math.floor(x/7)%3});
+ for(const [x,y] of [[240,2760],[920,2760],[270,3150],[900,3150],[480,2880],[700,3050]])object('campfire',x,y,16,12,false);
+ for(const [x,y] of [[90,2800],[1110,2850],[90,3200],[1110,3150]])object('deadtree',x,y,16,12,true,{variant:x%3});
+ for(const [x,y] of [[300,2640],[880,2640],[520,3230],[660,2860]])object('crystal',x,y,12,10,false,{variant:4});
+ // La puerta es sólida desde el muro norte: no se puede pasar por detrás.
+ object('door',556,2602,88,86,true,{label:'Abrir la puerta del trono'});
+ spawn('archmage',600,2710);
+ for(const [x,y] of [[250,2650],[950,2650],[200,2900],[1000,2900],[420,3050],[780,3260]])spawn('mage',x,y);
+ for(const [x,y] of [[450,2720],[750,2720],[300,3250],[900,3250]])spawn('armor',x,y);
+}
 Z.collides=function(world,x,y,radius=8,ignoreNpc=null){
  if(!Number.isFinite(x)||!Number.isFinite(y)||x-radius<(world.left||0)+12||y-radius<12||x+radius>world.width-12||y+radius>world.height-12)return true;
  for(const o of world.objects){if(!o.solid)continue;if(x+radius<o.x||x-radius>o.x+o.w||y+radius<o.y||y-radius>o.y+o.h)continue;
@@ -212,7 +250,7 @@ Z.collides=function(world,x,y,radius=8,ignoreNpc=null){
  for(const n of world.npcs){if(n.id===ignoreId)continue;if((x-n.x)**2+(y-n.y)**2<(radius+9)**2)return true;}
  return false;
 };
-const PLACES=['well','sign','stall','forge','stairs','altar'];
+const PLACES=['well','sign','stall','forge','stairs','altar','door'];
 Z.nearbyInteractable=function(world,x,y,maxDistance=46,player=null){
  let nearest=null,best=maxDistance;
  for(const p of world.pickups){if(p.collected)continue;const d=Math.hypot(p.x-x,p.y-y);if(d<best){nearest=p;best=d;}}

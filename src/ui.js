@@ -317,7 +317,7 @@
       },'toggle');
       sizeToggle.setAttribute('aria-label','Tamaño de los controles táctiles'); sizeRow.append(sizeToggle); parent.append(sizeRow);
       const help = el('div','help-grid');
-      [['Moverte','WASD / flechas'],['Talar o picar','E, quieto'],['Correr','Shift'],['Atacar','Espacio / clic'],['Rodar','F / clic derecho'],['Habilidad','Q'],['Interactuar','E'],['Usar hierba','R'],['Armas','1 — 5'],['Personaje','C'],['Diario','J'],['Mapa','M'],['Pausa','Esc']].forEach(([action,key]) => { const row = el('div'); row.append(el('span','',action),el('kbd','',key)); help.append(row); });
+      [['Moverte','WASD / flechas'],['Talar o picar','E, quieto'],['Correr','Shift'],['Atacar','Espacio / clic'],['Rodar','Ctrl / clic derecho (hacia donde vas)'],['Habilidad','Q'],['Interactuar','E'],['Usar hierba','R'],['Armas','1 — 5'],['Personaje','C'],['Diario','J'],['Mapa','M'],['Pausa','Esc']].forEach(([action,key]) => { const row = el('div'); row.append(el('span','',action),el('kbd','',key)); help.append(row); });
       parent.append(help);
       paragraph(parent,'Los controles táctiles aparecen en pantallas compatibles. En un teléfono, giralo horizontalmente para ver mejor. El sonido se activa después de tu primera interacción.','hint');
     },returnToPause ? showPause : null);
@@ -344,6 +344,7 @@
        'Monedas: ' + fmt(p.coins) + ' · Hierbas: ' + p.herbs + ' / ' + Zak.HERB_BAG + ' · Derrotas: ' + p.kills,
        'Próximo nivel: ' + fmt(p.xp) + ' / ' + Zak.xpNeeded(p.level) + ' XP',
        'Materiales: ' + Object.entries(Zak.MATERIALS).map(([k,m]) => m.name + ' ' + (p.materials[k] || 0)).join(' · '),
+       'Llaves del trono: ' + (p.throneKeys || 0) + ' · Récord contra Zak: ' + (p.zakBest > 0 ? Zak.formatTime(p.zakBest) : '—'),
        'Ofrendas: ' + Object.entries(Zak.OFFERINGS).map(([k,o]) => o.icon + ' ' + o.name + ' ' + (p.offerings[k] || 0)).join(' · '),
        'Pico: ' + (p.pickaxe ? Zak.TIER_NAMES[p.pickaxe] : 'no') + ' · Hacha: ' + (p.axe ? Zak.TIER_NAMES[p.axe] : 'no') + ' · Antorcha: ' + (p.torch ? 'sí' : 'no'),
        'Armas: ' + p.weapons.map(w => Zak.WEAPON_TYPES[w].name + (w === 'elemental' ? '' : ' nvl ' + (p.weaponLevels[w] || 1))).join(' · ')].forEach(line => summary.append(el('div','',line)));
@@ -394,7 +395,7 @@
         paragraph(parent,'Los enemigos sueltan monedas: gastalas en el puesto de El Almacén, al oeste de la plaza. Arriba tenés la ficha, el diario, el mapa, la pausa para guardar y ⛶ para pantalla completa. Se juega mejor con el celular en horizontal.');
       } else {
         paragraph(parent,'La aldea es tu refugio. Movete con WASD o flechas y buscá el arco: acercate a su brillo y presioná E.');
-        paragraph(parent,'Atacá con Espacio o clic: cada cuarto golpe seguido es crítico. F o clic derecho te hace rodar y esquivar cualquier golpe. Q activa tu habilidad; Fede y Pepe tienen habilidades pasivas. Shift te permite correr: cuidá la energía.');
+        paragraph(parent,'Atacá con Espacio o clic: cada cuarto golpe seguido es crítico. Ctrl o clic derecho te hace rodar hacia donde vas y esquivar cualquier golpe. Q activa tu habilidad; Fede y Pepe tienen habilidades pasivas. Shift te permite correr: cuidá la energía.');
         paragraph(parent,'Los enemigos sueltan monedas. Gastalas en el puesto de El Almacén, al oeste de la plaza. Las hierbas van a tu bolsa y se usan con R.');
         paragraph(parent,'C abre tus estadísticas; J, el diario; M, el mapa. Guardá manualmente en una de las tres ranuras desde Esc antes de irte.');
       }
@@ -471,7 +472,7 @@
       Zak.Ranking.submit(game).catch(error => { if (!submitWarned) { submitWarned = true; toast('No se pudo publicar en el ranking online: ' + error.message + '. Se guardó en este dispositivo.',true); } });
     }, Math.max(0,8000 - (Date.now() - lastSubmit)));
   }
-  const RANK_TABS = [['level','Nivel'],['kills','Enemigos'],['bosses','Jefes']];
+  const RANK_TABS = [['level','Nivel'],['kills','Enemigos'],['bosses','Jefes'],['zak','Récord Zak']];
   function showRanking(sort = 'level', back = null) {
     const own = Zak.Ranking.profile().id, version = modalVersion + 1;
     if (game.player && game.state !== 'menu') Zak.Ranking.saveLocal(Zak.Ranking.entryFor(game));
@@ -489,12 +490,14 @@
       function render(entries,append = false) {
         if (version !== modalVersion) return;
         if (!append) list.replaceChildren();
-        if (!entries.length) { list.append(el('p','hint','Todavía no hay partidas. ¡Salí a la aventura y estrená el ranking!')); return; }
-        const head = el('div','rank-row rank-head'); ['#','Jugador','Nvl.','Enemigos','Jefes'].forEach(label => head.append(el('span','',label))); list.append(head);
+        // En «Récord Zak» solo aparecen las partidas que vencieron a Zak, de la más rápida a la más lenta.
+        const zak = sort === 'zak'; if (zak) entries = entries.filter(entry => entry.zak_time > 0);
+        if (!entries.length) { list.append(el('p','hint',zak ? 'Todavía nadie venció a Zak. ¿Vas a ser el primero?' : 'Todavía no hay partidas. ¡Salí a la aventura y estrená el ranking!')); return; }
+        const head = el('div','rank-row rank-head'); ['#','Jugador','Nvl.',zak ? 'Tiempo' : 'Enemigos','Jefes'].forEach(label => head.append(el('span','',label))); list.append(head);
         entries.slice(0,50).forEach((entry,index) => {
           const row = el('div','rank-row' + (entry.player_id === own ? ' mine' : '') + (index < 3 ? ' top' : ''));
           const who = el('span','rank-player'); who.append(el('strong','',entry.name),el('small','',character(entry.character).name + (entry.player_id === own ? ' · vos' : '')));
-          row.append(el('span','rank-pos',index < 3 ? ['♛','②','③'][index] : index + 1),who,el('span','',entry.level),el('span','',entry.kills),el('span','',entry.bosses));
+          row.append(el('span','rank-pos',index < 3 ? ['♛','②','③'][index] : index + 1),who,el('span','',entry.level),el('span','',zak ? Zak.formatTime(entry.zak_time) : entry.kills),el('span','',entry.bosses));
           list.append(row);
         });
       }
@@ -526,8 +529,8 @@
     text('points-badge',p.points); $('points-badge').classList.toggle('hidden',p.points < 1);
     $('journal-badge').classList.toggle('hidden',game.unclaimedRewards().length < 1);
     const ctx = game.context(), biome = ctx.biome || 'village';
-    text('hud-biome',Zak.BIOME_NAMES[biome] || biome); text('hud-safety',biome === 'village' ? 'ZONA SEGURA' : 'ZONA PELIGROSA');
-    $('hud-safety').classList.toggle('danger',biome !== 'village');
+    text('hud-biome',Zak.BIOME_NAMES[biome] || biome); text('hud-safety',Zak.isSafe(biome) ? 'ZONA SEGURA' : 'ZONA PELIGROSA');
+    $('hud-safety').classList.toggle('danger',!Zak.isSafe(biome));
     const hours = (8 + Math.floor(number(p.playTime) / 60)) % 24, minutes = Math.floor(number(p.playTime) % 60);
     text('hud-time',(hours >= 7 && hours < 19 ? '☀ ' : '☾ ') + String(hours).padStart(2,'0') + ':' + String(minutes).padStart(2,'0'));
     if (lastPortrait !== c.id) { Zak.drawPortrait($('hud-portrait'),c.id); lastPortrait = c.id; }
@@ -538,6 +541,7 @@
     if (p.stunned > 0) statuses.push('✦ Aturdido ' + Math.ceil(p.stunned) + ' s');
     if (p.grabbed > 0) statuses.push('✊ Agarrado');
     if (p.bleed) statuses.push('🩸 Desangrado');
+    if (p.burn) statuses.push('🔥 Quemado');
     if (p.heavySlow > 0) statuses.push('↓↓ Muy lento ' + Math.ceil(p.heavySlow) + ' s');
     if (game.darkness > 0 && biome === 'throne') statuses.push('☾ Ira del gobernante ' + Math.ceil(game.darkness) + ' s');
     if (p.buffs.gero > 0) statuses.push('✦ Fé Judía ' + Math.ceil(p.buffs.gero) + ' s');
@@ -588,7 +592,7 @@
   }
   // Qué está por hacer el jefe, en pocas palabras y con la forma de esquivarlo.
   function bossWarning(boss) {
-    if (boss.telegraph > 0) return boss.type === 'capo' ? '¡VA A EMBESTIR! RODÁ (F)' : boss.kind === 'tail' ? '¡COLAZO! ALEJATE O RODÁ (F)' : '¡VENENO! RODÁ (F)';
+    if (boss.telegraph > 0) return boss.type === 'capo' ? '¡VA A EMBESTIR! RODÁ (CTRL)' : boss.kind === 'tail' ? '¡COLAZO! ALEJATE O RODÁ (CTRL)' : '¡VENENO! RODÁ (CTRL)';
     if (boss.yielding) return game.exitPortal ? 'PORTAL A LA ALDEA · ' + Math.ceil(game.exitPortal.time) + ' s' : 'ZAK DEJA DE PELEAR';
     if (boss.seated) return 'SE CURA EN EL TRONO: VENCÉ AL JEFE INVOCADO';
     const a = boss.act;
@@ -596,11 +600,13 @@
     if (!a) return '';
     const hints = {
       rise: boss.type === 'golem' ? 'SE REARMA CON OTRO MATERIAL…' : 'SE VUELVE A LEVANTAR…',
-      lunge: '¡EMBESTIDA SANGRIENTA! RODÁ (F)', swipe: '¡MANOTAZO DOBLE! ALEJATE', drain: '¡TE CHUPA LA SANGRE!',
-      retreat: 'SE ALEJA PARA INVOCAR MURCIÉLAGOS', summon: '¡INVOCA MURCIÉLAGOS!',
-      quake: '¡TERREMOTO! SALÍ DEL CÍRCULO', throw: '¡PIEDRAZO! RODÁ (F)',
+      lunge: '¡EMBESTIDA SANGRIENTA! RODÁ (CTRL)', swipe: '¡MANOTAZO DOBLE! ALEJATE', drain: '¡TE CHUPA LA SANGRE!',
+      retreat: 'SE ALEJA PARA INVOCAR MURCIÉLAGOS',
+      quake: '¡TERREMOTO! SALÍ DEL CÍRCULO', throw: '¡PIEDRAZO! RODÁ (CTRL)',
       bite: '¡MORDIDA! DESANGRA', jump: '¡SALTA! SALÍ DEL CÍRCULO ROJO', dig: '¡ESCARBA! PEGALE ANTES DE 3 s',
-      slash: '¡ESPADAZOS! ALEJATE O RODÁ (F)', boomerang: '¡BUMERANES! RODÁ (F)', raise: 'INVOCA ESQUELETOS', major: 'INVOCA A UN JEFE',
+      slash: '¡ESPADAZOS! ALEJATE O RODÁ (CTRL)', boomerang: '¡BUMERANES! RODÁ (CTRL)', raise: 'INVOCA ESQUELETOS', major: 'INVOCA A UN JEFE',
+      teleport: 'SE TELETRANSPORTA…', nova: '¡BOLAS DE FUEGO! RODÁ (CTRL)', heal: 'SE CURA: ¡PEGALE PARA CORTARLO!', summon: boss.type === 'archmage' ? 'INVOCA ARMADURAS' : '¡INVOCA MURCIÉLAGOS!',
+      laser: boss.act && boss.act.wave !== undefined ? '¡ONDA! RODÁ (CTRL) CUANDO TE LLEGUE' : '¡LÁSER RELOJ! ESQUIVÁ LOS RAYOS',
       storm: 'TORMENTA: ESQUIVÁ LOS RAYOS · SOLO LA PIEDRA LO DAÑA', roar: 'IRA DEL GOBERNANTE', purple: '¡PARATE EN EL CÍRCULO CLARO!'
     };
     return hints[a.id] || '';
@@ -652,6 +658,8 @@
     if (!request) { if (!quiet) toast(/iPhone|iPod/.test(navigator.userAgent) ? 'En iPhone: tocá Compartir → «Agregar a inicio» y abrí el juego desde ese ícono para verlo en pantalla completa.' : 'Este navegador no permite pantalla completa. Probá agregar el juego a la pantalla de inicio.'); return; }
     Promise.resolve(request.call(root,{ navigationUI: 'hide' })).then(() => {
       if (screen.orientation && screen.orientation.lock) screen.orientation.lock('landscape').catch(() => {});
+      // En pantalla completa, Ctrl+W/T/N no cierran ni abren pestañas: Ctrl es la tecla de rodar.
+      if (navigator.keyboard && navigator.keyboard.lock) navigator.keyboard.lock(['KeyW','KeyT','KeyN']).catch(() => {});
     }).catch(() => { if (!quiet) toast('No se pudo activar la pantalla completa.'); });
   }
   function toggleFullscreen() {

@@ -6,6 +6,23 @@ Cada versión lista sus cambios agrupados por tipo:
 - **Change:** algo que ya existía y ahora funciona distinto.
 - **Fix:** un error corregido.
 
+## v2.6 — 2026-11-01
+* Feature
+    - **Dimensión de Zak:** el portal del altar ya no lleva directo al trono, sino a una dimensión de la que no se sale hasta vencer o perder contra Zak. Tiene el estilo oscuro y violeta del trono.
+        - **Santuario:** zona segura con una fuente que cura vida y energía, como el pozo de la aldea.
+        - **Pueblo Mágico:** al norte, con carpas y fogatas. Pisar una fogata quema: 2 de vida por segundo durante 5 s.
+        - **Puerta del trono:** al fondo del pueblo; se abre con la Llave del trono y lleva a Zak.
+    - **Magos:** se quedan quietos 2 s conjurando y tiran bolas de fuego que lastiman mucho y queman. Siempre buscan distancia y son algo lentos.
+    - **Armaduras vivientes:** mucha vida y mucho daño, extremadamente lentas; levantan la espada y giran, pegando todo a su alrededor.
+    - **El Rey Mago (jefe):** se teletransporta antes de casi cada ataque; bolas de fuego en estrella, zona de curación de 150 por segundo durante 10 s (pegale para cortarla), invocación de cinco armaduras y el Láser reloj, que termina en una onda de alcance infinito que solo se esquiva rodando. Suelta la **Esfera mágica** (se vende por ◉ 3000) y la **Llave del trono**. Nueva misión en el diario (◉ 150).
+    - **Quemadura:** nuevo estado (🔥 Quemado) que, como el veneno, ignora la armadura. La fuente y entrar a una zona segura lo apagan.
+    - **Récord contra Zak:** se guarda el tiempo más rápido de cada partida (desde que termina su presentación hasta vaciarle la última vida) y el ranking tiene la pestaña **Récord Zak**. Se ve también en la ficha (C).
+
+* Change
+    - **Rodar con Ctrl:** en teclado se rueda con **Ctrl** (antes F). Shift sigue siendo correr.
+    - **Rodar hacia donde vas:** con Ctrl o con clic derecho, la voltereta sale siempre en la dirección en que te movés; si estás quieto, hacia donde mirás. Antes el clic derecho rodaba hacia el puntero.
+    - Mientras jugás, los atajos del navegador con Ctrl (buscar, recargar, guardar…) no se activan. En pantalla completa tampoco Ctrl+W, Ctrl+T ni Ctrl+N.
+
 ## v2.5 — 2026-11-01
 
 * Feature

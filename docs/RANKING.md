@@ -22,6 +22,7 @@ create table if not exists public.scores (
   kills      int  not null check (kills between 0 and 100000),
   bosses     int  not null check (bosses between 0 and 10000),
   play_time  int  not null default 0 check (play_time between 0 and 10000000),
+  zak_time   int  check (zak_time between 1 and 10000000),
   updated_at timestamptz not null default now()
 );
 
@@ -50,6 +51,16 @@ drop policy if exists "ranking: borrar" on public.scores;
 create policy "ranking: borrar" on public.scores for delete to anon using (true);
 grant delete on public.scores to anon;
 ```
+
+### Récord contra Zak (v2.7)
+
+La pestaña **Récord Zak** usa una columna nueva. Corré esto una vez en **SQL Editor**:
+
+```sql
+alter table public.scores add column if not exists zak_time int check (zak_time between 1 and 10000000);
+```
+
+Mientras no la agregues, el resto del ranking sigue andando (el juego reintenta sin esa columna), pero la pestaña Récord Zak muestra un aviso y solo las partidas de este dispositivo.
 
 ## 3. Copiar la URL y la clave pública
 

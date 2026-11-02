@@ -14,7 +14,8 @@ const OPENING = {
  vampire:{swipe:0,lunge:2,summon:10},
  golem:{quake:2,rock:1.5,fortify:15},
  cerbero:{bite:0,jump:3,dig:12},
- zak:{slash:0,raise:8,storm:18,wrath:6,purple:12,boomerang:3}
+ zak:{slash:0,raise:8,storm:18,wrath:6,purple:12,boomerang:3},
+ archmage:{nova:1.5,heal:12,summon:7,laser:9}
 };
 const LINES = {
  yield:'Dejémoslo acá y volvé a tu dimensión, mortal.',
@@ -23,7 +24,7 @@ const LINES = {
  who:'¿Y vos quién sos?',
  what:'¿Qué hacés acá?',
  toy:'No importa… ahora vas a ser mi juguete por un rato.',
- altar:'Las cinco ofrendas se rompieron. El portal al Trono de Zak está abierto.'
+ altar:'Las cinco ofrendas se rompieron. El portal a la dimensión de Zak está abierto.'
 };
 // Letras por segundo de los diálogos (también las usa render.js).
 const CPS = Z.CUTSCENE_CPS = 32;
@@ -38,7 +39,7 @@ const SCENES = {
   {at:4.6,skip:true,run(s){this.say(s,'Zak',LINES.what);}},
   {at:7.2,skip:true,run(s){const z=this.zakEntity();z.pose='raise';this.say(s,'Zak',LINES.toy);this.sound.play('roar');this.shake(7,.7);
    this.effect(z.x,z.y,'wave',.7,{radius:130});for(let k=0;k<4;k++){const a=k*Math.PI/2+.5;this.effect(z.x+Math.cos(a)*95,z.y+Math.sin(a)*60,'bolt',.4);}this.sound.play('thunder');}},
-  {at:11,skip:true,run(){this.zakEntity().pose=null;this.endCutscene();}}
+  {at:11,skip:true,run(){this.zakEntity().pose=null;this.endCutscene();this.zakFightStart=this.time;}}
  ]},
  // No cruzaste el portal a tiempo: Zak lo cierra, se levanta del trono y te ejecuta.
  execute:{steps:[
@@ -105,12 +106,14 @@ Object.assign(Z.Game.prototype, {
   if(e.yielding)return'…';
   if(e.act&&e.act.id==='rise')return'Inmune';
   if(e.shield>0)return'¡Refuerzo!';
+  if(e.act&&e.act.id==='teleport')return'¡Se esfumó!';
   if(e.type==='zak'&&e.act&&e.act.id==='storm'&&source!=='stone')return'Solo la piedra';
   return null;
  },
  // Pegarle a Cerbero mientras escarba lo interrumpe.
  bossHitReact(e){
   if(e.type==='cerbero'&&e.act&&e.act.id==='dig'){e.act=null;e.cd.dig=14;this.effect(e.x,e.y-40,'miss',1,{text:'¡Lo interrumpiste!'});}
+  if(e.type==='archmage'&&e.act&&e.act.id==='heal'){e.act=null;e.cd.heal=18;this.effect(e.x,e.y-60,'miss',1,{text:'¡Cortaste la curación!'});}
  },
  bossNextLife(e){
   const def=Z.ENEMY_TYPES[e.type];
@@ -146,6 +149,7 @@ Object.assign(Z.Game.prototype, {
   else if(e.type==='golem')this.golemAI(e,dt,len);
   else if(e.type==='cerbero')this.cerberoAI(e,dt,len);
   else if(e.type==='zak')this.zakAI(e,dt,len);
+  else if(e.type==='archmage')this.archmageAI(e,dt,len);
  },
  // El Chupasangre: manotazo doble, embestida que agarra y chupa sangre, e invocación de murciélagos.
  vampireAI(e,dt,len){
@@ -329,7 +333,11 @@ Object.assign(Z.Game.prototype, {
   const levels=Z.grantXp(p,e.stats.xp,this.context());this.effect(e.x,e.y-60,'heal',1.4,{text:'+'+this.number(e.stats.xp*this.stats().xpMultiplier)+' EXP'});
   const[min,max]=def.coins;this.dropCoins(e.x,e.y,min+Math.floor(Math.random()*(max-min+1)));
   this.sound.play('boss');this.shake(8,.6);this.emit('progress');
-  if(first){p.points+=1;this.emit('toast',{message:'¡Venciste a Zak! Trofeo: +1 punto de mejora.'});}
+  // Récord: tiempo desde que termina la presentación hasta vaciarle la última vida.
+  let record='';if(this.zakFightStart!=null){const time=this.time-this.zakFightStart,best=!(p.zakBest>0)||time<p.zakBest;if(best)p.zakBest=time;
+   record=' Tiempo: '+Z.formatTime(time)+(best?' · ¡nuevo récord!':' (récord '+Z.formatTime(p.zakBest)+')');this.effect(e.x,e.y-100,'level',2.5,{text:'⏱ '+Z.formatTime(time)+(best?' · ¡RÉCORD!':'')});}
+  this.zakFightStart=null;
+  if(first){p.points+=1;this.emit('toast',{message:'¡Venciste a Zak! Trofeo: +1 punto de mejora.'+record});}else if(record)this.emit('toast',{message:'¡Venciste a Zak otra vez!'+record});
   if(levels)this.onLevel(levels);
  },
  updateZakYield(e,dt){
@@ -378,8 +386,8 @@ Object.assign(Z.Game.prototype, {
   if(this.enemies.some(e=>e.type==='cerbero'&&!e.dead&&!e.summoned)){this.emit('toast',{message:'Cerbero no te deja acercarte al altar. Derrotalo primero.',error:true});return false;}
   if(p.portal){this.emit('toast',{message:'El portal violeta ya está abierto. Entrá cuando estés listo.'});return false;}
   const placed=[];
-  for(const [k,o] of Object.entries(Z.OFFERINGS))if(!p.altar[k]&&p.offerings[k]>0){p.offerings[k]--;p.altar[k]=true;placed.push(o.name);}
-  const missing=Object.entries(Z.OFFERINGS).filter(([k])=>!p.altar[k]).map(([,o])=>o.name);
+  for(const [k,o] of Object.entries(Z.OFFERINGS))if(o.altar!==false&&!p.altar[k]&&p.offerings[k]>0){p.offerings[k]--;p.altar[k]=true;placed.push(o.name);}
+  const missing=Object.entries(Z.OFFERINGS).filter(([k,o])=>o.altar!==false&&!p.altar[k]).map(([,o])=>o.name);
   if(!missing.length){
    // El estado cambia ya (así un guardado a mitad de la escena queda bien); la escena solo lo muestra.
    p.altar=Z.emptyAltar();p.portal=true;this.questFlags.altar=true;
@@ -391,7 +399,7 @@ Object.assign(Z.Game.prototype, {
  portalObject(){return this.world.objects.find(o=>o.type==='portal'&&o.kind==='altar');},
  updatePortals(dt){
   const p=this.player;
-  if(p.portal&&this.biome==='altar'){const o=this.portalObject();if(o&&Math.hypot(p.x-(o.x+o.w/2),p.y-(o.y+o.h/2))<20){this.enterThrone();return;}}
+  if(p.portal&&this.biome==='altar'){const o=this.portalObject();if(o&&Math.hypot(p.x-(o.x+o.w/2),p.y-(o.y+o.h/2))<20){this.enterDimension();return;}}
   if(this.exitPortal&&this.biome==='throne'){
    const ex=this.exitPortal;ex.time-=dt;
    if(Math.hypot(p.x-ex.x,p.y-ex.y)<22){this.leaveThrone();return;}
@@ -402,8 +410,11 @@ Object.assign(Z.Game.prototype, {
   const p=this.player;Object.assign(p,{x:spot.x,y:spot.y,gather:null,roll:0,moving:false,grabbed:0,stunned:0});
   this.projectiles=[];this.enemies.forEach(e=>{e.latched=0;if(!e.summoned)e.alert=false;e.telegraph=0;e.dash=0;});
   this.biome=biome;if(!p.discovered.includes(biome))p.discovered.push(biome);
-  this.renderer.initialized=false;this.clearInput();this.emit('biome',{name:Z.BIOME_NAMES[biome],safe:biome==='village'});
+  this.renderer.initialized=false;this.clearInput();this.emit('biome',{name:Z.BIOME_NAMES[biome],safe:Z.isSafe(biome)});
  },
+ // El portal del altar lleva al Santuario de la dimensión de Zak: de ahí no se vuelve hasta ganarle o perder.
+ enterDimension(){const p=this.player;p.portal=false;this.resetZak();this.sound.play('portal');this.travel(Z.DIMENSION_SPOTS.arrive,'sanctum');
+  this.emit('toast',{message:'Llegaste a la dimensión de Zak. No hay vuelta atrás: el Santuario es seguro y al norte está el Pueblo Mágico.'});},
  enterThrone(){const p=this.player;p.portal=false;this.resetZak();this.sound.play('portal');this.travel(Z.THRONE_SPOTS.arrive,'throne');this.startCutscene('zakIntro');},
  leaveThrone(){const p=this.player;this.resetZak();p.poison=null;p.bleed=null;p.slow=0;p.heavySlow=0;this.sound.play('portal');this.travel(this.world.spawn,'village');}
 });

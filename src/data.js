@@ -123,6 +123,19 @@
       xp: 30, coins: [2, 4], color: '#cfc8b0', visionRange: 260, knockback: true, ranged: true, fixedHealth: true, power: 1.75,
       description: 'Dispara flechas que pegan muy fuerte y siempre trata de mantener la distancia. Se rompe de un golpe.'
     },
+    // Pueblo Mágico (dimensión de Zak). `pace` multiplica su paso; `burn` quema al pegar.
+    mage: {
+      name: 'Mago', base: { health: 90, strength: 18, speed: 14, endurance: 20 },
+      growth: { health: 2.5, strength: 1, speed: 0.3, endurance: 0.8 },
+      xp: 110, coins: [8, 14], color: '#5b4bb0', visionRange: 280, knockback: true, power: 1.5, pace: 0.85, burn: true,
+      description: 'Se queda quieto 2 s conjurando y lanza una bola de fuego que lastima mucho y quema. Siempre trata de mantener la distancia.'
+    },
+    armor: {
+      name: 'Armadura viviente', base: { health: 420, strength: 30, speed: 5, endurance: 75 },
+      growth: { health: 12, strength: 1.4, speed: 0.1, endurance: 1 },
+      xp: 180, coins: [12, 20], color: '#8a929c', visionRange: 200, knockback: false, pace: 0.45,
+      description: 'Hierro hueco con mucha vida y mucho daño. Extremadamente lenta y tarda en pegar, pero gira con la espada y golpea todo a su alrededor.'
+    },
     capo: {
       name: 'El Capo del Eco', boss: true, base: { health: 520, strength: 12, speed: 22, endurance: 35 },
       growth: { health: 30, strength: 0.8, speed: 1, endurance: 1.5 },
@@ -153,6 +166,12 @@
       xp: 2000, coins: [120, 160], color: '#5a4652', visionRange: 250, knockback: false, respawn: 600, drop: 'eye',
       description: 'Custodia el altar de ofrendas: mientras vive, el altar está cerrado. Su mordida desangra; salta y aterriza encima tuyo; si escarba 3 s sin que le pegues, se cura entero.'
     },
+    archmage: {
+      name: 'El Rey Mago', boss: true, base: { health: 2600, strength: 30, speed: 55, endurance: 55 },
+      growth: { health: 110, strength: 1.2, speed: 0.6, endurance: 1 },
+      xp: 3000, coins: [160, 220], color: '#4b3fa0', visionRange: 300, knockback: false, respawn: 600, drop: 'sphere', key: true, burn: true,
+      description: 'Custodia la puerta del trono. Se teletransporta antes de atacar: bolas de fuego en estrella, zona de curación (pegale para cortarla), invoca armaduras y el Láser reloj, que termina en una onda que solo se esquiva rodando.'
+    },
     zak: {
       name: 'Zak', boss: true, base: { health: 20000, strength: 40, speed: 22, endurance: 85 },
       growth: { health: 400, strength: 1.5, speed: 0.2, endurance: 0.3 },
@@ -166,9 +185,12 @@
     ring: { name: 'Anillo de la mafia', icon: '💍', price: 1000, boss: 'capo' },
     claw: { name: 'Garra Sangrienta', icon: '🩸', price: 1000, boss: 'vampire' },
     elemental: { name: 'Piedra Elemental', icon: '🔮', price: 2000, boss: 'golem' },
-    eye: { name: 'Ojo del alma', icon: '👁', price: 2000, boss: 'cerbero' }
+    eye: { name: 'Ojo del alma', icon: '👁', price: 2000, boss: 'cerbero' },
+    // No va al altar: es un trofeo del Rey Mago que se vende en El Almacén.
+    sphere: { name: 'Esfera mágica', icon: '🌀', price: 3000, boss: 'archmage', altar: false }
   };
-  Zak.emptyOfferings = () => ({ fang: 0, ring: 0, claw: 0, elemental: 0, eye: 0 });
+  Zak.ALTAR_OFFERINGS = Object.keys(Zak.OFFERINGS).filter(k => Zak.OFFERINGS[k].altar !== false);
+  Zak.emptyOfferings = () => ({ fang: 0, ring: 0, claw: 0, elemental: 0, eye: 0, sphere: 0 });
   Zak.emptyAltar = () => ({ fang: false, ring: false, claw: false, elemental: false, eye: false });
   Zak.ELEMENTAL_RECIPE = { coins: 0, materials: { wood: 10, stone: 25, iron: 20, gold: 15, diamond: 10 }, offerings: { elemental: 5 } };
   // Parte de la fuerza que se convierte en daño: 72% para los enemigos comunes y 68% para los jefes.
@@ -281,8 +303,8 @@
       playTime: 0, discovered: ['village'],
       coins: 0, herbs: 0, sharpen: 0, lessons: 0,
       materials: Zak.emptyMaterials(), axe: 0, pickaxe: 0, torch: false,
-      offerings: Zak.emptyOfferings(), altar: Zak.emptyAltar(), portal: false,
-      stunned: 0, grabbed: 0, bleed: null, heavySlow: 0,
+      offerings: Zak.emptyOfferings(), altar: Zak.emptyAltar(), portal: false, throneKeys: 0, zakBest: 0,
+      stunned: 0, grabbed: 0, bleed: null, burn: null, heavySlow: 0,
       weaponLevels: { fists: 1, bow: 1, sword: 1, stone: 1 }, gather: null,
       combo: 0, comboTime: 0, roll: 0, rollCooldown: 0, rollX: 0, rollY: 1
     };
@@ -359,7 +381,7 @@
     // `power` multiplica el daño después del tope de fuerza (las flechas del arquero).
     stats.strength *= (definition.boss ? Zak.BOSS_DAMAGE : Zak.ENEMY_DAMAGE) * (definition.power || 1);
     stats.maxHealth = stats.health;
-    stats.moveSpeed = Zak.speedBand(stats.speed).moveSpeed * (definition.boss ? Zak.BOSS_PACE : 1);
+    stats.moveSpeed = Zak.speedBand(stats.speed).moveSpeed * (definition.boss ? Zak.BOSS_PACE : 1) * (definition.pace || 1);
     stats.attackCooldown = Zak.speedBand(stats.speed).attackCooldown;
     stats.armor = Zak.enduranceBand(stats.endurance).armor;
     // Los jefes suben su experiencia el doble de rápido que los enemigos comunes.
@@ -368,6 +390,12 @@
   };
 
   // Cada nivel cuesta más que el anterior; desde el 50 además se encarece un 3% por nivel.
+  // Tiempo legible: 75 → «1:15», 3725 → «1:02:05».
+  Zak.formatTime = function (seconds) {
+    const s = Math.max(0, Math.round(finite(seconds))), h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60), r = s % 60;
+    return (h ? h + ':' + String(m).padStart(2, '0') : m) + ':' + String(r).padStart(2, '0');
+  };
+
   Zak.xpNeeded = function (level) {
     const n = Math.max(1, Math.floor(finite(level, 1))) - 1;
     return Math.round((100 + 50 * n + 5 * n * n) * Math.pow(1.03, Math.max(0, n - 49)));

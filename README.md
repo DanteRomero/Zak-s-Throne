@@ -21,7 +21,7 @@ El juego funciona directamente desde sus archivos: no requiere servidor, instala
 | Moverse | WASD o flechas |
 | Correr | Mantener Shift mientras te movés |
 | Atacar | Espacio o clic en el mundo |
-| Rodar y esquivar | F o clic derecho (hacia el puntero) |
+| Rodar y esquivar | Ctrl o clic derecho (hacia donde te movés; quieto, hacia donde mirás) |
 | Habilidad activa | Q |
 | Recoger / usar el pozo / comprar / hablar con el herrero / bajar y subir / dejar ofrendas en el altar | E |
 | Talar o picar | E cerca del árbol o la veta, y quedarse quieto |
@@ -46,7 +46,7 @@ El juego se adapta al tamaño de pantalla; en teléfonos conviene usar orientaci
 
 ## Ranking de amigos
 
-Desde el menú principal o la pausa, **Ranking de amigos** muestra nivel, enemigos derrotados y jefes vencidos de cada partida, con pestañas para ordenar por cada uno. El nombre se elige al seleccionar el personaje.
+Desde el menú principal o la pausa, **Ranking de amigos** muestra nivel, enemigos derrotados y jefes vencidos de cada partida, con pestañas para ordenar por cada uno. La pestaña **Récord Zak** muestra a quienes vencieron a Zak, del más rápido al más lento: cuenta el tiempo de la pelea, desde que termina su presentación hasta vaciarle la última vida, y guarda el mejor de cada partida. El nombre se elige al seleccionar el personaje.
 
 Sin configuración, el ranking muestra las partidas de cada dispositivo. Para compartirlo entre todos los dispositivos, seguí [docs/RANKING.md](docs/RANKING.md): se conecta un proyecto gratuito de Supabase pegando dos valores en `src/config.js`.
 
@@ -64,7 +64,10 @@ Los guardados se conservan en el almacenamiento local del navegador usado para j
 - **Cueva Profunda (Nvl 2):** se baja por la escalera del fondo noroeste de la Cueva del Eco; **hace falta una antorcha y haber vencido al Capo**. Está a oscuras: ves lo que alumbra la antorcha. Hay murciélagos, arañas, hierro y oro, y **no crecen hierbas medicinales**. En su extremo sureste baja otra escalera, custodiada por **El Chupasangre**.
 - **Las Entrañas (Nvl 3):** pocos gusanos de tierra, enterrados hasta que te acercás, las únicas vetas de diamante y **El Gólem Minero**.
 - **Altar del gobernante:** un cementerio al oeste de la aldea; se entra por el portón al final de la calle principal. Lo pueblan esqueletos con escudo y esqueletos arqueros. **Cerbero** custodia el altar de ofrendas.
-- **Trono de Zak:** sala gótica de ladrillo negro, siempre de noche pero bien visible. Se llega solo por el portal del altar. No hay enemigos: solo **Zak** y su trono.
+- **Dimensión de Zak:** el portal del altar lleva acá, y **no se sale** hasta vencer o perder contra Zak. Tiene dos partes, con el mismo estilo oscuro y violeta del trono:
+  - **Santuario** (zona segura): una fuente que, como el pozo de la aldea, devuelve la vida y la energía y apaga las quemaduras.
+  - **Pueblo Mágico** (al norte): carpas, fogatas, magos y armaduras vivientes. **Pisar una fogata quema**: 2 de vida por segundo durante 5 s, ignorando la armadura (rodar no te salva). Al fondo, el **Rey Mago** custodia la **puerta del trono**, que se abre con su **Llave del trono** (se gasta al usarla).
+- **Trono de Zak:** sala gótica de ladrillo negro, siempre de noche pero bien visible. Se llega solo por la puerta del Pueblo Mágico. No hay enemigos: solo **Zak** y su trono.
 
 Las bajadas custodiadas no se abren mientras su jefe esté vivo; si reaparece mientras estás abajo, subir siempre se puede. El mapa marca el almacén ($), el herrero (⚒), las bajadas (▼ ▲), el altar (✝) y las guaridas de los jefes (☠). Dentro de una cueva profunda o del trono, el mapa muestra esa zona. Los enemigos vuelven a aparecer después de **35 segundos**; el Capo y la Yarará, después de **3 minutos**; el Chupasangre, de 4; el Gólem, de 5; y Cerbero, de 10.
 
@@ -72,7 +75,7 @@ Al quedar noqueado volvés a la aldea. Si te vence un chorro aparece «Uhh... es
 
 ## Combate
 
-- **Rodar (F o clic derecho):** una voltereta rápida que gasta 20% de energía. Mientras dura (0,3 s) ningún golpe ni proyectil te hace daño; el veneno que ya tenés sigue actuando. Rodar también te saca de encima una rata prendida. No se puede rodar agotado.
+- **Rodar (Ctrl o clic derecho):** una voltereta rápida hacia donde te movés (quieto, hacia donde mirás) que gasta 20% de energía. Mientras dura (0,3 s) ningún golpe ni proyectil te hace daño; el veneno que ya tenés sigue actuando. Rodar también te saca de encima una rata prendida. No se puede rodar agotado.
 - **Combos:** cada golpe que conecta suma al combo si no dejás pasar mucho tiempo. El **cuarto golpe seguido es crítico** e inflige ×1,75. El HUD muestra el combo y avisa con ✦ cuando el próximo golpe es crítico.
 - Los golpes producen chispas, la cámara se sacude con críticos y daño fuerte, y la pantalla destella al recibir daño.
 
@@ -96,6 +99,7 @@ Cada objetivo del diario también da guita, una sola vez. Se reclama en el diari
 | Llegar a Las Entrañas | 50 |
 | Derrotar al Chupasangre | 60 |
 | Dejar las cinco ofrendas en el altar | 60 |
+| Derrotar al Rey Mago | 150 |
 | Derrotar al Gólem Minero | 80 |
 | Forjar la Espada Elemental | 100 |
 | Derrotar a Cerbero | 100 |
@@ -119,6 +123,9 @@ El Almacén también **compra las ofrendas** de los jefes, una por vez:
 | 🩸 Garra Sangrienta | El Chupasangre | 1000 |
 | 🔮 Piedra Elemental | El Gólem Minero | 2000 |
 | 👁 Ojo del alma | Cerbero | 2000 |
+| 🌀 Esfera mágica | El Rey Mago | 3000 |
+
+La Esfera mágica no va al altar: es un trofeo que solo sirve para vender. El Rey Mago también suelta siempre una **🗝 Llave del trono**.
 
 ## Materiales, herramientas y El Taller
 
@@ -174,6 +181,7 @@ Escalan con tu nivel como el resto de los enemigos, no retroceden con los golpes
 | El Chupasangre | Junto a la bajada al Nvl 3 | 990 | 15 | 35 | 40 |
 | El Gólem Minero | Las Entrañas | 462 por vida (×1; ×1,15; ×1,3; ×1,5) | 22 | 10 | 65 |
 | Cerbero | Altar del gobernante | 1760 | 20 | 62 | 50 |
+| El Rey Mago | Pueblo Mágico, frente a la puerta del trono | 2860 | 30 | 55 | 55 |
 | Zak | Trono de Zak | 22000 por vida (+440 por nivel, y la vida extra desde el nivel 8), 3 vidas | — | 22 | 85 |
 
 Son los valores en nivel 1; todos crecen con tu nivel. Hacen el **68%** de su fuerza como daño (los enemigos comunes, el 72%) y tienen un **10% más de vida** que la base de su ficha (los enemigos comunes, un 20% más). La tabla ya incluye ese extra. Desde el nivel 8 ganan **4%** de vida extra por nivel, como el resto. Entre el aviso y el golpe hay tiempo de reaccionar: entre 0,6 y 1 s para embestidas, saltos y golpes al piso, y menos de medio segundo para los golpes cortos. Caminan un **25% más lento** que lo que indica su velocidad, pero hacen todo a un **ritmo 20% mayor**: preparan, atacan, se mueven y recargan sus ataques antes (los tiempos de aviso de esta sección ya son más cortos en la práctica).
@@ -182,11 +190,12 @@ Son los valores en nivel 1; todos crecen con tu nivel. Hacen el **68%** de su fu
 - **La Yarará Madre:** te persigue. Colazo en anillo alrededor suyo (marca un círculo rosado: rodá o alejate). Antes de escupir el abanico de veneno retrocede un poco y marca tres líneas (50% de envenenar; 15% contra Fede).
 - **El Chupasangre:** *Embestida sangrienta* (línea roja; si te alcanza te agarra 1,7 s, te chupa la sangre tres veces y se cura 4% de su vida por mordida), *Manotazo* (dos golpes rápidos de corto alcance) e *Invocación* (se aleja y llama a cinco murciélagos).
 - **El Gólem Minero:** cuatro vidas, de piedra, hierro, oro y diamante; cada una tiene más vida y fuerza y se rearma con una animación del material. *Terremoto*: cuatro golpes al piso, cada uno avisado con un anillo naranja 0,9 s antes, con mucho daño en área. *Piedrazo*: aturde 3 s. *Refuerzo*: invencible 5 s cada 15 s, y al instante al bajar del 30% de vida (una vez por vida).
+- **El Rey Mago:** casi siempre se **teletransporta** lejos tuyo antes de atacar (mientras se esfuma no se le puede pegar). *Bolas de fuego*: cinco en estrella, 130% de su fuerza, y queman. *Zona de curación*: un círculo verde donde se cura 150 de vida por segundo durante 10 s y que te lastima si entrás; **pegale para cortarla**. *Invocación*: cinco armaduras vivientes. *Láser reloj*: cuatro rayos que giran como aspas cada vez más rápido durante 5 s y terminan en una **onda expansiva de alcance infinito** que solo se esquiva **rodando** justo cuando te llega (180% de su fuerza). Suelta la Esfera mágica y la Llave del trono.
 - **Cerbero:** *Mordida* que desangra (5 de vida por segundo durante 5 s, ignora la armadura). *Jugueteo*: salta, sigue tu posición y aterriza en el círculo rojo; si te alcanza vas a la mitad de velocidad 5 s. Mientras está en el aire no se le puede pegar. *Escarbar*: si en 3 s no le pegás, se cura entero.
 
 ### El Trono de Zak
 
-En el altar del cementerio se deja **una ofrenda de cada jefe** (E). Si tenés varias del mismo tipo, toma una sola; las que dejás quedan guardadas aunque te vayas. Mientras Cerbero esté vivo, el altar está cerrado. Con las cinco, una escena muestra cómo las ofrendas suben, giran, chocan entre rayos y abren un **portal violeta**: tocalo para entrar al Trono de Zak. Al entrar, Zak te recibe con una escena («¿Y vos quién sos?»…) y recién después empieza la pelea. Cada visita gasta un juego completo de ofrendas.
+En el altar del cementerio se deja **una ofrenda de cada jefe** (E). Si tenés varias del mismo tipo, toma una sola; las que dejás quedan guardadas aunque te vayas. Mientras Cerbero esté vivo, el altar está cerrado. Con las cinco, una escena muestra cómo las ofrendas suben, giran, chocan entre rayos y abren un **portal violeta**: tocalo para entrar a la dimensión de Zak. Al entrar, Zak te recibe con una escena («¿Y vos quién sos?»…) y recién después empieza la pelea. Cada visita gasta un juego completo de ofrendas.
 
 Cualquier golpe de Zak se lleva el **52%** de tu vida máxima, sin importar la armadura: dos golpes alcanzan.
 
@@ -291,6 +300,8 @@ Casi todos comparten un radio de detección de **195 píxeles**. Tienen **el mis
 | Gusano de tierra | 100 | 10 | 18 | 62 | +4 / +0,75 / +0,5 / +1 |
 | Esqueleto con escudo | 100 | 18 | 8 | 35 | +1,5 / +1 / +0,2 / +1 |
 | Esqueleto arquero | 1 | 18 | 30 | 0 | +0 / +1 / +0,5 / +0 |
+| Mago | 90 | 18 | 14 | 20 | +2,5 / +1 / +0,3 / +0,8 |
+| Armadura viviente | 420 | 30 | 5 | 75 | +12 / +1,4 / +0,1 / +1 |
 
 - Los **chorros** atacan con cuchillo y no retroceden al recibir golpes.
 - Los **perros** reducen el movimiento un 15% durante 4 segundos; contra Pepe, un 20%.
@@ -301,6 +312,8 @@ Casi todos comparten un radio de detección de **195 píxeles**. Tienen **el mis
 - Los **gusanos de tierra** (Las Entrañas) esperan enterrados, salen cuando te acercás a unos 120 píxeles y absorben 6 de daño por golpe. Reaparecen a los 90 segundos. Para pelear cómodo en los niveles profundos conviene llevar armas mejoradas.
 - Los **esqueletos con escudo** (cementerio) son lentos, pegan fuerte y tienen 15% de probabilidad de bloquear cada golpe.
 - Los **esqueletos arqueros** (cementerio) te ven desde 260 píxeles, disparan flechas cada 1,7 s y se alejan si te acercás. Sus flechas pegan un **75% más** que su fuerza (también por encima del tope de 100). Se rompen de un golpe.
+- Los **magos** (Pueblo Mágico) se quedan quietos **2 s conjurando** (un anillo naranja se va llenando) y tiran una **bola de fuego** que pega un 50% más que su fuerza y **quema**. Caminan algo lento y siempre buscan distancia.
+- Las **armaduras vivientes** (Pueblo Mágico) tienen mucha vida y armadura, caminan muy despacio y tardan en pegar: levantan la espada 1,1 s (círculo rojo) y **giran**, golpeando todo a su alrededor con el 150% de su fuerza.
 
 Los ataques empujan a perros, serpientes y ratas; las ratas prendidas deben terminar su agarre. Los aumentos propios de vida de cada enemigo se aplican según la tabla, sin sumarles los 2 de vida automáticos del jugador. El daño de veneno también respeta el límite de fuerza de 100.
 

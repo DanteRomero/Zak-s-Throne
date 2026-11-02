@@ -402,7 +402,7 @@
       const rewards = Object.fromEntries(game.questsWithRewards().map(q => [q.id, q.reward]));
       ok(rewards.deepest > rewards.capo && rewards.capo > rewards.level5 && rewards.level5 > rewards.sword && rewards.sword > rewards.bow);
       ok(rewards.zak > rewards.cerbero && rewards.cerbero > rewards.golem && rewards.golem > rewards.vampire && rewards.vampire > rewards.deepest);
-      ok(Object.values(rewards).reduce((a, b) => a + b, 0) <= 1000, 'Total stays modest');
+      ok(Object.values(rewards).reduce((a, b) => a + b, 0) <= 1200, 'Total stays modest');
     });
     test('Goals completed before rewards existed can still be claimed after loading', () => {
       const p = fixture('gero', true); p.weapons.push('bow', 'sword'); game.questFlags.defeat_capo = true; game.checkQuests();
@@ -439,6 +439,16 @@
       equal(save.balance >= 2, true, 'New saves are already balanced'); delete save.balance;
       ok(Z.Game.migrateSave(save)); equal(save.player.level, 21); equal(save.player.coins, 50 + Z.REBALANCE_GIFT); equal(save.player.points, 7); equal(save.player.stats.strength, 33);
       ok(Z.Game.validateSave(save)); equal(Z.Game.migrateSave(save), false, 'Only once');
+    });
+    test('Ctrl and right click roll where you are moving, not toward the mouse', () => {
+      const p = fixture(); const key = (type, k, extra = {}) => document.body.dispatchEvent(new KeyboardEvent(type, {key: k, bubbles: true, ...extra}));
+      key('keydown', 'f'); equal(p.roll, 0, 'F no longer rolls'); key('keyup', 'f');
+      key('keydown', 'd'); key('keydown', 'Control', {ctrlKey: true}); ok(p.roll > 0, 'Ctrl rolls'); near(p.rollX, 1); near(p.rollY, 0);
+      key('keyup', 'Control'); key('keyup', 'd'); advance(1.2);
+      game.keys.add('w'); const r = game.canvas.getBoundingClientRect();
+      game.canvas.dispatchEvent(new PointerEvent('pointerdown', {button: 2, clientX: r.right - 1, clientY: r.top + r.height / 2, bubbles: true}));
+      ok(p.roll > 0, 'Right click rolls'); near(p.rollX, 0, 'Not toward the mouse'); near(p.rollY, -1, 'Toward where you move'); game.keys.clear(); advance(1.2);
+      p.dir = 'left'; ok(game.roll()); near(p.rollX, -1, 'Standing still: where you look');
     });
     test('The skeleton archer keeps its distance and shoots arrows', () => {
       const p = fixture(); const archer = enemy('archer', p.x + 90); archer.cooldown = 0; const start = archer.x;
@@ -493,7 +503,7 @@
       killBoss('cerbero'); Object.assign(q.offerings, {claw: 1, elemental: 1, eye: 1}); ok(game.useAltar()); equal(q.portal, true); equal(Object.values(q.altar).some(Boolean), false, 'They break');
       equal(game.cutscene && game.cutscene.id, 'altar', 'Epic scene plays'); game.finishCutscene(); equal(game.cutscene, null);
       const portal = game.world.objects.find(o => o.type === 'portal'); Object.assign(q, {x: portal.x + portal.w / 2, y: portal.y + portal.h / 2}); game.biome = 'altar';
-      advance(.05); equal(game.biome, 'throne'); equal(q.portal, false); ok(q.discovered.includes('throne')); equal(game.cutscene.id, 'zakIntro');
+      advance(.05); equal(game.biome, 'sanctum', 'The portal leads to the Sanctum'); equal(q.portal, false); ok(q.discovered.includes('sanctum')); equal(game.cutscene, null);
     });
     test('During the storm only the stone hurts Zak, and a bolt kills', () => {
       const p = fixture('gero', true); game.enterThrone(); game.finishCutscene(); const zak = game.enemies.find(e => e.type === 'zak');
@@ -534,6 +544,62 @@
       game.advanceCutscene(); ok((game.cutscene.t - line.at) * Z.CUTSCENE_CPS >= line.text.length, 'E completes the line'); equal(game.cutscene.line, line);
       game.advanceCutscene();
       equal(game.cutscene.line.text, '¿Qué hacés acá?', 'E skips to the next line');
+    });
+    test('The altar portal leads to the Sanctum: safe, with a fountain, and the Magic Village up north', () => {
+      const p = fixture('gero', true); game.enterDimension(); equal(game.biome, 'sanctum'); ok(Z.isSafe('sanctum'));
+      const hp = p.hp; ok(!game.hurtPlayer(50, 'mage'), 'Nothing hurts in the Sanctum'); equal(p.hp, hp);
+      p.hp = 10; p.burn = {time: 5, tick: 1, damage: 2}; const well = game.world.objects.find(o => o.type === 'well' && o.dark);
+      Object.assign(p, {x: well.x + well.w / 2, y: well.y + well.h + 12}); game.interact(); equal(p.hp, game.stats().maxHealth, 'The fountain heals'); equal(p.burn, null);
+      Object.assign(p, {x: 600, y: 3300}); advance(.05); equal(game.biome, 'magic'); ok(!Z.isSafe('magic'));
+      ok(game.enemies.some(e => e.type === 'archmage') && game.enemies.filter(e => e.type === 'mage').length >= 5 && game.enemies.filter(e => e.type === 'armor').length >= 4);
+    });
+    test('Campfires burn 2 per second for 5 seconds', () => {
+      const p = fixture('gero', true); game.enterDimension(); game.enemies = []; const fire = game.world.objects.find(o => o.type === 'campfire');
+      Object.assign(p, {x: fire.x + fire.w / 2, y: fire.y + fire.h / 2}); game.biome = 'magic'; advance(.05); ok(p.burn && p.burn.damage === 2, 'Burning');
+      p.x += 60; const hp = p.hp; advance(5.2); near(hp - p.hp, 10, '2 per second for 5 s'); equal(p.burn, null);
+    });
+    test('Mages stand still 2 s casting, then throw a fireball that burns; they keep their distance', () => {
+      const p = fixture(); const mage = enemy('mage', p.x + 250); mage.cooldown = 0; mage.alert = true;
+      advance(.1); equal(mage.act && mage.act.id, 'cast'); const x = mage.x; advance(1.5); equal(mage.x, x, 'Still while casting');
+      ok(!game.projectiles.some(s => s.type === 'fireball'), 'Not yet'); advance(.5); ok(game.projectiles.some(s => s.type === 'fireball' && s.burn >= 2), 'Fireball');
+      advance(2); ok(p.burn, 'It burns'); const near2 = enemy('mage', p.x + 60); near2.cooldown = 9; near2.alert = true; const d = Math.abs(near2.x - p.x); advance(.5); ok(Math.abs(near2.x - p.x) > d, 'Backs away');
+    });
+    test('Living armors are very slow and spin their sword around them', () => {
+      const p = fixture(); const armor = enemy('armor', p.x + 40); armor.cooldown = 0; ok(armor.stats.moveSpeed < 40, 'Extremely slow');
+      advance(.05); equal(armor.act && armor.act.id, 'spin'); const hp = p.hp; advance(.9); equal(p.hp, hp, 'Slow to hit');
+      advance(.3); ok(p.hp < hp, 'Spin hits around'); const behind = p.hp; armor.act = null; armor.cooldown = 0; p.x = armor.x - 30; advance(1.3); ok(p.hp < behind, 'Also behind it');
+    });
+    test('The Archmage teleports, heals unless you hit him, summons armors and ends the clock laser with a wave you must roll', () => {
+      const p = fixture('gero', true); game.enterDimension(); const king = game.enemies.find(e => e.type === 'archmage');
+      game.enemies = [king]; Object.assign(p, {x: king.x, y: king.y + 120}); game.biome = 'magic'; p.stats.health = 5000; p.hp = 5000; let calls = 0; Math.random = () => calls++ ? original.random() : .1;
+      king.cd = {nova: 0, heal: 99, summon: 99, laser: 99, ready: 1}; advance(.05); equal(king.act.id, 'teleport'); const from = {x: king.x, y: king.y};
+      const hp = king.hp; game.hitEnemy(king, 500, true); equal(king.hp, hp, 'Untouchable while vanishing'); advance(.7);
+      ok(Math.hypot(king.x - from.x, king.y - from.y) > 50, 'He moved'); ok(Math.hypot(king.x - p.x, king.y - p.y) >= 200, 'Far from you');
+      const thrown = []; game.fireball = function (...args) { thrown.push(args); return Z.Game.prototype.fireball.apply(this, args); };
+      advance(.8); delete game.fireball; equal(thrown.length, 5, 'Five fireballs around'); ok(thrown.every(t => t[3] >= 2), 'They burn');
+      game.projectiles = []; Math.random = () => .9; king.act = null; king.hp = king.maxHp * .5; king.cd = {nova: 99, heal: 0, summon: 99, laser: 99, ready: 1};
+      advance(.05); equal(king.act.id, 'heal'); const low = king.hp; advance(2); ok(king.hp > low + 250, 'Heals ~150/s'); game.hitEnemy(king, 1, true); equal(king.act, null, 'A hit cancels it');
+      king.cd = {nova: 99, heal: 99, summon: 0, laser: 99, ready: 1}; advance(1.2); equal(game.enemies.filter(e => e.type === 'armor' && e.summoned).length, 5, 'Five armors');
+      game.enemies = [king]; king.act = null; king.cd = {nova: 99, heal: 99, summon: 99, laser: 0, ready: 1}; Object.assign(p, {x: king.x + (king.x < 600 ? 200 : -200), y: king.y});
+      advance(.05); equal(king.act.id, 'laser'); p.hp = 5000; advance(5.05);
+      const a = king.act; ok(a && a.wave !== undefined, 'Wave after the lasers'); const d = Math.hypot(p.x - king.x, (p.y - king.y) / .75);
+      while (king.act && a.wave + 60 < d) advance(1 / 60); const before = p.hp; p.rollCooldown = 0; p.stamina = 1; ok(game.roll()); advance(.25); equal(p.hp, before, 'Rolling dodges the wave');
+    });
+    test('The Archmage drops the Magic Sphere and the throne key; the key opens the door to Zak', () => {
+      const p = fixture('gero', true); game.enterDimension(); const king = game.enemies.find(e => e.type === 'archmage'); game.biome = 'magic';
+      game.hitEnemy(king, 1e9, true); equal(king.dead, true); collectDrops(); collectDrops(); equal(p.offerings.sphere, 1); equal(p.throneKeys, 1); ok(game.questFlags.defeat_archmage);
+      ok(Z.Game.prototype.sellOptions.call(game).some(o => o.id === 'sphere' && o.price === 3000), 'It sells');
+      const door = game.world.objects.find(o => o.type === 'door'); Object.assign(p, {x: door.x + door.w / 2, y: door.y + door.h + 14});
+      p.throneKeys = 0; game.interact(); equal(game.biome, 'magic', 'Locked without the key'); p.throneKeys = 1; game.interact();
+      equal(game.biome, 'throne'); equal(p.throneKeys, 0, 'The key is used'); equal(game.cutscene.id, 'zakIntro');
+      ok(!Z.ALTAR_OFFERINGS.includes('sphere'), 'The sphere is not an altar offering');
+    });
+    test('Beating Zak saves the fastest fight as a record', () => {
+      const p = fixture('gero', true); game.enterThrone(); game.finishCutscene(); const zak = game.enemies.find(e => e.type === 'zak');
+      game.time += 125; zak.life = 2; game.hitEnemy(zak, 1e9, true); ok(Math.abs(p.zakBest - 125) < .1, 'Record');
+      game.resetZak(); game.enterThrone(); game.finishCutscene(); game.time += 300; const z2 = game.enemies.find(e => e.type === 'zak'); z2.life = 2; game.hitEnemy(z2, 1e9, true);
+      ok(Math.abs(p.zakBest - 125) < .1, 'A slower win keeps the record');
+      const save = game.snapshot(); game.restore(save, 1); ok(Math.abs(game.player.zakBest - 125) < .1, 'Saved'); equal(Z.formatTime(125), '2:05'); equal(Z.formatTime(3725), '1:02:05');
     });
     test('Taking the exit portal brings you home and resets Zak', () => {
       const p = fixture('gero', true); game.enterThrone(); game.finishCutscene(); const zak = game.enemies.find(e => e.type === 'zak'); zak.life = 2; game.hitEnemy(zak, 1e9, true);

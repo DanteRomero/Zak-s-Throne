@@ -25,7 +25,8 @@ function normalize(entry) {
     run_id: String(entry.run_id), player_id: String(entry.player_id || ''), name: cleanName(entry.name) || 'Anónimo',
     character: Z.CHARACTERS.some(c => c.id === entry.character) ? entry.character : 'gero',
     level: Math.max(1, int(entry.level, 500)), kills: int(entry.kills, 1e5), bosses: int(entry.bosses, 1e4),
-    play_time: int(entry.play_time, 1e7), updated_at: String(entry.updated_at || '')
+    play_time: int(entry.play_time, 1e7), zak_time: Number(entry.zak_time) > 0 ? Math.max(1, int(entry.zak_time, 1e7)) : null,
+    updated_at: String(entry.updated_at || '')
   };
 }
 // Partidas borradas que todavía no se pudieron quitar del servidor (por ejemplo, sin conexión).
@@ -33,8 +34,13 @@ function pendingDeletes() { const list = readJson(DELETE_KEY, []); return Array.
 const SORTS = {
   level: (a, b) => b.level - a.level || b.kills - a.kills || b.bosses - a.bosses,
   kills: (a, b) => b.kills - a.kills || b.level - a.level,
-  bosses: (a, b) => b.bosses - a.bosses || b.level - a.level || b.kills - a.kills
+  bosses: (a, b) => b.bosses - a.bosses || b.level - a.level || b.kills - a.kills,
+  // Récord contra Zak: el menor tiempo gana; quienes no lo vencieron van al final.
+  zak: (a, b) => (a.zak_time || Infinity) - (b.zak_time || Infinity) || b.level - a.level
 };
+// Columnas de la tabla. `zak_time` se agregó en la v2.7 (ver docs/RANKING.md): si el servidor todavía no la tiene,
+// se reintenta sin ella para que el resto del ranking siga andando.
+const COLUMNS = 'run_id,player_id,name,character,level,kills,bosses,play_time,updated_at';
 Z.Ranking = {
   online, SORTS,
   profile() {
@@ -46,7 +52,7 @@ Z.Ranking = {
   entryFor(game) {
     const p = game.player; if (!ID_PATTERN.test(String(p.runId || ''))) p.runId = uid();
     const profile = this.profile();
-    return normalize({ run_id: p.runId, player_id: profile.id, name: profile.name, character: p.characterId, level: p.level, kills: p.kills, bosses: p.bossKills, play_time: p.playTime, updated_at: new Date().toISOString() });
+    return normalize({ run_id: p.runId, player_id: profile.id, name: profile.name, character: p.characterId, level: p.level, kills: p.kills, bosses: p.bossKills, play_time: p.playTime, zak_time: p.zakBest > 0 ? Math.round(p.zakBest) : null, updated_at: new Date().toISOString() });
   },
   local() { const list = readJson(LOCAL_KEY, []); return Array.isArray(list) ? list.map(normalize).filter(Boolean) : []; },
   saveLocal(entry) { const list = this.local().filter(e => e.run_id !== entry.run_id); list.push(entry); writeJson(LOCAL_KEY, list.slice(-200)); },
@@ -69,17 +75,25 @@ Z.Ranking = {
     const entry = this.entryFor(game); this.saveLocal(entry);
     if (!online()) return { online: false, entry };
     this.flushDeletes().catch(() => {});
-    const response = await fetch(endpoint() + '?on_conflict=run_id', {
-      method: 'POST', body: JSON.stringify(entry),
+    const body = { ...entry }; if (body.zak_time === null) delete body.zak_time;
+    const post = data => fetch(endpoint() + '?on_conflict=run_id', {
+      method: 'POST', body: JSON.stringify(data),
       headers: { ...headers(), 'Content-Type': 'application/json', Prefer: 'resolution=merge-duplicates,return=minimal' }
     });
+    let response = await post(body);
+    if (response.status === 400 && 'zak_time' in body) { delete body.zak_time; response = await post(body); }
     if (!response.ok) throw new Error('el servidor respondió ' + response.status);
     return { online: true, entry };
   },
   async list(sort = 'level') {
-    const order = { level: 'level.desc,kills.desc', kills: 'kills.desc,level.desc', bosses: 'bosses.desc,level.desc' }[sort] || 'level.desc';
+    const order = { level: 'level.desc,kills.desc', kills: 'kills.desc,level.desc', bosses: 'bosses.desc,level.desc', zak: 'zak_time.asc.nullslast,level.desc' }[sort] || 'level.desc';
     if (!online()) return { online: false, entries: this.local().sort(SORTS[sort] || SORTS.level) };
-    const response = await fetch(endpoint() + '?select=run_id,player_id,name,character,level,kills,bosses,play_time,updated_at&order=' + order + '&limit=100', { headers: headers() });
+    const query = columns => endpoint() + '?select=' + columns + '&order=' + order + (sort === 'zak' ? '&zak_time=not.is.null' : '') + '&limit=100';
+    let response = await fetch(query(COLUMNS + ',zak_time'), { headers: headers() });
+    if (response.status === 400) {
+      if (sort === 'zak') throw new Error('falta la columna zak_time en Supabase (ver docs/RANKING.md)');
+      response = await fetch(query(COLUMNS), { headers: headers() });
+    }
     if (!response.ok) throw new Error('el servidor respondió ' + response.status);
     const data = await response.json(), hidden = new Set(pendingDeletes());
     return { online: true, entries: (Array.isArray(data) ? data : []).map(normalize).filter(entry => entry && !hidden.has(entry.run_id)).sort(SORTS[sort] || SORTS.level) };
