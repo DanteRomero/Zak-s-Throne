@@ -6,6 +6,10 @@ Cada versión lista sus cambios agrupados por tipo:
 - **Change:** algo que ya existía y ahora funciona distinto.
 - **Fix:** un error corregido.
 
+## v2.7 — 2026-11-03
+* Change
+    - **Respiro de Zak:** después de cada ataque se queda quieto 2 s, sin perseguirte ni atacar, para que puedas pegarle cuerpo a cuerpo. Los tres espadazos ahora tardan 3,5 s en volver a estar listos (antes 2 s).
+
 ## v2.6 — 2026-11-01
 * Feature
     - **Dimensión de Zak:** el portal del altar ya no lleva directo al trono, sino a una dimensión de la que no se sale hasta vencer o perder contra Zak. Tiene el estilo oscuro y violeta del trono.

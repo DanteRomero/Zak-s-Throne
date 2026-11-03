@@ -515,6 +515,13 @@
       const p = fixture('gero', true); p.stats.health = 400; p.hp = 400; p.stats.endurance = 100; game.enterThrone(); game.finishCutscene(); const zak = game.enemies.find(e => e.type === 'zak');
       game.zakHit(zak, 1); ok(p.hp > 0 && p.hp <= 400 * .48 + 1e-6, 'One hit takes more than half'); game.zakHit(zak, 1); equal(game.state, 'paused');
     });
+    test('Zak stands still after an attack, leaving an opening for melee', () => {
+      const p = fixture('gero', true); game.enterThrone(); game.finishCutscene(); const zak = game.enemies.find(e => e.type === 'zak');
+      Object.assign(zak, {x: p.x + 60, y: p.y, act: {id: 'slash', t: 2.09, done: 2, swing: 2}, cd: {slash: 0, raise: 99, storm: 99, wrath: 99, purple: 99, major: 99, boomerang: 99, ready: 1}});
+      advance(.05); equal(zak.act, null, 'The combo ended'); ok(zak.cd.rest > 0, 'He rests'); const x = zak.x, y = zak.y; zak.cd.slash = 0;
+      advance(1.5); equal(zak.act, null, 'No attack while resting'); near(zak.x, x, 'He does not chase'); near(zak.y, y, 'He does not chase'); equal(zak.moving, false);
+      advance(.6); equal(zak.act && zak.act.id, 'slash', 'Then he attacks again');
+    });
     test('Major summon: Zak sits on his throne and heals until the boss falls', () => {
       const p = fixture('gero', true); game.enterThrone(); game.finishCutscene(); const zak = game.enemies.find(e => e.type === 'zak'); Math.random = () => 0;
       zak.cd = {slash: 99, raise: 99, storm: 99, wrath: 99, purple: 99, major: 0, ready: 1}; zak.hp -= 500; advance(1.6);

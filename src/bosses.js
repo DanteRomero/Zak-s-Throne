@@ -17,6 +17,8 @@ const OPENING = {
  zak:{slash:0,raise:8,storm:18,wrath:6,purple:12,boomerang:3},
  archmage:{nova:1.5,heal:12,summon:7,laser:9}
 };
+// Segundos que Zak se queda quieto después de cada ataque: la ventana para pegarle cuerpo a cuerpo.
+const ZAK_REST = 2;
 const LINES = {
  yield:'Dejémoslo acá y volvé a tu dimensión, mortal.',
  execute:'¿Sabés lo que le pasa al que no sigue mis órdenes?',
@@ -252,7 +254,7 @@ Object.assign(Z.Game.prototype, {
   if(a){a.t+=dt;
    if(a.id==='slash'){
     const n=Math.floor(a.t/.7),ph=a.t-n*.7;a.swing=n;
-    if(n>=3){e.act=null;e.cd.slash=2;return;}
+    if(n>=3){e.act=null;e.cd.slash=3.5;e.cd.rest=ZAK_REST;return;}
     if(ph<.3)this.aimAt(e);
     if(ph>=.45&&a.done!==n){a.done=n;this.sound.play('swing');this.shake(3,.15);this.effect(e.x+e.aimX*40,e.y-14+e.aimY*40,'slash',.25,{radius:70});
      this.move(e,e.aimX*10,e.aimY*10,10,e.biome);
@@ -260,7 +262,7 @@ Object.assign(Z.Game.prototype, {
     return;}
    if(a.id==='raise'){
     if(a.t>1){[['skeleton',-60,30],['skeleton',60,30],['archer',-110,-30],['archer',110,-30]].forEach(([type,dx,dy])=>this.summon(type,e.x+dx,e.y+dy,e));
-     this.sound.play('ability');e.act=null;e.cd.raise=24;}
+     this.sound.play('ability');e.act=null;e.cd.raise=24;e.cd.rest=ZAK_REST;}
     return;}
    if(a.id==='major'){
     if(a.t>1.5){const type=MAJOR[Math.floor(Math.random()*MAJOR.length)],m=this.summon(type,e.x,e.y+80,e);m.major=true;e.seated=true;e.act=null;
@@ -269,10 +271,10 @@ Object.assign(Z.Game.prototype, {
    if(a.id==='storm'){
     a.next-=dt;
     if(a.next<=0&&a.t<9.2){a.next=.3;const ang=Math.random()*Math.PI*2,r=Math.random()<.35?0:30+Math.random()*130;this.bolts.push({x:p.x+Math.cos(ang)*r,y:p.y+Math.sin(ang)*r*.75,t:.85,max:.85});}
-    if(a.t>=10){e.act=null;e.cd.storm=32;}
+    if(a.t>=10){e.act=null;e.cd.storm=32;e.cd.rest=ZAK_REST;}
     return;}
    if(a.id==='roar'){
-    if(a.t>.9){this.darkness=20;e.act=null;e.cd.wrath=40;this.emit('toast',{message:'Ira del gobernante: todo se oscurece durante 20 segundos.',error:true});}
+    if(a.t>.9){this.darkness=20;e.act=null;e.cd.wrath=40;e.cd.rest=ZAK_REST;this.emit('toast',{message:'Ira del gobernante: todo se oscurece durante 20 segundos.',error:true});}
     return;}
    // Golpe al piso: tres bumeranes de energía en abanico que vuelven a su mano.
    if(a.id==='boomerang'){
@@ -281,14 +283,15 @@ Object.assign(Z.Game.prototype, {
     const base=Math.atan2(p.y-6-(e.y-14),p.x-e.x),damage=Math.max(e.stats.strength*.6,this.stats().maxHealth*.52*.6);
     for(const offset of [-.38,0,.38]){const ang=base+offset;
      this.projectiles.push({x:e.x+Math.cos(ang)*18,y:e.y-14+Math.sin(ang)*18,dx:Math.cos(ang),dy:Math.sin(ang),type:'boomerang',hostile:true,pierce:true,damage,source:'zak',owner:e.id,traveled:0,range:300,back:false,hitCd:0});}
-    this.sound.play('spit');e.act=null;e.cd.boomerang=5.5;return;}
+    this.sound.play('spit');e.act=null;e.cd.boomerang=5.5;e.cd.rest=ZAK_REST;return;}
    if(a.id==='purple'){
     if(a.t>=2.8){
      this.sound.play('slam');this.shake(10,.7);this.effect(e.x,e.y,'wave',.6,{radius:220});
      if(Math.hypot(p.x-a.safe.x,p.y-a.safe.y)>a.r)this.zakHit(e,1.4,{unavoidable:true});
-     e.act=null;e.cd.purple=30;}
+     e.act=null;e.cd.purple=30;e.cd.rest=ZAK_REST;}
     return;}
   }
+  if(e.cd.rest>0){e.moving=false;return;}
   if(e.cd.major===undefined)e.cd.major=40+Math.random()*40;
   if(e.cd.major<=0&&!this.enemies.some(m=>m.summoned&&m.major&&!m.dead)){e.act={id:'major',t:0};this.sound.play('roar');return;}
   if(e.cd.storm<=0){e.act={id:'storm',t:0,next:.5};this.sound.play('thunder');this.emit('toast',{message:'Tormenta de agonía: un rayo te mata. Mientras dura, solo la piedra le hace daño.',error:true});return;}
