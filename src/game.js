@@ -241,7 +241,9 @@ class Game {
    if(p.weapon==='stone'){p.stoneAmmo=0;p.stoneWalkTime=0;}this.sound.play('bow');
   }else{
    this.effect(p.x+dx*22,p.y-7+dy*22,'slash',.2,{dir:p.dir,radius:weapon.range,own:true});
-   const targets=this.enemies.filter(e=>{if(e.dead||e.latched>0||e.biome!==this.biome)return false;const ex=e.x-p.x,ey=e.y-p.y,len=Math.hypot(ex,ey),reach=weapon.range+(isBoss(e)?8:0);return len<=reach&&(len<14||(ex*dx+ey*dy)/len>.2);});
+   const targets=this.enemies.filter(e=>{if(e.dead||e.latched>0||e.biome!==this.biome)return false;const ex=e.x-p.x,ey=e.y-p.y,len=Math.hypot(ex,ey),pad=isBoss(e)?8:0,reach=weapon.range+pad,along=ex*dx+ey*dy;if(len<14)return true;
+    // Área recta (puños) o abanico (espadas).
+    return weapon.width?along>=0&&along<=reach&&Math.abs(ex*dy-ey*dx)<=weapon.width/2+pad:len<=reach&&along/len>.2;});
    const crit=targets.length>0&&this.landStrike();targets.forEach(e=>this.hitEnemy(e,damage*(crit?CRIT_MULTIPLIER:1),false,crit,p.weapon));this.sound.play('swing');
   }return true;
  }

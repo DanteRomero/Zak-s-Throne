@@ -254,10 +254,11 @@
   Zak.weaponLevelMultiplier = level => 1 + 0.2 * (clamp(Math.floor(finite(level, 1)), 1, Zak.MAX_WEAPON_LEVEL) - 1);
 
   Zak.WEAPON_TYPES = {
-    fists: { name: 'Puños', damageMultiplier: 1, range: 36, description: 'Un buen golpe a corta distancia.' },
-    sword: { name: 'Espada', damageMultiplier: 1.5, range: 55, biome: 'weeds', description: '50% de daño adicional y mayor alcance.' },
-    bow: { name: 'Arco', damageMultiplier: 1, range: 350, chargeTime: 0.7, biome: 'village', description: 'Dispara a distancia. Hay que tensarlo entre flechas.' },
-    stone: { name: 'Piedra', damageMultiplier: 1, range: 220, walkToReload: 2, biome: 'cave', description: 'Una munición; caminar durante 2 s recarga el siguiente tiro.' },
+    // width: golpea en un área recta de ese ancho; sin width, en abanico.
+    fists: { name: 'Puños', damageMultiplier: 1, range: 36, width: 36, description: 'Un buen golpe recto a corta distancia.' },
+    sword: { name: 'Espada', damageMultiplier: 1.5, range: 36, biome: 'weeds', description: '50% de daño adicional y un golpe en abanico.' },
+    bow: { name: 'Arco', damageMultiplier: 1, range: 165, chargeTime: 0.7, biome: 'village', description: 'Dispara a distancia. Hay que tensarlo entre flechas.' },
+    stone: { name: 'Piedra', damageMultiplier: 1, range: 165, walkToReload: 2, biome: 'cave', description: 'Una munición; caminar durante 2 s recarga el siguiente tiro.' },
     elemental: { name: 'Espada Elemental', damageMultiplier: 4.5, range: 62, crafted: true, description: 'Forjada con cinco Piedras Elementales. Mucho más daño que la espada mejorada al máximo.' }
   };
 

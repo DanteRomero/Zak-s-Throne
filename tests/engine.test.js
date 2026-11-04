@@ -143,6 +143,22 @@
       const thief = enemy('thief',p.x+20); thief.stun = 100;
       game.keys.add(' '); advance(2.1); near(thief.hp,100-3*7.5);
     });
+    test('Fists hit a straight area; swords hit a fan with the same reach', () => {
+      const hits = (weapon, along, side) => {
+        const p = fixture(); p.weapons.push(weapon); p.weapon = weapon; p.dir = 'right'; p.attackCooldown = 0;
+        const target = enemy('thief', p.x + along, p.y + side); target.stun = 100; const hp = target.hp; game.attack(); return target.hp < hp;
+      };
+      equal(Z.WEAPON_TYPES.sword.range, Z.WEAPON_TYPES.fists.range, 'Same reach');
+      ok(hits('fists', 30, 15), 'Fists: inside the straight area');
+      ok(!hits('fists', 20, 25), 'Fists: a side the old fan reached is now out');
+      ok(!hits('fists', 40, 0), 'Fists: past the reach');
+      ok(hits('sword', 20, 25), 'Sword: the fan does reach that side');
+      ok(!hits('sword', 40, 0), 'Sword: past the reach');
+    });
+    test('The bow reaches three old sword lengths and no further', () => {
+      const p = fixture(); p.weapon = 'bow'; p.weapons.push('bow'); p.dir = 'right'; equal(Z.WEAPON_TYPES.bow.range, 165); equal(Z.WEAPON_TYPES.stone.range, Z.WEAPON_TYPES.bow.range, 'Stone and bow share their reach');
+      const far = enemy('thief', p.x + 195); far.stun = 100; const hp = far.hp; ok(game.attack()); advance(1.2); equal(far.hp, hp, 'Too far'); equal(game.projectiles.length, 0);
+    });
     test('Bow projectile reaches and damages an enemy at range', () => {
       const p = fixture(); p.weapon='bow'; p.weapons.push('bow'); p.dir='right';
       const thief = enemy('thief',p.x+110); thief.stun = 3; ok(game.attack()); equal(game.projectiles.length,1);

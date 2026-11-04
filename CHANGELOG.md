@@ -6,6 +6,17 @@ Cada versión lista sus cambios agrupados por tipo:
 - **Change:** algo que ya existía y ahora funciona distinto.
 - **Fix:** un error corregido.
 
+## v2.11 — 2026-11-04
+* Change
+    - **Piedra:** su alcance baja a 165 (antes 220), el mismo que el arco.
+
+## v2.10 — 2026-11-04
+* Change
+    - **Indicadores de ataque más transparentes:** la línea de los tiros y el área de los golpes tapan menos el juego.
+    - **Puños:** ahora golpean en un área recta, en lugar de en abanico. El alcance sigue igual.
+    - **Espada:** su alcance baja al de los puños (de 55 a 36). Sigue golpeando en abanico, así que cubre más hacia los costados.
+    - **Arco:** su alcance baja a 165 (antes 350), el triple de lo que tenía la espada.
+
 ## v2.9 — 2026-11-04
 * Change
     - **Apuntar y soltar (celular):** mantener el analógico de ataque ya no ataca: muestra hacia dónde va a salir el golpe, y el ataque se hace al soltarlo.

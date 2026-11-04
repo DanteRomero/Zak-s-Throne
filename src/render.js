@@ -272,7 +272,7 @@
   // Si el ataque todavía no está listo se ve apagado.
   function drawAimGuide(c, game, p, time) {
     const [dx, dy] = game.attackVector(), angle = Math.atan2(dy, dx), weapon = Z.WEAPON_TYPES[p.weapon];
-    const ready = !(p.attackCooldown > 0) && !(p.weapon === "stone" && !p.stoneAmmo), color = ready ? "#ffe9a8" : "#b9ae8c", dark = "#2a2118", alpha = ready ? .95 : .55;
+    const ready = !(p.attackCooldown > 0) && !(p.weapon === "stone" && !p.stoneAmmo), color = ready ? "#ffe9a8" : "#b9ae8c", dark = "#2a2118", alpha = ready ? .55 : .3;
     const stroke = (shape, width, tone) => { c.strokeStyle = tone; c.lineWidth = width; c.beginPath(); shape(); c.stroke(); };
     c.save(); c.globalAlpha = alpha;
     if (p.weapon === "bow" || p.weapon === "stone") {
@@ -295,10 +295,13 @@
         stroke(arrow, 4, dark); stroke(arrow, 2, color);
       }
     } else {
-      // El cono de ±78° y el alcance son los mismos que usa el daño, medidos desde los pies.
-      const cx = Math.round(p.x), cy = Math.round(p.y), half = Math.acos(.2), sector = () => { c.moveTo(cx, cy); c.arc(cx, cy, weapon.range, angle - half, angle + half); c.closePath(); };
-      c.globalAlpha = alpha * .28; c.fillStyle = color; c.beginPath(); sector(); c.fill();
-      c.globalAlpha = alpha; stroke(sector, 3, dark); stroke(sector, 1, color);
+      // El área es la misma que usa el daño, medida desde los pies: recta (puños) o abanico de ±78° (espadas).
+      const cx = Math.round(p.x), cy = Math.round(p.y), half = Math.acos(.2), reach = weapon.range, side = (weapon.width || 0) / 2;
+      const area = weapon.width
+        ? () => { c.moveTo(cx - dy * side, cy + dx * side); c.lineTo(cx - dy * side + dx * reach, cy + dx * side + dy * reach); c.lineTo(cx + dy * side + dx * reach, cy - dx * side + dy * reach); c.lineTo(cx + dy * side, cy - dx * side); c.closePath(); }
+        : () => { c.moveTo(cx, cy); c.arc(cx, cy, reach, angle - half, angle + half); c.closePath(); };
+      c.globalAlpha = alpha * .28; c.fillStyle = color; c.beginPath(); area(); c.fill();
+      c.globalAlpha = alpha; stroke(area, 3, dark); stroke(area, 1, color);
     }
     c.restore();
   }

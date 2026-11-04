@@ -38,7 +38,7 @@ La dirección de movimiento orienta al personaje; el ratón permite dirigir ataq
 ### En el celular
 
 - **Joystick analógico:** apoyá el pulgar en cualquier parte de la mitad izquierda y arrastrá. Inclinarlo poco camina más despacio.
-- **Analógico de ataque:** mantené ⚔ y arrastralo para apuntar; al soltarlo se hace el ataque. Mientras apuntás se ve el indicador: con arco y piedra, una línea con el recorrido del tiro hasta donde va a pegar; con puños y espadas, el área que alcanza el golpe. Podés caminar para un lado y atacar para el otro. Sin arrastrar, apunta solo al enemigo más cercano. Volver al centro antes de soltar cancela el golpe.
+- **Analógico de ataque:** mantené ⚔ y arrastralo para apuntar; al soltarlo se hace el ataque. Mientras apuntás se ve el indicador: con arco y piedra, una línea con el recorrido del tiro hasta donde va a pegar; con puños, el área recta del golpe; con espadas, su abanico. Podés caminar para un lado y atacar para el otro. Sin arrastrar, apunta solo al enemigo más cercano. Volver al centro antes de soltar cancela el golpe.
 - **Botones para el pulgar derecho:** ⟲ rueda, ✦ usa la habilidad, E se ilumina cuando hay algo para usar cerca, ❦ usa una hierba, » activa o desactiva la carrera y el botón de arma rota entre las conseguidas.
 - **Arriba:** ficha, diario, mapa, pausa y ⛶ para pantalla completa, que también intenta fijar la orientación horizontal.
 - El teléfono vibra al recibir daño (se desactiva junto con la sacudida de pantalla). Se juega en horizontal o en vertical, aunque en horizontal se ve más mundo. Los botones de la interfaz también permiten acceder a habilidades, armas, ficha, mapa y pausa.
@@ -322,11 +322,11 @@ Los ataques empujan a perros, serpientes y ratas; las ratas prendidas deben term
 
 | Arma | Dónde | Funcionamiento |
 | --- | --- | --- |
-| Puños | Desde el comienzo | Daño igual a fuerza, corto alcance |
-| Espada | Yuyos | Fuerza ×1,5 y mayor alcance |
-| Arco | Aldea | Proyectil a distancia; necesita 0,7 s de carga y respeta el intervalo de ataque |
-| Piedra | Cueva | Proyectil a distancia; caminar 2 s recarga la munición. Es lo único que lastima a Zak durante la Tormenta de agonía |
-| Espada Elemental | El Taller | Fuerza ×4,5 y alcance de espada; se forja con 5 Piedras Elementales y materiales |
+| Puños | Desde el comienzo | Daño igual a fuerza, corto alcance; golpea en un área recta |
+| Espada | Yuyos | Fuerza ×1,5, mismo alcance que los puños; golpea en abanico |
+| Arco | Aldea | Proyectil a distancia media; necesita 0,7 s de carga y respeta el intervalo de ataque |
+| Piedra | Cueva | Proyectil con el mismo alcance que el arco; caminar 2 s recarga la munición. Es lo único que lastima a Zak durante la Tormenta de agonía |
+| Espada Elemental | El Taller | Fuerza ×4,5, el mayor alcance cuerpo a cuerpo; golpea en abanico; se forja con 5 Piedras Elementales y materiales |
 
 Se interpretó «aumenta el daño en un ×0,5» como **50% adicional**, por lo que la espada multiplica por **1,5**.
 
