@@ -15,7 +15,7 @@ const OPENING = {
  golem:{quake:2,rock:1.5,fortify:15},
  cerbero:{bite:0,jump:3,dig:12},
  zak:{slash:0,raise:8,storm:18,wrath:6,purple:12,boomerang:3},
- archmage:{nova:1.5,heal:12,summon:7,laser:9}
+ archmage:{nova:1.5,heal:12,summon:7,laser:9,overload:14}
 };
 // Segundos que Zak se queda quieto después de cada ataque: la ventana para pegarle cuerpo a cuerpo.
 const ZAK_REST = 2;
@@ -139,7 +139,7 @@ Object.assign(Z.Game.prototype, {
   for(const k of Object.keys(e.cd))if(k!=='ready')e.cd[k]=Math.max(0,e.cd[k]-dt);
   e.shield=Math.max(0,(e.shield||0)-dt);
   if(e.yielding){this.updateZakYield(e,dt);return;}
-  e.alert=sameZone&&(e.summoned||len<def.visionRange||(e.alert&&len<def.visionRange*1.7));
+  e.alert=sameZone&&(e.summoned||len<def.visionRange||(e.alert&&len<def.visionRange*1.7)||!!(e.act&&e.act.id==='overload'));
   if(e.alert&&!wasAlert){this.sound.play('telegraph');if(!e.summoned)this.emit('boss',{name:def.name});}
   if(e.act&&e.act.id==='rise'){e.act.t+=dt;if(e.act.t>=(e.type==='zak'?2.6:2.2))this.riseComplete(e);return;}
   if(!e.alert){
@@ -410,7 +410,7 @@ Object.assign(Z.Game.prototype, {
   }
  },
  travel(spot,biome){
-  const p=this.player;Object.assign(p,{x:spot.x,y:spot.y,gather:null,roll:0,moving:false,grabbed:0,stunned:0});
+  const p=this.player;Object.assign(p,{x:spot.x,y:spot.y,gather:null,roll:0,moving:false,grabbed:0,stunned:0,frozen:0});
   this.projectiles=[];this.enemies.forEach(e=>{e.latched=0;if(!e.summoned)e.alert=false;e.telegraph=0;e.dash=0;});
   this.biome=biome;if(!p.discovered.includes(biome))p.discovered.push(biome);
   this.renderer.initialized=false;this.clearInput();this.emit('biome',{name:Z.BIOME_NAMES[biome],safe:Z.isSafe(biome)});

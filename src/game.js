@@ -126,8 +126,10 @@ class Game {
   if(this.cutscene){this.time+=dt;this.updateCutscene(dt);this.effects.forEach(e=>e.life-=dt);this.effects=this.effects.filter(e=>e.life>0);return;}
   this.cutsceneFade=Math.max(0,(this.cutsceneFade||0)-dt);
   this.time+=dt;const p=this.player;p.playTime+=dt;const stats=this.stats();p.hp=Math.min(p.hp,stats.maxHealth);
-  for(const k of ['attackCooldown','abilityCooldown','attackAnim','hitFlash','slow','dance','tobi','roll','rollCooldown','comboTime','stunned','grabbed','heavySlow'])p[k]=Math.max(0,(p[k]||0)-dt);
+  for(const k of ['attackCooldown','abilityCooldown','attackAnim','hitFlash','slow','dance','tobi','roll','rollCooldown','comboTime','stunned','frozen','grabbed','heavySlow'])p[k]=Math.max(0,(p[k]||0)-dt);
   this.darkness=Math.max(0,(this.darkness||0)-dt);
+  // Al terminar de congelarte, el hielo se rompe.
+  if(this.wasFrozen&&!(p.frozen>0)){this.effect(p.x,p.y-14,'iceshatter',.55,{seed:Math.random()*99});this.sound.play('block');}this.wasFrozen=p.frozen>0;
   if(p.comboTime<=0)p.combo=0;
   // Regeneración exacta: cinco pulsos en t=1,2,3,4,5, aun con delta fraccionado.
   if(p.buffs.gero>0){p.healClock=(p.healClock||0)+Math.min(dt,p.buffs.gero);if(p.healClock>=1-1e-8){p.healClock-=1;this.heal(5);}}
@@ -177,7 +179,7 @@ class Game {
   const newBiome=Z.biomeAt(p.x,p.y);if(newBiome!==this.biome){const oldMax=this.stats().maxHealth;this.biome=newBiome;const newMax=this.stats().maxHealth;
    if(p.characterId==='paco')p.hp=clamp(p.hp*newMax/oldMax,0,newMax);if(!p.discovered.includes(newBiome))p.discovered.push(newBiome);
    this.emit('biome',{name:names[newBiome],safe:Z.isSafe(newBiome)});
-   if(Z.isSafe(newBiome)){p.poison=null;p.slow=0;p.bleed=null;p.burn=null;p.heavySlow=0;p.stunned=0;p.grabbed=0;this.projectiles=this.projectiles.filter(s=>!s.hostile);this.enemies.forEach(e=>{if(e.latched>0){e.x=e.homeX;e.y=e.homeY;}e.latched=0;e.alert=false;e.telegraph=0;e.dash=0;});}}
+   if(Z.isSafe(newBiome)){p.poison=null;p.slow=0;p.bleed=null;p.burn=null;p.heavySlow=0;p.stunned=0;p.frozen=0;p.grabbed=0;this.projectiles=this.projectiles.filter(s=>!s.hostile);this.enemies.forEach(e=>{if(e.latched>0){e.x=e.homeX;e.y=e.homeY;}e.latched=0;e.alert=false;e.telegraph=0;e.dash=0;});}}
  }
  dirOf(x,y){return Math.abs(x)>Math.abs(y)?(x>0?'right':'left'):(y>0?'down':'up');}
  // Siempre rueda hacia donde te movés; quieto, hacia donde mirás.
@@ -406,7 +408,7 @@ class Game {
   // Los chorros se llevan la guita de verdad; el resto se pierde en el apuro. Si Zak te ejecuta, te deja sin nada.
   const execute=source==='execute',lost=execute?(p.coins||0):Math.floor((p.coins||0)*(source==='thief'||source==='capo'?.3:.1));p.coins=Math.max(0,(p.coins||0)-lost);
   if(execute){p.materials=Z.emptyMaterials();p.offerings=Z.emptyOfferings();}
-  Object.assign(p,this.world.spawn,{hp:1,poison:null,slow:0,stamina:1,exhausted:0,restTime:0,attackCooldown:0,moving:false,roll:0,combo:0,comboTime:0,gather:null,bleed:null,burn:null,stunned:0,grabbed:0,heavySlow:0});p.buffs={gero:0,pepe:0,paco:0,pacoAnimals:0,mate:0};this.biome='village';p.hp=this.stats().maxHealth;
+  Object.assign(p,this.world.spawn,{hp:1,poison:null,slow:0,stamina:1,exhausted:0,restTime:0,attackCooldown:0,moving:false,roll:0,combo:0,comboTime:0,gather:null,bleed:null,burn:null,stunned:0,frozen:0,grabbed:0,heavySlow:0});p.buffs={gero:0,pepe:0,paco:0,pacoAnimals:0,mate:0};this.biome='village';p.hp=this.stats().maxHealth;
   this.enemies=this.enemies.filter(e=>!e.summoned);
   this.enemies.forEach(e=>{if(!e.dead){if(isBoss(e))Object.assign(e,this.makeEnemy({id:e.id,type:e.type,x:e.homeX,y:e.homeY}));e.x=e.homeX;e.y=e.homeY;}e.latched=0;e.alert=false;e.telegraph=0;e.dash=0;});
   this.queuedWaves=[];this.projectiles=[];this.bolts=[];this.darkness=0;this.exitPortal=null;this.cutscene=null;this.cutsceneFade=0;this.state='paused';this.clearInput();this.emit('knockout',{source,quote,lost,execute});

@@ -538,7 +538,8 @@
     if (p.poison) statuses.push('☠ Veneno');
     if (p.slow > 0) statuses.push('↓ Mordedura ' + Math.ceil(p.slow) + ' s');
     if (p.exhausted > 0) statuses.push('Sin aliento ' + Math.ceil(p.exhausted) + ' s');
-    if (p.stunned > 0) statuses.push('✦ Aturdido ' + Math.ceil(p.stunned) + ' s');
+    if (p.frozen > 0) statuses.push('❄ Congelado ' + Math.ceil(p.frozen) + ' s');
+    else if (p.stunned > 0) statuses.push('✦ Aturdido ' + Math.ceil(p.stunned) + ' s');
     if (p.grabbed > 0) statuses.push('✊ Agarrado');
     if (p.bleed) statuses.push('🩸 Desangrado');
     if (p.burn) statuses.push('🔥 Quemado');
@@ -606,6 +607,7 @@
       quake: '¡TERREMOTO! SALÍ DEL CÍRCULO', throw: '¡PIEDRAZO! RODÁ (CTRL)',
       bite: '¡MORDIDA! DESANGRA', jump: '¡SALTA! SALÍ DEL CÍRCULO ROJO', dig: '¡ESCARBA! PEGALE ANTES DE 3 s',
       slash: '¡ESPADAZOS! ALEJATE O RODÁ (CTRL)', boomerang: '¡BUMERANES! RODÁ (CTRL)', raise: 'INVOCA ESQUELETOS', major: 'INVOCA A UN JEFE',
+      overload: 'SOBRECARGA: ¡PEGALE Y SALÍ DEL CÍRCULO! · ' + Math.max(1,Math.ceil(Zak.OVERLOAD_TIME - (a.time || 0))) + ' s',
       teleport: 'SE TELETRANSPORTA…', nova: '¡BOLAS DE FUEGO! RODÁ (CTRL)', heal: 'SE CURA: ¡PEGALE PARA CORTARLO!', summon: boss.type === 'archmage' ? 'INVOCA ARMADURAS' : '¡INVOCA MURCIÉLAGOS!',
       laser: boss.act && boss.act.wave !== undefined ? '¡ONDA! RODÁ (CTRL) CUANDO TE LLEGUE' : '¡LÁSER RELOJ! ESQUIVÁ LOS RAYOS',
       storm: 'TORMENTA: ESQUIVÁ LOS RAYOS · SOLO LA PIEDRA LO DAÑA', roar: 'IRA DEL GOBERNANTE', purple: '¡PARATE EN EL CÍRCULO CLARO!'

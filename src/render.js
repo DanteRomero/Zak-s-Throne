@@ -231,7 +231,7 @@
     const side = dir === "left" || dir === "right", back = dir === "up", moving = !!player.moving && !portrait && !(player.roll > 0);
     // Cuatro cuadros de caminata; en los de paso el cuerpo sube un píxel.
     const cycle = (player.walk !== undefined && player.walk !== null ? player.walk : time * 8) * 1.4 / TAU, frame = moving ? ((Math.floor(cycle * 4) % 4) + 4) % 4 : 0;
-    const seed = SEEDS[id] || 0, breathing = !moving && !portrait && Math.sin(time * 2.2 + seed + (player.x || 0) * .01) > .55;
+    const seed = SEEDS[id] || 0, breathing = !moving && !portrait && !(player.frozen > 0) && Math.sin(time * 2.2 + seed + (player.x || 0) * .01) > .55;
     const blink = !portrait && ((time + seed * 1.7) % 3.4) < .12, attacking = !portrait && player.attackAnim > 0;
     const facing = FACING[dir] || FACING.down, ax = attacking && player.attackX !== undefined ? player.attackX : facing[0], ay = attacking && player.attackY !== undefined ? player.attackY : facing[1];
     const v = { side, back, frame, moving, attacking, weapon: portrait ? null : weaponId(player), blink, up: moving && frame % 2 ? -1 : breathing ? 1 : 0 };
@@ -262,7 +262,16 @@
     if (!portrait && player.buffs && player.buffs.gero > 0) for (let k = 0; k < 5; k++) { const phase = (time * .8 + k / 5) % 1; rect(c, -10 + k * 5, -phase * 31, 1, 3, "#e7d18c"); }
     if (!portrait && player.poison) { const a = Math.floor(time * 6) % 2; rect(c, -7, -29 - a, 2, 2, "#b798d4"); rect(c, 5, -31 + a, 2, 2, "#9f81bf"); }
     if (!portrait && player.bleed) { rect(c, -6, -27 + (time * 20) % 6, 2, 2, "#c43a4a"); rect(c, 4, -25 + (time * 16) % 6, 2, 2, "#a12a3a"); }
-    if (!portrait && player.stunned > 0) for (let k = 0; k < 3; k++) { const a = time * 5 + k * 2.1; pixelText(c, "✦", Math.cos(a) * 9, -31 + Math.sin(a) * 3, "#f2d16b", 7); }
+    if (!portrait && player.frozen > 0) {
+      // Bloque de hielo, con facetas y un brillo que lo recorre.
+      poly(c, [[-13, 1], [-15, -15], [-10, -30], [-2, -35], [8, -32], [14, -21], [14, -5], [10, 1]], "#8fdcff88");
+      poly(c, [[-11, -2], [-13, -15], [-8, -27], [-3, -31], [-4, -14], [-8, -2]], "#e8fbff55");
+      poly(c, [[6, -29], [12, -20], [12, -6], [7, -2], [8, -16]], "#3f8fc055");
+      Px.line(c, -10, -30, -2, -35, "#ffffff"); Px.line(c, -2, -35, 8, -32, "#e8fbff"); Px.line(c, -15, -15, -10, -30, "#e8fbff"); Px.line(c, 8, -32, 14, -21, "#b8ecff");
+      const shine = Math.floor(time * 2.5) % 8; if (shine < 3) { const sx = -8 + shine * 7, sy = -22 + shine * 5; rect(c, sx, sy, 1, 5, "#ffffff"); rect(c, sx - 2, sy + 2, 5, 1, "#ffffff"); }
+      for (const [fx, fy] of [[-14, 1], [-4, 2], [6, 1], [13, 2]]) { rect(c, fx - 2, fy - 1, 5, 2, "#b8ecff"); }
+    }
+    if (!portrait && player.stunned > 0 && !(player.frozen > 0)) for (let k = 0; k < 3; k++) { const a = time * 5 + k * 2.1; pixelText(c, "✦", Math.cos(a) * 9, -31 + Math.sin(a) * 3, "#f2d16b", 7); }
     c.restore();
     if (attacking && !behind) drawAttack(c, player, time);
     if (!portrait && player.gather && player.gather.tool) drawTool(c, player, time);
@@ -272,7 +281,7 @@
   // Si el ataque todavía no está listo se ve apagado.
   function drawAimGuide(c, game, p, time) {
     const [dx, dy] = game.attackVector(), angle = Math.atan2(dy, dx), weapon = Z.WEAPON_TYPES[p.weapon];
-    const ready = !(p.attackCooldown > 0) && !(p.weapon === "stone" && !p.stoneAmmo), color = ready ? "#ffe9a8" : "#b9ae8c", dark = "#2a2118", alpha = ready ? .55 : .3;
+    const ready = !(p.attackCooldown > 0) && !(p.stunned > 0) && !(p.weapon === "stone" && !p.stoneAmmo), color = ready ? "#ffe9a8" : "#b9ae8c", dark = "#2a2118", alpha = ready ? .55 : .3;
     const stroke = (shape, width, tone) => { c.strokeStyle = tone; c.lineWidth = width; c.beginPath(); shape(); c.stroke(); };
     c.save(); c.globalAlpha = alpha;
     if (p.weapon === "bow" || p.weapon === "stone") {
@@ -864,8 +873,9 @@
   }
   // El Rey Mago: túnica real con estrellas, barba larga, corona y báculo. Flota al usar magia.
   function drawArchmage(c, e, time, walk) {
-    const a = e.act || {}, t = a.t || 0, id = a.id, heal = id === "heal", nova = id === "nova", summon = id === "summon", laser = id === "laser", casting = nova || summon || laser;
-    const hover = laser ? 6 + Math.round(Math.sin(time * 4) * 1.5) : Math.round(Math.sin(time * 2.4) + 1), sway = Math.sin(time * 2 + e.x * .1), k = nova ? Math.min(1, t / .7) : summon ? Math.min(1, t / .6) : laser ? Math.min(1, t / .8) : heal ? 1 : 0;
+    const a = e.act || {}, t = a.t || 0, id = a.id, heal = id === "heal", nova = id === "nova", summon = id === "summon", laser = id === "laser", overload = id === "overload", charge = overload ? Math.min(1, (a.time || 0) / (Z.OVERLOAD_TIME || 8)) : 0, casting = nova || summon || laser || overload;
+    const hover = laser ? 6 + Math.round(Math.sin(time * 4) * 1.5) : Math.round(Math.sin(time * 2.4) + 1), sway = Math.sin(time * 2 + e.x * .1), k = nova ? Math.min(1, t / .7) : summon ? Math.min(1, t / .6) : laser ? Math.min(1, t / .8) : heal ? 1 : overload ? Math.min(1, t / .5) : 0;
+    if (charge > .75) c.translate(Math.floor(time * 30) % 2 ? 1 : -1, 0);
     const kneel = heal ? 5 : 0;
     c.translate(0, -hover + kneel);
     const skirt = Math.round(sway * 2);
@@ -896,7 +906,7 @@
     const staffTop = -22 - 34, sx = Math.round(hand[0]) + 1, top = casting ? hand[1] - 30 - k * 4 : staffTop;
     rect(c, sx, top, 3, hover - kneel - top + (casting ? -8 : 0), "#4a2e1a"); rect(c, sx, top, 1, hover - kneel - top + (casting ? -8 : 0), "#7a5230");
     rect(c, sx - 3, top, 9, 2, "#f2c94c");
-    const orb = heal ? "#6ad18a" : casting ? "#ffb347" : "#a77bff", size = 6 + Math.round(k * (nova ? 4 : 2));
+    const orb = overload ? "#9fe8ff" : heal ? "#6ad18a" : casting ? "#ffb347" : "#a77bff", size = overload ? 6 + Math.round(charge * 9) : 6 + Math.round(k * (nova ? 4 : 2));
     if (Px.mode !== "outline") Px.glow(c, sx + 1, top - size, 10 + size + Math.round(Math.sin(time * 8) * 2), orb, .75);
     blob(c, sx + 1, top - size, size, size, tone(orb, .7)); blob(c, sx + 1, top - size, size - 1, size - 1, orb); rect(c, sx - 2, top - size - 3, 2, 2, "#ffffff");
   }
@@ -927,6 +937,11 @@
     } else if(e.type==="archmage"){
       if(a.id==="nova"&&a.t<.7){const base=Math.atan2(e.aimY,e.aimX);c.strokeStyle="#ff9a3a";c.lineWidth=2;c.setLineDash([5,5]);c.globalAlpha=pulse;for(let k=0;k<5;k++){const an=base+k*Math.PI*2/5;c.beginPath();c.moveTo(x,y-16);c.lineTo(x+Math.cos(an)*160,y-16+Math.sin(an)*160);c.stroke();}c.setLineDash([]);}
       else if(a.id==="heal"){ring(Z.ARCHMAGE_HEAL_RADIUS||85,"#6ad18a",.3);c.globalAlpha=.9;c.strokeStyle="#bff5cf";c.lineWidth=3;c.beginPath();c.arc(x,y-70,9,-Math.PI/2,-Math.PI/2+Math.max(0,1-(a.time||0)/10)*Math.PI*2);c.stroke();}
+      else if(a.id==="overload"){
+        const R=Z.OVERLOAD_RADIUS||150,k=Math.min(1,(a.time||0)/(Z.OVERLOAD_TIME||8));
+        ring(R,"#7fd8ff",.16+k*.3);c.globalAlpha=.9;c.strokeStyle="#e0f7ff";c.lineWidth=2;c.beginPath();c.ellipse(x,y-3,R*k,R*k*.75,0,0,Math.PI*2);c.stroke();
+        c.globalAlpha=1;pixelText(c,String(Math.max(1,Math.ceil((Z.OVERLOAD_TIME||8)-(a.time||0)))),x,y-bossTop(e)-14,k>.75?"#ff8f7a":"#d5f4ff",12);
+      }
       else if(a.id==="summon"){c.globalAlpha=.6;c.strokeStyle="#c9d1d6";c.lineWidth=2;for(let k=0;k<2;k++){c.beginPath();c.ellipse(x,y-2,40+k*18+Math.sin(time*6)*3,(40+k*18)*.6,time*(k?1:-1),0,Math.PI*2);c.stroke();}}
       else if(a.id==="laser"){
         const L=Z.LASER_LENGTH||520,ox=x,oy=y-20;
@@ -1008,6 +1023,12 @@
     } else if (e.type === "archmage") {
       if (a.id === "nova" && t < .7 || a.id === "summon") {
         const r = 14 + ((t * 2.2) % 1) * 26; c.save(); c.globalAlpha = .7; c.strokeStyle = a.id === "nova" ? "#ffb347" : "#c9d1d6"; c.lineWidth = 1; c.setLineDash([3, 3]); c.beginPath(); c.ellipse(x, y - 30, r, r * .65, time * 2, 0, Math.PI * 2); c.stroke(); c.setLineDash([]); c.restore();
+      } else if (a.id === "overload") {
+        const charge = Math.min(1, (a.time || 0) / (Z.OVERLOAD_TIME || 8));
+        for (let k = 0; k < 10; k++) { const an = k * Math.PI * 2 / 10 + .3, cx = x + Math.cos(an) * (24 + (k % 2) * 8), cy = y - 2 + Math.sin(an) * (13 + (k % 2) * 6), tall = Math.round((3 + (k % 3) * 3) * Math.min(1, charge * 1.4 + .1) + charge * 6); if (cy < y) { poly(c, [[cx - 3, cy], [cx, cy - tall], [cx + 3, cy]], "#5aa8d0"); poly(c, [[cx - 2, cy], [cx - 1, cy - tall + 1], [cx + 1, cy]], "#d5f4ff"); } }
+        // Copos que suben hacia el orbe, cada vez más.
+        for (let k = 0; k < 6 + Math.round(charge * 14); k++) { const f = (time * (.5 + charge) + k / 20) % 1, sx = x - 44 + hash(k, 13) * 88, sy = y - hash(k, 17) * 20, px = sx + (x + 14 - sx) * f, py = sy + (y - 74 - sy) * f; c.globalAlpha = .4 + f * .6; rect(c, px - 1, py, 3, 1, "#d5f4ff"); rect(c, px, py - 1, 1, 3, "#d5f4ff"); } c.globalAlpha = 1;
+        for (let k = 0; k < 10; k++) { const an = k * Math.PI * 2 / 10 + .3, cx = x + Math.cos(an) * (24 + (k % 2) * 8), cy = y - 2 + Math.sin(an) * (13 + (k % 2) * 6), tall = Math.round((3 + (k % 3) * 3) * Math.min(1, charge * 1.4 + .1) + charge * 6); if (cy >= y) { poly(c, [[cx - 3, cy], [cx, cy - tall], [cx + 3, cy]], "#5aa8d0"); poly(c, [[cx - 2, cy], [cx - 1, cy - tall + 1], [cx + 1, cy]], "#d5f4ff"); } }
       } else if (a.id === "heal") {
         for (let k = 0; k < 8; k++) { const f = (time * .7 + k / 8) % 1, px = x - 24 + hash(k, 8) * 48, py = y - f * 60; c.globalAlpha = 1 - f; rect(c, px - 1, py, 3, 1, "#bff5cf"); rect(c, px, py - 1, 1, 3, "#bff5cf"); } c.globalAlpha = 1;
       }
@@ -2128,6 +2149,17 @@
           for(let k=0;k<=7;k++){const t=k/7,an=tail+(head-tail)*t;outer.push([x+Math.cos(an)*r,y+Math.sin(an)*r]);inner.push([x+Math.cos(an)*(r-t*r*.4),y+Math.sin(an)*(r-t*r*.4)]);}
           if(head>tail)poly(c,outer.concat(inner.reverse()),"#f0e6bb");
         }
+      } else if(e.type==="iceblast"){
+        const R=e.radius||150,seed=Math.floor(e.seed||0),grow=1-(1-progress)*(1-progress),r=R*grow;
+        c.globalAlpha=(1-progress)*.5;c.fillStyle="#9fe8ff";c.beginPath();c.ellipse(x,y-3,r,r*.75,0,0,Math.PI*2);c.fill();
+        c.globalAlpha=1-progress;c.strokeStyle="#ffffff";c.lineWidth=3;c.beginPath();c.ellipse(x,y-3,r,r*.75,0,0,Math.PI*2);c.stroke();c.strokeStyle="#7fd8ff";c.lineWidth=2;c.beginPath();c.ellipse(x,y-3,r*.8,r*.6,0,0,Math.PI*2);c.stroke();
+        // Picos de hielo que brotan del piso por toda el área.
+        for(let k=0;k<26;k++){const an=hash(k,seed,4)*Math.PI*2,d=R*(.2+hash(k,seed,5)*.75);if(d>r)continue;const px=x+Math.cos(an)*d,py=y-3+Math.sin(an)*d*.75,tall=(8+hash(k,6)*16)*Math.sin(Math.min(1,progress*1.5)*Math.PI);c.globalAlpha=1-progress*.6;poly(c,[[px-4,py],[px,py-tall],[px+4,py]],"#5aa8d0");poly(c,[[px-2,py],[px-1,py-tall+1],[px+1,py]],"#e8fbff");}
+        for(let k=0;k<22;k++){const an=hash(k,seed,8)*Math.PI*2,sp=R*(.3+hash(k,seed,9)*.9)*grow;c.globalAlpha=Math.max(0,1-progress*1.1);rect(c,x+Math.cos(an)*sp,y-16+Math.sin(an)*sp*.7-Math.sin(progress*Math.PI)*22+progress*progress*30,k%3?2:3,2,k%2?"#e8fbff":"#7fd8ff");}
+        if(progress<.18){c.globalAlpha=(.18-progress)/.18*.9;Px.glow(c,x,y-30,70,"#d5f4ff",1);}
+      } else if(e.type==="iceshatter"){
+        const seed=Math.floor(e.seed||0);
+        for(let k=0;k<14;k++){const an=hash(k,seed,3)*Math.PI*2,sp=8+hash(k,seed,6)*26;c.globalAlpha=1-progress;rect(c,x+Math.cos(an)*sp*progress,y+Math.sin(an)*sp*progress*.7+progress*progress*16,k%3?3:2,2,k%2?"#e8fbff":"#7fd8ff");}
       } else if(e.type==="corpse"){
         // Muerte: destello blanco, el cuerpo se encoge y salta en pedazos.
         const body=e.enemy;

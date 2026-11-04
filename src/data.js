@@ -170,7 +170,7 @@
       name: 'El Rey Mago', boss: true, base: { health: 2600, strength: 30, speed: 55, endurance: 55 },
       growth: { health: 110, strength: 1.2, speed: 0.6, endurance: 1 },
       xp: 3000, coins: [160, 220], color: '#4b3fa0', visionRange: 300, knockback: false, respawn: 600, drop: 'sphere', key: true, burn: true,
-      description: 'Custodia la puerta del trono. Se teletransporta antes de atacar: bolas de fuego en estrella, zona de curación (pegale para cortarla), invoca armaduras y el Láser reloj, que termina en una onda que solo se esquiva rodando.'
+      description: 'Custodia la puerta del trono. Se teletransporta antes de atacar: bolas de fuego en estrella, zona de curación (pegale para cortarla), invoca armaduras y el Láser reloj, que termina en una onda que solo se esquiva rodando. Con la Sobrecarga se queda quieto 8 s y explota en hielo: aprovechá para pegarle y salí del círculo a tiempo, o te congela.'
     },
     zak: {
       name: 'Zak', boss: true, base: { health: 20000, strength: 40, speed: 22, endurance: 85 },
@@ -305,7 +305,7 @@
       coins: 0, herbs: 0, sharpen: 0, lessons: 0,
       materials: Zak.emptyMaterials(), axe: 0, pickaxe: 0, torch: false,
       offerings: Zak.emptyOfferings(), altar: Zak.emptyAltar(), portal: false, throneKeys: 0, zakBest: 0,
-      stunned: 0, grabbed: 0, bleed: null, burn: null, heavySlow: 0,
+      stunned: 0, frozen: 0, grabbed: 0, bleed: null, burn: null, heavySlow: 0,
       weaponLevels: { fists: 1, bow: 1, sword: 1, stone: 1 }, gather: null,
       combo: 0, comboTime: 0, roll: 0, rollCooldown: 0, rollX: 0, rollY: 1
     };

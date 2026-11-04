@@ -6,6 +6,13 @@ Cada versión lista sus cambios agrupados por tipo:
 - **Change:** algo que ya existía y ahora funciona distinto.
 - **Fix:** un error corregido.
     
+## v2.13 — 2026-11-04
+* Feature
+    - **Sobrecarga (El Rey Mago):** se queda quieto 8 s, sin teletransportarse y sin protección, para que puedas pegarle cuerpo a cuerpo. Después explota en hielo: 250% de su fuerza en un área 1,5 veces mayor que el terremoto del Gólem.
+        - **Aviso:** un círculo marca el área, un anillo crece hasta el borde, hay cuenta regresiva y a su alrededor crecen cristales de hielo.
+        - Se esquiva saliendo del círculo o rodando justo a tiempo. Pegarle no la interrumpe.
+    - **Congelado:** nuevo estado de 5 s. Quedás dentro de un bloque de hielo sin poder moverte, atacar, rodar ni usar tu habilidad, y los enemigos te pueden seguir pegando. Las hierbas se pueden usar.
+
 ## v2.12 — 2026-11-04
 * Change
     - **Zak, nuevo diseño:** armadura de acero oscuro con placas en capas y gemas rojas, cuernos curvos, ojos rojos, bufanda y capa rojas rotas. Ahora se ve distinto de frente, de costado y de espaldas.

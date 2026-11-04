@@ -623,6 +623,27 @@
       advance(.05); equal(armor.act && armor.act.id, 'spin'); const hp = p.hp; advance(.9); equal(p.hp, hp, 'Slow to hit');
       advance(.3); ok(p.hp < hp, 'Spin hits around'); const behind = p.hp; armor.act = null; armor.cooldown = 0; p.x = armor.x - 30; advance(1.3); ok(p.hp < behind, 'Also behind it');
     });
+    test('Overload: eight seconds standing still and hittable, then an ice blast that freezes you for five', () => {
+      const p = fixture('gero', true); game.enterDimension(); const king = game.enemies.find(e => e.type === 'archmage');
+      game.enemies = [king]; Object.assign(p, {x: king.x + 140, y: king.y}); game.biome = 'magic'; p.stats.health = 9000; p.hp = 9000; p.weapon = 'fists'; Math.random = () => .1;
+      king.cd = {nova: 99, heal: 99, summon: 99, laser: 99, overload: 0, ready: 1}; advance(.05); equal(king.act && king.act.id, 'overload', 'Starts right there, without teleporting');
+      const spot = {x: king.x, y: king.y}, hp = king.hp; game.hitEnemy(king, 500, true); ok(king.hp < hp, 'He can be hit'); equal(king.act.id, 'overload', 'Hits do not stop it');
+      king.cd.nova = 0; king.cd.heal = 0; king.cd.laser = 0; advance(7.8); equal(king.act.id, 'overload', 'Still charging'); near(king.x, spot.x, 'Does not move'); near(king.y, spot.y, 'Does not move'); near(p.hp, 9000, 'No damage yet');
+      equal(Z.OVERLOAD_RADIUS, 150, 'One and a half times the Golem quake');
+      king.cd.nova = 99; king.cd.heal = 99; king.cd.laser = 99; advance(.2); equal(king.act, null, 'It ends'); ok(p.hp < 9000, 'The blast hurts'); ok(p.frozen > 4.5 && p.frozen <= 5, 'Frozen for five seconds');
+      const x = p.x, frozenAt = p.frozen; p.attackCooldown = 0; p.rollCooldown = 0; game.keys.add('d'); advance(.3); game.keys.clear(); near(p.x, x, 'Cannot move'); ok(!game.attack(), 'Cannot attack'); ok(!game.roll(), 'Cannot roll'); ok(p.frozen < frozenAt);
+      const before = p.hp; game.hurtPlayer(10, 'mage'); ok(p.hp < before, 'Enemies can hit you while frozen');
+      advance(4.8); equal(p.frozen, 0, 'Thaws after five seconds'); equal(p.stunned, 0); ok(game.attack(), 'Attacks again');
+    });
+    test('Overload only reaches inside its area and rolling dodges it', () => {
+      const blast = (dx, dy, roll) => {
+        const p = fixture('gero', true); game.enterDimension(); const king = game.enemies.find(e => e.type === 'archmage');
+        game.enemies = [king]; Object.assign(p, {x: king.x + dx, y: king.y + dy}); game.biome = 'magic'; p.stats.health = 9000; p.hp = 9000; p.rollX = 0; p.rollY = 0;
+        king.alert = true; king.cd = {nova: 99, heal: 99, summon: 99, laser: 99, overload: 99, ready: 1}; king.act = {id: 'overload', t: 0, time: 7.99}; p.roll = roll ? .2 : 0; advance(.05); equal(king.act, null); return {frozen: p.frozen > 0, hurt: p.hp < 9000};
+      };
+      ok(blast(148, 0, false).frozen, 'Inside'); ok(!blast(155, 0, false).hurt, 'Just outside'); ok(blast(0, 110, false).frozen, 'The area is an ellipse: inside'); ok(!blast(0, 116, false).frozen, 'The area is an ellipse: outside');
+      const rolled = blast(60, 0, true); ok(!rolled.frozen && !rolled.hurt, 'A roll dodges it');
+    });
     test('The Archmage teleports, heals unless you hit him, summons armors and ends the clock laser with a wave you must roll', () => {
       const p = fixture('gero', true); game.enterDimension(); const king = game.enemies.find(e => e.type === 'archmage');
       game.enemies = [king]; Object.assign(p, {x: king.x, y: king.y + 120}); game.biome = 'magic'; p.stats.health = 5000; p.hp = 5000; let calls = 0; Math.random = () => calls++ ? original.random() : .1;

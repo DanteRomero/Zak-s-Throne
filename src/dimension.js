@@ -3,6 +3,8 @@
 'use strict';
 const Z = window.Zak, distance = (a,b) => Math.hypot(a.x-b.x,a.y-b.y);
 const CAST_TIME=2, SPIN_WINDUP=1.1, SPIN_RADIUS=58, CAMPFIRE_RADIUS=13, HEAL_RADIUS=Z.ARCHMAGE_HEAL_RADIUS=85, LASER_LENGTH=Z.LASER_LENGTH=520;
+// Sobrecarga del Rey Mago: el área es 1,5 veces la del terremoto del Gólem (100).
+const OVERLOAD_TIME=Z.OVERLOAD_TIME=8, OVERLOAD_RADIUS=Z.OVERLOAD_RADIUS=150, OVERLOAD_FREEZE=5;
 // Quemadura por segundo según la fuerza de quien la causa; nunca menos que la fogata (2).
 const burnFrom = e => Math.max(2,Math.round(e.stats.strength*.08));
 Object.assign(Z.Game.prototype, {
@@ -10,6 +12,11 @@ Object.assign(Z.Game.prototype, {
   const p=this.player,fresh=!p.burn;
   p.burn={time:5,tick:p.burn?p.burn.tick:1,damage:Math.max(damage,p.burn?p.burn.damage:0)};
   if(fresh)this.emit('toast',{message:'¡Te quemaste! '+damage+' de vida por segundo durante 5 s.',error:true});
+ },
+ // Congelado: como el aturdimiento, no deja moverse, atacar, rodar ni usar la habilidad.
+ freezePlayer(){
+  const p=this.player;p.frozen=OVERLOAD_FREEZE;p.stunned=Math.max(p.stunned||0,OVERLOAD_FREEZE);p.gather=null;
+  this.emit('toast',{message:'¡Te congeló! No podés moverte ni atacar durante 5 segundos.',error:true});
  },
  // Pisar una fogata del Pueblo Mágico quema (rodar no salva: es fuego, no un golpe).
  updateCampfires(){
@@ -73,6 +80,15 @@ Object.assign(Z.Game.prototype, {
    if(a.id==='summon'){
     if(a.t>=1){for(let k=0;k<5;k++){const ang=k*Math.PI*2/5;this.summon('armor',e.x+Math.cos(ang)*70,e.y+Math.sin(ang)*50,e);}this.sound.play('ability');e.act=null;e.cd.summon=30;}
     return;}
+   // Sobrecarga: 8 s (tiempo real) cargando, quieto y sin protección: es la ventana para pegarle de cerca.
+   if(a.id==='overload'){
+    a.time+=realDt;e.moving=false;
+    if(a.time>=OVERLOAD_TIME){
+     this.sound.play('slam');this.sound.play('thunder');this.shake(8,.5);this.effect(e.x,e.y,'wave',.5,{radius:OVERLOAD_RADIUS});this.effect(e.x,e.y,'iceblast',.8,{radius:OVERLOAD_RADIUS,seed:Math.random()*99});
+     if(this.inRadius(e,OVERLOAD_RADIUS)&&this.hurtPlayer(e.stats.strength*2.5,e.type)&&this.state==='playing')this.freezePlayer();
+     e.act=null;e.cd.overload=30;
+    }
+    return;}
    // Láser reloj: 1 s de aviso, 5 s de cuatro rayos que giran cada vez más rápido y una onda sin límite que solo se esquiva rodando.
    if(a.id==='laser'){
     if(a.t<1)return;
@@ -88,9 +104,12 @@ Object.assign(Z.Game.prototype, {
   }
   let next=null;
   if(e.cd.heal<=0&&e.hp<e.maxHp*.7)next='heal';
+  else if(e.cd.overload<=0)next='overload';
   else if(e.cd.laser<=0)next='laser';
   else if(e.cd.summon<=0&&this.summonsOf(e)<3)next='summon';
   else if(e.cd.nova<=0)next='nova';
+  // La Sobrecarga arranca donde está: tiene que dar tiempo a llegarle cuerpo a cuerpo.
+  if(next==='overload'){this.archmageStart(e,next);return;}
   if(next){
    if(Math.random()<.8){e.act={id:'teleport',t:0,next};this.sound.play('teleport');this.effect(e.x,e.y-20,'poof',.6,{seed:2});}
    else this.archmageStart(e,next);
@@ -104,6 +123,7 @@ Object.assign(Z.Game.prototype, {
  archmageStart(e,id){
   this.aimAt(e);
   if(id==='heal'){e.act={id,t:0,time:0,tick:.5,shown:0};this.sound.play('ability');}
+  else if(id==='overload'){e.act={id,t:0,time:0};this.sound.play('roar');this.emit('toast',{message:'¡Sobrecarga! Está indefenso 8 s: pegale, y salí del círculo antes de que explote.',error:true});}
   else if(id==='laser'){e.act={id,t:0,angle:Math.random()*Math.PI/2,speed:0,hitCd:0};this.sound.play('roar');}
   else{e.act={id,t:0};this.sound.play('telegraph');}
  },
