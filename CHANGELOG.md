@@ -7,7 +7,7 @@ Cada versión lista sus cambios agrupados por tipo:
 - **Fix:** un error corregido.
     
 ## v2.13 — 2026-11-04
-* Feature
+* Feature 
     - **Sobrecarga (El Rey Mago):** se queda quieto 8 s, sin teletransportarse y sin protección, para que puedas pegarle cuerpo a cuerpo. Después explota en hielo: 250% de su fuerza en un área 1,5 veces mayor que el terremoto del Gólem.
         - **Aviso:** un círculo marca el área, un anillo crece hasta el borde, hay cuenta regresiva y a su alrededor crecen cristales de hielo.
         - Se esquiva saliendo del círculo o rodando justo a tiempo. Pegarle no la interrumpe.
