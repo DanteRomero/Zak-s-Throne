@@ -391,7 +391,7 @@
     openModal('Primero, los pies en la tierra', 'BIENVENIDO A LOS AROMOS', parent => {
       if (isTouch()) {
         paragraph(parent,'La aldea es tu refugio. Apoyá el pulgar izquierdo en cualquier parte de la mitad izquierda y arrastralo para moverte. Buscá el arco y tocá E cerca de su brillo.');
-        paragraph(parent,'⚔ ataca y apunta solo al enemigo más cercano: cada cuarto golpe seguido es crítico. ⟲ te hace rodar y esquivar cualquier golpe. ✦ es tu habilidad, » activa o desactiva la carrera, ❦ usa una hierba y el botón de arma cambia entre las que tengas.');
+        paragraph(parent,'⚔ es un segundo analógico: arrastralo para apuntar, mirá el indicador y soltalo para atacar. Si solo lo tocás, apunta solo al enemigo más cercano. Cada cuarto golpe seguido es crítico. ⟲ te hace rodar y esquivar cualquier golpe. ✦ es tu habilidad, » activa o desactiva la carrera, ❦ usa una hierba y el botón de arma cambia entre las que tengas.');
         paragraph(parent,'Los enemigos sueltan monedas: gastalas en el puesto de El Almacén, al oeste de la plaza. Arriba tenés la ficha, el diario, el mapa, la pausa para guardar y ⛶ para pantalla completa. Se juega mejor con el celular en horizontal.');
       } else {
         paragraph(parent,'La aldea es tu refugio. Movete con WASD o flechas y buscá el arco: acercate a su brillo y presioná E.');
@@ -616,7 +616,6 @@
   $('herb-button').addEventListener('click',() => { game.useHerb(); $('world').focus(); });
   const isTouch = () => game.touchMode || (window.matchMedia && matchMedia('(pointer:coarse)').matches);
   const capture = (node,id) => { try { node.setPointerCapture(id); } catch (_) {} };
-  function setTouchKey(key,pressed) { if (pressed) game.keys.add(key); else game.keys.delete(key); }
   function touchButton(id,action) {
     $(id).addEventListener('pointerdown',event => {
       event.preventDefault(); if (game.state !== 'playing') return;
@@ -642,8 +641,36 @@
   });
   zone.addEventListener('pointermove',event => { if (event.pointerId === stickPointer) { event.preventDefault(); stickMove(event); } });
   ['pointerup','pointercancel','lostpointercapture'].forEach(type => zone.addEventListener(type,event => { if (event.pointerId === stickPointer) stickEnd(); }));
-  touchButton('touch-attack',event => { capture($('touch-attack'),event.pointerId); setTouchKey(' ',true); game.attack(); });
-  ['pointerup','pointercancel','lostpointercapture'].forEach(type => $('touch-attack').addEventListener(type,event => { event.preventDefault(); setTouchKey(' ',false); }));
+  // Analógico de ataque: mantenerlo muestra hacia dónde va el ataque y soltarlo lo ejecuta.
+  // Sin arrastrar apunta solo al enemigo más cercano; volver al centro antes de soltar cancela.
+  const aimStick = $('touch-attack'), aimKnob = aimStick.querySelector('.aim-knob'), AIM_RANGE = 38, AIM_DEAD_ZONE = .3, AIM_HOLD_MS = 140;
+  let aimPointer = null, aimOrigin = null, aimDragged = false, aimHold = null;
+  const actionScale = () => CONTROL_SIZES[game.settings.controls][2];
+  function aimMove(event) {
+    if (game.state !== 'playing') return;
+    const scale = actionScale(), max = AIM_RANGE * scale, dx = event.clientX - aimOrigin.x, dy = event.clientY - aimOrigin.y, len = Math.hypot(dx,dy) || 1, clamped = Math.min(max,len);
+    aimKnob.style.transform = 'translate(' + dx / len * clamped / scale + 'px,' + dy / len * clamped / scale + 'px)';
+    if (clamped / max >= AIM_DEAD_ZONE) {
+      aimDragged = true; clearTimeout(aimHold); game.attackPreview = false; game.attackStick = { x: dx / len, y: dy / len }; aimStick.classList.add('aiming');
+    } else {
+      game.attackStick = null; aimStick.classList.remove('aiming');
+    }
+  }
+  function aimEnd(fire) {
+    clearTimeout(aimHold);
+    if (fire && (!aimDragged || game.attackStick)) game.releaseAttack();
+    aimPointer = null; game.attackStick = null; game.attackPreview = false;
+    aimStick.classList.remove('active','aiming'); aimKnob.style.transform = '';
+  }
+  touchButton('touch-attack',event => {
+    if (aimPointer !== null) return;
+    aimPointer = event.pointerId; capture(aimStick,event.pointerId); aimOrigin = { x: event.clientX, y: event.clientY }; aimDragged = false; aimStick.classList.add('active');
+    // La espera evita que el indicador parpadee en cada toque corto.
+    aimHold = setTimeout(() => { if (aimPointer !== null && !aimDragged && game.state === 'playing') game.attackPreview = true; },AIM_HOLD_MS);
+  });
+  aimStick.addEventListener('pointermove',event => { if (event.pointerId === aimPointer) { event.preventDefault(); aimMove(event); } });
+  aimStick.addEventListener('pointerup',event => { if (event.pointerId === aimPointer) { event.preventDefault(); aimEnd(true); } });
+  ['pointercancel','lostpointercapture'].forEach(type => aimStick.addEventListener(type,event => { if (event.pointerId === aimPointer) aimEnd(false); }));
   touchButton('touch-roll',() => game.roll());
   touchButton('touch-ability',() => game.ability());
   touchButton('touch-interact',() => game.interact());

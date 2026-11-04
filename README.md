@@ -38,7 +38,8 @@ La dirección de movimiento orienta al personaje; el ratón permite dirigir ataq
 ### En el celular
 
 - **Joystick analógico:** apoyá el pulgar en cualquier parte de la mitad izquierda y arrastrá. Inclinarlo poco camina más despacio.
-- **Botones para el pulgar derecho:** ⚔ ataca y apunta solo al enemigo más cercano, ⟲ rueda, ✦ usa la habilidad, E se ilumina cuando hay algo para usar cerca, ❦ usa una hierba, » activa o desactiva la carrera y el botón de arma rota entre las conseguidas.
+- **Analógico de ataque:** mantené ⚔ y arrastralo para apuntar; al soltarlo se hace el ataque. Mientras apuntás se ve el indicador: con arco y piedra, una línea con el recorrido del tiro hasta donde va a pegar; con puños y espadas, el área que alcanza el golpe. Podés caminar para un lado y atacar para el otro. Sin arrastrar, apunta solo al enemigo más cercano. Volver al centro antes de soltar cancela el golpe.
+- **Botones para el pulgar derecho:** ⟲ rueda, ✦ usa la habilidad, E se ilumina cuando hay algo para usar cerca, ❦ usa una hierba, » activa o desactiva la carrera y el botón de arma rota entre las conseguidas.
 - **Arriba:** ficha, diario, mapa, pausa y ⛶ para pantalla completa, que también intenta fijar la orientación horizontal.
 - El teléfono vibra al recibir daño (se desactiva junto con la sacudida de pantalla). Se juega en horizontal o en vertical, aunque en horizontal se ve más mundo. Los botones de la interfaz también permiten acceder a habilidades, armas, ficha, mapa y pausa.
 
@@ -335,12 +336,13 @@ Implementado con **HTML, CSS y JavaScript**, sin paquetes externos. El mundo se 
 
 - `src/data.js`: personajes, enemigos, jefes, artículos del almacén y reglas puras de estadísticas, experiencia y mejoras.
 - `src/world.js`: mapa, biomas, objetos, colisiones y vecinos.
+- `src/pixel.js`: herramientas de pixel art: dibujo sin suavizado, contornos y destellos de sprites, fuente de píxeles propia, luces con tramado y ruido para el terreno.
 - `src/render.js`: sprites, terreno, cámara y efectos visuales.
 - `src/game.js`: simulación, movimiento, combate, esquiva, combos, monedas, tienda, jefes y habilidades.
 - `src/bosses.js`: el Chupasangre, el Gólem Minero, Cerbero y Zak; altar de ofrendas, portales e invocaciones.
 - `src/ui.js`: menús, HUD, tienda, ranking, guardados y controles táctiles.
 - `src/ranking.js` y `src/config.js`: ranking local u online (Supabase).
-- `tests/rules.test.js`: 30 pruebas de reglas y casos límite.
+- `tests/rules.test.js`: 37 pruebas de reglas y casos límite.
 
 Si ya tenés Node instalado:
 
@@ -348,9 +350,9 @@ Si ya tenés Node instalado:
 node tests/rules.test.js
 ```
 
-Abrí `tests/index.html` para ejecutar las 30 pruebas de reglas y las 37 pruebas de integración del motor en el navegador. El resultado detalla cada caso aprobado o fallido.
+Abrí `tests/index.html` para ejecutar las 37 pruebas de reglas y las 80 pruebas de integración del motor en el navegador. El resultado detalla cada caso aprobado o fallido.
 
-También se incluyen 16 pruebas de interfaz, 11 del ranking (con un servidor simulado) y 9 de controles táctiles con Chrome y Python 3, sin librerías adicionales. El verificador abre un perfil temporal aislado; nunca usa tus guardados personales:
+También se incluyen 31 pruebas de interfaz y de pixel art, 18 del ranking (con un servidor simulado) y 33 de controles táctiles con Chrome y Python 3, sin librerías adicionales. El verificador abre un perfil temporal aislado; nunca usa tus guardados personales:
 
 ```sh
 python tests/browser_check.py tests/index.html --script tests/engine.test.js

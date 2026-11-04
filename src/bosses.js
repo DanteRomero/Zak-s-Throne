@@ -159,7 +159,7 @@ Object.assign(Z.Game.prototype, {
   if(a){a.t+=dt;
    if(a.id==='swipe'){
     if(a.t<.42)return;
-    if(a.hits<2&&a.t>=.42+a.hits*.28){a.hits++;this.sound.play('swing');this.effect(e.x+e.aimX*22,e.y-10+e.aimY*22,'slash',.2,{radius:40});
+    if(a.hits<2&&a.t>=.42+a.hits*.28){a.hits++;this.sound.play('swing');this.effect(e.x+e.aimX*22,e.y-10+e.aimY*22,'slash',.2,{radius:40,ang:Math.atan2(e.aimY,e.aimX)});
      if(this.inFront(e,54,.3))this.hurtPlayer(e.stats.strength*.85,e.type);}
     if(a.t>1.07)e.act=null;return;}
    if(a.id==='lunge'){
@@ -216,7 +216,7 @@ Object.assign(Z.Game.prototype, {
   if(a){a.t+=dt;
    if(a.id==='bite'){
     if(a.t<.47){this.aimAt(e);return;}
-    if(!a.done){a.done=true;this.sound.play('bite');this.effect(e.x+e.aimX*24,e.y-12+e.aimY*24,'slash',.2,{radius:30});
+    if(!a.done){a.done=true;this.sound.play('bite');this.effect(e.x+e.aimX*24,e.y-12+e.aimY*24,'slash',.2,{radius:30,ang:Math.atan2(e.aimY,e.aimX)});
      if(this.inFront(e,58,.2)&&this.hurtPlayer(e.stats.strength*1.1,e.type)&&this.state==='playing'){p.bleed={time:5,tick:1,damage:5};this.emit('toast',{message:'Te estás desangrando: 5 de vida por segundo durante 5 s.',error:true});}}
     if(a.t>.72)e.act=null;return;}
    if(a.id==='jump'){
@@ -256,7 +256,7 @@ Object.assign(Z.Game.prototype, {
     const n=Math.floor(a.t/.7),ph=a.t-n*.7;a.swing=n;
     if(n>=3){e.act=null;e.cd.slash=3.5;e.cd.rest=ZAK_REST;return;}
     if(ph<.3)this.aimAt(e);
-    if(ph>=.45&&a.done!==n){a.done=n;this.sound.play('swing');this.shake(3,.15);this.effect(e.x+e.aimX*40,e.y-14+e.aimY*40,'slash',.25,{radius:70});
+    if(ph>=.45&&a.done!==n){a.done=n;this.sound.play('swing');this.shake(3,.15);this.effect(e.x+e.aimX*40,e.y-14+e.aimY*40,'slash',.25,{radius:70,ang:Math.atan2(e.aimY,e.aimX)});
      this.move(e,e.aimX*10,e.aimY*10,10,e.biome);
      if(this.inFront(e,105,Math.cos(Math.PI/6)))this.zakHit(e,1);}
     return;}

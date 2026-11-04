@@ -54,5 +54,19 @@
   const time=g.time;document.getElementById('pause-button').click();g.update(1);
   assert('Pausa detiene la simulación',g.time===time&&g.state==='paused');close();
   await wait();
+  // Pixel art: nada de suavizado, escala entera y letra propia para todos los textos del juego.
+  const Px=Zak.Pixel,sheet=document.createElement('canvas');sheet.width=sheet.height=120;const pen=Px.install(sheet.getContext('2d'));
+  const onlySolid=()=>{const data=pen.getImageData(0,0,120,120).data;for(let i=3;i<data.length;i+=4)if(data[i]!==0&&data[i]!==255)return false;return true;};
+  Px.scale=1.6;Zak.drawCharacter(pen,{x:40,y:70,characterId:'dante',dir:'right'},0,true);Px.scale=1;
+  assert('Un sprite escalado no deja píxeles semitransparentes',onlySolid());
+  pen.fillStyle='#fff';pen.strokeStyle='#fff';pen.lineWidth=3;pen.setLineDash([5,4]);pen.beginPath();pen.ellipse(70,70,30,18,.4,0,Math.PI*2);pen.stroke();pen.setLineDash([]);pen.beginPath();pen.moveTo(10,10);pen.arc(10,10,25,.2,1.2);pen.closePath();pen.fill();
+  assert('Trazos y rellenos curvos salen sin antialiasing',onlySolid());
+  const missing=[];
+  for(const text of ['abcdefghijklmnñopqrstuvwxyzáéíóúü¿?¡!.,:;-+/()%0123456789','ABCDEFGHIJKLMNÑOPQRSTUVWXYZÁÉÍÓÚÜ«»…$',...g.world.objects.map(o=>o.label||''),...g.world.npcs.map(n=>n.name||''),...Zak.CHARACTERS.map(c=>c.name),...Object.values(Zak.OFFERINGS).map(o=>o.icon),'♪♫☠✦▸▼▲⚒✝≈✓🗝'])
+    for(const ch of Array.from(text))if(!Px.hasGlyph(ch))missing.push(ch);
+  assert('La fuente de píxeles dibuja todos los textos del juego: '+missing.join(''),missing.length===0);
+  assert('La fuente chica también escribe nombres y carteles',[...g.world.objects.map(o=>o.label||''),...g.world.npcs.map(n=>n.name||'')].every(text=>Array.from(text).every(ch=>Px.hasGlyph(ch,6))));
+  g.renderer.resize(true);const world=document.getElementById('world'),scale=world.getBoundingClientRect().width*devicePixelRatio/world.width;
+  assert('Con lugar suficiente, cada píxel del juego mide un número entero de píxeles reales',Math.abs(scale-Math.round(scale))<.01);
   return {passed:results.filter(r=>r.pass).length,failed:results.filter(r=>!r.pass).length,results};
 })()

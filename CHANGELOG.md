@@ -6,6 +6,35 @@ Cada versión lista sus cambios agrupados por tipo:
 - **Change:** algo que ya existía y ahora funciona distinto.
 - **Fix:** un error corregido.
 
+## v2.9 — 2026-11-04
+* Change
+    - **Apuntar y soltar (celular):** mantener el analógico de ataque ya no ataca: muestra hacia dónde va a salir el golpe, y el ataque se hace al soltarlo.
+        - **A distancia (arco y piedra):** una línea marca el recorrido real del tiro y termina donde va a pegar: una mira sobre el primer enemigo, una barra si choca con un obstáculo o una flecha si llega al máximo alcance.
+        - **Cuerpo a cuerpo (puños y espadas):** un área muestra el rango exacto del golpe, con el mismo alcance y ángulo que usa el daño.
+        - Si el ataque todavía no está listo, el indicador se ve apagado. Si soltás cuando le falta poco (hasta 0,35 s), el golpe sale apenas esté listo en vez de perderse.
+        - Sin arrastrar, mantenerlo muestra el indicador hacia el enemigo más cercano; un toque corto ataca directo. Volver al centro antes de soltar sigue cancelando.
+
+## v2.8 — 2026-11-04
+* Feature
+    - **Analógico de ataque (celular):** el botón ⚔ ahora es un analógico como el de movimiento. Arrastralo para elegir la dirección exacta del golpe o del disparo; ataca sin parar mientras esté inclinado y podés caminar para un lado y pegar para el otro.
+        - Mientras apuntás, una guía en pantalla marca el alcance real: la línea del tiro con arco y piedra, la zona que barre el golpe con puños y espadas.
+        - Un toque, o dejarlo apretado sin moverlo, sigue apuntando solo al enemigo más cercano. Volver al centro antes de soltar cancela el golpe.
+    - **Animaciones de ataque:** la espada se balancea con una estela en la dirección real del golpe, alternando el lado en cada golpe; el puño sale desde el hombro; el arco se tensa; la piedra se arroja. También se ven el hacha y el pico al juntar materiales.
+    - **Muerte de los enemigos:** destello blanco, el cuerpo se encoge y salta en pedazos del color de cada uno.
+    - **Vida de fondo:** mariposas y hojas que vuelan de día, luciérnagas de noche y polvo en las cuevas.
+* Change
+    - **Gráficos más nítidos, siempre en pixel art:** ya no hay bordes borrosos en jefes, polígonos, círculos ni avisos de ataque, y cada sprite lleva contorno. En la mayoría de las pantallas, cada píxel del juego mide un número entero de píxeles reales, así que todos quedan iguales; a cambio, la vista puede ser hasta un 12,5% más grande o más chica según la pantalla.
+    - **Personajes:** caminata de 4 cuadros con vistas de frente, espalda y costado, respiración y parpadeo. La voltereta gira de a cuartos, con estela. Al recibir un golpe, destello blanco.
+    - **Enemigos:** nuevas animaciones de aleteo (murciélago), reptar (víbora), galope y cola (perro), y patas que se mueven más rápido cuando te persiguen. Quietos, respiran. La barra de vida cambia de color según cuánta les queda.
+    - **Terreno:** pasto, tierra y roca con textura natural en lugar de la grilla de cuadrados; caminos de borde irregular; biomas que se funden entre sí; plaza con adoquines; alfombra del trono con rombos.
+    - **Árboles, arbustos y laguna redibujados:** follaje en racimos con luz y sombra que se mueve con el viento; la laguna tiene orilla, profundidad, ondas, destellos y juncos.
+    - **Luz y oscuridad con tramado:** antorcha, faroles, fogatas y penumbra de las cuevas sin degradados lisos.
+    - **Letra de píxeles propia:** carteles, nombres, números de daño y diálogos se leen claros. Los críticos saltan más grandes.
+    - **Tiros:** la flecha vuela en su ángulo real, con estela; la bola de fuego y el veneno dejan rastro; las piedras giran cuadro a cuadro.
+    - El terreno se reutiliza al empezar una partida nueva, así que arranca sin trabarse.
+* Fix
+    - El polvo al correr podía no dibujarse si todavía no habías rodado; ahora aparece siempre, también en la aldea.
+
 ## v2.7 — 2026-11-03
 * Change
     - **Respiro de Zak:** después de cada ataque se queda quieto 2 s, sin perseguirte ni atacar, para que puedas pegarle cuerpo a cuerpo. Los tres espadazos ahora tardan 3,5 s en volver a estar listos (antes 2 s).
