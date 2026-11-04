@@ -256,7 +256,7 @@ Object.assign(Z.Game.prototype, {
     const n=Math.floor(a.t/.7),ph=a.t-n*.7;a.swing=n;
     if(n>=3){e.act=null;e.cd.slash=3.5;e.cd.rest=ZAK_REST;return;}
     if(ph<.3)this.aimAt(e);
-    if(ph>=.45&&a.done!==n){a.done=n;this.sound.play('swing');this.shake(3,.15);this.effect(e.x+e.aimX*40,e.y-14+e.aimY*40,'slash',.25,{radius:70,ang:Math.atan2(e.aimY,e.aimX)});
+    if(ph>=.45&&a.done!==n){a.done=n;this.sound.play('swing');this.shake(3,.15);this.effect(e.x+e.aimX*40,e.y-14+e.aimY*40,'slash',.25,{radius:70,ang:Math.atan2(e.aimY,e.aimX),own:true});
      this.move(e,e.aimX*10,e.aimY*10,10,e.biome);
      if(this.inFront(e,105,Math.cos(Math.PI/6)))this.zakHit(e,1);}
     return;}

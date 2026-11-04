@@ -5,6 +5,8 @@ const Z = window.Zak, clamp = (v,a,b) => Math.max(a,Math.min(b,v));
 const distance = (a,b) => Math.hypot(a.x-b.x,a.y-b.y);
 const dirs = {down:[0,1],up:[0,-1],left:[-1,0],right:[1,0]};
 const ATTACK_QUEUE_TIME = .35;
+// Lluvia de cuchillos del Capo: aviso, duración y ritmo en segundos reales.
+const KNIFE_WINDUP = .9, KNIFE_TIME = 5, KNIFE_RATE = 3, KNIFE_KO = 5, KNIFE_COOLDOWN = 18, KNIFE_FIRST = 7;
 const names = Z.BIOME_NAMES = {village:'Palihue City',cave:'Cueva del Eco',weeds:'Los Yuyos',cave2:'Cueva Profunda',cave3:'Las Entrañas',altar:'Altar del gobernante',throne:'Trono de Zak',sanctum:'Santuario',magic:'Pueblo Mágico'};
 const isCave = biome => /^cave/.test(biome||'');
 const ROLL_TIME=.3,ROLL_COOLDOWN=.55,ROLL_COST=.2,COMBO_CRIT=4,CRIT_MULTIPLIER=1.75,HERB_REGROW=90,TAIL_RADIUS=62;
@@ -113,7 +115,7 @@ class Game {
   this.biome='village';this.time=0;this.effects=[];this.projectiles=[];this.drops=[];this.queuedWaves=[];this.questFlags={};this.currentSlot=null;this.bolts=[];this.darkness=0;this.exitPortal=null;this.cutscene=null;this.cutsceneFade=0;
   this.enemies=this.world.enemySpawns.map(s=>this.makeEnemy(s));this.clearInput();this.aim=null;this.state='playing';this.renderer.resize(true);this.emit('start');
  }
- makeEnemy(s){const stats=this.enemyStatsFor(s.type,0);return{...s,homeX:s.x,homeY:s.y,biome:Z.biomeAt(s.x,s.y),stats,hp:stats.health,maxHp:stats.health,level:stats.level,dir:'down',walk:0,moving:false,dead:false,respawn:0,cooldown:.6,stun:0,charm:0,latched:0,latchRest:0,alert:false,provoked:false,hitFlash:0,special:2.5,telegraph:0,dash:0,aimX:0,aimY:1,life:0,act:null,cd:{},shield:0,seated:false,yielding:null,pose:null,air:false,lift:0,lowFortified:false,backoff:0};}
+ makeEnemy(s){const stats=this.enemyStatsFor(s.type,0);return{...s,homeX:s.x,homeY:s.y,biome:Z.biomeAt(s.x,s.y),stats,hp:stats.health,maxHp:stats.health,level:stats.level,dir:'down',walk:0,moving:false,dead:false,respawn:0,cooldown:.6,stun:0,charm:0,latched:0,latchRest:0,alert:false,provoked:false,hitFlash:0,special:2.5,telegraph:0,dash:0,aimX:0,aimY:1,life:0,act:null,cd:{},rain:null,rainCd:KNIFE_FIRST,shield:0,seated:false,yielding:null,pose:null,air:false,lift:0,lowFortified:false,backoff:0};}
  pause(){if(this.state==='playing'){this.state='paused';this.clearInput();}}
  resume(){if(this.state==='paused'){this.state='playing';this.clearInput();}}
  vibrate(ms){if(this.touchMode&&this.settings.shake&&navigator.vibrate)try{navigator.vibrate(ms);}catch(_){}}
@@ -259,7 +261,7 @@ class Game {
   // Gólem y Zak tienen varias vidas: al vaciar una, se levantan con la siguiente.
   if(e.hp<=0&&this.bossNextLife(e))return;
   if(e.hp<=0){const first=!this.questFlags['defeat_'+e.type];e.hp=0;e.dead=true;e.respawn=definition.respawn||35;e.alert=false;e.telegraph=0;e.dash=0;this.player.kills++;this.questFlags['defeat_'+e.type]=true;
-   this.effect(e.x,e.y-8,'poof',.6,{seed:Math.random()*99});this.effect(e.x,e.y,'corpse',definition.boss?.8:.45,{seed:Math.random()*99,enemy:{...e,act:null,moving:false,telegraph:0,alert:false,hitFlash:0}});this.sound.play(definition.boss?'boss':'death');
+   this.effect(e.x,e.y-8,'poof',.6,{seed:Math.random()*99});this.effect(e.x,e.y,'corpse',definition.boss?.8:.45,{seed:Math.random()*99,enemy:{...e,act:null,rain:null,dash:0,moving:false,telegraph:0,alert:false,hitFlash:0}});this.sound.play(definition.boss?'boss':'death');
    const levels=Z.grantXp(this.player,e.stats.xp,this.context());this.effect(e.x,e.y-38,'heal',1.1,{text:'+'+this.number(e.stats.xp*this.stats().xpMultiplier)+' EXP'});
    const[min,max]=definition.coins||[0,0];if(!e.summoned)this.dropCoins(e.x,e.y,min+Math.floor(Math.random()*(max-min+1))+Math.floor((e.level-1)/2));
    if(definition.drop&&!e.summoned)this.dropOffering(e.x,e.y,definition.drop);
@@ -291,7 +293,7 @@ class Game {
   const p=this.player;for(const e of this.enemies){
    if(e.dead){if(e.summoned)continue;e.respawn-=dt;if(e.respawn<=0&&distance({x:e.homeX,y:e.homeY},p)>230)Object.assign(e,this.makeEnemy({id:e.id,type:e.type,x:e.homeX,y:e.homeY}));continue;}
    e.cooldown=Math.max(0,e.cooldown-dt*(isBoss(e)?Z.BOSS_TEMPO:1));e.hitFlash=Math.max(0,e.hitFlash-dt);e.latchRest=Math.max(0,e.latchRest-dt);e.stun=Math.max(0,e.stun-dt);e.charm=Math.max(0,e.charm-dt);e.moving=false;
-   if(e.stun>0){e.alert=false;e.telegraph=0;e.dash=0;e.backoff=0;if(!isBoss(e))e.act=null;continue;}const sameZone=e.biome===this.biome&&!Z.isSafe(this.biome);
+   if(e.stun>0){e.alert=false;e.telegraph=0;e.dash=0;e.backoff=0;if(e.rain){e.rain=null;e.rainCd=KNIFE_COOLDOWN;}if(!isBoss(e))e.act=null;continue;}const sameZone=e.biome===this.biome&&!Z.isSafe(this.biome);
    if(isBoss(e)){const bossDt=dt*Z.BOSS_TEMPO;if(e.type==='capo'||e.type==='yarara')this.updateBoss(e,bossDt,sameZone);else this.updateBigBoss(e,bossDt,sameZone);if(this.state!=='playing')break;continue;}
    if(e.type==='mage'||e.type==='armor'){this.updateDimensionEnemy(e,dt,sameZone);if(this.state!=='playing')break;continue;}
    if(e.latched>0){
@@ -326,6 +328,9 @@ class Game {
  updateBoss(e,dt,sameZone){
   const p=this.player,len=distance(e,p),wasAlert=e.alert;
   e.alert=sameZone&&(e.summoned||len<230||(e.alert&&len<400));
+  // La lluvia de cuchillos tiene alcance infinito: dura mientras sigas en su zona, y él no se mueve.
+  if(e.rain){if(sameZone){this.updateKnifeRain(e,dt/Z.BOSS_TEMPO);return;}e.rain=null;e.rainCd=KNIFE_COOLDOWN;}
+  if(e.type==='capo'&&e.alert)e.rainCd=Math.max(0,e.rainCd-dt/Z.BOSS_TEMPO);
   if(!e.alert){e.telegraph=0;e.dash=0;e.backoff=0;}
   e.tailCd=Math.max(0,(e.tailCd||0)-dt);
   if(e.alert&&!wasAlert){this.sound.play('telegraph');if(!e.summoned)this.emit('boss',{name:Z.ENEMY_TYPES[e.type].name});}
@@ -347,10 +352,24 @@ class Game {
   if(e.type==='yarara'&&e.alert){
    if(len<TAIL_RADIUS&&e.tailCd<=0){e.kind='tail';e.telegraph=.75;e.tailCd=3;this.sound.play('telegraph');return;}
    if(e.special<=0&&len<260){e.special=3.8;e.backoff=.4;return;}
+  }else if(e.alert&&!e.summoned&&e.rainCd<=0){
+   e.rain={t:0,wind:KNIFE_WINDUP,thrown:0,hits:0};e.moving=false;this.sound.play('telegraph');this.emit('toast',{message:'¡Lluvia de cuchillos! Atraviesan todo: rodá para esquivarlos.',error:true});return;
   }else if(e.alert&&e.special<=0&&len<260){
    e.kind='dash';e.telegraph=1;e.special=4.2;e.aimX=(p.x-e.x)/(len||1);e.aimY=(p.y-e.y)/(len||1);
    this.sound.play('telegraph');return;}
   if(e.alert&&len<26&&e.cooldown<=0)this.enemyAttack(e);
+ }
+ // Lluvia de cuchillos: cada cuchillo sale hacia donde estás en ese momento, atraviesa todo y solo se frena al salir de la zona.
+ updateKnifeRain(e,dt){
+  const p=this.player,r=e.rain;r.t+=dt;e.moving=false;e.alert=true;
+  const aim=Math.atan2(p.y-8-(e.y-26),p.x-e.x),dx=Math.cos(aim),dy=Math.sin(aim);e.aimX=dx;e.aimY=dy;e.dir=this.dirOf(dx,dy);
+  if(r.t<r.wind)return;
+  const total=KNIFE_TIME*KNIFE_RATE,due=Math.min(total,Math.floor((r.t-r.wind)*KNIFE_RATE)+1);
+  while(r.thrown<due){
+   r.thrown++;this.sound.play('swing');
+   this.projectiles.push({x:e.x+dx*14,y:e.y-26+dy*14,dx,dy,type:'knife',hostile:true,zone:e.biome,tally:r,damage:e.stats.strength*2,source:e.type,traveled:0,range:Infinity});
+  }
+  if(r.t>=r.wind+KNIFE_TIME){e.rain=null;e.rainCd=KNIFE_COOLDOWN;e.cooldown=.6;}
  }
  // Colazo: golpea todo el anillo alrededor de la Yarará y empuja hacia afuera. Se esquiva rodando o alejándose.
  tailSweep(e){
@@ -396,9 +415,10 @@ class Game {
  updateProjectiles(dt){
   const p=this.player;
   this.projectiles=this.projectiles.filter(s=>{if(this.state!=='playing')return false;if(s.type==='boomerang')return this.updateBoomerang(s,dt);
-   const speed=s.type==='bow'||s.type==='arrow'?330:s.type==='venom'?185:s.type==='boulder'?215:s.type==='fireball'?200:235,travel=speed*dt;s.x+=s.dx*travel;s.y+=s.dy*travel;s.traveled+=travel;
-   if(s.traveled>s.range||Z.collides(this.world,s.x,s.y,2))return false;
+   const speed=s.type==='bow'||s.type==='arrow'?330:s.type==='venom'?185:s.type==='boulder'?215:s.type==='fireball'?200:s.type==='knife'?250:235,travel=speed*dt;s.x+=s.dx*travel;s.y+=s.dy*travel;s.traveled+=travel;
+   if(s.zone?Z.biomeAt(s.x,s.y)!==s.zone:s.traveled>s.range||Z.collides(this.world,s.x,s.y,2))return false;
    if(s.hostile){if(Math.hypot(p.x-s.x,p.y-8-s.y)<(s.type==='boulder'?16:s.type==='fireball'?13:11)){const hit=this.hurtPlayer(s.damage,s.source);
+     if(hit&&this.state==='playing'&&s.tally&&++s.tally.hits>=KNIFE_KO){this.emit('toast',{message:'¡Cinco cuchillazos! El Capo te noqueó.',error:true});this.knockout(s.source);return false;}
      if(hit&&this.state==='playing'&&s.burn)this.burnPlayer(s.burn);
      if(hit&&this.state==='playing'&&s.type==='venom'&&Math.random()<(p.characterId==='fede'?.15:.5))this.poisonPlayer(s.poison);
      if(hit&&this.state==='playing'&&s.stun){p.stunned=s.stun;p.gather=null;this.shake(5,.3);this.emit('toast',{message:'¡Piedrazo! Quedaste aturdido '+s.stun+' segundos.',error:true});}

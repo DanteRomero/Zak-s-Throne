@@ -143,17 +143,48 @@
       const thief = enemy('thief',p.x+20); thief.stun = 100;
       game.keys.add(' '); advance(2.1); near(thief.hp,100-3*7.5);
     });
+    test('Knife rain: five seconds, three knives a second, and the Capo stays put aiming at you', () => {
+      const p = fixture(); p.rollX = 0; p.rollY = 0; const capo = enemy('capo', p.x + 90); capo.rainCd = 0; capo.special = 99;
+      game.update(1 / 60); ok(capo.rain, 'The rain starts'); const spot = {x: capo.x, y: capo.y};
+      advance(.8); equal(game.projectiles.filter(s => s.type === 'knife').length, 0, 'Warns before the first knife');
+      p.y -= 30; advance(.15); const first = game.projectiles.find(s => s.type === 'knife'); ok(first, 'First knife'); ok(first.dy < 0, 'Aims at where you are now');
+      const knives = new Set(); let frames = 0; while (capo.rain && frames++ < 400) { game.projectiles.forEach(s => { if (s.type === 'knife') knives.add(s); }); p.roll = .1; game.update(1 / 60); }
+      game.projectiles.forEach(s => { if (s.type === 'knife') knives.add(s); });
+      equal(knives.size, 15, 'Exactly 15 knives'); equal(capo.rain, null, 'Ends by itself'); ok(Math.abs((frames + 54) / 60 - 5.9) < .1, 'Lasts five seconds after the warning'); near(capo.x, spot.x, 'Does not chase'); near(capo.y, spot.y, 'Does not flee');
+    });
+    test('Knives pass through walls, have no range limit and never leave the zone', () => {
+      const p = fixture(); p.y = 1500; Z.collides = () => true;
+      const knife = {x: 1500, y: 700, dx: -1, dy: 0, type: 'knife', hostile: true, zone: 'weeds', tally: {hits: 0}, damage: 1, source: 'capo', traveled: 0, range: Infinity};
+      game.projectiles = [knife]; for (let k = 0; k < 60; k++) game.updateProjectiles(1 / 60);
+      ok(game.projectiles.includes(knife), 'Walls do not stop it');
+      for (let k = 0; k < 600 && game.projectiles.includes(knife); k++) game.updateProjectiles(1 / 60);
+      ok(!game.projectiles.includes(knife), 'It does not leave the zone'); ok(knife.traveled > 350, 'Flies further than any shot'); ok(knife.x < 900 && knife.x > 880, 'Dropped right at the zone edge');
+    });
+    test('Five knife hits in one rain knock you out; rolling dodges', () => {
+      const p = fixture(); const tally = {hits: 0}; p.coins = 100;
+      const throwAt = () => game.projectiles.push({x: p.x, y: p.y - 8, dx: 1, dy: 0, type: 'knife', hostile: true, zone: game.biome, tally, damage: 1, source: 'capo', traveled: 0, range: Infinity});
+      p.roll = .2; throwAt(); game.updateProjectiles(1 / 60); equal(tally.hits, 0, 'A roll dodges and does not count'); p.roll = 0; game.projectiles = [];
+      for (let k = 0; k < 4; k++) { throwAt(); game.updateProjectiles(1 / 60); } equal(tally.hits, 4); equal(game.state, 'playing');
+      throwAt(); game.updateProjectiles(1 / 60); equal(p.coins, 70, 'Knocked out by the Capo: loses 30%'); equal(game.biome, 'village'); equal(game.projectiles.length, 0);
+    });
+    test('Leaving the zone or stunning the Capo stops the rain; his summoned copy never uses it', () => {
+      const p = fixture(); const capo = enemy('capo', p.x + 90); capo.rainCd = 0; capo.special = 99; game.update(1 / 60); ok(capo.rain);
+      capo.stun = 1; game.update(1 / 60); equal(capo.rain, null, 'Stun cancels');
+      capo.stun = 0; capo.rain = {t: 0, wind: .9, thrown: 0, hits: 0}; p.x = 800; game.update(1 / 60); equal(capo.rain, null, 'Leaving the zone cancels');
+      const q = fixture(); const minion = enemy('capo', q.x + 90); minion.summoned = true; minion.rainCd = 0; minion.special = 99; game.update(1 / 60); equal(minion.rain, null);
+    });
     test('Fists hit a straight area; swords hit a fan with the same reach', () => {
       const hits = (weapon, along, side) => {
         const p = fixture(); p.weapons.push(weapon); p.weapon = weapon; p.dir = 'right'; p.attackCooldown = 0;
         const target = enemy('thief', p.x + along, p.y + side); target.stun = 100; const hp = target.hp; game.attack(); return target.hp < hp;
       };
       equal(Z.WEAPON_TYPES.sword.range, Z.WEAPON_TYPES.fists.range, 'Same reach');
-      ok(hits('fists', 30, 15), 'Fists: inside the straight area');
-      ok(!hits('fists', 20, 25), 'Fists: a side the old fan reached is now out');
-      ok(!hits('fists', 40, 0), 'Fists: past the reach');
-      ok(hits('sword', 20, 25), 'Sword: the fan does reach that side');
-      ok(!hits('sword', 40, 0), 'Sword: past the reach');
+      equal(Z.WEAPON_TYPES.fists.range, 45); equal(Z.WEAPON_TYPES.fists.width, 24);
+      ok(hits('fists', 40, 10), 'Fists: inside the straight area');
+      ok(!hits('fists', 25, 20), 'Fists: too far to the side');
+      ok(!hits('fists', 50, 0), 'Fists: past the reach');
+      ok(hits('sword', 25, 20), 'Sword: the fan does reach that side');
+      ok(!hits('sword', 50, 0), 'Sword: past the reach');
     });
     test('The bow reaches three old sword lengths and no further', () => {
       const p = fixture(); p.weapon = 'bow'; p.weapons.push('bow'); p.dir = 'right'; equal(Z.WEAPON_TYPES.bow.range, 165); equal(Z.WEAPON_TYPES.stone.range, Z.WEAPON_TYPES.bow.range, 'Stone and bow share their reach');

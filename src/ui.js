@@ -592,6 +592,7 @@
   }
   // Qué está por hacer el jefe, en pocas palabras y con la forma de esquivarlo.
   function bossWarning(boss) {
+    if (boss.rain) return '¡LLUVIA DE CUCHILLOS! RODÁ (CTRL) · ' + boss.rain.hits + ' DE 5 TE NOQUEA';
     if (boss.telegraph > 0) return boss.type === 'capo' ? '¡VA A EMBESTIR! RODÁ (CTRL)' : boss.kind === 'tail' ? '¡COLAZO! ALEJATE O RODÁ (CTRL)' : '¡VENENO! RODÁ (CTRL)';
     if (boss.yielding) return game.exitPortal ? 'PORTAL A LA ALDEA · ' + Math.ceil(game.exitPortal.time) + ' s' : 'ZAK DEJA DE PELEAR';
     if (boss.seated) return 'SE CURA EN EL TRONO: VENCÉ AL JEFE INVOCADO';

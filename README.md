@@ -187,7 +187,7 @@ Escalan con tu nivel como el resto de los enemigos, no retroceden con los golpes
 
 Son los valores en nivel 1; todos crecen con tu nivel. Hacen el **68%** de su fuerza como daño (los enemigos comunes, el 72%) y tienen un **10% más de vida** que la base de su ficha (los enemigos comunes, un 20% más). La tabla ya incluye ese extra. Desde el nivel 8 ganan **4%** de vida extra por nivel, como el resto. Entre el aviso y el golpe hay tiempo de reaccionar: entre 0,6 y 1 s para embestidas, saltos y golpes al piso, y menos de medio segundo para los golpes cortos. Caminan un **25% más lento** que lo que indica su velocidad, pero hacen todo a un **ritmo 20% mayor**: preparan, atacan, se mueven y recargan sus ataques antes (los tiempos de aviso de esta sección ya son más cortos en la práctica).
 
-- **El Capo del Eco:** marca una línea roja y embiste: 160% de su fuerza y frena 1,5 s.
+- **El Capo del Eco:** marca una línea roja y embiste: 160% de su fuerza y frena 1,5 s. *Lluvia de cuchillos*: se planta sin perseguirte ni huir y durante 5 s tira 3 cuchillos por segundo, cada uno hacia donde estés en ese momento (200% de su fuerza). Atraviesan cualquier estructura, llegan a toda la cueva y no salen de ella. **Si te dan 5 en una misma lluvia, te noquea.** Se esquivan rodando, y aturdirlo o salir de la zona la corta.
 - **La Yarará Madre:** te persigue. Colazo en anillo alrededor suyo (marca un círculo rosado: rodá o alejate). Antes de escupir el abanico de veneno retrocede un poco y marca tres líneas (50% de envenenar; 15% contra Fede).
 - **El Chupasangre:** *Embestida sangrienta* (línea roja; si te alcanza te agarra 1,7 s, te chupa la sangre tres veces y se cura 4% de su vida por mordida), *Manotazo* (dos golpes rápidos de corto alcance) e *Invocación* (se aleja y llama a cinco murciélagos).
 - **El Gólem Minero:** cuatro vidas, de piedra, hierro, oro y diamante; cada una tiene más vida y fuerza y se rearma con una animación del material. *Terremoto*: cuatro golpes al piso, cada uno avisado con un anillo naranja 0,9 s antes, con mucho daño en área. *Piedrazo*: aturde 3 s. *Refuerzo*: invencible 5 s cada 15 s, y al instante al bajar del 30% de vida (una vez por vida).
@@ -350,7 +350,7 @@ Si ya tenés Node instalado:
 node tests/rules.test.js
 ```
 
-Abrí `tests/index.html` para ejecutar las 37 pruebas de reglas y las 80 pruebas de integración del motor en el navegador. El resultado detalla cada caso aprobado o fallido.
+Abrí `tests/index.html` para ejecutar las 37 pruebas de reglas y las 86 pruebas de integración del motor en el navegador. El resultado detalla cada caso aprobado o fallido.
 
 También se incluyen 31 pruebas de interfaz y de pixel art, 18 del ranking (con un servidor simulado) y 33 de controles táctiles con Chrome y Python 3, sin librerías adicionales. El verificador abre un perfil temporal aislado; nunca usa tus guardados personales:
 

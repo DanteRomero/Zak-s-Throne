@@ -140,7 +140,7 @@
       name: 'El Capo del Eco', boss: true, base: { health: 520, strength: 12, speed: 22, endurance: 35 },
       growth: { health: 30, strength: 0.8, speed: 1, endurance: 1.5 },
       xp: 650, coins: [45, 60], color: '#c99a5c', visionRange: 230, knockback: false, respawn: 180, drop: 'ring',
-      description: 'Custodia la bajada a la Cueva Profunda: mientras esté vivo no se baja. Avisa con una línea roja y embiste: rodá hacia un costado.'
+      description: 'Custodia la bajada a la Cueva Profunda: mientras esté vivo no se baja. Avisa con una línea roja y embiste: rodá hacia un costado. Cada tanto se planta y tira una lluvia de cuchillos que atraviesa todo: cinco cuchillazos y te noquea.'
     },
     yarara: {
       name: 'La Yarará Madre', boss: true, base: { health: 480, strength: 10, poison: 5, speed: 28, endurance: 20 },
@@ -255,8 +255,8 @@
 
   Zak.WEAPON_TYPES = {
     // width: golpea en un área recta de ese ancho; sin width, en abanico.
-    fists: { name: 'Puños', damageMultiplier: 1, range: 36, width: 36, description: 'Un buen golpe recto a corta distancia.' },
-    sword: { name: 'Espada', damageMultiplier: 1.5, range: 36, biome: 'weeds', description: '50% de daño adicional y un golpe en abanico.' },
+    fists: { name: 'Puños', damageMultiplier: 1, range: 45, width: 24, description: 'Un buen golpe recto a corta distancia.' },
+    sword: { name: 'Espada', damageMultiplier: 1.5, range: 45, biome: 'weeds', description: '50% de daño adicional y un golpe en abanico.' },
     bow: { name: 'Arco', damageMultiplier: 1, range: 165, chargeTime: 0.7, biome: 'village', description: 'Dispara a distancia. Hay que tensarlo entre flechas.' },
     stone: { name: 'Piedra', damageMultiplier: 1, range: 165, walkToReload: 2, biome: 'cave', description: 'Una munición; caminar durante 2 s recarga el siguiente tiro.' },
     elemental: { name: 'Espada Elemental', damageMultiplier: 4.5, range: 62, crafted: true, description: 'Forjada con cinco Piedras Elementales. Mucho más daño que la espada mejorada al máximo.' }

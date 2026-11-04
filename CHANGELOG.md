@@ -6,6 +6,32 @@ Cada versión lista sus cambios agrupados por tipo:
 - **Change:** algo que ya existía y ahora funciona distinto.
 - **Fix:** un error corregido.
     
+## v2.11 — 2026-11-04
+* Feature
+    - **Lluvia de cuchillos (El Capo del Eco):** se planta en su lugar, sin perseguirte ni huir, avisa con los cuchillos en alto y durante 5 s tira 3 por segundo (200% de su fuerza), cada uno hacia donde estés en ese momento.
+        - Los cuchillos atraviesan cualquier estructura y llegan a toda la cueva, pero no salen de ella.
+        - **Cinco cuchillazos en una misma lluvia te noquean.** Sobre tu cabeza y en la barra del jefe se ve cuántos llevás.
+        - Se esquivan rodando. Aturdirlo o salir de la zona la corta. La copia que invoca Zak no la usa.
+* Change
+    - **Jefes redibujados:** los siete ahora están dibujados a su tamaño real, píxel por píxel, en lugar de ser sprites chicos agrandados.
+        - **El Capo:** traje a rayas, sombrero, anteojos negros, bigote, cigarrillo y faca.
+        - **La Yarará:** cuerpo por segmentos con su dibujo de rombos.
+        - **El Chupasangre:** capa que se abre como alas de murciélago, garras y colmillos.
+        - **El Gólem:** bloques de roca con vetas de mineral, puños enormes y casco de minero con linterna.
+        - **Cerbero:** tres cabezas separadas sobre sus cuellos, grietas de lava y crin encendida.
+        - **Zak:** armadura con runas, cuernos, capa rota y una espada del tamaño de un hombre.
+        - **El Rey Mago:** túnica con estrellas, barba larga, corona y báculo.
+    - **Animaciones de ataque de los jefes:** cada ataque tiene preparación y golpe, sincronizados con el momento real del daño.
+        - **El Capo:** carga la faca, embiste con estela y lanza los cuchillos alternando las manos.
+        - **La Yarará:** se yergue y abre la boca con veneno para escupir, y azota la cola en círculo.
+        - **El Chupasangre:** zarpazos con marcas de garras, capa abierta antes de la embestida y gotas de sangre cuando te chupa.
+        - **El Gólem:** levanta los puños y al caer abre grietas y hace saltar piedras; arranca la roca del piso antes de tirarla.
+        - **Cerbero:** las cabezas se retraen y muerden, encoge las patas al saltar y tira tierra al escarbar.
+        - **Zak:** levanta la espada y baja un tajo que cubre el área real del daño; la clava en el piso en la Tormenta y ruge alzando los brazos.
+        - **El Rey Mago:** alza el báculo y su orbe crece al conjurar, flota durante el láser y se arrodilla al curarse.
+    - **Espada:** su alcance sube a 45 (antes 36).
+    - **Puños:** su alcance sube a 45 (antes 36), igual que la espada, y su área recta es más angosta: 24 de ancho (antes 36).
+
 ## v2.10 — 2026-11-04
 * Change
     - **Indicadores de ataque más transparentes:** la línea de los tiros y el área de los golpes tapan menos el juego.
