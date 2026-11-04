@@ -6,6 +6,14 @@ Cada versión lista sus cambios agrupados por tipo:
 - **Change:** algo que ya existía y ahora funciona distinto.
 - **Fix:** un error corregido.
     
+## v2.12 — 2026-11-04
+* Change
+    - **Zak, nuevo diseño:** armadura de acero oscuro con placas en capas y gemas rojas, cuernos curvos, ojos rojos, bufanda y capa rojas rotas. Ahora se ve distinto de frente, de costado y de espaldas.
+    - **Espada violeta:** guarda curva con gema, empuñadura trenzada y una hoja oscura con filos encendidos que chispean.
+    - **Ataques de Zak en violeta:** el tajo tiene capas de luz y chispas, y cubre el área real del daño. La ejecución ahora destella en violeta.
+    - **Zak se desploma:** al perder una vida se arrodilla, cae al piso y se vuelve a levantar envuelto en un aura violeta. Al correr se inclina con la capa al viento, y al clavar la espada queda hundida en el piso.
+    - **Cerbero, ahora un perro de verdad:** cuerpo de perro con pecho hondo y cintura fina, patas traseras con su articulación, cola peluda y pelo a mechones. Sus tres cabezas tienen hocico largo, orejas paradas, nariz, colmillos y collares con púas, y jadean con la lengua afuera.
+
 ## v2.11 — 2026-11-04
 * Feature
     - **Lluvia de cuchillos (El Capo del Eco):** se planta en su lugar, sin perseguirte ni huir, avisa con los cuchillos en alto y durante 5 s tira 3 por segundo (200% de su fuerza), cada uno hacia donde estés en ese momento.

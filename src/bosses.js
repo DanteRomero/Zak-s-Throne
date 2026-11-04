@@ -55,7 +55,7 @@ const SCENES = {
   {at:8.6,skip:true,run(s){const z=this.zakEntity(),p=this.player,l=distance(z,p)||1;
    if(l>30){z.x=p.x-(p.x-z.x)/l*26;z.y=p.y-(p.y-z.y)/l*26;}this.aimAt(z);s.chase=false;s.line=null;z.moving=false;z.act={id:'slash',t:.5};
    this.effect(p.x,p.y-8,'slash',.35,{radius:70});this.effect(p.x,p.y-29,'hit',1,{text:'-'+this.number(Math.ceil(p.hp))});
-   this.sound.play('thunder');this.sound.play('hurt');this.shake(12,.8);this.hurtFlash=1;s.flashAt=s.t;s.flashColor='170,20,30';p.hp=0;}},
+   this.sound.play('thunder');this.sound.play('hurt');this.shake(12,.8);this.hurtFlash=1;s.flashAt=s.t;s.flashColor='130,50,220';p.hp=0;}},
   {at:10,run(){this.endCutscene();this.resetZak();this.knockout('execute');}}
  ],tick(s,dt){
   const z=this.zakEntity(),p=this.player;if(!z)return;

@@ -397,7 +397,6 @@
     c.save(); c.translate(Math.round(x), Math.round(y)); c.globalAlpha *= alpha; Px.mode = "flash"; Px.flashColor = color; body(); c.restore(); Px.mode = null; Px.flashColor = "#ffffff";
   }
   const localAim = e => Math.atan2(e.aimY || 0, (e.aimX === undefined ? 1 : e.aimX) * (e.dir === "left" ? -1 : 1));
-  const steppedTime = (t, fps = 12) => Math.floor(t * fps) / fps;
 
   // El Capo del Eco: traje a rayas, sombrero, anteojos negros, bigote y faca.
   function capoBody(c, e, time, walk) {
@@ -587,115 +586,281 @@
     fist(lx, ly); fist(rx, ry);
     if (thrown) { const by = ly - 14; box(c, -15, by - 12, 30, 24, "#6a6e74"); rect(c, -11, by - 10, 14, 5, "#a4a8ae"); rect(c, 2, by, 8, 1, "#3f4247"); rect(c, -8, by + 4, 7, 1, "#3f4247"); }
   }
-  // Una cabeza de Cerbero: se abre, muerde y mira.
-  function hellHead(c, x, y, open, alert, seed, time) {
-    const fur = "#4d3a44", shade = "#35282f", snarl = open > 0;
-    poly(c, [[x - 1, y - 6], [x + 1, y - 13], [x + 5, y - 6]], shade); poly(c, [[x + 6, y - 6], [x + 9, y - 13], [x + 11, y - 6]], shade);
-    box(c, x - 3, y - 7, 15, 12, fur); rect(c, x - 1, y - 7, 9, 1, "#6d5864");
-    box(c, x + 10, y - 2, 10, 5, "#5a4650"); rect(c, x + 18, y - 2, 3, 2, "#120d10");
-    rect(c, x + 12, y + 3 + open, 8, 3, shade);
-    rect(c, x + 10, y + 3, 10, open, "#4a1218");
-    if (snarl || alert) { for (const k of [11, 14, 17]) { rect(c, x + k, y + 3, 1, 2, "#efe2c8"); rect(c, x + k + 1, y + 4 + open, 1, 2, "#efe2c8"); } }
-    else rect(c, x + 11, y + 3, 8, 1, "#efe2c8");
-    rect(c, x + 5, y - 4, 3, 2, "#1a1012"); rect(c, x + 6, y - 4, 2, 2, snarl ? "#ffd34a" : "#ff5a3c");
-    if (snarl && Px.mode !== "outline" && Math.sin(time * 9 + seed) > .4) rect(c, x + 14, y + 6 + open, 1, 3, "#c9d8e0");
+  // Cabeza de perro de perfil: cráneo con stop, hocico largo, orejas paradas y lengua afuera.
+  function dogHead(c, x, y, open, alert, pant, seed, time) {
+    const fur = "#3d3139", mid = "#57484f", light = "#7c6b73", dark = "#231b20";
+    const o = Math.round(open);
+    poly(c, [[x - 1, y - 6], [x + 3, y - 18], [x + 7, y - 6]], dark);
+    poly(c, [[x + 1, y + 3], [x + 16, y + 4 + o], [x + 18, y + 6 + o], [x + 5, y + 8 + Math.round(o * .5)], [x - 3, y + 7]], fur);
+    rect(c, x + 5, y + 7 + Math.round(o * .5), 10, 1, "#6b5a62");
+    if (o > 0) {
+      poly(c, [[x + 3, y + 3], [x + 19, y + 3], [x + 16, y + 4 + o], [x + 4, y + 6 + Math.round(o * .4)]], "#5a1218");
+      for (const k of [9, 13, 16]) rect(c, x + k, y + 3, 1, Math.min(3, o), "#f4ead6");
+      rect(c, x + 12, y + 3 + o - 1, 1, 2, "#f4ead6"); rect(c, x + 8, y + 3 + o, 1, 2, "#f4ead6");
+    }
+    if (pant) {
+      // Lengua afuera, jadeando: lo más perro que tiene un perro.
+      const drip = Math.floor(time * 7 + seed) % 2;
+      rect(c, x + 7, y + 4 + o, 7, 2, "#d9606a"); rect(c, x + 11, y + 5 + o, 3, 3 + drip, "#d9606a"); rect(c, x + 12, y + 6 + o, 1, 2 + drip, "#a83f4c");
+    }
+    poly(c, [[x - 8, y - 4], [x - 2, y - 9], [x + 5, y - 8], [x + 8, y - 4], [x + 19, y - 2], [x + 22, y], [x + 21, y + 3], [x + 8, y + 4], [x - 1, y + 6], [x - 8, y + 3]], mid);
+    poly(c, [[x - 6, y - 5], [x - 1, y - 8], [x + 5, y - 7], [x + 8, y - 3], [x + 19, y - 1], [x + 19, y], [x + 7, y - 1], [x - 3, y - 3]], light);
+    poly(c, [[x + 8, y + 1], [x + 20, y + 1], [x + 20, y + 3], [x + 8, y + 4]], fur);
+    rect(c, x + 19, y - 2, 4, 3, "#0f0b0d"); rect(c, x + 20, y - 2, 1, 1, "#6d6268");
+    rect(c, x + 3, y - 5, 5, 1, dark); rect(c, x + 4, y - 4, 3, 2, "#1a1012"); rect(c, x + 5, y - 4, 2, 2, alert ? "#ff5a3c" : "#f0b040"); rect(c, x + 5, y - 4, 1, 1, "#ffe0a0");
+    poly(c, [[x - 7, y - 5], [x - 6, y - 19], [x + 1, y - 7]], fur); poly(c, [[x - 5, y - 7], [x - 5, y - 15], [x - 1, y - 7]], "#7a4a52");
+    poly(c, [[x - 8, y + 1], [x - 13, y + 7], [x - 7, y + 5], [x - 8, y + 9], [x - 3, y + 6]], fur);
   }
-  // Cerbero: lomo con grietas de lava, tres cabezas y cola de púa.
+  // Cerbero: un perrazo de tres cabezas con collares de púas, pecho profundo, cintura fina y patas de perro.
   function drawCerbero(c, e, time, walk) {
     const a = e.act || {}, t = a.t || 0, id = a.id, biteWind = id === "bite" && t < .47, biting = id === "bite" && t >= .47, dig = id === "dig", jump = id === "jump";
-    const air = jump ? Math.min(1, t / 1.5) : 0, crouch = jump && air < .1 ? 4 : 0, flying = jump && air >= .1 && air < .95, pitch = dig ? 5 : 0, gallop = e.moving ? Math.round(Math.sin(time * 14 + e.x) * 3) : 0;
-    const wag = Math.sin(time * (e.alert ? 12 : 5));
-    limb(c, -24, -20 + crouch, Math.PI + .5 + wag * .5, 15, 4, "#2c2228"); { const tx = -24 + Math.cos(Math.PI + .5 + wag * .5) * 15, ty = -20 + crouch + Math.sin(Math.PI + .5 + wag * .5) * 15; poly(c, [[tx - 5, ty - 1], [tx + 1, ty - 4], [tx + 1, ty + 3]], "#ff7a3a"); }
-    const leg = (x, shift, near) => {
-      const col = near ? "#4d3a44" : "#33262e", paw = near ? "#1a1418" : "#141014";
-      if (flying) { limb(c, x, -12, near ? 2.3 : .9, 10, 5, col); return; }
-      rect(c, x + shift, -12 + crouch, 5, 12 - crouch, col); rect(c, x + shift, -12 + crouch, 1, 11 - crouch, "#6d5864"); rect(c, x + shift - 1, -2, 7, 2, paw); rect(c, x + shift + 4, -1, 2, 1, "#a89a8a");
+    const air = jump ? Math.min(1, t / 1.5) : 0, crouch = jump && air < .1 ? 5 : 0, flying = jump && air >= .1 && air < .95, gait = time * (e.alert ? 13 : 9) + e.x * .1, run = e.moving && !id;
+    const pitch = dig ? 7 : 0, wag = Math.sin(time * (e.alert ? 14 : 6)), far = "#2b2228", near = "#3d3139", hi = "#57484f", paw = "#181215";
+    const foot = (x, y, lit) => { rect(c, x - 3, y - 3, 8, 3, paw); rect(c, x - 3, y - 3, 8, 1, lit); for (const k of [0, 2, 4]) rect(c, x - 2 + k, y - 1, 1, 1, "#a89a8a"); };
+    const frontLeg = (sx, sy, phase, color, lit) => {
+      if (flying) { const k = armTo(c, sx, sy, sx + 10, sy + 7, 6, color); armTo(c, k[0], k[1], k[0] + 7, k[1] + 7, 4, color); foot(k[0] + 7, k[1] + 9, lit); return; }
+      const fx = sx + 1 + (run ? Math.sin(phase) * 9 : 0), lift = run ? Math.max(0, Math.cos(phase)) * 4 : 0, fy = -lift;
+      armTo(c, sx, sy, fx + 1, sy + (fy - 3 - sy) * .55, 7, color); armTo(c, fx + 1, sy + (fy - 3 - sy) * .55, fx, fy - 2, 4, color); foot(fx, fy, lit);
     };
-    leg(-22, -gallop, false); leg(8, -gallop, false);
-    const digPaw = dig ? Math.round(Math.sin(time * 22) * 4) : 0;
-    leg(-14, gallop, true); leg(14 + (dig ? 2 : 0), dig ? digPaw : gallop, true);
-    c.translate(0, crouch);
-    // Cuerpo: del anca al pecho, más bajo adelante cuando escarba.
-    poly(c, [[-28, -30 + pitch / 2], [-6, -32], [18, -35 + pitch], [22, -14 + pitch], [-4, -10], [-28, -12]], "#35282f");
-    poly(c, [[-26, -28 + pitch / 2], [-6, -30], [16, -33 + pitch], [19, -22 + pitch], [-6, -18], [-26, -20]], "#4d3a44");
-    poly(c, [[-26, -28 + pitch / 2], [-6, -30], [16, -33 + pitch], [14, -30 + pitch], [-6, -27], [-26, -25]], "#6d5864");
-    for (const [x, y] of [[-19, -22], [-8, -21], [5, -24]]) { rect(c, x, y, 5, 1, "#c9502a"); rect(c, x + 1, y + 1, 3, 1, "#ff9a3a"); }
-    // Crin de púas con punta encendida.
-    for (let k = 0; k < 7; k++) { const sx = -24 + k * 6, sy = -31 + (k > 3 ? -2 + pitch / 2 : 0), tall = 4 + Math.round(Math.sin(time * 6 + k) + 1); poly(c, [[sx - 2, sy + 2], [sx, sy - tall], [sx + 3, sy + 2]], "#2c2228"); rect(c, sx, sy - tall + 1, 1, 2, "#ff7a3a"); }
-    box(c, 6, -38 + pitch, 15, 24, "#3f3039");
-    const heads = [[4, -54, 0], [20, -37, 2.1], [6, -19, 4.2]];
+    const rearLeg = (hx, hy, phase, color, lit) => {
+      if (flying) { const k = armTo(c, hx, hy, hx - 11, hy + 5, 8, color); armTo(c, k[0], k[1], k[0] - 9, k[1] + 5, 4, color); foot(k[0] - 10, k[1] + 7, lit); return; }
+      const fx = hx + 2 + (run ? Math.sin(phase) * 10 : 0), lift = run ? Math.max(0, Math.cos(phase)) * 4 : 0, fy = -lift, hock = [fx - 7, fy - 10 + crouch / 2], knee = [hx + 5, hy + (hock[1] - hy) * .45];
+      armTo(c, hx, hy, knee[0], knee[1], 10, color); armTo(c, knee[0], knee[1], hock[0], hock[1], 5, color); armTo(c, hock[0], hock[1], fx, fy - 2, 3, color); foot(fx, fy, lit);
+    };
+    // Cola peluda que se menea.
+    let tx = -30, ty = -26 + crouch, ta = Math.PI + (e.alert ? .85 : .45) + wag * .3;
+    for (const [len, w] of [[8, 5], [7, 5], [6, 3]]) { const end = limb(c, tx, ty, ta, len, w, near); tx = end[0]; ty = end[1]; ta -= (e.alert ? -.25 : .3); }
+    poly(c, [[tx, ty - 3], [tx + Math.cos(ta) * 6, ty + Math.sin(ta) * 6], [tx, ty + 3]], hi);
+    rearLeg(-22, -20 + crouch, gait + Math.PI, far, "#3d3139"); frontLeg(12, -22 + crouch + pitch, gait, far, "#3d3139");
+    // Cuerpo: anca redonda, lomo, cintura recogida y pecho hondo.
+    const y0 = crouch;
+    poly(c, [[-33, -23 + y0], [-30, -32 + y0], [-20, -35 + y0], [-4, -32 + y0 + pitch / 3], [12, -37 + y0 + pitch], [20, -32 + y0 + pitch], [21, -19 + y0 + pitch], [14, -12 + y0 + pitch], [2, -13 + y0 + pitch / 2], [-12, -19 + y0], [-26, -15 + y0]], near);
+    poly(c, [[-30, -31 + y0], [-20, -34 + y0], [-4, -31 + y0 + pitch / 3], [12, -36 + y0 + pitch], [18, -33 + y0 + pitch], [14, -28 + y0 + pitch], [-4, -26 + y0 + pitch / 3], [-22, -29 + y0]], hi);
+    poly(c, [[-4, -14 + y0 + pitch / 3], [14, -13 + y0 + pitch], [19, -20 + y0 + pitch], [6, -19 + y0 + pitch / 2]], "#2b2228");
+    // Pelo del lomo y del pecho, a mechones.
+    for (let k = 0; k < 7; k++) { const fx = -27 + k * 7, fy = -33 + y0 + (k > 3 ? pitch * (k - 3) / 4 - 1 : 0) + (k > 2 && k < 5 ? 2 : 0), rise = 3 + (k % 2) + Math.round(Math.sin(time * 5 + k) * .6); poly(c, [[fx - 3, fy + 2], [fx - 2, fy - rise], [fx + 3, fy + 2]], k % 2 ? near : hi); }
+    for (let k = 0; k < 4; k++) poly(c, [[12 + k * 3, -19 + y0 + pitch], [13 + k * 3, -10 + y0 + pitch + (k % 2) * 2], [15 + k * 3, -19 + y0 + pitch]], k % 2 ? near : hi);
+    rearLeg(-20, -21 + crouch, gait, near, hi);
+    const pawDig = dig ? Math.round(Math.sin(time * 24) * 5) : 0;
+    frontLeg(10 + pawDig * .4, -21 + crouch + pitch, dig ? time * 24 : gait + Math.PI, near, hi);
+    // Tres cabezas en abanico, cada una con su cuello y su collar de púas.
+    const heads = [[-5, -62, 0], [20, -44, 2.1], [13, -21, 4.2]];
     heads.forEach(([hx, hy, seed], i) => {
-      let dx = 0, dy = Math.round(Math.sin(time * 3 + seed) * 1.5) + pitch, open = e.alert && Math.sin(time * 4 + seed) > .75 ? 1 : 0;
-      if (biteWind) { const k = Math.min(1, t / .47); dx = -6 * k; dy += -2 * k * (i === 1 ? 0 : i === 0 ? 1 : -1); open = Math.round(k * 4); }
-      if (biting) { const k = Math.min(1, (t - .47) / .1); dx = -6 + 16 * k; open = t < .55 ? 5 : 1; }
-      if (dig) { dy += i === 2 ? 5 : 3; dx = i === 2 ? 3 : 0; open = i === 2 ? (Math.floor(time * 10) % 2 ? 2 : 0) : 0; }
-      if (flying) { dx = 2; dy -= 2; open = 3; }
-      if (a.id === "jump" && crouch) open = 2;
-      armTo(c, 9, -29 + pitch, hx + dx + 3, hy + dy, 9, "#3f3039");
-      hellHead(c, hx + dx, hy + dy, open, e.alert, seed, time);
+      let dx = 0, dy = Math.round(Math.sin(time * 3 + seed) * 1.5) + pitch, open = 0, pant = false;
+      const breath = e.alert ? Math.sin(time * 8 + seed) : 0;
+      if (e.alert && !id) { open = 2 + (breath > 0 ? 1 : 0); pant = i !== 0; }
+      else if (!id && Math.sin(time * 1.6 + seed) > .2) { open = 1; pant = true; }
+      if (biteWind) { const k = Math.min(1, t / .47); dx = -7 * k; dy += (i - 1) * -2 * k; open = Math.round(k * 7); }
+      if (biting) { const k = Math.min(1, (t - .47) / .08); dx = -7 + 19 * k; open = t < .54 ? 8 : 1; }
+      if (dig) { dy += i === 2 ? 7 : 3; dx += i === 2 ? 4 : 0; open = i === 2 ? (Math.floor(time * 10) % 2 ? 3 : 0) : 0; }
+      if (flying) { dx += 3; dy -= 2; open = 4; }
+      if (jump && crouch) { dy += 3; open = 2; }
+      const cx = hx + dx, cy = hy + dy, nx = 8, ny = -26 + y0 + pitch, neck = Math.atan2(cy - ny, cx - nx), mx = nx + (cx - nx) * .62, my = ny + (cy - ny) * .62;
+      armTo(c, nx, ny, cx - 1, cy + 1, 11, i === 1 ? hi : near);
+      rrect(c, mx, my, neck + Math.PI / 2, -7, -2, 14, 4, "#6e1f28"); rrect(c, mx, my, neck + Math.PI / 2, -7, -2, 14, 1, "#a8323c");
+      for (const k of [-5, 0, 5]) { const px = mx + Math.cos(neck + Math.PI / 2) * k, py = my + Math.sin(neck + Math.PI / 2) * k; rrect(c, px, py, neck, 2, -1, 4, 2, "#d9d2c0"); }
+      dogHead(c, cx, cy, open, e.alert, pant, seed, time);
     });
   }
-  // La espada de Zak: hoja negra con corazón violeta. (x,y) es la mano y a, hacia dónde apunta la hoja.
-  function zakSword(c, x, y, a, time) {
-    const pulse = Math.sin(time * 4) > 0 ? VIOLET : "#c9a6ff", part = (px, py, w, h, color) => rrect(c, x, y, a, px, py, w, h, color);
-    part(10, -6, 78, 12, "#0d0b12"); part(11, -5, 76, 10, "#1f1b28"); part(12, -5, 74, 2, "#3b3548"); part(14, -1, 70, 2, pulse); part(84, -4, 8, 8, "#1f1b28"); part(88, -2, 6, 4, "#3b3548");
-    part(6, -13, 5, 26, "#3a2a5a"); part(6, -11, 2, 22, "#7b4fc0"); part(-6, -2, 13, 4, "#241a33"); part(-10, -4, 5, 8, "#7b4fc0");
+  // La espada de Zak: guarda curva violeta, gema, empuñadura trenzada y una hoja oscura con filos encendidos.
+  function zakSword(c, x, y, a, time, sunk = 0) {
+    const part = (px, py, w, h, color) => rrect(c, x, y, a, px, py, w, h, color), at = (u, v) => [x + Math.cos(a) * u - Math.sin(a) * v, y + Math.sin(a) * u + Math.cos(a) * v];
+    const shape = (points, color) => poly(c, points.map(p => at(p[0], p[1])), color), flame = Math.floor(time * 11) % 3;
+    if (Px.mode !== "outline") { for (const u of sunk ? [24, 40] : [30, 58, 84]) { const p = at(u, 0); Px.glow(c, p[0], p[1], 15, "#a040ff", .42); } }
+    // Hoja
+    if (sunk) {
+      shape([[13, -7], [sunk, -6], [sunk, 6], [13, 7]], "#c95cff"); shape([[13, -5], [sunk, -4], [sunk, 4], [13, 5]], "#7a2fd0"); shape([[13, -4], [sunk, -3], [sunk, 3], [13, 4]], "#1b1530"); shape([[13, -1], [sunk, -1], [sunk, 1], [13, 1]], "#44365f"); shape([[13, -7], [sunk, -6], [sunk, -5], [13, -6]], "#f4d8ff");
+      const tip = at(sunk, 0); rect(c, tip[0] - 11, tip[1] - 1, 22, 2, "#0e0a14"); rect(c, tip[0] - 16, tip[1], 5, 1, "#0e0a14"); rect(c, tip[0] + 11, tip[1], 6, 1, "#0e0a14");
+    } else {
+      shape([[13, -7], [76, -6], [98, 0], [76, 6], [13, 7]], "#c95cff");
+      shape([[13, -5], [75, -4], [93, 0], [75, 4], [13, 5]], "#7a2fd0");
+      shape([[13, -4], [74, -3], [88, 0], [74, 3], [13, 4]], "#1b1530");
+      shape([[13, -1], [80, 0], [13, 1]], "#44365f");
+      shape([[13, -7], [76, -6], [98, 0], [76, -5], [13, -6]], "#f4d8ff");
+    }
+    if (Px.mode !== "outline") for (let k = 0; k < 5; k++) { const u = 20 + ((k * 17 + flame * 6) % (sunk ? Math.max(10, sunk - 22) : 72)), s = k % 2 ? 1 : -1, p = at(u, s * (8 + (k + flame) % 3)); rect(c, p[0], p[1], 1, 2, k % 2 ? "#f4d8ff" : "#c95cff"); }
+    // Guarda: dos cuernos curvados hacia la hoja.
+    for (const s of [-1, 1]) {
+      shape([[8, 0], [13, s * 2], [14, s * 13], [22, s * 21], [15, s * 20], [7, s * 15], [3, s * 7]], "#2b2350");
+      shape([[9, s * 1], [12, s * 3], [13, s * 13], [19, s * 19], [14, s * 18], [8, s * 14], [5, s * 7]], "#5b4bb0");
+      shape([[10, s * 3], [11, s * 4], [12, s * 13], [16, s * 17], [13, s * 16], [9, s * 12]], "#a59af0");
+    }
+    shape([[3, -6], [15, -6], [18, 0], [15, 6], [3, 6], [0, 0]], "#2b2350"); shape([[5, -4], [13, -4], [15, 0], [13, 4], [5, 4], [3, 0]], "#6a2fb0"); shape([[7, -2], [11, -2], [12, 0], [11, 2], [7, 2], [6, 0]], "#f0a0ff");
+    // Empuñadura trenzada y pomo con gema.
+    part(-15, -3, 18, 6, "#1d1630");
+    for (let u = -14; u < 2; u += 4) { part(u, -3, 2, 6, "#6a3fc0"); part(u + 1, -3, 1, 3, "#a77bff"); }
+    shape([[-21, 0], [-18, -4], [-14, -4], [-13, 0], [-14, 4], [-18, 4]], "#3a2c6a"); shape([[-19, 0], [-17, -2], [-15, 0], [-17, 2]], "#e090ff");
   }
-  // Zak: armadura negra con runas, cuernos, capa rota y una espada del tamaño de un hombre.
+  const ZAK = { deep: "#121014", dark: "#232026", steel: "#3a363e", mid: "#5b565f", light: "#8d888e", shine: "#c6c1c3", red0: "#4c0d15", red1: "#7e1620", red2: "#b3242c", red3: "#dd4247", eye: "#ff3b30" };
+  const zakGem = (c, x, y) => { rect(c, x - 2, y - 2, 4, 4, ZAK.deep); rect(c, x - 1, y - 1, 2, 2, ZAK.red3); rect(c, x - 1, y - 1, 1, 1, "#ffb0a8"); };
+  // Cuerno curvo; s=1 a la derecha.
+  function zakHorn(c, x, y, s, reach, up) {
+    poly(c, [[x, y + 6], [x + s * reach * .6, y + 2], [x + s * reach, y - up * .4], [x + s * reach * .82, y - up], [x + s * reach * .62, y - up * .5], [x + s * reach * .28, y - 6], [x, y - 4]], ZAK.mid);
+    poly(c, [[x + s * 1, y], [x + s * reach * .5, y - 3], [x + s * reach * .66, y - up * .5], [x + s * reach * .78, y - up * .85], [x + s * reach * .84, y - up * .5], [x + s * reach * .55, y - 1]], ZAK.shine);
+    poly(c, [[x + s * reach, y - up * .45], [x + s * reach * .82, y - up], [x + s * reach * .78, y - up * .62]], ZAK.steel);
+  }
+  // Hombrera de placas superpuestas con púa y gema roja.
+  function zakPauldron(c, x, y, s) {
+    poly(c, [[x + s * 2, y + 1], [x + s * 12, y - 21], [x + s * 13, y - 5]], ZAK.mid); poly(c, [[x + s * 3, y], [x + s * 11, y - 17], [x + s * 10, y - 5]], ZAK.shine);
+    poly(c, [[x - s * 9, y - 4], [x + s * 4, y - 9], [x + s * 15, y - 2], [x + s * 18, y + 9], [x + s * 10, y + 15], [x - s * 7, y + 10]], ZAK.steel);
+    poly(c, [[x - s * 8, y - 3], [x + s * 4, y - 8], [x + s * 13, y - 2], [x + s * 3, y - 2]], ZAK.light);
+    for (const k of [5, 11]) { poly(c, [[x - s * 7, y + k], [x + s * 5, y + k - 2], [x + s * 18, y + k + 2], [x + s * 15, y + k + 5], [x + s * 4, y + k + 2], [x - s * 6, y + k + 4]], k === 5 ? ZAK.mid : ZAK.steel); Px.line(c, x - s * 6, y + k, x + s * 5, y + k - 2, ZAK.shine); Px.line(c, x + s * 5, y + k - 2, x + s * 17, y + k + 2, ZAK.light); }
+    Px.line(c, x - s * 8, y - 3, x + s * 4, y - 8, ZAK.shine); Px.line(c, x + s * 4, y - 8, x + s * 13, y - 2, ZAK.shine);
+    zakGem(c, x + s * 3, y + 3);
+  }
+  // Pierna de placas de frente; lift la levanta.
+  function zakLegFront(c, x, lift, s) {
+    box(c, x, -36, 13, 15 - lift, ZAK.dark); rect(c, x + 2, -36, 3, 13 - lift, ZAK.steel);
+    poly(c, [[x - 1, -23 - lift], [x + 6, -27 - lift], [x + 14, -23 - lift], [x + 11, -15 - lift], [x + 2, -15 - lift]], ZAK.mid); poly(c, [[x + 1, -23 - lift], [x + 6, -26 - lift], [x + 12, -23 - lift], [x + 6, -21 - lift]], ZAK.shine); zakGem(c, x + 6, -19 - lift);
+    box(c, x + 1, -15 - lift, 11, 12, ZAK.steel); rect(c, x + 3, -14 - lift, 2, 10, ZAK.light); rect(c, x + 8, -13 - lift, 1, 9, ZAK.deep);
+    poly(c, [[x - 1 - (s > 0 ? 0 : 3), -3 - lift], [x + 13 + (s > 0 ? 3 : 0), -3 - lift], [x + 14 + (s > 0 ? 3 : 0), 0 - lift], [x - 2 - (s > 0 ? 0 : 3), 0 - lift]], ZAK.dark); rect(c, x + 1, -3 - lift, 10, 1, ZAK.mid);
+  }
+  // Pierna de perfil, con la rodilla doblada según el paso.
+  function zakLegSide(c, hipX, footX, lift, tone1, tone2) {
+    const footY = -lift, kneeX = (hipX + footX) / 2 + 6, kneeY = (-34 + footY) / 2 - 2, k = armTo(c, hipX, -34, kneeX, kneeY, 12, tone1); armTo(c, k[0], k[1], footX, footY - 2, 10, tone2);
+    poly(c, [[k[0] - 3, k[1] - 5], [k[0] + 6, k[1] - 4], [k[0] + 6, k[1] + 4], [k[0] - 3, k[1] + 4]], ZAK.mid); rect(c, k[0], k[1] - 4, 4, 2, ZAK.shine);
+    poly(c, [[footX - 6, footY - 4], [footX + 7, footY - 4], [footX + 13, footY], [footX - 6, footY]], ZAK.dark); rect(c, footX - 4, footY - 4, 9, 1, ZAK.mid);
+  }
+  function zakHelmFront(c, y, glow) {
+    zakHorn(c, -11, y - 19, -1, 18, 25); zakHorn(c, 11, y - 19, 1, 18, 25);
+    poly(c, [[-12, y - 20], [0, y - 31], [12, y - 20], [13, y - 6], [7, y + 2], [-7, y + 2], [-13, y - 6]], ZAK.dark);
+    poly(c, [[-10, y - 20], [0, y - 29], [-2, y - 12], [-11, y - 9]], ZAK.steel); poly(c, [[-8, y - 20], [-1, y - 27], [-2, y - 19]], ZAK.light);
+    poly(c, [[-2, y - 31], [2, y - 31], [2, y - 12], [0, y - 9], [-2, y - 12]], ZAK.mid); rect(c, -1, y - 30, 1, 17, ZAK.shine);
+    poly(c, [[-10, y - 11], [10, y - 11], [8, y - 4], [-8, y - 4]], ZAK.deep);
+    poly(c, [[-9, y - 11], [-3, y - 8], [-3, y - 6], [-8, y - 9]], glow); poly(c, [[9, y - 11], [3, y - 8], [3, y - 6], [8, y - 9]], glow);
+    rect(c, -7, y - 9, 2, 1, "#ffc0b0"); rect(c, 5, y - 9, 2, 1, "#ffc0b0");
+    for (const k of [-5, -2, 1, 4]) rect(c, k, y - 3, 1, 4, ZAK.deep);
+    if (Px.mode !== "outline") { Px.glow(c, -6, y - 8, 7, "#ff3b30", .6); Px.glow(c, 6, y - 8, 7, "#ff3b30", .6); }
+  }
+  // Zak: armadura de acero oscuro, cuernos curvos, bufanda y capa rojas. Tiene vistas de frente, costado y espalda.
   function drawZak(c, e, time, walk) {
     const a = e.act || {}, t = a.t || 0, id = a.id, seated = e.seated || (e.yielding && e.yielding.seatedAt), aim = localAim(e), flap = Math.sin(time * 2.6);
-    const planted = id === "storm" || id === "purple", raised = id === "raise" || id === "major" || e.pose === "raise", roar = id === "roar", boom = id === "boomerang";
-    const armor = "#2a2733", plate = "#36323f", deep = "#14131a", rune = Math.sin(time * 3) > 0 ? "#b48cff" : "#7b4fc0";
-    // Capa
-    const hem = k => Math.round(Math.sin(time * 3 + k * 1.4) * 3);
-    poly(c, [[-18, -68], [18, -68], [24 + flap * 3, -14], [15, -4 + hem(1)], [8, -11], [1, -1 + hem(2)], [-7, -10], [-15, -3 + hem(3)], [-24 - flap * 3, -14]], "#1a0a18");
-    poly(c, [[-15, -66], [15, -66], [21 + flap * 3, -16], [14, -8 + hem(1)], [8, -15], [1, -5 + hem(2)], [-7, -14], [-14, -7 + hem(3)], [-21 - flap * 3, -16]], "#4a1838");
-    poly(c, [[-5, -66], [5, -66], [6, -14], [-6, -14]], "#5c2147");
-    // Piernas
-    if (seated) {
-      box(c, -18, -26, 15, 10, armor); box(c, 3, -26, 15, 10, armor); box(c, -18, -17, 10, 17, plate); box(c, 8, -17, 10, 17, plate); rect(c, -20, -3, 14, 3, deep); rect(c, 6, -3, 14, 3, deep);
-    } else {
-      const step = id ? 0 : walk * 2;
-      for (const [x, s] of [[-17, step], [3, -step]]) { const lift = s > 0 ? 3 : 0; box(c, x, -30, 14, 16 - lift, armor); box(c, x + 1, -16 - lift, 12, 13, plate); rect(c, x + 3, -20 - lift, 8, 3, "#4a4656"); rect(c, x - 1, -3 - lift, 16, 3, deep); rect(c, x, -3 - lift, 8, 1, "#4a4656"); }
+    const planted = id === "storm" || id === "purple", raised = id === "raise" || id === "major" || e.pose === "raise", roar = id === "roar", boom = id === "boomerang", rise = id === "rise";
+    const chase = !!(currentGame && currentGame.cutscene && currentGame.cutscene.chase), stride = e.moving ? Math.sin(time * (chase ? 15 : 9) + e.x * .05) : 0, hem = k => Math.round(Math.sin(time * 3.2 + k * 1.7) * 3), hurt = e.hitFlash > 0 && !id;
+    const view = seated ? "front" : e.dir === "up" ? "back" : e.dir === "down" ? "front" : "side";
+    if (rise) {
+      // Se desploma, queda en el piso y se vuelve a levantar envuelto en violeta.
+      const stage = t < .25 ? 1 : t < 1.5 ? 2 : t < 2.2 ? 1 : 0;
+      if (stage === 2) {
+        poly(c, [[-40, -3], [-28, -14], [-6, -17], [18, -13], [34, -3], [20, 0], [8, -2], [-4, 0], [-18, -2], [-30, 0]], ZAK.red0); poly(c, [[-34, -3], [-24, -12], [-6, -14], [14, -11], [26, -4], [8, -5], [-10, -4]], ZAK.red1);
+        poly(c, [[-22, -8], [-6, -19], [18, -18], [22, -8], [0, -3]], ZAK.steel); poly(c, [[-14, -11], [-4, -18], [14, -17], [8, -12], [-6, -9]], ZAK.mid); zakGem(c, 4, -12);
+        poly(c, [[16, -15], [30, -18], [38, -9], [32, -2], [18, -3]], ZAK.dark); poly(c, [[20, -14], [30, -16], [33, -11], [22, -10]], ZAK.mid); rect(c, 29, -8, 4, 2, ZAK.red2);
+        zakHorn(c, 26, -16, 1, 14, 14); zakHorn(c, 22, -15, -1, 10, 11); zakSword(c, -30, -2, .03, time);
+        return;
+      }
+      if (stage === 1) {
+        // De rodillas, apoyado en la espada.
+        poly(c, [[-26, -44], [24, -44], [34 + flap * 3, -8], [18, -1], [6, -8], [-6, -1], [-18, -8], [-34 - flap * 3, -1]], ZAK.red1);
+        box(c, -19, -26, 16, 12, ZAK.dark); box(c, -19, -14, 14, 14, ZAK.steel); box(c, 4, -26, 14, 10, ZAK.dark); poly(c, [[4, -17], [18, -17], [24, -3], [24, 0], [6, 0]], ZAK.steel); rect(c, 6, -3, 18, 3, ZAK.deep);
+        box(c, -19, -56, 38, 32, ZAK.steel); poly(c, [[-15, -56], [15, -56], [12, -42], [0, -34], [-12, -42]], ZAK.mid); poly(c, [[-13, -55], [13, -55], [11, -50], [-11, -50]], ZAK.light);
+        poly(c, [[-13, -62], [13, -62], [15, -54], [0, -45], [-15, -54]], ZAK.red1); rect(c, -12, -62, 24, 2, ZAK.red3);
+        zakPauldron(c, -23, -60, -1); zakPauldron(c, 23, -60, 1); zakHelmFront(c, -57, ZAK.eye);
+        zakSword(c, 30, -46, Math.PI / 2 - .1, time, 46); armTo(c, 24, -52, 30, -46, 9, ZAK.dark); box(c, 25, -51, 11, 11, ZAK.mid);
+        return;
+      }
     }
-    const lower = planted ? 4 : roar ? -2 : 0, hit = id === "slash" && (t % .7) >= .45;
-    c.translate(hit ? 3 : 0, lower + (seated ? 8 : 0));
-    // Poses de la espada: mano fuerte (hx,hy), ángulo de la hoja y mano de apoyo.
-    let hx = 24, hy = -36 + walk, blade = -1.2, sx = -24, sy = -36 - walk, both = false;
+    // Poses de la espada: mano fuerte (hx,hy), ángulo de la hoja y mano de apoyo (sx,sy).
+    let hx = view === "side" ? 12 : 27, hy = -40 - Math.round(stride * 2), blade = view === "side" ? -.7 : -1.1, sx = view === "side" ? -8 : -27, sy = -40 + Math.round(stride * 2), both = false;
+    if (view === "back") { hx = 22; hy = -44; blade = -1.9; sx = -26; }
+    if (chase) { hx = 22; hy = -42; blade = 2.7; }
     if (id === "slash") {
       const ph = t % .7;
-      if (ph < .45) { const k = Math.min(1, ph / .3); hx = 24 - 30 * k; hy = -36 - 44 * k; blade = -1.2 - 1.45 * k; both = true; }
-      else { const k = Math.min(1, (ph - .45) / .09); hx = -6 + 38 * k; hy = -80 + 50 * k; blade = -2.65 + (aim + 2.65) * k; both = true; }
-    } else if (boom) { const k = Math.min(1, t / .55); hx = 24 - 24 * k; hy = -36 - 50 * k; blade = -1.2 - .37 * k; both = true; }
-    else if (raised) { const k = Math.min(1, t / .4 + (e.pose === "raise" ? 1 : 0)); hx = 24 - 18 * k; hy = -36 - 50 * k; blade = -1.2 - .37 * k; sx = -28; sy = -66; }
-    else if (planted) { hx = 0; hy = -38; blade = Math.PI / 2; both = true; }
-    else if (seated) { hx = 18; hy = -30; blade = Math.PI + .08; both = false; sx = -20; sy = -30; }
-    else if (roar) { hx = 34; hy = -60; blade = -1; sx = -34; sy = -60; }
-    if (both) { sx = hx - 4; sy = hy + 5; }
-    const behind = id === "slash" && t % .7 < .45 || boom;
-    if (behind) zakSword(c, hx, hy, blade, time);
-    armTo(c, -22, -62, sx, sy, 10, "#1b1a22");
-    // Torso
-    box(c, -22, -70, 44, 42, armor); box(c, -18, -66, 36, 16, plate); rect(c, -18, -66, 36, 2, "#4f4a5c"); rect(c, -1, -68, 2, 40, deep); rect(c, -20, -44, 40, 2, deep);
-    for (const y of [-40, -35]) rect(c, -15, y, 30, 2, "#1f1d27");
-    poly(c, [[0, -62], [7, -55], [0, -48], [-7, -55]], "#1a1622"); poly(c, [[0, -59], [4, -55], [0, -51], [-4, -55]], rune);
-    rect(c, -22, -30, 44, 3, "#7b4fc0"); rect(c, -22, -30, 44, 1, "#a77bff"); box(c, -3, -31, 6, 5, "#c9a24c");
-    if (Px.mode !== "outline") Px.glow(c, 0, -55, 13, "#a77bff", .35 + Math.sin(time * 3) * .1);
-    // Hombreras con púas.
-    for (const s of [-1, 1]) { const x = s < 0 ? -36 : 18; box(c, x, -74, 18, 15, plate); rect(c, x + 2, -72, 14, 2, "#55506a"); poly(c, [[x + 1, -74], [x + 5, -89], [x + 9, -74]], "#4a4656"); poly(c, [[x + 9, -74], [x + 13, -84], [x + 17, -74]], "#3a3644"); rect(c, x, -62, 18, 3, deep); }
-    // Casco
-    const tilt = roar ? -3 : 0;
-    box(c, -13, -94 + tilt, 26, 25, "#1e1c26"); rect(c, -13, -94 + tilt, 26, 2, "#3a3648"); rect(c, -9, -82 + tilt, 18, 6, "#0c0a10"); rect(c, -1, -94 + tilt, 2, 12, "#3a3648"); rect(c, -1, -76 + tilt, 2, 7, "#3a3648");
-    for (const k of [-8, -4, 3, 7]) rect(c, k, -74 + tilt, 1, 4, "#0c0a10");
-    const eye = roar || id === "slash" || boom ? "#ffffff" : Math.sin(time * 3) > 0 ? "#d9c2ff" : VIOLET;
-    rect(c, -8, -80 + tilt, 16, 2, VIOLET); rect(c, -6, -80 + tilt, 12, 1, eye);
-    if (Px.mode !== "outline") Px.glow(c, 0, -80 + tilt, 11, "#a77bff", roar ? .9 : .5);
-    poly(c, [[-13, -92 + tilt], [-20, -100 + tilt], [-30, -118 + tilt], [-16, -104 + tilt], [-9, -82 + tilt]], "#453f54"); poly(c, [[13, -92 + tilt], [20, -100 + tilt], [30, -118 + tilt], [16, -104 + tilt], [9, -82 + tilt]], "#453f54");
-    Px.line(c, -14, -93 + tilt, -27, -114 + tilt, "#6d6784"); Px.line(c, 14, -93 + tilt, 27, -114 + tilt, "#6d6784");
-    // Brazo fuerte y espada.
-    if (!behind) { if (seated) armTo(c, 22, -62, hx, hy, 10, "#26242e"); else armTo(c, 22, -62, hx, hy, 10, "#26242e"); zakSword(c, hx, hy, blade, time); }
-    else armTo(c, 22, -62, hx, hy, 10, "#26242e");
-    box(c, hx - 6, hy - 6, 12, 12, plate); box(c, sx - 5, sy - 5, 10, 10, plate);
+      if (ph < .45) { const k = Math.min(1, ph / .3); hx = 20 - 26 * k; hy = -42 - 46 * k; blade = -1.1 - 1.55 * k; }
+      else { const k = Math.min(1, (ph - .45) / .09); hx = -6 + (Math.cos(aim) * 30 + 6) * k; hy = -88 + (42 + Math.sin(aim) * 24) * k; blade = -2.65 + (aim + 2.65) * k; }
+      both = true;
+    } else if (boom) { const k = Math.min(1, t / .55); hx = 22 - 22 * k; hy = -42 - 52 * k; blade = -1.1 - .47 * k; both = true; }
+    else if (raised) { const k = Math.min(1, t / .4 + (e.pose === "raise" ? 1 : 0)); hx = 26 - 20 * k; hy = -40 - 56 * k; blade = -1.1 - .47 * k; sx = -30; sy = -72; }
+    else if (planted) { hx = view === "side" ? 16 : 0; hy = -44; blade = Math.PI / 2; both = true; }
+    else if (seated) { hx = 19; hy = -34; blade = Math.PI + .06; sx = -21; sy = -34; }
+    else if (roar) { hx = 38; hy = -70; blade = -1; sx = -38; sy = -70; }
+    if (both) { sx = hx - 3; sy = hy + 6; }
+    const swordFirst = view === "back" || (id === "slash" && t % .7 < .45) || boom;
+    const lean = chase ? 9 : view === "side" && e.moving ? 3 : hurt ? -3 : id === "slash" && t % .7 >= .45 ? 4 : 0, drop = planted ? 5 : roar ? -2 : seated ? 8 : Math.abs(stride) > .7 ? 0 : -1;
+    const f = flap * 3, wind = chase ? 22 : e.moving && view === "side" ? 9 : 0;
+    // Capa roja rota: detrás de todo salvo de espaldas.
+    const cape = (top, spread) => {
+      poly(c, [[-spread, top], [spread, top], [spread + 12 + f, -13], [spread + 2, -1 + hem(1)], [spread - 8, -10], [spread - 15, 1 + hem(2)], [3, -9], [-5, 2 + hem(3)], [-spread + 11, -10], [-spread - 1, 0 + hem(4)], [-spread - 12 - f, -13]], "#1d0a10");
+      poly(c, [[-spread + 3, top + 2], [spread - 3, top + 2], [spread + 8 + f, -15], [spread, -5 + hem(1)], [spread - 8, -14], [spread - 15, -3 + hem(2)], [3, -13], [-5, -2 + hem(3)], [-spread + 11, -14], [-spread + 1, -4 + hem(4)], [-spread - 8 - f, -15]], ZAK.red0);
+      for (const x of [-spread + 3, spread - 4]) poly(c, [[x - 3, top + 8], [x + 3, top + 8], [x + (x > 0 ? 9 : 2) + f * .6, -17], [x + (x > 0 ? 4 : -3), -6 + hem(5)], [x - (x > 0 ? 1 : 9) - f * .6, -17]], ZAK.red1);
+      for (const x of [-spread - 2, spread + 3]) poly(c, [[x - 1, top + 30], [x + 1, top + 30], [x + (x > 0 ? 5 : -1) + f * .6, -16], [x + (x > 0 ? 2 : -3) + f * .6, -11 + hem(6)]], ZAK.red2);
+    };
+    if (view === "front") cape(-74, 20);
+    else if (view === "side") {
+      const back = -6 - wind, flow = wind * .5;
+      poly(c, [[10, -76], [-12, -76], [back - 26, -30 - flow * 1.1], [back - 34 - f, -6 - flow * .8], [back - 22, -11 - flow * .6 + hem(1)], [back - 18, 1 - flow * .4 + hem(2)], [back - 6, -9 - flow * .3], [back + 2, 2 + hem(3)], [4, -10], [8, -30]], "#1d0a10");
+      poly(c, [[7, -74], [-10, -74], [back - 21, -30 - flow * 1.1], [back - 28 - f, -10 - flow * .8], [back - 20, -15 - flow * .6 + hem(1)], [back - 16, -3 - flow * .4 + hem(2)], [back - 5, -13 - flow * .3], [back + 2, -2 + hem(3)], [2, -14], [5, -30]], ZAK.red0);
+      poly(c, [[-2, -72], [-6, -72], [back - 13, -28 - flow], [back - 12, -12 - flow * .6], [back - 7, -24 - flow * .6]], ZAK.red1); poly(c, [[-7, -60], [-9, -60], [back - 21, -26 - flow], [back - 24, -14 - flow * .7], [back - 18, -24 - flow * .8]], ZAK.red2);
+    }
+    // Piernas
+    if (seated) {
+      box(c, -19, -30, 16, 11, ZAK.dark); box(c, 3, -30, 16, 11, ZAK.dark); poly(c, [[-22, -22], [-6, -24], [-5, -14], [-20, -14]], ZAK.mid); poly(c, [[22, -22], [6, -24], [5, -14], [20, -14]], ZAK.mid); zakGem(c, -13, -19); zakGem(c, 13, -19);
+      box(c, -19, -14, 13, 14, ZAK.steel); box(c, 6, -14, 13, 14, ZAK.steel); rect(c, -21, -3, 16, 3, ZAK.deep); rect(c, 5, -3, 16, 3, ZAK.deep);
+    } else if (view === "side") {
+      const reach = chase ? 20 : 13;
+      zakLegSide(c, -2, -2 - Math.round(stride * reach), stride > .15 ? Math.round(stride * 5) : 0, ZAK.deep, ZAK.dark);
+      zakLegSide(c, 3, 3 + Math.round(stride * reach), stride < -.15 ? Math.round(-stride * 5) : 0, ZAK.dark, ZAK.steel);
+    } else {
+      zakLegFront(c, -17, stride > .25 ? 4 : 0, -1); zakLegFront(c, 4, stride < -.25 ? 4 : 0, 1);
+    }
+    if (view === "back") cape(-76, 22);
+    c.translate(lean, drop);
+    if (swordFirst) zakSword(c, hx, hy, blade, time, planted ? 40 - drop : 0);
+    if (view === "side") {
+      // Costado: torso de perfil, una hombrera adelante y el casco mirando hacia adelante.
+      armTo(c, -4, -68, sx, sy, 8, ZAK.deep); box(c, sx - 5, sy - 5, 10, 10, ZAK.dark);
+      poly(c, [[-14, -74], [13, -74], [16, -56], [11, -38], [-11, -38], [-15, -56]], ZAK.dark);
+      poly(c, [[-4, -73], [13, -73], [15, -56], [10, -40], [0, -40]], ZAK.steel); poly(c, [[2, -71], [12, -71], [13, -60], [4, -58]], ZAK.mid); poly(c, [[5, -70], [11, -70], [12, -64], [6, -64]], ZAK.light);
+      for (const y of [-56, -50, -44]) { rect(c, 0, y, 13, 1, ZAK.deep); rect(c, 1, y + 1, 11, 1, ZAK.light); }
+      poly(c, [[-11, -40], [11, -40], [14, -26], [6, -22], [-6, -22], [-13, -26]], ZAK.deep); poly(c, [[-1, -38], [10, -38], [12, -27], [1, -24]], ZAK.steel); rect(c, -11, -41, 22, 3, ZAK.dark); zakGem(c, 7, -40);
+      poly(c, [[3, -38], [10, -38], [11, -19 + hem(2)], [6, -23], [3, -17 + hem(3)]], ZAK.red1);
+      poly(c, [[-14, -80], [12, -80], [14, -71], [3, -66], [-13, -71]], ZAK.red1); rect(c, -12, -80, 23, 2, ZAK.red3); rect(c, -11, -74, 18, 1, ZAK.red0);
+      const tail = chase ? 34 : 18 + wind; poly(c, [[-11, -77], [-14, -68], [-14 - tail, -60 + hem(1)], [-20 - tail, -56 + hem(2)], [-13 - tail * .6, -55], [-9, -64]], ZAK.red1); poly(c, [[-11, -75], [-14 - tail * .8, -60 + hem(1)], [-12 - tail * .5, -58], [-10, -68]], ZAK.red3);
+      // Casco de perfil
+      const hy0 = -80, tilt = roar ? -3 : hurt ? -2 : 0;
+      zakHorn(c, -6, hy0 - 19 + tilt, -1, 14, 19); zakHorn(c, 3, hy0 - 19 + tilt, 1, 21, 27);
+      poly(c, [[-13, hy0 - 16 + tilt], [-4, hy0 - 29 + tilt], [8, hy0 - 25 + tilt], [14, hy0 - 12 + tilt], [17, hy0 - 3 + tilt], [11, hy0 + 3 + tilt], [-4, hy0 + 3 + tilt], [-13, hy0 - 4 + tilt]], ZAK.dark);
+      poly(c, [[-10, hy0 - 17 + tilt], [-3, hy0 - 27 + tilt], [7, hy0 - 23 + tilt], [11, hy0 - 13 + tilt], [-2, hy0 - 12 + tilt], [-10, hy0 - 8 + tilt]], ZAK.steel); poly(c, [[-7, hy0 - 18 + tilt], [-2, hy0 - 25 + tilt], [5, hy0 - 22 + tilt], [-2, hy0 - 18 + tilt]], ZAK.light);
+      poly(c, [[0, hy0 - 11 + tilt], [14, hy0 - 11 + tilt], [16, hy0 - 4 + tilt], [3, hy0 - 4 + tilt]], ZAK.deep); poly(c, [[6, hy0 - 10 + tilt], [13, hy0 - 10 + tilt], [13, hy0 - 7 + tilt], [7, hy0 - 8 + tilt]], ZAK.eye); rect(c, 10, hy0 - 10 + tilt, 2, 1, "#ffc0b0");
+      for (const k of [6, 9, 12]) rect(c, k, hy0 - 3 + tilt, 1, 5, ZAK.deep);
+      if (Px.mode !== "outline") Px.glow(c, 10, hy0 - 8 + tilt, 8, "#ff3b30", .6);
+      zakPauldron(c, 1, -74, 1);
+    } else if (view === "back") {
+      armTo(c, -22, -66, sx, sy, 9, ZAK.deep); box(c, sx - 5, sy - 5, 10, 10, ZAK.dark);
+      box(c, -19, -74, 38, 18, ZAK.steel);
+      poly(c, [[-22, -78], [22, -78], [20, -66], [5, -58], [0, -36 + hem(1)], [-5, -58], [-20, -66]], ZAK.red1); poly(c, [[-20, -78], [20, -78], [18, -72], [-18, -72]], ZAK.red2); rect(c, -20, -78, 40, 2, ZAK.red3); poly(c, [[-2, -66], [2, -66], [1, -34 + hem(1)], [-1, -34 + hem(1)]], ZAK.red2);
+      zakPauldron(c, -24, -74, -1); zakPauldron(c, 24, -74, 1);
+      const y = -80; zakHorn(c, -11, y - 19, -1, 18, 25); zakHorn(c, 11, y - 19, 1, 18, 25);
+      poly(c, [[-13, y - 20], [0, y - 31], [13, y - 20], [13, y - 2], [7, y + 3], [-7, y + 3], [-13, y - 2]], ZAK.dark); poly(c, [[-10, y - 20], [0, y - 28], [-3, y - 3], [-10, y - 5]], ZAK.steel); poly(c, [[-2, y - 31], [2, y - 31], [2, y], [-2, y]], ZAK.mid); rect(c, -1, y - 30, 1, 29, ZAK.shine);
+      for (let k = 0; k < 3; k++) rect(c, -10, y - 13 + k * 5, 20, 1, ZAK.deep);
+    } else {
+      armTo(c, -23, -66, sx, sy, 9, ZAK.dark);
+      { const ex = (-23 + sx) / 2, ey = (-66 + sy) / 2; rect(c, ex - 4, ey - 4, 8, 7, ZAK.mid); rect(c, ex - 3, ey - 4, 6, 1, ZAK.shine); zakGem(c, sx, sy - 7); }
+      // Cintura, faldones y paño rojo al frente.
+      poly(c, [[-14, -42], [14, -42], [19, -31], [8, -27], [-8, -27], [-19, -31]], ZAK.deep);
+      poly(c, [[-14, -40], [-4, -40], [-6, -28], [-18, -31]], ZAK.steel); poly(c, [[14, -40], [4, -40], [6, -28], [18, -31]], ZAK.steel); poly(c, [[-13, -39], [-7, -39], [-9, -32], [-16, -32]], ZAK.light); poly(c, [[13, -39], [7, -39], [9, -32], [16, -32]], ZAK.mid);
+      poly(c, [[-4, -40], [4, -40], [5, -17 + hem(2)], [1, -21], [0, -13 + hem(1)], [-2, -21], [-5, -16 + hem(3)]], ZAK.red1); poly(c, [[-1, -40], [2, -40], [1, -20], [-1, -20]], ZAK.red2);
+      rect(c, -15, -44, 30, 4, ZAK.dark); rect(c, -15, -44, 30, 1, ZAK.mid); zakGem(c, 0, -42);
+      // Peto en capas, en punta.
+      poly(c, [[-20, -76], [20, -76], [18, -58], [8, -46], [0, -42], [-8, -46], [-18, -58]], ZAK.deep);
+      poly(c, [[-18, -74], [18, -74], [16, -60], [0, -44], [-16, -60]], ZAK.steel);
+      poly(c, [[-17, -72], [0, -72], [0, -60], [-15, -60]], ZAK.mid); poly(c, [[17, -72], [1, -72], [1, -60], [15, -60]], ZAK.steel);
+      for (const y of [-66, -60, -54, -48]) { const w = (y + 42) * -.72 + 1; poly(c, [[-w, y - 2], [0, y + 4], [w, y - 2], [w, y], [0, y + 6], [-w, y]], y < -56 ? ZAK.mid : ZAK.light); poly(c, [[-w, y - 2], [0, y + 4], [0, y + 5], [-w, y - 1]], ZAK.shine); }
+      rect(c, -1, -72, 2, 30, ZAK.deep);
+      // Bufanda roja cruzada y su caída.
+      poly(c, [[-17, -82], [17, -82], [19, -74], [8, -67], [0, -62], [-8, -67], [-19, -74]], ZAK.red0);
+      poly(c, [[-16, -82], [16, -82], [17, -75], [7, -69], [0, -65], [-7, -69], [-17, -75]], ZAK.red1);
+      poly(c, [[-15, -81], [15, -81], [13, -77], [0, -72], [-13, -77]], ZAK.red2); rect(c, -14, -82, 28, 2, ZAK.red3); poly(c, [[-12, -76], [0, -70], [-2, -67], [-12, -73]], ZAK.red2);
+      zakPauldron(c, -24, -74, -1); zakPauldron(c, 24, -74, 1);
+      const tilt = roar ? -3 : hurt ? -2 : 0;
+      zakHelmFront(c, -80 + tilt, ZAK.eye);
+    }
+    // Brazo fuerte y guantelete.
+    const shoulderX = view === "side" ? 3 : 23, shoulderY = view === "side" ? -66 : -66;
+    armTo(c, shoulderX, shoulderY, hx, hy, 9, ZAK.dark);
+    const mx = (shoulderX + hx) / 2, my = (shoulderY + hy) / 2; rect(c, mx - 4, my - 4, 8, 7, ZAK.mid); rect(c, mx - 3, my - 4, 6, 1, ZAK.shine);
+    if (!swordFirst) zakSword(c, hx, hy, blade, time, planted ? 40 - drop : 0);
+    box(c, hx - 6, hy - 6, 12, 12, ZAK.steel); rect(c, hx - 5, hy - 5, 10, 2, ZAK.light); zakGem(c, hx, hy + 1);
+    if (both || view === "front" || view === "back") { box(c, sx - 5, sy - 5, 10, 10, ZAK.steel); rect(c, sx - 4, sy - 4, 8, 1, ZAK.light); }
   }
   // El Rey Mago: túnica real con estrellas, barba larga, corona y báculo. Flota al usar magia.
   function drawArchmage(c, e, time, walk) {
@@ -775,7 +940,7 @@
     if(warn)pixelText(c,"!!",x,y-bossTop(e)-Math.abs(Math.sin(time*12))*3,"#ff8f7a",12);
   }
   const BIG_BOSSES = { vampire: 1, golem: 1, cerbero: 1, zak: 1, archmage: 1 };
-  const BIG_OUTLINE = { vampire: "#120c14", golem: "#191a1d", cerbero: "#6b3a3e", zak: "#5b3a93", archmage: "#0e0a1c" };
+  const BIG_OUTLINE = { vampire: "#120c14", golem: "#191a1d", cerbero: "#120d10", zak: "#0a090d", archmage: "#0e0a1c" };
   function bigBossBody(c, e, time, walk) {
     if (e.type === "vampire") drawVampire(c, e, time, walk);
     else if (e.type === "golem") drawGolem(c, e, time, walk);
@@ -791,11 +956,20 @@
       if (a.id === "slash") {
         const ph = t % .7, k = (ph - .45) / .16;
         // El tajo cubre lo mismo que el daño: 105 de alcance y ±30° desde los pies.
-        if (k >= 0 && k <= 1) { const from = aim - Math.PI / 6, to = aim + Math.PI / 6, head = from + (to - from) * Math.min(1, k * 2.2), tail = from + (to - from) * Math.max(0, k * 2 - 1); c.save(); c.globalAlpha = 1 - k * .4; crescent(c, x, y - 14, 102, tail, head, 40, "#7b3fd0", "#efe2ff"); c.restore(); }
+        if (k >= 0 && k <= 1) { const from = aim - Math.PI / 6, to = aim + Math.PI / 6, head = from + (to - from) * Math.min(1, k * 2.2), tail = from + (to - from) * Math.max(0, k * 2 - 1); const mid = (head + tail) / 2; c.save();
+          for (const f of [.15, .5, .85]) { const an = tail + (head - tail) * f; Px.glow(c, x + Math.cos(an) * 88, y - 14 + Math.sin(an) * 88, 30, "#a040ff", .6 * (1 - k * .5)); }
+          c.globalAlpha = 1 - k * .35; crescent(c, x, y - 14, 106, tail, head, 64, "#5a1fb0"); crescent(c, x, y - 14, 104, tail, head, 44, "#a040ff"); crescent(c, x, y - 14, 102, tail, head, 22, "#d98cff", "#fbeaff");
+          c.globalAlpha = 1 - k * .6; for (let n = 0; n < 9; n++) { const an = tail + (head - tail) * hash(n, 6), r = 74 + hash(n, 7) * 42 + k * 12, px = x + Math.cos(an) * r, py = y - 14 + Math.sin(an) * r; rect(c, px, py, 1, 3, n % 2 ? "#fbeaff" : "#c95cff"); if (n % 3 === 0) rect(c, px - 1, py + 1, 3, 1, "#fbeaff"); }
+          c.restore(); }
       } else if (a.id === "raise" || a.id === "major" || e.pose === "raise") {
-        for (let k = 0; k < 10; k++) { const f = (time * .9 + k * .1) % 1; c.globalAlpha = 1 - f; rect(c, x - 32 + hash(k, 3) * 64, y - f * 90, 2, 3, k % 2 ? VIOLET : "#e6d6ff"); } c.globalAlpha = 1;
+        for (let k = 0; k < 12; k++) { const f = (time * .9 + k / 12) % 1, px = x - 36 + hash(k, 3) * 72, py = y - f * 104; c.globalAlpha = 1 - f; rect(c, px, py, 1, 3, k % 2 ? "#c95cff" : "#fbeaff"); if (k % 3 === 0) rect(c, px - 1, py + 1, 3, 1, "#fbeaff"); } c.globalAlpha = 1;
       } else if (a.id === "storm" || a.id === "purple") {
         for (let k = 0; k < 3; k++) { const an = time * 7 + k * 2.1, r = 22 + Math.sin(time * 11 + k) * 8; Px.line(c, x, y - 3, x + Math.cos(an) * r, y - 3 + Math.sin(an) * r * .55, k % 2 ? VIOLET : "#e6d6ff"); }
+      } else if (a.id === "rise") {
+        // Vuelve a levantarse envuelto en violeta.
+        const power = Math.min(1, Math.max(0, (t - .6) / 1.2));
+        if (power > 0) { Px.glow(c, x, y - 34, 46, "#a040ff", .55 * power); c.save(); c.globalAlpha = power; c.strokeStyle = "#c95cff"; c.lineWidth = 2; c.beginPath(); const spin = time * 3; c.ellipse(x, y - 4, 40, 15, 0, spin, spin + 2.1); c.stroke(); c.beginPath(); c.ellipse(x, y - 4, 40, 15, 0, spin + Math.PI, spin + Math.PI + 2.1); c.stroke(); c.restore();
+          for (let k = 0; k < 14; k++) { const f = (time * 1.1 + k / 14) % 1, px = x - 38 + hash(k, 9) * 76, py = y - f * 84; c.globalAlpha = (1 - f) * power; rect(c, px, py, 1, 3, k % 2 ? "#c95cff" : "#fbeaff"); if (k % 4 === 0) { rect(c, px - 2, py + 1, 5, 1, "#fbeaff"); } } c.globalAlpha = 1; }
       } else if (a.id === "roar") {
         const r = 30 + (t % .45) / .45 * 70; c.save(); c.globalAlpha = 1 - (t % .45) / .45; c.strokeStyle = "#b48cff"; c.lineWidth = 2; c.beginPath(); c.ellipse(x, y - 80, r, r * .7, 0, 0, Math.PI * 2); c.stroke(); c.restore();
       }
@@ -823,10 +997,10 @@
         for (let n = 0; n < 6; n++) { const f = t / .25, an = n * 1.05; box(c, x + Math.cos(an) * (10 + f * 18), y - 4 - f * 18 + Math.sin(an) * 4, 3, 3, "#7a7064"); }
       }
     } else if (e.type === "cerbero") {
-      if (a.id === "bite" && t >= .47 && t < .62) {
-        // Mordida: las mandíbulas se cierran delante de las tres cabezas.
-        const k = (t - .47) / .15, fx = x + (e.dir === "left" ? -1 : 1) * 46, gap = Math.round((1 - k) * 7);
-        for (const ty of [y - 49, y - 32, y - 14]) for (const s of [-1, 1]) for (let m = 0; m < 3; m++) poly(c, [[fx - 6 + m * 4, ty + s * (gap + 4)], [fx - 5 + m * 4, ty + s * gap], [fx - 3 + m * 4, ty + s * (gap + 4)]], "#fff6e6");
+      if (a.id === "bite" && t >= .47 && t < .6) {
+        // Babas que saltan con el mordiscón.
+        const k = (t - .47) / .13, f = e.dir === "left" ? -1 : 1;
+        for (let n = 0; n < 6; n++) rect(c, x + f * (42 + k * (10 + n * 3)), y - 52 + n * 7 + k * 10, 1, 2, "#dfe9ee");
       } else if (a.id === "dig") {
         const f = e.dir === "left" ? 1 : -1;
         for (let n = 0; n < 8; n++) { const k = (time * 1.8 + n / 8) % 1; rect(c, x + f * (6 + k * 34) + hash(n, 2) * 8 - 4, y - 2 - Math.sin(k * Math.PI) * (14 + hash(n, 4) * 12), 3, 2, n % 2 ? "#5a4632" : "#7a6246"); }
@@ -854,11 +1028,11 @@
     sprite(c, BIG_OUTLINE[e.type] || "#14121a", e.hitFlash > .05, body);
     c.restore();
     bigBossFx(c, e, time, x, y);
-    if (e.act && e.act.id === "rise") pixelText(c, "✦", x + Math.sin(time * 6) * 10, y - 60 - Math.abs(Math.sin(time * 4)) * 6, "#e7d18c", 12);
+    if (e.act && e.act.id === "rise") pixelText(c, "✦", x + Math.sin(time * 6) * 10, y - bossTop(e) - Math.abs(Math.sin(time * 4)) * 6, e.type === "zak" ? "#e6c8ff" : "#e7d18c", 12);
     if (e.stun > 0) pixelText(c, "♪", x + Math.sin(time * 4) * 7, y - 70, "#e2c578", 11);
     else if (e.alert && !e.act && !e.yielding) pixelText(c, "☠", x, y - bossTop(e), "#edb977", 10);
   }
-  const bossTop = e => e.type === "zak" ? 124 : e.type === "golem" ? 90 : e.type === "archmage" ? 78 : e.type === "vampire" ? 56 : 66;
+  const bossTop = e => e.type === "zak" ? 130 : e.type === "golem" ? 90 : e.type === "archmage" ? 78 : e.type === "vampire" ? 56 : 84;
   // Objetos de la dimensión de Zak: carpas, fogatas, la puerta del trono y la fuente del Santuario.
   function drawDimensionObject(c, o, time) {
     const x=o.x,y=o.y,w=o.w,h=o.h;
