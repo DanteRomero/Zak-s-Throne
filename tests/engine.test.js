@@ -186,9 +186,13 @@
       ok(hits('sword', 25, 20), 'Sword: the fan does reach that side');
       ok(!hits('sword', 50, 0), 'Sword: past the reach');
     });
-    test('The bow reaches three old sword lengths and no further', () => {
-      const p = fixture(); p.weapon = 'bow'; p.weapons.push('bow'); p.dir = 'right'; equal(Z.WEAPON_TYPES.bow.range, 165); equal(Z.WEAPON_TYPES.stone.range, Z.WEAPON_TYPES.bow.range, 'Stone and bow share their reach');
-      const far = enemy('thief', p.x + 195); far.stun = 100; const hp = far.hp; ok(game.attack()); advance(1.2); equal(far.hp, hp, 'Too far'); equal(game.projectiles.length, 0);
+    test('The bow reaches twice as far as the stone and no further', () => {
+      const p = fixture(); p.weapon = 'bow'; p.weapons.push('bow'); p.dir = 'right'; equal(Z.WEAPON_TYPES.bow.range, 330); equal(Z.WEAPON_TYPES.stone.range, 165, 'The stone keeps its reach');
+      const far = enemy('thief', p.x + 360); far.stun = 100; const hp = far.hp; ok(game.attack()); advance(1.2); equal(far.hp, hp, 'Too far'); equal(game.projectiles.length, 0);
+    });
+    test('The bow hits an enemy well past the stone reach', () => {
+      const p = fixture(); p.weapon = 'bow'; p.weapons.push('bow'); p.dir = 'right';
+      const far = enemy('thief', p.x + 320); far.stun = 100; const hp = far.hp; ok(game.attack()); advance(1.2); ok(far.hp < hp, 'Hit at 320'); equal(game.projectiles.length, 0);
     });
     test('Bow projectile reaches and damages an enemy at range', () => {
       const p = fixture(); p.weapon='bow'; p.weapons.push('bow'); p.dir='right';
@@ -550,7 +554,23 @@
       killBoss('cerbero'); Object.assign(q.offerings, {claw: 1, elemental: 1, eye: 1}); ok(game.useAltar()); equal(q.portal, true); equal(Object.values(q.altar).some(Boolean), false, 'They break');
       equal(game.cutscene && game.cutscene.id, 'altar', 'Epic scene plays'); game.finishCutscene(); equal(game.cutscene, null);
       const portal = game.world.objects.find(o => o.type === 'portal'); Object.assign(q, {x: portal.x + portal.w / 2, y: portal.y + portal.h / 2}); game.biome = 'altar';
-      advance(.05); equal(game.biome, 'sanctum', 'The portal leads to the Sanctum'); equal(q.portal, false); ok(q.discovered.includes('sanctum')); equal(game.cutscene, null);
+      advance(.05); equal(game.cutscene && game.cutscene.id, 'portal', 'Crossing plays a scene'); equal(game.biome, 'altar'); game.finishCutscene();
+      equal(game.biome, 'sanctum', 'The portal leads to the Sanctum'); equal(q.portal, true, 'It stays lit'); ok(q.discovered.includes('sanctum')); equal(game.cutscene, null);
+    });
+    test('The lit portal can be crossed again without offerings, but not while Cerbero lives', () => {
+      const p = fixture('gero', true), toasts = [], onEvent = game.onEvent; game.onEvent = (type, detail) => { if (type === 'toast') toasts.push(detail.message); return onEvent.call(game, type, detail); };
+      const portal = game.world.objects.find(o => o.type === 'portal'), stand = () => { Object.assign(p, {x: portal.x + portal.w / 2, y: portal.y + portal.h / 2}); game.biome = 'altar'; };
+      p.portal = true; p.stats.health = 1e5; p.hp = 1e5; game.enemies = game.enemies.filter(e => e.type === 'cerbero'); game.enemies[0].stun = 99; stand(); advance(.5); equal(game.biome, 'altar', 'Cerbero blocks it'); equal(game.cutscene, null); equal(toasts.length, 1, 'One warning, not one per frame');
+      p.x += 60; advance(.05); stand(); advance(.05); equal(toasts.length, 2, 'Warns again when you come back'); equal(p.portal, true);
+      killBoss('cerbero'); advance(.05); equal(game.cutscene && game.cutscene.id, 'portal');
+      game.keys.add('d'); advance(.5); game.keys.clear(); near(p.x, portal.x + portal.w / 2, 'Pulled in, not walking'); ok(!game.attack() && !game.roll(), 'No acting during the scene');
+      advance(1); equal(game.biome, 'sanctum', 'Changes zone mid-scene'); near(p.x, Z.DIMENSION_SPOTS.arrive.x); ok(game.cutscene); advance(1.5); equal(game.cutscene, null, 'The scene ends by itself'); equal(p.portal, true);
+      const save = game.snapshot(); game.restore(save, 1); equal(game.player.portal, true, 'Saved lit');
+    });
+    test('Old saves: a portal already opened turns back on and returns offerings left on the altar', () => {
+      fixture('gero', true); const save = JSON.parse(JSON.stringify(game.snapshot())); save.questFlags.altar = true; save.player.portal = false; save.player.altar.ring = true; save.player.offerings.ring = 1;
+      game.restore(save, 1); const q = game.player; equal(q.portal, true); equal(q.altar.ring, false); equal(q.offerings.ring, 2);
+      fixture('gero', true); const fresh = JSON.parse(JSON.stringify(game.snapshot())); fresh.player.altar.ring = true; game.restore(fresh, 1); equal(game.player.portal, false, 'Never opened: nothing changes'); equal(game.player.altar.ring, true);
     });
     test('During the storm only the stone hurts Zak, and a bolt kills', () => {
       const p = fixture('gero', true); game.enterThrone(); game.finishCutscene(); const zak = game.enemies.find(e => e.type === 'zak');

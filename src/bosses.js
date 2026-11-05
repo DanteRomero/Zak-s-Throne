@@ -32,6 +32,8 @@ const LINES = {
 const CPS = Z.CUTSCENE_CPS = 32;
 // Momentos de la escena del altar (render.js los usa para dibujar).
 const ALTAR_SCENE = Z.ALTAR_SCENE = {lit:[.6,.95,1.3,1.65,2],converge:2.4,burst:3.9,open:4.3};
+// Momentos del cruce del portal: te chupa hasta `travel`, ahí cambiás de zona y salís hasta `end`.
+const PORTAL_SCENE = Z.PORTAL_SCENE = {travel:1.3,end:2.7};
 // Escenas: pasos con `at` (segundos) que se ejecutan en orden. Los pasos con `skip` son los
 // puntos a los que salta el jugador al apretar E, Espacio, Enter o tocar la pantalla.
 const SCENES = {
@@ -78,6 +80,17 @@ const SCENES = {
   const t=s.t;if(t<ALTAR_SCENE.converge||t>=ALTAR_SCENE.burst)return;
   const k=(t-ALTAR_SCENE.converge)/(ALTAR_SCENE.burst-ALTAR_SCENE.converge),a=s.altar,cx=a.x+a.w/2;this.shake(1+k*5,.15);
   s.nextBolt=(s.nextBolt||0)-dt;if(s.nextBolt<=0){s.nextBolt=.24-k*.12;const ang=Math.random()*Math.PI*2,r=60+Math.random()*90;this.effect(cx+Math.cos(ang)*r,a.y+20+Math.sin(ang)*r*.6,'bolt',.3);if(Math.random()<.5)this.sound.play('thunder');}
+ }},
+ // El portal te chupa girando, un destello te cambia de zona y salís de otro portal que se cierra atrás tuyo.
+ portal:{steps:[
+  {at:0,run(){this.sound.play('telegraph');}},
+  {at:PORTAL_SCENE.travel,skip:true,run(s){this.enterDimension();const a=Z.DIMENSION_SPOTS.arrive;s.arrived={x:a.x,y:a.y};s.focus={x:a.x,y:a.y-14};s.flashAt=s.t;s.flashColor='244,236,255';this.shake(6,.5);this.effect(a.x,a.y,'wave',.8,{radius:110});}},
+  {at:PORTAL_SCENE.end,skip:true,run(){this.player.dir='down';this.endCutscene();}}
+ ],tick(s){
+  const p=this.player,t=s.t;
+  // Gira cada vez más rápido al entrar y va frenando al salir.
+  const spin=t<PORTAL_SCENE.travel?t*t*9:(PORTAL_SCENE.end-t)*(PORTAL_SCENE.end-t)*6;p.dir=['down','right','up','left'][Math.floor(spin)%4];
+  if(s.arrived)return;const k=Math.min(1,t/PORTAL_SCENE.travel),ease=k*k*(3-2*k);p.x=s.from.x+(s.to.x-s.from.x)*ease;p.y=s.from.y+(s.to.y-s.from.y)*ease;
  }}
 };
 Object.assign(Z.Game.prototype, {
@@ -386,7 +399,7 @@ Object.assign(Z.Game.prototype, {
  // El altar recibe una ofrenda de cada jefe. Lo que ya dejaste queda guardado aunque te vayas.
  useAltar(){
   const p=this.player;
-  if(this.enemies.some(e=>e.type==='cerbero'&&!e.dead&&!e.summoned)){this.emit('toast',{message:'Cerbero no te deja acercarte al altar. Derrotalo primero.',error:true});return false;}
+  if(this.cerberoGuards()){this.emit('toast',{message:'Cerbero no te deja acercarte al altar. Derrotalo primero.',error:true});return false;}
   if(p.portal){this.emit('toast',{message:'El portal violeta ya está abierto. Entrá cuando estés listo.'});return false;}
   const placed=[];
   for(const [k,o] of Object.entries(Z.OFFERINGS))if(o.altar!==false&&!p.altar[k]&&p.offerings[k]>0){p.offerings[k]--;p.altar[k]=true;placed.push(o.name);}
@@ -400,9 +413,15 @@ Object.assign(Z.Game.prototype, {
   return placed.length>0;
  },
  portalObject(){return this.world.objects.find(o=>o.type==='portal'&&o.kind==='altar');},
+ // Mientras Cerbero vive no se puede usar el altar ni cruzar el portal. La copia que invoca Zak no cuenta.
+ cerberoGuards(){return this.enemies.some(e=>e.type==='cerbero'&&!e.dead&&!e.summoned);},
  updatePortals(dt){
   const p=this.player;
-  if(p.portal&&this.biome==='altar'){const o=this.portalObject();if(o&&Math.hypot(p.x-(o.x+o.w/2),p.y-(o.y+o.h/2))<20){this.enterDimension();return;}}
+  if(p.portal&&this.biome==='altar'){const o=this.portalObject(),near=!!o&&Math.hypot(p.x-(o.x+o.w/2),p.y-(o.y+o.h/2))<20;
+   if(near&&!this.cerberoGuards()){this.portalWarned=false;this.sound.play('portal');this.startCutscene('portal',{from:{x:p.x,y:p.y},to:{x:o.x+o.w/2,y:o.y+o.h/2},focus:{x:o.x+o.w/2,y:o.y+o.h/2-14}});return;}
+   // Avisa una sola vez cada vez que lo pisás, no en cada cuadro.
+   if(near&&!this.portalWarned)this.emit('toast',{message:'Cerbero custodia el portal: no te deja pasar. Derrotalo primero.',error:true});
+   this.portalWarned=near;}
   if(this.exitPortal&&this.biome==='throne'){
    const ex=this.exitPortal;ex.time-=dt;
    if(Math.hypot(p.x-ex.x,p.y-ex.y)<22){this.leaveThrone();return;}
@@ -416,9 +435,9 @@ Object.assign(Z.Game.prototype, {
   this.renderer.initialized=false;this.clearInput();this.emit('biome',{name:Z.BIOME_NAMES[biome],safe:Z.isSafe(biome)});
  },
  // El portal del altar lleva al Santuario de la dimensión de Zak: de ahí no se vuelve hasta ganarle o perder.
- enterDimension(){const p=this.player;p.portal=false;this.resetZak();this.sound.play('portal');this.travel(Z.DIMENSION_SPOTS.arrive,'sanctum');
+ enterDimension(){this.resetZak();this.sound.play('portal');this.travel(Z.DIMENSION_SPOTS.arrive,'sanctum');
   this.emit('toast',{message:'Llegaste a la dimensión de Zak. No hay vuelta atrás: el Santuario es seguro y al norte está el Pueblo Mágico.'});},
- enterThrone(){const p=this.player;p.portal=false;this.resetZak();this.sound.play('portal');this.travel(Z.THRONE_SPOTS.arrive,'throne');this.startCutscene('zakIntro');},
+ enterThrone(){this.resetZak();this.sound.play('portal');this.travel(Z.THRONE_SPOTS.arrive,'throne');this.startCutscene('zakIntro');},
  leaveThrone(){const p=this.player;this.resetZak();p.poison=null;p.bleed=null;p.slow=0;p.heavySlow=0;this.sound.play('portal');this.travel(this.world.spawn,'village');}
 });
 })();

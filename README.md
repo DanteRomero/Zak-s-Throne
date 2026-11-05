@@ -65,7 +65,7 @@ Los guardados se conservan en el almacenamiento local del navegador usado para j
 - **Cueva Profunda (Nvl 2):** se baja por la escalera del fondo noroeste de la Cueva del Eco; **hace falta una antorcha y haber vencido al Capo**. Está a oscuras: ves lo que alumbra la antorcha. Hay murciélagos, arañas, hierro y oro, y **no crecen hierbas medicinales**. En su extremo sureste baja otra escalera, custodiada por **El Chupasangre**.
 - **Las Entrañas (Nvl 3):** pocos gusanos de tierra, enterrados hasta que te acercás, las únicas vetas de diamante y **El Gólem Minero**.
 - **Altar del gobernante:** un cementerio al oeste de la aldea; se entra por el portón al final de la calle principal. Lo pueblan esqueletos con escudo y esqueletos arqueros. **Cerbero** custodia el altar de ofrendas.
-- **Dimensión de Zak:** el portal del altar lleva acá, y **no se sale** hasta vencer o perder contra Zak. Tiene dos partes, con el mismo estilo oscuro y violeta del trono:
+- **Dimensión de Zak:** el portal del altar lleva acá, y **no se sale** hasta vencer o perder contra Zak. Las ofrendas se gastan una sola vez: **el portal queda prendido para siempre** y lo podés volver a cruzar, salvo mientras **Cerbero** esté vivo (se ve rojo y no deja pasar). Tiene dos partes, con el mismo estilo oscuro y violeta del trono:
   - **Santuario** (zona segura): una fuente que, como el pozo de la aldea, devuelve la vida y la energía y apaga las quemaduras.
   - **Pueblo Mágico** (al norte): carpas, fogatas, magos y armaduras vivientes. **Pisar una fogata quema**: 2 de vida por segundo durante 5 s, ignorando la armadura (rodar no te salva). Al fondo, el **Rey Mago** custodia la **puerta del trono**, que se abre con su **Llave del trono** (se gasta al usarla).
 - **Trono de Zak:** sala gótica de ladrillo negro, siempre de noche pero bien visible. Se llega solo por la puerta del Pueblo Mágico. No hay enemigos: solo **Zak** y su trono.
@@ -324,8 +324,8 @@ Los ataques empujan a perros, serpientes y ratas; las ratas prendidas deben term
 | --- | --- | --- |
 | Puños | Desde el comienzo | Daño igual a fuerza, corto alcance; golpea en un área recta |
 | Espada | Yuyos | Fuerza ×1,5, mismo alcance que los puños; golpea en abanico |
-| Arco | Aldea | Proyectil a distancia media; necesita 0,7 s de carga y respeta el intervalo de ataque |
-| Piedra | Cueva | Proyectil con el mismo alcance que el arco; caminar 2 s recarga la munición. Es lo único que lastima a Zak durante la Tormenta de agonía |
+| Arco | Aldea | Proyectil de largo alcance; necesita 0,7 s de carga y respeta el intervalo de ataque |
+| Piedra | Cueva | Proyectil con la mitad del alcance del arco; caminar 2 s recarga la munición. Es lo único que lastima a Zak durante la Tormenta de agonía |
 | Espada Elemental | El Taller | Fuerza ×4,5, el mayor alcance cuerpo a cuerpo; golpea en abanico; se forja con 5 Piedras Elementales y materiales |
 
 Se interpretó «aumenta el daño en un ×0,5» como **50% adicional**, por lo que la espada multiplica por **1,5**.

@@ -473,7 +473,7 @@ class Game {
   const p=this.player,item=Z.nearbyInteractable(this.world,p.x,p.y,46,p);if(!item)return null;
   if(item.type==='stairs'){const guard=this.stairsGuard(item);return{item,label:item.label+(guard?' · la custodia '+Z.ENEMY_TYPES[guard.type].name:item.dir==='down'&&!p.torch?' · necesitás antorcha':'')};}
   if(item.type==='door')return{item,label:p.throneKeys>0?'Abrir la puerta del trono (🗝 '+p.throneKeys+')':'Puerta del trono · necesitás la llave del Rey Mago'};
-  if(item.type==='altar'){const placed=Object.values(p.altar||{}).filter(Boolean).length;return{item,label:this.enemies.some(e=>e.type==='cerbero'&&!e.dead&&!e.summoned)?'Altar de ofrendas · lo custodia Cerbero':p.portal?'El portal ya está abierto':'Dejar ofrendas en el altar ('+placed+'/5)'};}
+  if(item.type==='altar'){const placed=Object.values(p.altar||{}).filter(Boolean).length;return{item,label:this.cerberoGuards()?'Altar de ofrendas · lo custodia Cerbero':p.portal?'El portal ya está abierto':'Dejar ofrendas en el altar ('+placed+'/5)'};}
   if(item.type==='ore'||item.type==='tree'){const def=this.nodeDef(item),tool=Z.TOOLS[def.tool],have=p[def.tool]||0;
    if(have<def.tier)return{item,label:'Veta de '+def.name+' · necesitás '+tool.name.toLowerCase()+' de '+Z.TIER_NAMES[def.tier]+' o mejor'};
    if(p.gather&&p.gather.id===item.id)return{item,label:(def.tool==='axe'?'Talando… ':'Picando… ')+Math.round(p.gather.time/p.gather.total*100)+'%'};
@@ -645,6 +645,8 @@ class Game {
   if(Z.isSafe(this.biome)){p.poison=null;p.slow=0;}this.zakFightStart=null;this.time=Number.isFinite(data.time)?clamp(data.time,0,1e9):0;this.questFlags={};
   if(data.questFlags&&typeof data.questFlags==='object')for(const k of Object.keys(data.questFlags))if(/^((quest|claimed)_(bow|cave|stone|weeds|sword|shop|bestiary|level5|capo|yarara|smith|deep|deepest|vampire|golem|elemental|cerbero|altar|archmage|zak)|defeat_(thief|dog|snake|rat|bat|spider|worm|skeleton|archer|mage|armor|capo|yarara|vampire|golem|cerbero|archmage|zak)|bought|crafted|gathered|elemental|altar|complete)$/.test(k))this.questFlags[k]=data.questFlags[k]===true;
   if(!this.quests().every(q=>q.done))delete this.questFlags.complete;
+  // Antes el portal se apagaba al cruzarlo: si ya lo abriste, queda prendido y te devuelve lo que dejaste de nuevo en el altar.
+  if(this.questFlags.altar){p.portal=true;for(const k of Z.ALTAR_OFFERINGS)if(p.altar[k]){p.altar[k]=false;p.offerings[k]++;}}
   this.world.pickups.forEach(i=>{i.collected=data.collected.includes(i.id);if(i.collected&&i.type==='herb')i.regrow=HERB_REGROW;});
   for(const saved of data.nodes||[]){const o=saved&&this.world.objects.find(n=>n.id===saved.id&&(n.type==='ore'||n.type==='tree'));if(!o)continue;
    o.harvested=true;o.regrow=clamp(Number(saved.regrow)||0,0,this.nodeDef(o).regrow);if(o.type==='ore')o.solid=false;}this.enemies=this.world.enemySpawns.map(spawn=>{

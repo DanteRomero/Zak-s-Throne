@@ -6,6 +6,15 @@ Cada versión lista sus cambios agrupados por tipo:
 - **Change:** algo que ya existía y ahora funciona distinto.
 - **Fix:** un error corregido.
     
+## v2.14 — 2026-11-04
+* Feature
+    - **Animación al cruzar el portal:** el portal te chupa girando mientras se agranda y caen chispas en espiral, la pantalla se va a blanco y salís en el Santuario de otro portal que se cierra atrás tuyo. Dura 2,7 s y se puede saltear.
+* Change
+    - **Arco:** su alcance sube a 330 (antes 165), el doble. La piedra se queda en 165.
+    - **El portal no se apaga más:** antes se apagaba al cruzarlo y cada visita gastaba las cinco ofrendas. Ahora se gastan una sola vez y el portal queda prendido para siempre.
+    - **Cerbero custodia el portal:** mientras esté vivo se ve rojo y no deja pasar, y un aviso te lo dice cuando lo pisás. Antes solo custodiaba el altar. Como reaparece a los 10 minutos, puede que tengas que volver a vencerlo o esperar.
+    - **Partidas existentes:** si ya abriste el portal alguna vez, vuelve a estar prendido, y las ofrendas que habías dejado de nuevo en el altar vuelven a tu bolsa.
+
 ## v2.13 — 2026-11-04
 * Feature 
     - **Sobrecarga (El Rey Mago):** se queda quieto 8 s, sin teletransportarse y sin protección, para que puedas pegarle cuerpo a cuerpo. Después explota en hielo: 250% de su fuerza en un área 1,5 veces mayor que el terremoto del Gólem.

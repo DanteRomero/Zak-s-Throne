@@ -1143,7 +1143,11 @@
       const s=g.cutscene&&g.cutscene.id==="altar"?g.cutscene:null,start=(Z.ALTAR_SCENE||{}).open||0;
       if(s&&s.t<start)return true;
       const k=s?Math.min(1,(s.t-start)/1.2):1,grow=k<1?1+2.7*Math.pow(k-1,3)+1.7*Math.pow(k-1,2):1;
-      c.save();c.translate(Math.round(x+w/2),Math.round(y+h/2));Px.scale=grow;drawPortal(c,0,0,time*(s?1+(1-k)*3:1),"#a77bff");Px.scale=1;c.restore();return true;
+      // Con Cerbero vivo se ve rojo y apagado: no deja pasar. Al cruzarlo se agranda y gira cada vez más rápido.
+      const cross=g.cutscene&&g.cutscene.id==="portal"?Math.min(1,g.cutscene.t/Z.PORTAL_SCENE.travel):0,cx=Math.round(x+w/2),cy=Math.round(y+h/2);
+      c.save();c.translate(cx,cy);if(cross){const size=1+cross*cross*.7;c.translate(0,-14);c.scale(size,size);c.translate(0,14);}Px.scale=grow;
+      if(g.cerberoGuards())drawPortal(c,0,0,time*.2,"#8a2a3a","#d0606a","#2a0a14");else drawPortal(c,0,0,time*(s?1+(1-k)*3:1+cross*5),"#a77bff");
+      Px.scale=1;c.restore();return true;
     }
     if(o.type==="pillar"){
       shadow(c,x+w/2,y+h,w+10,6);
@@ -1163,11 +1167,11 @@
     }
     return false;
   }
-  function drawPortal(c,x,y,time,color) {
+  function drawPortal(c,x,y,time,color,light="#e6d6ff",core="#3a1a6a") {
     c.save();
-    for(let k=0;k<4;k++){c.globalAlpha=.25+k*.15;c.strokeStyle=k%2?color:"#e6d6ff";c.lineWidth=2;c.beginPath();c.ellipse(x,y-14,16-k*3,24-k*4,0,time*(k%2?2:-2),time*(k%2?2:-2)+Math.PI*1.6);c.stroke();}
-    c.globalAlpha=.5+Math.sin(time*5)*.15;c.fillStyle="#3a1a6a";c.beginPath();c.ellipse(x,y-14,10,17,0,0,Math.PI*2);c.fill();
-    for(let k=0;k<6;k++){const a=time*2+k,r=20+Math.sin(time*3+k)*4;c.globalAlpha=.7;rect(c,x+Math.cos(a)*r,y-14+Math.sin(a)*r*1.3,2,2,"#e6d6ff");}
+    for(let k=0;k<4;k++){c.globalAlpha=.25+k*.15;c.strokeStyle=k%2?color:light;c.lineWidth=2;c.beginPath();c.ellipse(x,y-14,16-k*3,24-k*4,0,time*(k%2?2:-2),time*(k%2?2:-2)+Math.PI*1.6);c.stroke();}
+    c.globalAlpha=.5+Math.sin(time*5)*.15;c.fillStyle=core;c.beginPath();c.ellipse(x,y-14,10,17,0,0,Math.PI*2);c.fill();
+    for(let k=0;k<6;k++){const a=time*2+k,r=20+Math.sin(time*3+k)*4;c.globalAlpha=.7;rect(c,x+Math.cos(a)*r,y-14+Math.sin(a)*r*1.3,2,2,light);}
     c.restore();
   }
   const SMALL_OUTLINE={thief:"#191922",skeleton:"#26251f",archer:"#26251f",mage:"#120e24",armor:"#1a1d21",bat:"#1a1522",spider:"#150f0d",worm:"#2e1a14",dog:"#2e241a",snake:"#17261c",rat:"#22232a"};
@@ -1939,6 +1943,10 @@
           const n=item.data;
           drawCharacter(c,{...n,characterId:["paco","gero","tena","dante"][Math.abs(n.variant||0)%4],moving:n.moving===undefined?true:n.moving},time);
           if(n.name&&Math.hypot(p.x-n.x,p.y-n.y)<42&&!menu)pixelText(c,n.name,n.x,n.y-33,"#e1d6af",6);
+        } else if(scene&&scene.id==="portal"){
+          // Se achica hasta desaparecer al entrar y vuelve a crecer al salir.
+          const P=Z.PORTAL_SCENE,t=scene.t,before=Math.max(0,(t-.45)/(P.travel-.45)),size=t<P.travel?1-before*before:Math.min(1,(t-P.travel-.15)/.6);
+          if(size>.02){c.save();c.translate(p.x,p.y-10);c.scale(size,size);c.translate(-p.x,-p.y+10);c.globalAlpha=Math.min(1,size*1.6);drawCharacter(c,p,time);c.restore();}
         } else drawCharacter(c,p,time);
       }
       if(p.burn&&!menu){for(let k=0;k<4;k++){const t=(time*2.2+k*.25)%1;c.globalAlpha=1-t;rect(c,p.x-6+k*4,p.y-12-t*16,2,3,k%2?"#ff8a2a":"#ffd36a");}c.globalAlpha=1;}
@@ -1995,6 +2003,7 @@
       if((game.attackStick||game.attackPreview)&&!menu&&!scene&&game.state==="playing")drawAimGuide(c,game,p,time);
       if(!menu)this.drawThroneHazards(c,game,time);
       if(scene&&scene.id==="altar")this.drawAltarScene(c,scene,time);
+      if(scene&&scene.id==="portal")this.drawPortalScene(c,scene,time);
       for(const effect of game.effects||[])this.drawEffect(c,effect,time);
       if(game.biome==="weeds"&&!menu)for(let k=0;k<4;k++)tuft(c,p.x-8+k*5,p.y+2,"#587a43",true,Math.sin(time*2)>0?1:0);
       c.restore();
@@ -2072,11 +2081,28 @@
       }
       c.restore();
     }
+    // Cruce del portal: chispas que caen en espiral al entrar; al salir, un portal igual que se cierra girando.
+    drawPortalScene(c,s,time) {
+      const P=Z.PORTAL_SCENE,t=s.t;
+      c.save();
+      if(!s.arrived){
+        const k=Math.min(1,t/P.travel),cx=s.to.x,cy=s.to.y-14;
+        for(let n=0;n<28;n++){const life=(hash(n,5)+t*(.6+k*1.2))%1,r=(1-life)*(46+hash(n,8)*44),a=hash(n,3)*Math.PI*2+life*(5+k*5);
+          c.globalAlpha=Math.min(1,life*2.4)*(.35+k*.65);rect(c,cx+Math.cos(a)*r,cy+Math.sin(a)*r*.8,n%4?2:3,n%4?2:3,n%3?"#c9a6ff":"#f1e2ff");}
+        c.globalAlpha=k*k*.5;c.fillStyle="#e6d6ff";c.beginPath();c.ellipse(cx,cy,10+k*k*22,16+k*k*30,0,0,Math.PI*2);c.fill();
+      } else {
+        const k=Math.max(0,1-(t-P.travel-.6)/(P.end-P.travel-.6)),size=Math.min(k*(2-k),1);
+        if(size>.02){c.translate(Math.round(s.arrived.x),Math.round(s.arrived.y));c.translate(0,-14);c.scale(size,size);c.translate(0,14);drawPortal(c,0,0,time*(1+(1-k)*5),"#a77bff");}
+      }
+      c.restore();
+    }
     // Franjas de cine, destellos y el cuadro de diálogo con efecto de máquina de escribir.
     drawCutsceneOverlay(c,game,W,H,time) {
       const s=game.cutscene,k=s?Math.min(1,s.t/.5):Math.min(1,game.cutsceneFade/.5),bar=Math.round(H*.1*(1-(1-k)*(1-k)));
       c.save();
       if(s&&s.id==="altar"){const A=Z.ALTAR_SCENE,dim=s.t<A.burst?Math.max(0,Math.min(1,(s.t-A.converge)/1.2))*.4:0;if(dim>0){c.fillStyle="rgba(20,8,40,"+dim+")";c.fillRect(0,0,W,H);}}
+      // La pantalla se va a blanco justo antes del cambio de zona, y el destello la devuelve.
+      if(s&&s.id==="portal"&&!s.arrived){const f=(s.t-(Z.PORTAL_SCENE.travel-.35))/.35;if(f>0){c.fillStyle="rgba(244,236,255,"+Math.min(1,f)+")";c.fillRect(0,0,W,H);}}
       if(s&&s.flashAt!==undefined){const f=1-(s.t-s.flashAt)/.9;if(f>0){c.fillStyle="rgba("+s.flashColor+","+f+")";c.fillRect(0,0,W,H);}}
       if(bar>0){rect(c,0,0,W,bar,"#050308");rect(c,0,H-bar,W,bar,"#050308");}
       const l=s&&s.line;
