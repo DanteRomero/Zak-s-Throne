@@ -177,6 +177,8 @@ Z.createWorld=function(){
  }));
  buildWest(world,object,path,(type,x,y)=>world.enemySpawns.push({id:'west-'+type+'-'+world.enemySpawns.length,type,x,y}));
  buildDimension(world,object,path,(type,x,y)=>world.enemySpawns.push({id:'dim-'+type+'-'+world.enemySpawns.length,type,x,y}));
+ // Vecinos nuevos y animales: siempre al final. Si fueran antes, moverían las vetas y los árboles que recuerdan las partidas guardadas.
+ Z.addVillagers(world,object);
  return world;
 };
 // Valla de Los Yuyos, Altar del gobernante y Trono de Zak. Se agregan al final para no cambiar
@@ -249,16 +251,20 @@ Z.collides=function(world,x,y,radius=8,ignoreNpc=null){
  for(const o of world.objects){if(!o.solid)continue;if(x+radius<o.x||x-radius>o.x+o.w||y+radius<o.y||y-radius>o.y+o.h)continue;
   const nx=Math.max(o.x,Math.min(x,o.x+o.w)),ny=Math.max(o.y,Math.min(y,o.y+o.h));if((x-nx)**2+(y-ny)**2<radius*radius)return true;}
  const ignoreId=typeof ignoreNpc==='object'&&ignoreNpc?ignoreNpc.id:ignoreNpc;
- for(const n of world.npcs){if(n.id===ignoreId)continue;if((x-n.x)**2+(y-n.y)**2<(radius+9)**2)return true;}
+ for(const n of world.npcs){if(n.id===ignoreId)continue;if((x-n.x)**2+(y-n.y)**2<(radius+(n.radius||9))**2)return true;}
  return false;
 };
 const PLACES=['well','sign','stall','forge','stairs','altar','door'];
+// Hasta dónde se puede hablar con alguien, medido desde el borde de su cuerpo.
+const TALK_RANGE=24;
 Z.nearbyInteractable=function(world,x,y,maxDistance=46,player=null){
  let nearest=null,best=maxDistance;
  for(const p of world.pickups){if(p.collected)continue;const d=Math.hypot(p.x-x,p.y-y);if(d<best){nearest=p;best=d;}}
  if(nearest)return nearest;
  const gap=o=>{const nx=Math.max(o.x,Math.min(x,o.x+o.w)),ny=Math.max(o.y,Math.min(y,o.y+o.h));return Math.hypot(x-nx,y-ny);};
  for(const o of world.objects){if(!PLACES.includes(o.type))continue;const d=gap(o);if(d<best){nearest=o;best=d;}}
+ // Un vecino gana solo si está más cerca que el lugar: que pase uno al lado del puesto no tapa la compra.
+ if(!(player&&player.gather))for(const n of world.npcs||[]){if(!n.lines)continue;const d=Math.max(0,Math.hypot(n.x-x,n.y-y)-(n.radius||9));if(d<=TALK_RANGE&&d<best){nearest=n;best=d;}}
  if(nearest)return nearest;
  // Los árboles solo cuentan si tenés hacha: si no, cada árbol de la aldea pediría atención.
  best=Math.min(maxDistance,26);

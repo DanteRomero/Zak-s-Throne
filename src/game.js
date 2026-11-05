@@ -65,6 +65,12 @@ class Sound {
   // Voces de los diálogos: grave para Zak, clara para el narrador.
   if(kind==='voice')this.tone(110+Math.random()*30,.05,'sawtooth',.025);
   if(kind==='blip')this.tone(540+Math.random()*80,.03,'square',.012);
+  // Los animales de la aldea, y el mate del gaucho.
+  if(kind==='neigh')[880,1000,780,620].forEach((n,i)=>this.tone(n,.15,'sawtooth',.016,i*.1,n*.85));
+  if(kind==='cluck')[430,560,400].forEach((n,i)=>this.tone(n,.07,'square',.018,i*.09));
+  if(kind==='woof')[0,.17].forEach(d=>this.tone(170,.11,'square',.035,d,90));
+  if(kind==='meow')this.tone(520,.32,'sine',.04,0,780);
+  if(kind==='mate')[170,240,195,300,225,360,260].forEach((n,i)=>this.tone(n,.08,'triangle',.04,i*.07,n*1.25));
  }
  update(dt,biome){if(!this.enabled)return;this.ambientTime-=dt;if(this.ambientTime<=0){this.ambientTime=3+Math.random()*3;if(biome==='throne'||biome==='altar'||biome==='sanctum'||biome==='magic')this.tone(biome==='altar'?58:46,2.8,'sawtooth',.012);else if(isCave(biome))this.tone(biome==='cave'?65:52,2.5,'sine',.018);else{const n=[262,330,392,440,523][Math.floor(Math.random()*5)];this.tone(n,1.8,'sine',.016);this.tone(n*1.5,1.5,'sine',.009,.7);}}}
 }
@@ -213,12 +219,22 @@ class Game {
    const ny=entity.y+dy/steps;if((!zone||Z.biomeAt(entity.x,ny)===zone)&&!Z.collides(this.world,entity.x,ny,radius,ignoreNpc))entity.y=ny;}
  }
  updateNpcs(dt){
-  this.world.npcs.forEach((n,index)=>{if(n.static){n.moving=false;return;}n.wait=(n.wait||0)-dt;
-   if(n.wait<=0&&Math.hypot(n.targetX-n.x,n.targetY-n.y)<7){n.wait=2+Math.random()*5;n.targetX=n.homeX+Math.sin(this.time*.17+index*3)*65;n.targetY=n.homeY+Math.cos(this.time*.21+index*2)*55;}
+  this.world.npcs.forEach(n=>{if(n.static){n.moving=false;return;}n.wait=(n.wait||0)-dt;
+   const[roamX,roamY]=n.roam||[65,55],[restMin,restMax]=n.rest||[2,7],radius=n.radius||9,speed=n.speed||22;
+   if(n.wait<=0&&Math.hypot(n.targetX-n.x,n.targetY-n.y)<7){n.wait=restMin+Math.random()*(restMax-restMin);n.targetX=n.homeX+(Math.random()*2-1)*roamX;n.targetY=n.homeY+(Math.random()*2-1)*roamY;}
    if(n.wait>0){n.moving=false;return;}const dx=n.targetX-n.x,dy=n.targetY-n.y,len=Math.hypot(dx,dy),before={x:n.x,y:n.y};
-   if(len>3){const nx=n.x+dx/len*22*dt,ny=n.y+dy/len*22*dt;if(Math.hypot(nx-this.player.x,ny-this.player.y)>20)this.move(n,nx-n.x,ny-n.y,9,'village',n.id);n.dir=Math.abs(dx)>Math.abs(dy)?(dx>0?'right':'left'):(dy>0?'down':'up');n.walk+=dt*5;}
+   // Nunca se acerca tanto como para encerrar al jugador: si se pisaran, este no podría moverse.
+   if(len>3){const nx=n.x+dx/len*speed*dt,ny=n.y+dy/len*speed*dt;if(Math.hypot(nx-this.player.x,ny-this.player.y)>Math.max(20,radius+11))this.move(n,nx-n.x,ny-n.y,radius,'village',n.id);n.dir=this.dirOf(dx,dy);if(Math.abs(dx)>1)n.faceLeft=dx<0;n.walk+=dt*speed*.23;}
    n.moving=distance(before,n)>.01;if(!n.moving&&len>7){n.targetX=n.x;n.targetY=n.y;n.wait=1;}
   });
+ }
+ // Cada vecino dice sus frases por turno: la primera vez, la primera. Con los animales, una mimada.
+ talkTo(n){
+  const p=this.player,pool=(n.linesFor&&n.linesFor[p.characterId])||n.lines,turn=n.said||0;n.said=turn+1;
+  p.dir=this.dirOf(n.x-p.x,n.y-p.y);
+  if(!n.static){n.dir=this.dirOf(p.x-n.x,p.y-n.y);n.faceLeft=p.x<n.x;n.moving=false;n.wait=Math.max(n.wait||0,2.5);}
+  if(n.voice)this.sound.play(n.voice);if(n.species)this.effect(n.x,n.y-(n.tag||20)+2,'heart',1.3);
+  this.startCutscene('talk',{speaker:n.name,text:pool[turn%pool.length],focus:{x:(p.x+n.x)/2,y:(p.y+n.y)/2}});
  }
  // Cada golpe que conecta suma al combo; el cuarto seguido es crítico.
  landStrike(){const p=this.player;p.combo=(p.comboTime>0?p.combo:0)+1;p.comboTime=Math.max(1.6,this.stats().attackCooldown+.7);return p.combo%COMBO_CRIT===0;}
@@ -466,6 +482,7 @@ class Game {
  herbHealing(){return Math.max(25,Math.round(this.stats().maxHealth*.2));}
  interact(){
   if(this.state!=='playing'||this.cutscene)return;const p=this.player,item=Z.nearbyInteractable(this.world,p.x,p.y,46,p);if(!item)return;
+  if(item.lines){this.talkTo(item);return;}
   if(item.type==='forge'){this.emit('smith');return;}
   if(item.type==='door'){this.openThroneDoor();return;}
   if(item.type==='altar'){this.useAltar();return;}

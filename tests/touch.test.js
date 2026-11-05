@@ -97,5 +97,15 @@
   assert('El tamaño vuelve a chico al recorrer las opciones', size.textContent === 'CHICOS');
   document.getElementById('close-modal').click(); document.getElementById('close-modal').click();
   g.pause(); g.resume();
+  // Hablar con un vecino: el botón E abre la charla y tocar la pantalla la sigue.
+  const gaucho = g.world.npcs.find(n => n.kind === 'gaucho'), screen = document.getElementById('world'), middle = screen.getBoundingClientRect();
+  Object.assign(g.player, {x: gaucho.x, y: gaucho.y + 24}); g.biome = 'village';
+  pointer(document.getElementById('touch-interact'), 'pointerdown', 700, 300);
+  assert('El botón E abre la charla con el gaucho', g.cutscene && g.cutscene.id === 'talk');
+  await wait(450);
+  pointer(screen, 'pointerdown', middle.width / 2, middle.height / 2); pointer(screen, 'pointerup', middle.width / 2, middle.height / 2);
+  assert('Tocar la pantalla completa el texto', !!g.cutscene);
+  pointer(screen, 'pointerdown', middle.width / 2, middle.height / 2); pointer(screen, 'pointerup', middle.width / 2, middle.height / 2);
+  assert('Tocar otra vez cierra la charla, sin atacar', !g.cutscene && !g.mouseHeld);
   return {passed: results.filter(r => r.pass).length, failed: results.filter(r => !r.pass).length, results};
 })()

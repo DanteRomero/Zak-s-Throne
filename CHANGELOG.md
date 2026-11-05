@@ -6,6 +6,20 @@ Cada versión lista sus cambios agrupados por tipo:
 - **Change:** algo que ya existía y ahora funciona distinto.
 - **Fix:** un error corregido.
     
+## v2.17 — 2026-11-05
+* Feature
+    - **Más vecinos en Palihue City:** ahora son 17, cada uno con su propia ropa: la seño Clara, Doña Rosa, Tito el almacenero, Rulo el cartero, Cacho el intendente, Mirta la chusma, el Tano Carmelo, Facu, Sor Inés, el Cabo Funes, Don Chiche el pescador y los de siempre.
+    - **Animales:** 3 caballos, 5 gallinas, 3 gatos y 3 perros, con nombre y su forma de moverse. Las gallinas picotean, los gatos se sientan y los caballos pastan. Zaino y Moro están en un corral nuevo, al sur de la calle a Los Yuyos.
+    - **El Gaucho:** toma mate sentado en un tronco, con su pava y con Malacara, su caballo ensillado, al costado de la calle a Los Yuyos.
+    - **Diálogos:** acercate a cualquier vecino o animal y apretá **E** (en el celular, el botón **E**). Cada uno dice sus frases por turno, y algunas traen consejos que sirven. Mientras dura la charla, el mundo se queda quieto y el reloj no corre.
+        - Los animales reciben una mimada, con corazón y su propio sonido.
+        - Si jugás con Pepe, las gallinas te tratan distinto.
+* Change
+    - Los vecinos ya no usan el aspecto de los personajes jugables.
+    - Los diálogos no se cortan a mitad de una acotación corta, y la frase ya no salta de renglón mientras se escribe. También en las escenas de Zak.
+    - Los cuadros de diálogo muestran **E** cuando el texto termina.
+    - Las partidas guardadas no cambian: vetas y árboles conservan su identificador y las charlas no se guardan. Si guardaste justo donde ahora vive un vecino, aparecés en la plaza.
+
 ## v2.16 — 2026-11-05
 * Feature
     - **Día, tarde y noche:** el reloj de arriba a la derecha ahora dice en qué parte del día estás. El día completo dura 24 minutos reales: **día** de 07:00 a 14:00, **tarde** de 14:00 a 19:00 con una luz dorada que crece hasta el atardecer, y **noche** de 19:00 a 07:00.

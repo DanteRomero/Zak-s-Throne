@@ -781,6 +781,112 @@
       }
     });
 
+    // Vecinos, animales y diálogos.
+    const GAUCHO_LINE = 'Como me gustaría que haya un lugar pa jugar al truco... será que se arme algún torneito. *ruido de mate*';
+    const npc = name => game.world.npcs.find(n => n.name === name);
+    const talkers = () => game.world.npcs.filter(n => n.lines), people = () => game.world.npcs.filter(n => n.look);
+    const standNear = n => { Object.assign(game.player, {x: n.x, y: n.y + (n.radius || 9) + 12}); game.biome = Z.biomeAt(game.player.x, game.player.y); };
+    test('Saved games: new neighbors do not move any vein or tree', () => {
+      // Huella tomada en v2.16: si cambia, las partidas guardadas recordarían vetas y árboles equivocados.
+      const nodes = Z.createWorld().objects.filter(o => o.type === 'ore' || o.type === 'tree'); let hash = 0;
+      for (const o of nodes) for (const ch of [o.id, o.type, o.x, o.y].join('|') + ';') hash = Math.imul(hash, 31) + ch.charCodeAt(0) | 0;
+      equal(nodes.length, 307, 'veins and trees'); equal(hash, 1825658723, 'fingerprint');
+    });
+    test('Saved games: a v2.16 save restores the same harvested nodes and carries no NPC data', () => {
+      const p = fixture('gero', true); p.level = 7; p.xp = 0; const data = JSON.parse(JSON.stringify(game.snapshot()));
+      ok(!Object.keys(data).some(k => /npc|talk|said/i.test(k)) && !Object.keys(data.player).some(k => /npc|talk|said/i.test(k)), 'the save format did not change');
+      data.nodes = [{id: 'object-161', regrow: 20}, {id: 'object-86', regrow: 20}];
+      game.restore(data);
+      const ore = game.world.objects.find(o => o.id === 'object-161'), tree = game.world.objects.find(o => o.id === 'object-86');
+      ok(ore.type === 'ore' && ore.x === 319 && ore.y === 261 && ore.harvested, 'same vein'); ok(tree.type === 'tree' && tree.x === 988 && tree.y === 947 && tree.harvested, 'same tree'); equal(game.player.level, 7);
+    });
+    test('Saved games: standing where a new neighbor lives only moves you to the village', () => {
+      const p = fixture('gero', true); p.level = 7; p.xp = 0; const gaucho = npc('El Gaucho'); const data = JSON.parse(JSON.stringify(game.snapshot()));
+      data.player.x = gaucho.x; data.player.y = gaucho.y; game.restore(data);
+      equal(game.player.level, 7); ok(!Z.collides(game.world, game.player.x, game.player.y, 8), 'player is free to walk');
+    });
+    test('The village has neighbors and every requested animal', () => {
+      fixture('gero', true); const count = species => game.world.npcs.filter(n => n.species === species).length;
+      ok(people().length >= 16, 'neighbors'); ok(count('horse') >= 3 && count('chicken') >= 5 && count('cat') >= 3 && count('dog') >= 3, 'animals');
+    });
+    test('Each neighbor has their own clothes, not a playable skin', () => {
+      fixture('gero', true); const list = people(), shot = draw => { const cv = document.createElement('canvas'); cv.width = cv.height = 64; const c = Z.Pixel.install(cv.getContext('2d')); draw(c); return cv.toDataURL(); };
+      ok(list.every(n => !n.characterId), 'no neighbor borrows a character'); equal(new Set(list.map(n => JSON.stringify(n.look))).size, list.length, 'different looks');
+      const skins = new Set(Z.CHARACTERS.map(ch => shot(c => Z.drawCharacter(c, {x: 32, y: 54, characterId: ch.id, dir: 'down'}, 1))));
+      const seen = list.map(n => shot(c => Z.drawNpc(c, {...n, x: 32, y: 54, dir: 'down', moving: false}, 1)));
+      equal(new Set(seen).size, list.length, 'different sprites'); ok(seen.every(image => !skins.has(image)), 'no sprite equals a playable one');
+    });
+    test('The gaucho drinks mate with his horse and says the exact line', () => {
+      fixture('gero', true); const gaucho = npc('El Gaucho'), horse = npc('Malacara');
+      ok(gaucho.static && horse.static && horse.saddle && distance2(gaucho, horse) < 60, 'gaucho next to his saddled horse');
+      standNear(gaucho); equal(Z.nearbyInteractable(game.world, game.player.x, game.player.y, 46, game.player), gaucho);
+      game.interact(); advance(.1); equal(game.cutscene.id, 'talk'); equal(game.cutscene.line.speaker, 'El Gaucho'); equal(game.cutscene.line.text, GAUCHO_LINE);
+    });
+    test('The mate sound plays once, when the text reaches it', () => {
+      fixture('gero', true); standNear(npc('El Gaucho')); const played = [], play = game.sound.play; game.sound.play = kind => played.push(kind);
+      try { game.interact(); advance(1); equal(played.includes('mate'), false, 'too early'); advance(3); equal(played.filter(k => k === 'mate').length, 1, 'once'); } finally { game.sound.play = play; }
+    });
+    test('A talk freezes the world until you dismiss it, and frees the player afterwards', () => {
+      const p = fixture('gero', true), rosa = npc('Doña Rosa'); standNear(rosa); const clock = p.playTime; p.moving = true;
+      game.interact(); advance(.5); near(p.playTime, clock, 'the clock stops'); equal(p.moving, false); const line = game.cutscene.line.text; equal(line, rosa.lines[0]);
+      game.advanceCutscene(); ok(game.cutscene, 'first press only completes the text'); near((game.cutscene.t - game.cutscene.line.at) * Z.CUTSCENE_CPS, line.length);
+      game.advanceCutscene(); equal(game.cutscene, null); equal(game.cutsceneFade, 0); const before = p.playTime; advance(.2); ok(p.playTime > before, 'time runs again');
+    });
+    test('Lines take turns and start over', () => {
+      fixture('gero', true); const n = npc('Tito'); standNear(n);
+      for (const expected of [...n.lines, n.lines[0]]) { game.interact(); advance(.1); equal(game.cutscene.line.text, expected); game.finishCutscene(); n.x = n.homeX; n.y = n.homeY; standNear(n); }
+    });
+    test('Chickens treat Pepe with respect; other characters get the regular lines', () => {
+      fixture('pepe', true); const hen = npc('Turuleca'); standNear(hen); game.interact(); advance(.1); ok(hen.linesFor.pepe.includes(game.cutscene.line.text), 'Pepe'); game.finishCutscene();
+      fixture('gero', true); const other = npc('Turuleca'); standNear(other); game.interact(); advance(.1); ok(other.lines.includes(game.cutscene.line.text), 'Gero');
+    });
+    test('Whoever you talk to turns to face you', () => {
+      const p = fixture('gero', true), n = npc('Juli'); Object.assign(p, {x: n.x + 22, y: n.y}); game.biome = 'village'; game.interact(); advance(.1);
+      equal(game.cutscene.speaker, 'Juli'); equal(n.dir, 'right'); equal(p.dir, 'left'); equal(n.moving, false);
+    });
+    test('A neighbor only beats a place when closer, and never beats pickups, gathering or the smith', () => {
+      const p = fixture('gero', true), stall = game.world.objects.find(o => o.type === 'stall'), near2 = (x, y, who = p) => Z.nearbyInteractable(game.world, x, y, 46, who);
+      equal(near2(640, 1222), stall, 'buying'); equal(near2(668, 1225), npc('Tito'), 'talking');
+      const bow = game.world.pickups.find(i => i.type === 'bow'), dog = npc('Chicho'); dog.x = bow.x + 9; dog.y = bow.y; equal(near2(bow.x, bow.y), bow, 'pickup first');
+      dog.x = dog.homeX; dog.y = dog.homeY; equal(near2(dog.x, dog.y + 16), dog, 'dog alone'); ok(near2(dog.x, dog.y + 16, {gather: {id: 1}, axe: 0}) !== dog, 'gathering is not interrupted');
+      equal(npc('El Herrero').lines, undefined); equal(near2(1062, 1476).type, 'forge', 'the smith keeps his shop');
+    });
+    test('Every neighbor starts on free ground in the village and cannot reach the respawn point', () => {
+      fixture('gero', true); const w = game.world;
+      for (const n of game.world.npcs) { if (n.kind === 'smith') continue; const r = n.radius || 9; equal(Z.biomeAt(n.x, n.y), 'village', n.name); ok(!Z.collides(w, n.x, n.y, r, n.id), n.name + ' starts stuck');
+        if (n.static) { ok(Math.hypot(n.x - w.spawn.x, n.y - w.spawn.y) > r + 11, n.name + ' on spawn'); continue; }
+        const [rx, ry] = n.roam || [65, 55], dx = Math.max(0, Math.abs(n.homeX - w.spawn.x) - rx), dy = Math.max(0, Math.abs(n.homeY - w.spawn.y) - ry); ok(Math.hypot(dx, dy) > r + 11, n.name + ' can step on spawn'); }
+    });
+    test('Wandering keeps everyone in the village, near home and out of solid objects', () => {
+      fixture('gero', true); const w = game.world, p = game.player; Object.assign(p, w.spawn);
+      for (let i = 0; i < 900; i++) { game.time += 1 / 15; game.updateNpcs(1 / 15); }
+      const moved = w.npcs.filter(n => !n.static && n.kind !== 'smith' && (n.x !== n.homeX || n.y !== n.homeY)); ok(moved.length > 20, 'most of them walked: ' + moved.length);
+      for (const n of w.npcs) { if (n.kind === 'smith') continue; const r = n.radius || 9, [rx, ry] = n.roam || [65, 55]; equal(Z.biomeAt(n.x, n.y), 'village', n.name); ok(!Z.collides(w, n.x, n.y, r, n.id), n.name + ' got stuck');
+        if (!n.static) ok(Math.abs(n.x - n.homeX) <= rx + 4 && Math.abs(n.y - n.homeY) <= ry + 4, n.name + ' wandered off'); else ok(n.x === n.homeX && n.y === n.homeY, n.name + ' must stay'); }
+    });
+    test('No animal or neighbor can trap the player, not even a horse', () => {
+      fixture('gero', true); const w = game.world, p = game.player;
+      for (const name of ['Zaino', 'Moro', 'Chicho', 'Turuleca', 'Michi', 'Don Ramón']) {
+        const n = npc(name), guard = Math.max(20, (n.radius || 9) + 11) + 2; let placed = false;
+        for (let a = 0; a < 6.28 && !placed; a += .4) { const x = n.x + Math.cos(a) * guard, y = n.y + Math.sin(a) * guard; if (!Z.collides(w, x, y, 8)) { Object.assign(p, {x, y}); placed = true; } }
+        ok(placed, name + ': free spot');
+        for (let i = 0; i < 300; i++) { game.time += 1 / 15; game.updateNpcs(1 / 15); ok(!Z.collides(w, p.x, p.y, 8), name + ' stepped onto the player'); }
+      }
+    });
+    test('Everything they say can be drawn and fits in the dialog box, even on a phone', () => {
+      fixture('gero', true); const widths = [Math.min(640 - 32, 470) - 28, Math.min(350 - 32, 470) - 28];
+      for (const n of talkers()) {
+        ok(n.label && n.lines.length >= 2, n.name + ' has a hint and lines');
+        for (const ch of Array.from(n.name.toUpperCase())) ok(Z.Pixel.hasGlyph(ch, 8), 'name glyph ' + ch);
+        for (const line of [...n.lines, ...Object.values(n.linesFor || {}).flat()]) {
+          for (const ch of Array.from(line)) ok(Z.Pixel.hasGlyph(ch), 'glyph ' + ch + ' in ' + line);
+          for (const width of widths) { const rows = Z.dialogLines(line, width); equal(rows.join(' '), line, 'rows keep the text'); ok(rows.length <= 3, 'too long: ' + line); ok(rows.every(r => Z.Pixel.textWidth(r, 9) <= width), 'too wide: ' + line); }
+        }
+      }
+      ok(Z.dialogLines(GAUCHO_LINE, widths[0]).some(row => row.includes('*ruido de mate*')), 'the punchline is not split');
+    });
+    function distance2(a, b) { return Math.hypot(a.x - b.x, a.y - b.y); }
+
     game.pause(); cancelAnimationFrame(game.frame);
     return {passed: results.filter(r=>r.pass).length, failed: results.filter(r=>!r.pass).length, results};
   };

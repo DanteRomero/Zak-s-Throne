@@ -58,6 +58,16 @@
   const eternal=await clockAt(1,false,'magic');assert('En la dimensión de Zak siempre es de noche, aunque afuera sea de día',/NOCHE ETERNA/.test(eternal.shown)&&!/☀/.test(eternal.shown));
   const noMoon=await clockAt(13,true,'throne');assert('Y la luna roja no se ve allá',/NOCHE ETERNA/.test(noMoon.shown)&&!noMoon.red&&!/Luna roja/.test(noMoon.statuses));
   await clockAt(0);
+  // Charla con un vecino: el aviso en pantalla, la tecla de verdad y el cuadro de diálogo.
+  const press=key=>{for(const type of ['keydown','keyup'])document.body.dispatchEvent(new KeyboardEvent(type,{key,bubbles:true}));};
+  const gaucho=g.world.npcs.find(n=>n.kind==='gaucho');Object.assign(g.player,{x:gaucho.x,y:gaucho.y+24});g.biome='village';await hudWait();
+  assert('Cerca del gaucho, el aviso invita a hablar',document.getElementById('interaction-hint').textContent.includes('Hablar con el gaucho'));
+  press('e');g.update(.4);await hudWait();
+  assert('La E abre el diálogo y se esconde el HUD',g.cutscene&&g.cutscene.line.text.startsWith('Como me gustaría')&&document.body.classList.contains('cutscene'));
+  g.renderer.draw(g,0);press(' ');g.renderer.draw(g,0);
+  assert('Con Espacio se completa el texto sin cerrar',!!g.cutscene);
+  press('e');await hudWait();
+  assert('Otra tecla cierra el diálogo y vuelve el HUD',!g.cutscene&&!document.body.classList.contains('cutscene'));
   localStorage.setItem('zak.throne.save.3','{roto');document.getElementById('load-game').click();
   assert('Ranura dañada no puede cargarse',document.querySelectorAll('.save-slot')[2].disabled);close();close();
   const time=g.time;document.getElementById('pause-button').click();g.update(1);

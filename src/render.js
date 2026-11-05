@@ -349,6 +349,247 @@
     const s = Math.floor(Math.min(canvas.width / 30, canvas.height / 44)) || 1;
     c.save(); c.translate(Math.round(canvas.width / 2), canvas.height - 6); Px.scale = s; drawSmith(c, { x: 0, y: 0 }, 0, true); Px.scale = 1; c.restore();
   }
+  // Vecinos: tienen su propia ropa y no comparten dibujo con los personajes jugables.
+  function villagerBody(c, L, v, time) {
+    const { side, back, frame, moving, blink, up } = v, fat = L.fat || 0, shoe = L.shoe || "#293330", swing = moving ? (frame === 0 ? 1 : frame === 2 ? -1 : 0) : 0;
+    const ink = "#303831", shirt = L.top, shade = L.topShade, light = L.topLight;
+    if (back && L.rod) rect(c, 8, -24, 1, 18, "#7a5634");
+    // Piernas o pollera.
+    if (L.skirt) {
+      const w = side ? 10 : 12 + fat * 2, x0 = -w / 2;
+      rect(c, side ? -2 - swing * 2 : -4 + swing, -2, side ? 5 : 3, 2, shoe); rect(c, side ? -2 + swing * 2 : 1 - swing, -2, side ? 5 : 3, 2, shoe);
+      rect(c, x0, -9, w, 7, L.legs); rect(c, x0, -3, w, 1, L.legsShade); rect(c, x0 + w - 1, -9, 1, 6, L.legsShade);
+    } else if (side) {
+      const stride = swing * 3, lift = moving && frame % 2 ? 1 : 0, low = L.shorts ? L.skin : L.legs;
+      rect(c, -2 - stride, -7, 4, 5, L.shorts ? L.skinShade : L.legsShade); rect(c, -2 - stride, -2, 5, 2, shoe);
+      rect(c, -2 + stride, -7, 4, 5 - lift, low); rect(c, -2 + stride, -2 - lift, 5, 2, shoe);
+      if (L.shorts) rect(c, -3, -8, 6, 3, L.legs);
+    } else {
+      const liftL = swing > 0 ? 2 : 0, liftR = swing < 0 ? 2 : 0, low = L.shorts ? L.skin : L.legs;
+      rect(c, -5 - fat, -7, 4, 5 - liftL, low); rect(c, 1, -7, 4 + fat, 5 - liftR, low);
+      rect(c, -2 - fat, -7, 1, 5 - liftL, L.shorts ? L.skinShade : L.legsShade); rect(c, 4 + fat, -7, 1, 5 - liftR, L.shorts ? L.skinShade : L.legsShade);
+      rect(c, -5 - fat, -2 - liftL, 5, 2, shoe); rect(c, 1, -2 - liftR, 5 + fat, 2, shoe);
+      if (L.shorts) { rect(c, -5 - fat, -8, 10 + fat * 2, 3, L.legs); rect(c, -1, -6, 2, 1, L.legsShade); }
+    }
+    c.translate(0, up);
+    if (back && L.pack) rect(c, -5, -15, 10, 9, L.pack);
+    // Torso.
+    const tx = side ? -4 - fat : -5 - fat, tw = side ? 8 + fat * 2 : 10 + fat * 2;
+    rect(c, tx, -15, tw, 9, shirt); rect(c, tx, -8, tw, 2, shade); rect(c, tx + tw - 1, -15, 1, 8, shade); rect(c, tx, -15, 1, 7, light);
+    if (L.stripes) for (let k = tx + 1; k < tx + tw - 1; k += 3) rect(c, k, -15, 1, 7, L.stripes);
+    if (L.plaid) for (let k = -13; k < -7; k += 3) rect(c, tx, k, tw, 1, L.plaid);
+    if (L.stripe) { rect(c, tx, -15, 1, 9, L.stripe); rect(c, tx + tw - 1, -15, 1, 9, L.stripe); }
+    if (L.flowers) { rect(c, tx + 1, -13, 1, 1, L.flowers); rect(c, tx + tw - 3, -12, 1, 1, L.flowers); }
+    if (back && L.hood) rect(c, -4, -16, 8, 4, shade);
+    if (!back) {
+      if (L.apron) { const ax = side ? -1 : -4 - fat, aw = side ? 5 : 8 + fat * 2; rect(c, ax, -14, aw, L.skirt ? 13 : 11, L.apron); rect(c, ax, -11, aw, 1, "#00000022"); if (!side) { rect(c, ax, -15, 1, 1, L.apron); rect(c, ax + aw - 1, -15, 1, 1, L.apron); } }
+      if (!side && L.tie) { rect(c, -1, -15, 2, 5, L.tie); rect(c, -2, -15, 4, 1, light); }
+      if (!side && L.sash) Px.line(c, -5 - fat, -14, 4 + fat, -8, L.sash, 2);
+      if (!side && L.print) { rect(c, -2, -13, 4, 3, L.print); rect(c, -1, -12, 2, 1, shirt); }
+      if (!side && L.pack) { rect(c, -4, -15, 1, 7, L.pack); rect(c, 3, -15, 1, 7, L.pack); }
+      if (!side && L.badge) rect(c, 2, -13, 2, 2, "#e7be72");
+      if (!side && L.cross) { rect(c, -1, -14, 2, 6, "#d8d4c8"); rect(c, -2, -12, 4, 1, "#d8d4c8"); }
+      if (!side && L.whistle) { Px.line(c, -2, -15, 0, -11, "#e9e4d6"); Px.line(c, 2, -15, 0, -11, "#e9e4d6"); rect(c, -1, -11, 3, 2, "#c7cdd2"); }
+      if (!side && L.hood) rect(c, -2, -12, 4, 2, shade);
+    }
+    if (L.bag) { if (!side) Px.line(c, -5 - fat, -15, 4 + fat, -8, "#5a3f26", 1); rect(c, side ? -5 : 3, -10, 6, 5, L.bag); rect(c, side ? -5 : 3, -10, 6, 1, "#5a3f26"); }
+    // Brazos y lo que llevan en la mano.
+    if (side) {
+      const ax = -1 + swing * 2;
+      if (L.rod) {
+        rect(c, 0, -14, 6, 3, shade); rect(c, 6, -14, 2, 3, L.skin);
+        Px.line(c, 7, -13, 22, -21, "#7a5634");
+      } else { rect(c, ax, -14, 3, 6, shade); rect(c, ax, -9, 3, 2, L.skin); }
+    } else {
+      const armL = moving ? swing : 0, armR = moving ? -swing : 0;
+      rect(c, -8 - fat, -14 + armL, 3, 6, shade); rect(c, -8 - fat, -9 + armL, 3, 3, L.skin);
+      if (L.laptop && !back && !moving) {
+        rect(c, 5 + fat, -14, 3, 4, shade); rect(c, -5, -11, 10, 1, shade);
+        rect(c, -5, -10, 10, 5, "#3b3f47"); rect(c, -4, -9, 8, 3, "#8fd3e8"); rect(c, -4 + (Math.floor(time * 2) % 6), -8, 2, 1, "#ffffff");
+      } else { rect(c, 5 + fat, -14 + armR, 3, 6, shade); rect(c, 5 + fat, -9 + armR, 3, 3, L.skin); }
+      if (L.cane && !back) { rect(c, 8 + fat, -11 + armR, 1, 11 - armR, "#6b4a2a"); rect(c, 7 + fat, -12 + armR, 3, 1, "#6b4a2a"); }
+    }
+    // Cabeza.
+    rect(c, -5, -24, 10, 10, L.skin); rect(c, -6, -22, 12, 6, L.skin); rect(c, -4, -16, 8, 2, L.skinShade); rect(c, -6, -18, 1, 2, L.skinShade);
+    if (!back) {
+      if (side) { rect(c, 1, blink ? -19 : -20, 2, blink ? 1 : 2, ink); rect(c, 5, -19, 2, 2, L.skinShade); if (!L.mustache && !L.beard) rect(c, 2, -16, 3, 1, "#855c4b"); }
+      else { rect(c, -4, blink ? -19 : -20, 2, blink ? 1 : 2, ink); rect(c, 3, blink ? -19 : -20, 2, blink ? 1 : 2, ink); rect(c, 0, -18, 1, 2, L.skinShade); if (!L.mustache && !L.beard) rect(c, -1, -16, 3, 1, "#855c4b"); }
+      if (L.beard) { if (side) { rect(c, -1, -17, 7, 3, L.beard); rect(c, 0, -14, 5, 1, L.beard); } else { rect(c, -5, -17, 10, 3, L.beard); rect(c, -4, -14, 8, 1, L.beard); } }
+      if (L.mustache) { if (side) rect(c, 2, -17, 4, 1, L.mustache); else { rect(c, -3, -17, 6, 1, L.mustache); rect(c, -3, -16, 1, 1, L.mustache); rect(c, 2, -16, 1, 1, L.mustache); } }
+      if (L.glasses) { if (side) { rect(c, 0, -21, 5, 1, L.glasses); rect(c, 0, -21, 1, 3, L.glasses); rect(c, 4, -21, 1, 3, L.glasses); rect(c, -5, -21, 5, 1, L.glasses); } else { rect(c, -5, -21, 4, 1, L.glasses); rect(c, 2, -21, 4, 1, L.glasses); rect(c, -5, -21, 1, 3, L.glasses); rect(c, -2, -21, 1, 3, L.glasses); rect(c, 2, -21, 1, 3, L.glasses); rect(c, 5, -21, 1, 3, L.glasses); rect(c, -1, -20, 3, 1, L.glasses); } }
+      if (L.earrings && !side) { rect(c, -7, -17, 1, 2, L.earrings); rect(c, 6, -17, 1, 2, L.earrings); }
+    }
+    // Pelo.
+    const hair = L.hair, style = L.hairStyle;
+    if (style === "bald") { rect(c, -6, -21, 2, 3, hair); if (!side) rect(c, 4, -21, 2, 3, hair); if (back) rect(c, -5, -20, 10, 3, hair); rect(c, -3, -24, 3, 1, "#ffffff44"); }
+    else if (style === "long") { rect(c, -5, -24, 10, 3, hair); rect(c, -6, -22, 2, 10, hair); if (back) rect(c, -6, -22, 12, 12, hair); else if (side) rect(c, -5, -22, 4, 10, hair); else rect(c, 4, -22, 2, 10, hair); }
+    else if (style === "curly") { rect(c, -7, -26, 14, 5, hair); rect(c, -8, -24, 3, 6, hair); rect(c, -5, -27, 10, 1, hair); if (back) rect(c, -7, -21, 14, 6, hair); else if (side) rect(c, -6, -21, 5, 5, hair); else rect(c, 5, -24, 3, 6, hair); rect(c, -3, -26, 2, 1, "#ffffff33"); rect(c, 2, -25, 2, 1, "#ffffff33"); }
+    else if (style !== "none") {
+      rect(c, -5, -24, 10, 3, hair); rect(c, -6, -22, 2, 4, hair);
+      if (back) rect(c, -5, -22, 11, 7, hair); else if (side) rect(c, -5, -22, 4, 6, hair); else rect(c, 4, -22, 2, 2, hair);
+      rect(c, -3, -24, 5, 1, "#ffffff22");
+      if (style === "bun") { rect(c, -2, -27, 5, 3, hair); rect(c, -1, -27, 2, 1, "#ffffff33"); }
+    }
+    if (L.rollers) for (const [rx, ry] of [[-6, -26], [-2, -27], [2, -27], [5, -25]]) { rect(c, rx, ry, 3, 3, L.rollers); rect(c, rx + 1, ry + 1, 1, 1, "#ffffff"); }
+    // Sombreros.
+    const hat = L.hatColor;
+    if (L.hat === "boina") { rect(c, -7, -25, 14, 3, hat); rect(c, -6, -26, 12, 1, hat); rect(c, -1, -27, 2, 1, hat); rect(c, -6, -23, 12, 1, "#00000044"); }
+    if (L.hat === "cap") { rect(c, -6, -26, 12, 4, hat); rect(c, -5, -27, 10, 1, hat); if (back) rect(c, -5, -22, 10, 1, "#00000033"); else if (side) rect(c, 3, -23, 6, 2, hat); else rect(c, -6, -22, 12, 1, "#20293f"); }
+    if (L.hat === "police") { rect(c, -7, -27, 14, 3, "#2c3f63"); rect(c, -6, -28, 12, 1, "#41598a"); rect(c, -6, -24, 12, 2, "#17161b"); if (!back) rect(c, -1, -27, 2, 2, "#e7be72"); if (side) rect(c, 3, -23, 5, 1, "#17161b"); }
+    if (L.hat === "chef") { rect(c, -5, -28, 10, 6, "#f4f1e6"); rect(c, -7, -32, 14, 5, "#ffffff"); rect(c, -6, -23, 12, 1, "#c8c5b6"); }
+    if (L.hat === "piluso") { rect(c, -6, -27, 12, 4, hat); rect(c, -9, -23, 18, 2, hat); rect(c, -9, -22, 18, 1, "#00000022"); rect(c, -6, -24, 12, 1, "#8f8159"); }
+    if (L.hat === "veil") {
+      rect(c, -7, -26, 14, 5, shirt); rect(c, -8, -24, 3, 13, shirt); rect(c, 5, -24, 3, 13, shirt);
+      if (back) rect(c, -8, -24, 16, 14, shirt); else if (side) rect(c, -8, -24, 8, 14, shirt);
+      if (!back) rect(c, side ? 0 : -5, -23, side ? 6 : 10, 2, "#f2efe4");
+    }
+    if (L.ball && !moving) { const bounce = Math.round(Math.abs(Math.sin(time * 4.2 + 1)) * 7); rect(c, -11, -7 - bounce, 5, 5, "#f4f4f0"); rect(c, -9, -6 - bounce, 2, 2, "#23232a"); }
+  }
+  function drawVillager(c, n, time) {
+    const L = n.look, dir = n.dir || "down", side = dir === "left" || dir === "right", moving = !!n.moving, seed = (n.homeX || 0) * .013;
+    const cycle = (n.walk || 0) * 1.4 / TAU, frame = moving ? ((Math.floor(cycle * 4) % 4) + 4) % 4 : 0, breathing = !moving && Math.sin(time * 2.2 + seed) > .55;
+    const v = { side, back: dir === "up", frame, moving, blink: ((time + seed * 1.7) % 3.4) < .12, up: moving && frame % 2 ? -1 : breathing ? 1 : 0 };
+    c.save(); c.translate(Math.round(n.x), Math.round(n.y)); shadow(c, 0, 0, L.kid ? 13 : 16 + (L.fat || 0) * 2, 5);
+    const outer = Px.scale; if (L.kid) Px.scale = outer * .84;
+    sprite(c, "#1b2321", false, () => { if (dir === "left") c.scale(-1, 1); villagerBody(c, L, v, time); });
+    Px.scale = outer;
+    // La línea de la caña cae al agua, y el corcho se hunde de vez en cuando.
+    if (L.rod) { const f = dir === "left" ? -1 : 1, bite = Math.sin(time * .7 + seed) > .85 ? 2 : Math.round(Math.sin(time * 2) * .6); rect(c, Math.min(f * 22, f * 22 + 1), -21, 1, 21 + bite, "#e9e4d699"); rect(c, f * 22 - 1, bite - 1, 3, 2, "#d9503f"); }
+    c.restore();
+  }
+  // El gaucho, sentado en un tronco, se ceba mates sin apuro al lado de su pava.
+  function gauchoBody(c, sip) {
+    const skin = "#b97f55", shade = "#94613f", poncho = "#8f3a2e", dark = "#6b2a22", light = "#ad5040", cloth = "#4c5157", clothDark = "#393d42", boot = "#241c18", hat = "#26201d";
+    // Pava sobre el piso.
+    rect(c, -22, -7, 8, 7, "#596066"); rect(c, -22, -7, 8, 1, "#8b939a"); rect(c, -20, -8, 4, 1, "#3d4247"); rect(c, -14, -6, 3, 1, "#596066"); rect(c, -12, -7, 2, 1, "#596066"); rect(c, -20, -11, 1, 3, "#3d4247"); rect(c, -17, -11, 1, 3, "#3d4247"); rect(c, -20, -11, 4, 1, "#3d4247");
+    // Tronco.
+    rect(c, -9, -8, 18, 8, "#6f5234"); rect(c, -9, -8, 18, 2, "#a98a5c"); rect(c, -6, -7, 12, 1, "#8c6f46"); rect(c, -7, -4, 1, 4, "#57402a"); rect(c, 5, -5, 1, 5, "#57402a");
+    // Bombachas de campo y botas con espuelas.
+    rect(c, -8, -12, 7, 6, cloth); rect(c, 1, -12, 7, 6, cloth); rect(c, -2, -12, 1, 6, clothDark); rect(c, 7, -12, 1, 6, clothDark);
+    rect(c, -7, -6, 5, 5, boot); rect(c, 2, -6, 5, 5, boot); rect(c, -8, -2, 6, 2, boot); rect(c, 2, -2, 6, 2, boot); rect(c, -6, -5, 1, 3, "#3d322b"); rect(c, 3, -5, 1, 3, "#3d322b"); rect(c, -9, -2, 1, 1, "#d8c078"); rect(c, 8, -2, 1, 1, "#d8c078");
+    // Rastra con monedas.
+    rect(c, -6, -13, 12, 2, "#241c18"); rect(c, -4, -13, 2, 2, "#d7dbde"); rect(c, -1, -13, 2, 2, "#d7dbde"); rect(c, 2, -13, 2, 2, "#d7dbde");
+    // Poncho con guarda pampa.
+    poly(c, [[-6, -24], [6, -24], [11, -14], [-11, -14]], poncho); rect(c, -6, -24, 12, 1, light); rect(c, -8, -20, 2, 3, light);
+    rect(c, -10, -16, 20, 1, "#e4d6a2"); rect(c, -11, -15, 22, 1, "#1f1a17"); for (let k = -9; k < 10; k += 4) rect(c, k, -15, 2, 1, "#e4d6a2");
+    rect(c, 7, -20, 2, 3, dark);
+    // Mano libre sobre la rodilla.
+    rect(c, -9, -13, 3, 2, skin);
+    // Pañuelo al cuello.
+    rect(c, -5, -25, 10, 2, "#dcd6c2"); rect(c, -2, -23, 4, 2, "#dcd6c2"); rect(c, -1, -21, 2, 1, "#b9b39f");
+    // Cabeza, barba y bigote.
+    rect(c, -5, -34, 10, 10, skin); rect(c, -6, -32, 12, 6, skin); rect(c, -6, -30, 1, 2, shade);
+    const closed = sip > 4; rect(c, -4, closed ? -29 : -30, 2, closed ? 1 : 2, "#24201c"); rect(c, 3, closed ? -29 : -30, 2, closed ? 1 : 2, "#24201c"); rect(c, 0, -28, 1, 2, shade);
+    rect(c, -5, -27, 10, 2, "#3a2c22"); rect(c, -6, -28, 2, 3, "#3a2c22"); rect(c, 4, -28, 2, 3, "#3a2c22"); rect(c, -4, -25, 8, 1, "#3a2c22"); rect(c, -3, -28, 6, 1, "#4c3a2c");
+    // Sombrero de ala ancha.
+    rect(c, -11, -34, 22, 2, hat); rect(c, -9, -35, 18, 1, hat); rect(c, -6, -40, 12, 5, hat); rect(c, -6, -36, 12, 1, poncho); rect(c, -5, -40, 4, 1, "#3d342f"); rect(c, -10, -33, 20, 1, "#17120f");
+    // Brazo con el mate: sube hasta que la bombilla llega a la boca.
+    const up = Math.round(sip * 1.15), side = Math.round(sip * .8), mx = 5 - side, my = -15 - up;
+    rect(c, 7, -22, 4, 6, poncho); Px.line(c, 9, -16, mx + 3, my + 3, dark, 3);
+    rect(c, mx - 1, my + 2, 3, 3, skin);
+    rect(c, mx, my, 5, 5, "#6d4a2a"); rect(c, mx + 1, my + 3, 3, 1, "#553819"); rect(c, mx, my - 1, 5, 1, "#d8c078"); rect(c, mx + 1, my - 2, 3, 1, "#59703a");
+    rect(c, mx + 1, my - 5, 1, 4, "#d7dbde"); rect(c, mx, my - 5, 1, 1, "#d7dbde");
+  }
+  function drawGaucho(c, n, time) {
+    // Ciclo de 7 s: el mate descansa, sube, se toma y vuelve a bajar.
+    const t = (time + 2) % 7, sip = t < 4 ? 0 : t < 4.5 ? (t - 4) * 10 : t < 6.2 ? 5 : t < 6.7 ? (6.7 - t) * 10 : 0;
+    c.save(); c.translate(Math.round(n.x), Math.round(n.y)); shadow(c, 0, 0, 28, 6); shadow(c, -18, 0, 12, 3);
+    sprite(c, "#1b2321", false, () => gauchoBody(c, sip));
+    // Vapor del agua caliente, en la pava y en el mate.
+    for (let k = 0; k < 2; k++) { const f = (time * .55 + k * .5) % 1; rect(c, -11 + Math.round(Math.sin(f * 8)), -8 - Math.round(f * 11), 1, 2, "#ffffff55"); }
+    if (sip === 0) { const f = (time * .7) % 1; rect(c, 7 + Math.round(Math.sin(f * 7)), -22 - Math.round(f * 7), 1, 2, "#ffffff44"); }
+    c.restore();
+  }
+  // Animales de la aldea: de perfil, mirando a la derecha; hacia la izquierda se espejan.
+  function horseBody(c, n, time) {
+    const A = n.coat, seed = n.homeX || 0, hoof = "#2a211b", walk = n.moving ? Math.round(Math.sin(time * 7 + seed) * 2) : 0;
+    const swish = Math.sin(time * 1.1 + seed) > .55 ? Math.round(Math.sin(time * 9)) : 0, low = horseGrazing(n, time);
+    rect(c, -19, -24, 3, 3, A.mane); rect(c, -21 - swish, -22, 3, 10, A.mane); rect(c, -20 - swish * 2, -12, 2, 4, A.mane);
+    for (const [x, d] of [[-14, -walk], [8, walk]]) { rect(c, x + d, -12, 3, 10, A.shade); rect(c, x + d, -2, 3, 2, hoof); }
+    rect(c, -18, -25, 27, 13, A.coat); rect(c, -17, -26, 25, 2, A.light); rect(c, -18, -14, 27, 2, A.shade); rect(c, -19, -23, 1, 8, A.coat); rect(c, 9, -24, 1, 9, A.coat);
+    if (A.dapple) for (const [x, y] of [[-14, -22], [-9, -19], [-4, -23], [2, -20], [5, -16], [-12, -16]]) rect(c, x, y, 2, 2, A.dapple);
+    for (const [x, d] of [[-18, walk], [4, -walk]]) { rect(c, x + d, -14, 4, 12, A.coat); rect(c, x + d, -2, 4, 2, hoof); rect(c, x + d, -14, 1, 12, A.light); }
+    if (n.saddle) {
+      rect(c, -10, -27, 14, 12, "#7f2f28"); rect(c, -10, -18, 14, 1, "#e4d6a2"); rect(c, -10, -16, 14, 1, "#e4d6a2"); for (let k = -9; k < 4; k += 3) rect(c, k, -17, 1, 1, "#e4d6a2");
+      rect(c, -8, -30, 10, 4, "#4a3222"); rect(c, -9, -31, 3, 2, "#6b4a2a"); rect(c, 0, -31, 3, 2, "#6b4a2a"); rect(c, -2, -15, 1, 5, "#3a2a1c"); rect(c, -4, -10, 5, 2, "#c7cdd2");
+    }
+    if (low) {
+      // Pastando: el cuello baja hacia adelante y el hocico llega al piso.
+      poly(c, [[1, -26], [18, -14], [15, -7], [7, -14]], A.coat); Px.line(c, 1, -27, 16, -16, A.mane, 2);
+      rect(c, 14, -14, 7, 6, A.coat); rect(c, 18, -10, 6, 7, A.coat); rect(c, 22, -5, 2, 2, "#2a211b"); rect(c, 15, -17, 2, 3, A.coat); rect(c, 18, -16, 2, 2, A.shade); rect(c, 17, -12, 2, 1, "#1a1512");
+      if (A.blaze) Px.line(c, 20, -13, 23, -6, "#f4efe0");
+      rect(c, 25, -2, 1, 2, "#6f9a4a"); rect(c, 23, -1, 1, 1, "#88b05a"); rect(c, 27, -2, 1, 2, "#88b05a");
+    } else {
+      // Con la cabeza alta: cuello grueso y hocico largo, inclinado hacia abajo.
+      poly(c, [[0, -26], [10, -38], [17, -33], [10, -15]], A.coat); Px.line(c, 0, -27, 10, -39, A.mane, 2); rect(c, 9, -40, 3, 2, A.mane);
+      rect(c, 10, -41, 9, 7, A.coat); rect(c, 15, -38, 7, 6, A.coat); rect(c, 19, -35, 6, 6, A.coat); rect(c, 19, -30, 6, 1, A.shade); rect(c, 23, -33, 1, 1, "#2a211b");
+      rect(c, 11, -44, 2, 3, A.coat); rect(c, 14, -44, 2, 3, A.shade); rect(c, 14, -39, 2, 1, "#1a1512"); rect(c, 14, -38, 2, 1, "#00000044");
+      if (A.blaze) Px.line(c, 18, -41, 23, -32, "#f4efe0");
+      if (n.saddle) { rect(c, 16, -36, 7, 1, "#3a2a1c"); rect(c, 15, -40, 1, 4, "#3a2a1c"); }
+    }
+  }
+  const horseGrazing = (n, time) => !n.moving && Math.sin(time * .33 + (n.homeX || 0)) > .15;
+  function chickenBody(c, n, time) {
+    const A = n.coat, seed = (n.homeX || 0) + (n.homeY || 0), step = n.moving ? Math.round(Math.sin(time * 14 + seed)) : 0, peck = !n.moving && Math.sin(time * 2.6 + seed) > .5, dx = peck ? 2 : 0, dy = peck ? 6 : 0;
+    rect(c, -2 - step, -3, 1, 3, "#d9a03f"); rect(c, 1 + step, -3, 1, 3, "#d9a03f"); rect(c, -3 - step, -1, 3, 1, "#d9a03f"); rect(c, 0 + step, -1, 3, 1, "#d9a03f");
+    rect(c, -7, -11, 2, 3, A.shade); rect(c, -8, -13, 2, 3, A.coat); rect(c, -6, -9, 2, 3, A.coat);
+    rect(c, -5, -8, 9, 5, A.coat); rect(c, -4, -9, 7, 1, A.light); rect(c, -4, -4, 7, 1, A.shade); rect(c, -3, -7, 4, 3, A.shade); rect(c, -2, -7, 2, 1, A.light);
+    rect(c, 2 + dx, -13 + dy, 4, 6, A.coat); rect(c, 3 + dx, -15 + dy, 2, 2, "#c9382f"); rect(c, 5 + dx, -14 + dy, 1, 1, "#c9382f"); rect(c, 6 + dx, -11 + dy, 2, 1, "#e8a93a"); rect(c, 5 + dx, -9 + dy, 1, 2, "#c9382f"); rect(c, 4 + dx, -12 + dy, 1, 1, "#1a1512");
+  }
+  function catBody(c, n, time) {
+    const A = n.coat, seed = n.homeX || 0, eye = A.eyes || "#2c3a26", wave = Math.round(Math.sin(time * 1.6 + seed) * 1.4);
+    if (n.moving) {
+      const step = Math.round(Math.sin(time * 11 + seed));
+      rect(c, -9, -14 + wave, 2, 6, A.coat); rect(c, -8, -9, 2, 2, A.coat);
+      rect(c, -7 + step, -3, 2, 3, A.shade); rect(c, 3 - step, -3, 2, 3, A.shade); rect(c, -5 - step, -3, 2, 3, A.coat); rect(c, 1 + step, -3, 2, 3, A.coat);
+      rect(c, -7, -8, 12, 5, A.coat); rect(c, -6, -8, 10, 1, A.light); rect(c, -7, -4, 12, 1, A.shade);
+      if (A.tabby) for (let k = -5; k < 4; k += 3) rect(c, k, -8, 1, 3, A.tabby);
+      rect(c, 3, -12, 7, 6, A.coat); rect(c, 3, -14, 2, 2, A.coat); rect(c, 8, -14, 2, 2, A.coat); rect(c, 7, -10, 1, 1, eye); rect(c, 9, -8, 1, 1, "#d98a8a");
+    } else {
+      // Sentado, con la cola enroscada en el piso y las orejas atentas.
+      rect(c, -8, -2, 8, 2, A.coat); rect(c, -9, -4 - (wave > 0 ? 1 : 0), 2, 3, A.coat);
+      rect(c, -4, -9, 8, 9, A.coat); rect(c, -3, -9, 6, 1, A.light); rect(c, 3, -8, 1, 8, A.shade); rect(c, -1, -3, 2, 3, A.light);
+      if (A.tabby) { rect(c, -4, -6, 3, 1, A.tabby); rect(c, -4, -3, 3, 1, A.tabby); }
+      rect(c, -3, -15, 8, 7, A.coat); rect(c, -3, -17, 2, 2, A.coat); rect(c, 3, -17, 2, 2, A.coat); rect(c, -2, -16, 1, 1, A.shade); rect(c, 4, -16, 1, 1, A.shade);
+      const shut = Math.sin(time * .9 + seed) > .4;
+      rect(c, -1, shut ? -12 : -13, 1, shut ? 1 : 2, eye); rect(c, 3, shut ? -12 : -13, 1, shut ? 1 : 2, eye); rect(c, 1, -11, 1, 1, "#d98a8a");
+      if (A.tabby) { rect(c, 0, -15, 1, 2, A.tabby); rect(c, 2, -15, 1, 2, A.tabby); }
+    }
+  }
+  function dogBody(c, n, time) {
+    const A = n.coat, seed = n.homeX || 0, step = n.moving ? Math.round(Math.sin(time * 12 + seed) * 2) : 0, wag = Math.round(Math.sin(time * 10 + seed) * 1.4), pant = !n.moving && Math.sin(time * 1.1 + seed) > -.1;
+    rect(c, -12, -14 + wag, 2, 6, A.coat); rect(c, -11, -10, 3, 2, A.coat);
+    rect(c, -9 + step, -4, 2, 4, A.shade); rect(c, 4 - step, -4, 2, 4, A.shade); rect(c, -7 - step, -4, 3, 4, A.coat); rect(c, 2 + step, -4, 3, 4, A.coat);
+    rect(c, -9, -11, 15, 7, A.coat); rect(c, -8, -12, 13, 1, A.light); rect(c, -9, -5, 15, 1, A.shade);
+    if (A.patch) { rect(c, -7, -10, 5, 4, A.patch); rect(c, -6, -11, 3, 1, A.patch); }
+    rect(c, 3, -17, 8, 8, A.coat); rect(c, 4, -18, 6, 1, A.light); rect(c, 9, -13, 5, 4, A.muzzle || A.coat); rect(c, 13, -13, 2, 2, "#1f1a18"); rect(c, 3, -18, 3, 6, A.shade);
+    if (A.patch) rect(c, 6, -16, 4, 4, A.patch);
+    rect(c, 7, -15, 2, 2, A.patch ? "#ece6d6" : "#1f1a18"); if (A.patch) rect(c, 8, -15, 1, 1, "#1f1a18"); else rect(c, 7, -15, 1, 1, "#ffffff");
+    if (A.collar) { rect(c, 3, -10, 7, 2, A.collar); rect(c, 6, -8, 2, 1, "#e7be72"); }
+    if (pant) rect(c, 11, -9, 2, 2, "#d9708a");
+  }
+  const ANIMAL_ART = { horse: [horseBody, 40, 7, "#22180f"], chicken: [chickenBody, 12, 3, "#26201a"], cat: [catBody, 15, 4, "#201c1a"], dog: [dogBody, 22, 5, "#241c15"] };
+  function drawAnimal(c, n, time) {
+    const [body, w, h, outline] = ANIMAL_ART[n.kind];
+    c.save(); c.translate(Math.round(n.x), Math.round(n.y)); shadow(c, 0, 0, w, h);
+    if (n.tied) { const f = n.faceLeft ? -1 : 1; rect(c, f * 31, -17, 3, 17, "#5a4128"); rect(c, f * 31, -17, 3, 1, "#8a6a44"); }
+    sprite(c, outline, false, () => { if (n.faceLeft) c.scale(-1, 1); body(c, n, time); });
+    // La rienda queda floja cuando baja la cabeza a pastar y se tensa cuando la levanta.
+    if (n.tied) { const f = n.faceLeft ? -1 : 1, low = horseGrazing(n, time); Px.line(c, f * 22, low ? -8 : -31, f * 32, -15, "#2c2118"); }
+    c.restore();
+  }
+  function drawNpc(c, n, time) {
+    if (n.kind === "gaucho") return drawGaucho(c, n, time);
+    if (ANIMAL_ART[n.kind]) return drawAnimal(c, n, time);
+    drawVillager(c, n, time);
+  }
+  // Parte un diálogo en renglones que entran en el cuadro. Lo usan el cuadro de texto y las pruebas.
+  function dialogLines(text, width) {
+    const lines = [""];
+    // Una acotación corta entre asteriscos no se corta: «*ruido de mate*» va entera, si no, se pierde el remate.
+    for (const word of String(text).match(/\*[^*]{1,30}\*|[^ ]+/g) || []) { const test = lines[lines.length - 1] ? lines[lines.length - 1] + " " + word : word; if (Px.textWidth(test, 9) > width && lines[lines.length - 1]) lines.push(word); else lines[lines.length - 1] = test; }
+    return lines;
+  }
   function drawTelegraph(c, e, time) {
     const x=Math.round(e.x), y=Math.round(e.y), pulse=.35+Math.abs(Math.sin(time*18))*.4;
     c.save();c.globalAlpha=pulse;
@@ -1936,7 +2177,7 @@
       for(const d of game.drops||[])if(visible(d.x,d.y,20))coin(c,d,time);
       const renderables=[];
       for(const o of objects)if(!["pond","flower","grass"].includes(o.type)&&visible(o.x+o.w/2,o.y+o.h/2,Math.max(o.w||0,o.h||0)+80))renderables.push({y:o.y+o.h,kind:"object",data:o});
-      for(const npc of world.npcs||[])if(visible(npc.x,npc.y,35))renderables.push({y:npc.y,kind:"npc",data:npc});
+      for(const npc of world.npcs||[])if(visible(npc.x,npc.y,50))renderables.push({y:npc.y,kind:"npc",data:npc});
       for(const e of game.enemies||[])if(!e.dead&&visible(e.x,e.y,35))renderables.push({y:e.y,kind:"enemy",data:e});
       if(game.player&&!menu)renderables.push({y:p.y,kind:"player",data:p});
       renderables.sort((a,b)=>a.y-b.y);
@@ -1953,8 +2194,8 @@
         }
         else if(item.kind==="npc"){
           const n=item.data;
-          drawCharacter(c,{...n,characterId:["paco","gero","tena","dante"][Math.abs(n.variant||0)%4],moving:n.moving===undefined?true:n.moving},time);
-          if(n.name&&Math.hypot(p.x-n.x,p.y-n.y)<42&&!menu)pixelText(c,n.name,n.x,n.y-33,"#e1d6af",6);
+          drawNpc(c,n,time);
+          if(n.name&&Math.hypot(p.x-n.x,p.y-n.y)<(n.radius||9)+33&&!menu)pixelText(c,n.name,n.x,n.y-(n.tag||33),"#e1d6af",6);
         } else if(scene&&scene.id==="portal"){
           // Se achica hasta desaparecer al entrar y vuelve a crecer al salir.
           const P=Z.PORTAL_SCENE,t=scene.t,before=Math.max(0,(t-.45)/(P.travel-.45)),size=t<P.travel?1-before*before:Math.min(1,(t-P.travel-.15)/.6);
@@ -2123,7 +2364,8 @@
     }
     // Franjas de cine, destellos y el cuadro de diálogo con efecto de máquina de escribir.
     drawCutsceneOverlay(c,game,W,H,time) {
-      const s=game.cutscene,k=s?Math.min(1,s.t/.5):Math.min(1,game.cutsceneFade/.5),bar=Math.round(H*.1*(1-(1-k)*(1-k)));
+      // Las charlas con los vecinos no llevan franjas: se ve todo el mundo alrededor.
+      const s=game.cutscene,k=s?Math.min(1,s.t/.5):Math.min(1,game.cutsceneFade/.5),bar=s&&s.plain?0:Math.round(H*.1*(1-(1-k)*(1-k)));
       c.save();
       if(s&&s.id==="altar"){const A=Z.ALTAR_SCENE,dim=s.t<A.burst?Math.max(0,Math.min(1,(s.t-A.converge)/1.2))*.4:0;if(dim>0){c.fillStyle="rgba(20,8,40,"+dim+")";c.fillRect(0,0,W,H);}}
       // La pantalla se va a blanco justo antes del cambio de zona, y el destello la devuelve.
@@ -2133,13 +2375,12 @@
       const l=s&&s.line;
       if(l){
         const shown=Math.min(l.text.length,Math.max(0,Math.floor((s.t-l.at)*(Z.CUTSCENE_CPS||32)))),zak=l.speaker==="Zak";
-        const bw=Math.min(W-32,470),bh=44,bx=Math.round((W-bw)/2),by=H-bar-bh-10,accent=zak?"#a77bff":"#e7be72";
+        // El texto se parte una sola vez, con la frase completa: así no salta de renglón mientras se escribe.
+        const bw=Math.min(W-32,470),rows=dialogLines(l.text,bw-28),bh=44+Math.max(0,rows.length-2)*14,bx=Math.round((W-bw)/2),by=H-bar-bh-10,accent=zak?"#a77bff":"#e7be72";
         c.globalAlpha=.94;rect(c,bx-2,by-2,bw+4,bh+4,"#050308");rect(c,bx,by,bw,bh,"#1a1424");c.globalAlpha=1;rect(c,bx,by,bw,2,accent);
         if(l.speaker){const nw=Px.textWidth(l.speaker.toUpperCase(),8)+14;rect(c,bx+10,by-9,nw,13,"#050308");rect(c,bx+11,by-8,nw-2,11,accent);Px.text(c,l.speaker.toUpperCase(),bx+17,by-2,"#120f18",8,"left",accent);}
-        const words=l.text.slice(0,shown).split(" "),lines=[""];
-        for(const word of words){const test=lines[lines.length-1]?lines[lines.length-1]+" "+word:word;if(Px.textWidth(test,9)>bw-28&&lines[lines.length-1])lines.push(word);else lines[lines.length-1]=test;}
-        lines.slice(0,2).forEach((text,i)=>pixelText(c,text,bx+13,by+(lines.length>1?15:22)+i*14,"#f1e8d4",9,"left"));
-        if(shown>=l.text.length&&Math.sin(time*6)>0)pixelText(c,"▸",bx+bw-12,by+bh-9,accent,9);
+        let left=shown;rows.forEach((text,i)=>{if(left>0)pixelText(c,text.slice(0,left),bx+13,by+(rows.length>1?15:22)+i*14,"#f1e8d4",9,"left");left-=text.length+1;});
+        if(shown>=l.text.length&&Math.sin(time*6)>0)pixelText(c,game.touchMode?"▸":"E ▸",bx+bw-8,by+bh-9,accent,9,"right");
       }
       c.restore();
     }
@@ -2298,7 +2539,7 @@
     }
     rect(c,0,0,w,1,"#b7ab7d");rect(c,0,h-1,w,1,"#b7ab7d");rect(c,0,0,1,h,"#b7ab7d");rect(c,w-1,0,1,h,"#b7ab7d");
   }
-  Z.Renderer=Renderer;Z.drawPortrait=drawPortrait;Z.drawCharacter=drawCharacter;Z.drawEnemy=drawEnemy;Z.drawMinimap=drawMinimap;Z.drawSmithPortrait=drawSmithPortrait;
+  Z.Renderer=Renderer;Z.drawPortrait=drawPortrait;Z.drawCharacter=drawCharacter;Z.drawEnemy=drawEnemy;Z.drawMinimap=drawMinimap;Z.drawSmithPortrait=drawSmithPortrait;Z.drawNpc=drawNpc;Z.dialogLines=dialogLines;
   Renderer.drawPortrait=drawPortrait;
 })();
 

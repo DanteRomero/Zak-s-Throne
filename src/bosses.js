@@ -37,6 +37,14 @@ const PORTAL_SCENE = Z.PORTAL_SCENE = {travel:1.3,end:2.7};
 // Escenas: pasos con `at` (segundos) que se ejecutan en orden. Los pasos con `skip` son los
 // puntos a los que salta el jugador al apretar E, Espacio, Enter o tocar la pantalla.
 const SCENES = {
+ // Charla con un vecino: queda el texto en pantalla hasta que el jugador sigue.
+ talk:{plain:true,steps:[
+  {at:0,run(s){this.say(s,s.speaker,s.text);}},
+  {at:3600,skip:true,run(){this.endCutscene();this.cutsceneFade=0;}}
+ ],tick(s){
+  const l=s.line,sip=l?l.text.indexOf('*ruido de mate*'):-1;
+  if(sip>=0&&!s.sipped&&(s.t-l.at)*CPS>=sip){s.sipped=true;this.sound.play('mate');}
+ }},
  zakIntro:{steps:[
   {at:.7,run(s){const z=this.zakEntity();s.focus={x:z.x,y:z.y-34};z.dir='down';this.sound.play('telegraph');}},
   {at:1.8,skip:true,run(s){this.say(s,'Zak',LINES.who);}},
@@ -377,7 +385,7 @@ Object.assign(Z.Game.prototype, {
  zakEntity(){return this.enemies.find(m=>m.type==='zak'&&!m.summoned);},
  // Escenas: el jugador no se mueve, los enemigos se congelan y la cámara mira a `focus`.
  startCutscene(id,extra={}){
-  const p=this.player;this.cutscene={id,t:0,done:0,line:null,focus:{x:p.x,y:p.y},...extra};
+  const p=this.player;this.cutscene={id,t:0,done:0,line:null,focus:{x:p.x,y:p.y},plain:!!SCENES[id].plain,...extra};
   Object.assign(p,{moving:false,running:false,roll:0,gather:null,attackAnim:0});this.clearInput();this.aim=null;this.projectiles=[];this.bolts=[];
  },
  say(s,speaker,text){s.line={speaker,text,at:s.t,shown:0};},

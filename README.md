@@ -2,7 +2,7 @@
 
 Una aventura de acción y exploración en pixel art, vista desde arriba. Elegí a uno de seis amigos, preparate en la aldea y salí a explorar la cueva y los Yuyos.
 
-Versión actual: **v2.16**. Los cambios de cada versión están en [CHANGELOG.md](CHANGELOG.md).
+Versión actual: **v2.17**. Los cambios de cada versión están en [CHANGELOG.md](CHANGELOG.md).
 
 ## Jugar
 
@@ -59,7 +59,7 @@ Los guardados se conservan en el almacenamiento local del navegador usado para j
 
 ## El mundo
 
-- **Palihue City:** zona completamente segura, con casas, árboles, flores y vecinos que caminan y tienen colisión. Los enemigos no pueden entrar. El pozo permite recuperar vida y el puesto de **El Almacén** vende provisiones. Acá se encuentra el arco.
+- **Palihue City:** zona completamente segura, con casas, árboles, flores, vecinos y animales que caminan y tienen colisión (ver **Vecinos y animales**). Los enemigos no pueden entrar. El pozo permite recuperar vida y el puesto de **El Almacén** vende provisiones. Acá se encuentra el arco.
 - **Cueva:** zona oscura habitada por chorros y perros callejeros. La piedra se encuentra en su interior. En el fondo noroeste, sentado en su trono junto a la bajada, **El Capo del Eco** no deja pasar a nadie.
 - **Yuyos:** pastos altos, serpientes y ratas. Acá se encuentra la espada y Paco recibe su bonificación de Campesino. En el rincón noreste anida **La Yarará Madre**. La valla del límite con la aldea llega hasta arriba de todo: al nido se llega por el camino de los yuyos.
 - **Cueva Profunda (Nvl 2):** se baja por la escalera del fondo noroeste de la Cueva del Eco; **hace falta una antorcha y haber vencido al Capo**. Está a oscuras: ves lo que alumbra la antorcha. Hay murciélagos, arañas, hierro y oro, y **no crecen hierbas medicinales**. En su extremo sureste baja otra escalera, custodiada por **El Chupasangre**.
@@ -73,6 +73,15 @@ Los guardados se conservan en el almacenamiento local del navegador usado para j
 Las bajadas custodiadas no se abren mientras su jefe esté vivo; si reaparece mientras estás abajo, subir siempre se puede. El mapa marca el almacén ($), el herrero (⚒), las bajadas (▼ ▲), el altar (✝) y las guaridas de los jefes (☠). Dentro de una cueva profunda o del trono, el mapa muestra esa zona. Los enemigos vuelven a aparecer después de **35 segundos**; el Capo y la Yarará, después de **3 minutos**; el Chupasangre, de 4; el Gólem, de 5; y Cerbero, de 10.
 
 Al quedar noqueado volvés a la aldea. Si te vence un chorro aparece «Uhh... este gil me sacó guita»… y es literal: un chorro o el Capo se llevan el **30%** de tus monedas. Cualquier otra derrota cuesta el **10%**. Si Zak te ejecuta, perdés toda la guita, los materiales y las ofrendas (ver [El Trono de Zak](#el-trono-de-zak)).
+
+### Vecinos y animales
+
+En Palihue City viven 17 vecinos, cada uno con su ropa, y 14 animales: 3 caballos, 5 gallinas, 3 gatos y 3 perros. Acercate y apretá **E** (en el celular, el botón **E**) para hablar o hacer una mimada; cada uno va diciendo sus frases por turno. Con **E**, **Espacio**, **Enter** o tocando la pantalla seguís la charla. Mientras dura, el mundo se queda quieto y el reloj no corre.
+
+- **El Gaucho:** toma mate sentado en un tronco, al costado de la calle que va a Los Yuyos, con Malacara, su caballo.
+- **Caballos:** Zaino y Moro pastan en el corral que está al sur de esa calle. Tiene una entrada del lado del camino.
+- **Gallinas:** dan vueltas al lado de El Almacén y de La Querencia. Si jugás con Pepe, te tratan distinto.
+- **Los que más ayudan:** Clara, Beto, Tito, Mirta y Sor Inés tiran consejos que sirven de verdad.
 
 ### Día, tarde y noche
 
@@ -347,7 +356,8 @@ Se interpretó «aumenta el daño en un ×0,5» como **50% adicional**, por lo q
 Implementado con **HTML, CSS y JavaScript**, sin paquetes externos. El mundo se dibuja en Canvas 2D con gráficos pixel art creados por código; no requiere imágenes, tipografías ni sonidos descargados.
 
 - `src/data.js`: personajes, enemigos, jefes, artículos del almacén y reglas puras de estadísticas, experiencia y mejoras.
-- `src/world.js`: mapa, biomas, objetos, colisiones y vecinos.
+- `src/world.js`: mapa, biomas, objetos y colisiones.
+- `src/npcs.js`: vecinos y animales: dónde andan, cómo se ven y qué dicen.
 - `src/pixel.js`: herramientas de pixel art: dibujo sin suavizado, contornos y destellos de sprites, fuente de píxeles propia, luces con tramado y ruido para el terreno.
 - `src/render.js`: sprites, terreno, cámara y efectos visuales.
 - `src/game.js`: simulación, movimiento, combate, esquiva, combos, monedas, tienda, jefes y habilidades.
@@ -363,9 +373,9 @@ Si ya tenés Node instalado:
 node tests/rules.test.js
 ```
 
-Abrí `tests/index.html` para ejecutar las 37 pruebas de reglas y las 99 pruebas de integración del motor en el navegador. El resultado detalla cada caso aprobado o fallido.
+Abrí `tests/index.html` para ejecutar las 37 pruebas de reglas y las 115 pruebas de integración del motor en el navegador. El resultado detalla cada caso aprobado o fallido.
 
-También se incluyen 37 pruebas de interfaz y de pixel art, 18 del ranking (con un servidor simulado) 33 de controles táctiles y 42 de la nube (también con un servidor simulado) con Chrome y Python 3, sin librerías adicionales. El verificador abre un perfil temporal aislado; nunca usa tus guardados personales:
+También se incluyen 41 pruebas de interfaz y de pixel art, 18 del ranking (con un servidor simulado) 36 de controles táctiles y 42 de la nube (también con un servidor simulado) con Chrome y Python 3, sin librerías adicionales. El verificador abre un perfil temporal aislado; nunca usa tus guardados personales:
 
 ```sh
 python tests/browser_check.py tests/index.html --script tests/engine.test.js
