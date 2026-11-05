@@ -25,6 +25,8 @@ class Browser:
         if b' 101 ' not in response: raise RuntimeError(response.decode())
         self.seq=0; self.errors=[]
         self.command('Page.enable'); self.command('Runtime.enable')
+        # Ninguna prueba llega al ranking ni a la nube reales: el navegador bloquea Supabase. Las pruebas simulan el servidor en window.fetch.
+        self.command('Network.enable'); self.command('Network.setBlockedURLs',{'urls':['*supabase.co*']})
     def receive(self,n):
         result=b''
         while len(result)<n:
@@ -63,6 +65,8 @@ class Browser:
                 if self.evaluate("document.readyState === 'complete'"):break
             except RuntimeError:pass
             time.sleep(.05)
+        # Si un Chrome futuro dejara de aplicar el bloqueo, la prueba se corta antes de poder publicar.
+        if self.evaluate("fetch('https://supabase.co/',{mode:'no-cors'}).then(()=>true,()=>false)"):raise RuntimeError('Supabase no está bloqueado: las pruebas podrían publicar en el ranking real.')
         time.sleep(.5)
     def screenshot(self,path):
         data=self.command('Page.captureScreenshot',{'format':'png','captureBeyondViewport':False})['data']

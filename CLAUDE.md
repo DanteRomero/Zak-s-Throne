@@ -24,6 +24,14 @@ python tests/browser_check.py index.html --touch --width 844 --height 390 --scri
 
 Los tests de navegador imprimen un JSON con `passed` y `failed`. Usan Chrome: toman la ruta de `CHROME_PATH` y, si no está definida, la de Windows. Si agregás pruebas, actualizá los totales de la sección de tests del `README.md`.
 
+## No ensuciar el ranking
+
+Las pruebas no deben dejar perfiles en el ranking de los amigos.
+
+- Probá siempre con `tests/browser_check.py` o su clase `Browser`, también en los scripts sueltos y las capturas. Bloquean Supabase, así que nada llega al ranking ni a la nube reales.
+- Si tenés que usar otra herramienta sobre el juego real, poné el apodo `Test` y, al terminar, borrá esa fila por su `run_id`. Si no se puede borrar, avisá; el apodo `Test` la deja identificada.
+- Nunca borres filas de otros nombres sin que te lo pidan: pueden ser partidas reales.
+
 ## Partidas guardadas
 
 Hay amigos jugando partidas reales, guardadas en su navegador con claves que empiezan con `zak.throne.save.`. Un cambio no debe hacerles perder progreso:
