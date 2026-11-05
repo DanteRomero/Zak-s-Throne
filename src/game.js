@@ -115,7 +115,19 @@ class Game {
   this.biome='village';this.time=0;this.effects=[];this.projectiles=[];this.drops=[];this.queuedWaves=[];this.questFlags={};this.currentSlot=null;this.bolts=[];this.darkness=0;this.exitPortal=null;this.cutscene=null;this.cutsceneFade=0;
   this.enemies=this.world.enemySpawns.map(s=>this.makeEnemy(s));this.clearInput();this.aim=null;this.state='playing';this.renderer.resize(true);this.emit('start');
  }
- makeEnemy(s){const stats=this.enemyStatsFor(s.type,0);return{...s,homeX:s.x,homeY:s.y,biome:Z.biomeAt(s.x,s.y),stats,hp:stats.health,maxHp:stats.health,level:stats.level,dir:'down',walk:0,moving:false,dead:false,respawn:0,cooldown:.6,stun:0,charm:0,latched:0,latchRest:0,alert:false,provoked:false,hitFlash:0,special:2.5,telegraph:0,dash:0,aimX:0,aimY:1,life:0,act:null,cd:{},rain:null,rainCd:KNIFE_FIRST,shield:0,seated:false,yielding:null,pose:null,air:false,lift:0,lowFortified:false,backoff:0};}
+ makeEnemy(s){const biome=Z.biomeAt(s.x,s.y),stats=this.enemyStatsFor(s.type,0,biome);return{...s,homeX:s.x,homeY:s.y,biome,stats,hp:stats.health,maxHp:stats.health,level:stats.level,dir:'down',walk:0,moving:false,dead:false,respawn:0,cooldown:.6,stun:0,charm:0,latched:0,latchRest:0,alert:false,provoked:false,hitFlash:0,special:2.5,telegraph:0,dash:0,aimX:0,aimY:1,life:0,act:null,cd:{},rain:null,rainCd:KNIFE_FIRST,shield:0,seated:false,yielding:null,pose:null,air:false,lift:0,lowFortified:false,backoff:0};}
+ // La luna roja se tira una sola vez por noche y dura hasta que amanece. El reloj sigue corriendo en la dimensión de Zak, pero allá no se nota.
+ updateDayCycle(){
+  const p=this.player,clock=Z.dayClock(p.playTime),moon=Z.BLOOD_MOON;
+  if(clock.phase==='night'){if(p.moonNight!==clock.night){p.moonNight=clock.night;this.setBloodMoon(Math.random()<moon.chance);}}
+  else if(p.bloodMoon){this.setBloodMoon(false);if(!Z.isZakDimension(this.biome))this.emit('toast',{message:'Amanece: se fue la luna roja.'});}
+  const visible=p.bloodMoon===true&&!Z.isZakDimension(this.biome);
+  if(visible&&!this.moonNotified){this.sound.play('telegraph');this.emit('toast',{message:'¡Luna roja! Hasta que amanezca, los enemigos son más fuertes, rápidos y resistentes, pero dan el doble de experiencia y monedas.',error:true});}
+  this.moonNotified=visible;
+ }
+ setBloodMoon(on){if(this.player.bloodMoon===on)return;this.player.bloodMoon=on;this.refreshEnemyStats(this.enemies.filter(e=>!Z.isZakDimension(e.biome)));}
+ // Recalcula las estadísticas conservando la proporción de vida de cada enemigo.
+ refreshEnemyStats(list=this.enemies){list.forEach(e=>{const stats=this.enemyStatsFor(e.type,e.life||0,e.biome),ratio=e.hp/e.maxHp;e.stats=stats;e.level=stats.level;e.maxHp=stats.health;if(!e.dead)e.hp=Math.max(1,ratio*stats.health);});}
  pause(){if(this.state==='playing'){this.state='paused';this.clearInput();}}
  resume(){if(this.state==='paused'){this.state='playing';this.clearInput();}}
  vibrate(ms){if(this.touchMode&&this.settings.shake&&navigator.vibrate)try{navigator.vibrate(ms);}catch(_){}}
@@ -125,7 +137,7 @@ class Game {
   // Durante una escena el mundo se congela: solo avanzan la escena y los efectos.
   if(this.cutscene){this.time+=dt;this.updateCutscene(dt);this.effects.forEach(e=>e.life-=dt);this.effects=this.effects.filter(e=>e.life>0);return;}
   this.cutsceneFade=Math.max(0,(this.cutsceneFade||0)-dt);
-  this.time+=dt;const p=this.player;p.playTime+=dt;const stats=this.stats();p.hp=Math.min(p.hp,stats.maxHealth);
+  this.time+=dt;const p=this.player;p.playTime+=dt;this.updateDayCycle();const stats=this.stats();p.hp=Math.min(p.hp,stats.maxHealth);
   for(const k of ['attackCooldown','abilityCooldown','attackAnim','hitFlash','slow','dance','tobi','roll','rollCooldown','comboTime','stunned','frozen','grabbed','heavySlow'])p[k]=Math.max(0,(p[k]||0)-dt);
   this.darkness=Math.max(0,(this.darkness||0)-dt);
   // Al terminar de congelarte, el hielo se rompe.
@@ -265,7 +277,7 @@ class Game {
   if(e.hp<=0){const first=!this.questFlags['defeat_'+e.type];e.hp=0;e.dead=true;e.respawn=definition.respawn||35;e.alert=false;e.telegraph=0;e.dash=0;this.player.kills++;this.questFlags['defeat_'+e.type]=true;
    this.effect(e.x,e.y-8,'poof',.6,{seed:Math.random()*99});this.effect(e.x,e.y,'corpse',definition.boss?.8:.45,{seed:Math.random()*99,enemy:{...e,act:null,rain:null,dash:0,moving:false,telegraph:0,alert:false,hitFlash:0}});this.sound.play(definition.boss?'boss':'death');
    const levels=Z.grantXp(this.player,e.stats.xp,this.context());this.effect(e.x,e.y-38,'heal',1.1,{text:'+'+this.number(e.stats.xp*this.stats().xpMultiplier)+' EXP'});
-   const[min,max]=definition.coins||[0,0];if(!e.summoned)this.dropCoins(e.x,e.y,min+Math.floor(Math.random()*(max-min+1))+Math.floor((e.level-1)/2));
+   const[min,max]=definition.coins||[0,0];if(!e.summoned)this.dropCoins(e.x,e.y,(min+Math.floor(Math.random()*(max-min+1))+Math.floor((e.level-1)/2))*(e.stats.bloodMoon?Z.BLOOD_MOON.coins:1));
    if(definition.drop&&!e.summoned)this.dropOffering(e.x,e.y,definition.drop);
    if(definition.key&&!e.summoned)this.dropOffering(e.x+14,e.y,'key');
    if(definition.boss&&!e.summoned){this.player.bossKills=(this.player.bossKills||0)+1;this.emit('progress');this.shake(6,.5);if(first){this.player.points+=1;this.emit('toast',{message:'¡Derrotaste a '+definition.name+'! Trofeo: +1 punto de mejora.'});}else this.emit('toast',{message:definition.name+' vuelve a caer.'});}
@@ -289,7 +301,7 @@ class Game {
  }
  onLevel(){
   this.sound.play('level');this.effect(this.player.x,this.player.y,'level',1.4,{radius:50});this.emit('progress');this.emit('toast',{message:'¡Nivel '+this.player.level+'! Tenés '+this.player.points+' punto(s) para mejorar. Presioná C.'});
-  this.enemies.forEach(e=>{const stats=this.enemyStatsFor(e.type,e.life||0),ratio=e.hp/e.maxHp;e.stats=stats;e.level=stats.level;e.maxHp=stats.health;if(!e.dead)e.hp=Math.max(1,ratio*stats.health);});
+  this.refreshEnemyStats();
  }
  updateEnemies(dt){
   const p=this.player;for(const e of this.enemies){
@@ -628,6 +640,8 @@ class Game {
   Game.validateSave(data);const source=data.player,p=Z.createPlayer(source.characterId);
   for(const k of ['level','xp','points','hp','x','y','stamina'])p[k]=source[k];for(const k of Object.keys(Z.STAT_LABELS))p.stats[k]=source.stats[k];
   for(const k of ['kills','deaths','playTime','abilityCooldown','attackCooldown','stoneWalkTime','restTime','slow','exhausted'])p[k]=typeof source[k]==='number'&&Number.isFinite(source[k])?clamp(source[k],0,1e9):0;
+  // Luna roja: solo vale si el guardado es de esa misma noche. Las partidas viejas tiran al volver a jugar.
+  p.moonNight=Number.isInteger(source.moonNight)?clamp(source.moonNight,-1,1e9):-1;{const night=Z.dayClock(p.playTime).night;p.bloodMoon=source.bloodMoon===true&&night>=0&&night===p.moonNight;}this.moonNotified=false;
   p.abilityCooldown=Math.min(p.abilityCooldown,30);p.attackCooldown=Math.min(p.attackCooldown,3);p.slow=Math.min(p.slow,4);p.exhausted=Math.min(p.exhausted,10);p.stamina=clamp(p.stamina,0,1);p.stoneWalkTime=clamp(p.stoneWalkTime,0,2);
   p.coins=Math.floor(clamp(Number(source.coins)||0,0,1e7));p.herbs=Math.floor(clamp(Number(source.herbs)||0,0,Z.HERB_BAG));p.sharpen=Math.floor(clamp(Number(source.sharpen)||0,0,5));p.lessons=Math.floor(clamp(Number(source.lessons)||0,0,1e4));
   p.bossKills=Math.floor(clamp(Number(source.bossKills)||0,0,1e4));p.throneKeys=Math.floor(clamp(Number(source.throneKeys)||0,0,99));p.zakBest=clamp(Number(source.zakBest)||0,0,1e7);
@@ -650,7 +664,7 @@ class Game {
   this.world.pickups.forEach(i=>{i.collected=data.collected.includes(i.id);if(i.collected&&i.type==='herb')i.regrow=HERB_REGROW;});
   for(const saved of data.nodes||[]){const o=saved&&this.world.objects.find(n=>n.id===saved.id&&(n.type==='ore'||n.type==='tree'));if(!o)continue;
    o.harvested=true;o.regrow=clamp(Number(saved.regrow)||0,0,this.nodeDef(o).regrow);if(o.type==='ore')o.solid=false;}this.enemies=this.world.enemySpawns.map(spawn=>{
-   const e=this.makeEnemy(spawn),saved=data.enemies.find(i=>i&&i.id===e.id);if(saved){const lives=Z.ENEMY_TYPES[e.type].lives||1;if(e.type==='golem'&&Number.isInteger(saved.life)&&saved.life>0&&saved.life<lives){e.life=saved.life;e.stats=this.enemyStatsFor(e.type,e.life);e.maxHp=e.stats.health;}if(Number.isFinite(saved.hp))e.hp=clamp(saved.hp,0,e.maxHp);e.dead=saved.dead===true||e.hp<=0;e.respawn=clamp(Number(saved.respawn)||0,0,Z.ENEMY_TYPES[e.type].respawn||35);e.provoked=saved.provoked===true;e.cooldown=clamp(Number(saved.cooldown)||0,0,3);e.stun=clamp(Number(saved.stun)||0,0,7);e.charm=clamp(Number(saved.charm)||0,0,10);e.latched=clamp(Number(saved.latched)||0,0,3);e.latchRest=clamp(Number(saved.latchRest)||0,0,1.6);e.alert=saved.alert===true;if(this.biome==='village'||e.dead)e.latched=0;
+   const e=this.makeEnemy(spawn),saved=data.enemies.find(i=>i&&i.id===e.id);if(saved){const lives=Z.ENEMY_TYPES[e.type].lives||1;if(e.type==='golem'&&Number.isInteger(saved.life)&&saved.life>0&&saved.life<lives){e.life=saved.life;e.stats=this.enemyStatsFor(e.type,e.life,e.biome);e.maxHp=e.stats.health;}if(Number.isFinite(saved.hp))e.hp=clamp(saved.hp,0,e.maxHp);e.dead=saved.dead===true||e.hp<=0;e.respawn=clamp(Number(saved.respawn)||0,0,Z.ENEMY_TYPES[e.type].respawn||35);e.provoked=saved.provoked===true;e.cooldown=clamp(Number(saved.cooldown)||0,0,3);e.stun=clamp(Number(saved.stun)||0,0,7);e.charm=clamp(Number(saved.charm)||0,0,10);e.latched=clamp(Number(saved.latched)||0,0,3);e.latchRest=clamp(Number(saved.latchRest)||0,0,1.6);e.alert=saved.alert===true;if(this.biome==='village'||e.dead)e.latched=0;
     if(Number.isFinite(saved.x)&&Number.isFinite(saved.y)&&Z.biomeAt(saved.x,saved.y)===e.biome&&!Z.collides(this.world,saved.x,saved.y,7)){e.x=saved.x;e.y=saved.y;}}
    return e;});
   this.effects=[];this.projectiles=[];this.drops=[];this.bolts=[];this.darkness=0;this.exitPortal=null;this.cutscene=null;this.cutsceneFade=0;this.queuedWaves=Array.isArray(data.queuedWaves)&&p.characterId==='dante'?data.queuedWaves.slice(0,2).filter(w=>w&&Number.isFinite(w.delay)).map(w=>({delay:clamp(w.delay,0,1.1)})):[];this.currentSlot=slot;this.clearInput();this.aim=null;this.state='playing';this.renderer.resize(true);this.emit('start',{loaded:true});

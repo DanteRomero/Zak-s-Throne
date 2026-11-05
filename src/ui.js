@@ -9,7 +9,7 @@
   const SETTINGS_KEY = 'zak.throne.settings.v1';
   const WEAPONS = ['fists', 'bow', 'sword', 'stone', 'elemental'];
   const ICONS = { fists: '✊', bow: '➶', sword: '⚔', stone: '◆', elemental: '✧' };
-  let selected = 'gero', modalResume = false, modalBack = null, lastFocus = null, modalVersion = 0, suppressPause = false;
+  let selected = 'gero', modalResume = false, modalBack = null, lastFocus = null, modalVersion = 0, suppressPause = false, slotsView = null;
   let lastPortrait = '', lastHud = 0, hasStarted = false;
   const number = value => Number.isFinite(Number(value)) ? Number(value) : 0;
   const fmt = value => Number(number(value).toFixed(1)).toLocaleString('es-AR');
@@ -84,6 +84,7 @@
   function updateSaveCount() { text('save-count', [1,2,3].filter(index => readSlot(index).state === 'valid').length + ' / 3'); }
   function openModal(title, eyebrow, build, back = null) {
     const wasOpen = visibleModal();
+    slotsView = null;
     if (!wasOpen) {
       lastFocus = document.activeElement;
       modalResume = game.state === 'playing' || game.state === 'paused';
@@ -108,7 +109,7 @@
   }
   function hideModal(resume = true) {
     $('modal-overlay').classList.add('hidden'); modalVersion++;
-    modalBack = null;
+    modalBack = null; slotsView = null;
     const shouldResume = resume && modalResume && game.player;
     modalResume = false;
     if (shouldResume && game.state === 'paused') game.resume();
@@ -213,6 +214,7 @@
       if (!imported) { game.currentSlot = index; submitScore(); }
       updateSaveCount(); toast((imported ? 'Partida importada' : 'Partida guardada') + ' en la ranura ' + index + '.');
       if (imported) showSlots('load'); else showPause();
+      cloudAfterChange();
     } catch (error) {
       toast('No se pudo guardar. Podés exportar un respaldo JSON. ' + error.message,true);
     }
@@ -244,7 +246,7 @@
       if (game.currentSlot === index) game.currentSlot = null;
       // La partida en curso que se borró del ranking empieza a contar como una nueva.
       if (runId && !shared && game.player && game.player.runId === runId) game.player.runId = null;
-      updateSaveCount(); showSlots(mode);
+      updateSaveCount(); showSlots(mode); cloudAfterChange();
       if (!runId || shared) { toast('Ranura ' + index + ' borrada.'); return; }
       try { const result = await Zak.Ranking.remove(runId); toast('Ranura ' + index + ' borrada' + (result.online ? ' y quitada del ranking.' : '.')); }
       catch (error) { toast('Ranura ' + index + ' borrada. No se pudo quitar del ranking online (' + error.message + '); se reintentará más tarde.',true); }
@@ -275,8 +277,9 @@
       actions.append(button('Importar JSON',pickImport));
       actions.append(button(mode === 'save' && game.player ? 'Exportar partida' : 'Exportar ranura',() => mode === 'save' && game.player ? download(game.snapshot()) : showSlots('export')));
       parent.append(actions);
-      paragraph(parent,'Guardado manual en este navegador. Un respaldo JSON permite llevar tu partida a otro equipo.','hint');
+      paragraph(parent,Zak.Cloud.session() ? 'Guardado manual, sincronizado con tu cuenta en todos tus dispositivos.' : 'Guardado manual en este navegador.' + (Zak.Cloud.available() ? ' Con una cuenta se sincroniza entre dispositivos.' : ' Un respaldo JSON permite llevar tu partida a otro equipo.'),'hint');
     }, game.player && (game.state === 'paused' || game.state === 'playing') ? showPause : null);
+    slotsView = { mode, imported };
   }
   function pickImport() {
     const input = el('input'); input.type = 'file'; input.accept = '.json,application/json'; input.hidden = true;
@@ -293,12 +296,116 @@
     input.addEventListener('cancel', () => input.remove(),{once:true});
     document.body.append(input); input.click();
   }
-  $('load-game').addEventListener('click', () => showSlots('load'));
+  $('load-game').addEventListener('click', () => { showSlots('load'); Zak.Cloud.sync(); });
+  /* ---------- Cuenta y nube ---------- */
+  const inGame = () => !!game.player && (game.state === 'playing' || game.state === 'paused');
+  function cloudStatusText() {
+    const s = Zak.Cloud.state;
+    if (s.status === 'syncing') return 'Sincronizando…';
+    if (s.status === 'ok') return 'Todo sincronizado · ' + new Date(s.lastSync).toLocaleTimeString('es-AR',{ hour:'2-digit', minute:'2-digit' });
+    return s.message || '';
+  }
+  function updateCloudStatus() {
+    $('cloud-button').classList.toggle('hidden',!Zak.Cloud.available());
+    text('cloud-status',Zak.Cloud.session() ? 'Con sesión' : 'Sin sesión');
+    const line = $('cloud-state'); if (line) line.textContent = cloudStatusText();
+  }
+  // Después de guardar o borrar: si no se pudo subir, se avisa, pero la partida ya quedó en el dispositivo.
+  async function cloudAfterChange() {
+    if (!Zak.Cloud.session()) return;
+    if (!await Zak.Cloud.sync() && Zak.Cloud.state.message) toast(Zak.Cloud.state.message,Zak.Cloud.state.status !== 'offline');
+    updateCloudStatus();
+  }
+  // Las sincronizaciones de fondo no interrumpen una partida en curso.
+  function cloudBackground() { if (!inGame()) Zak.Cloud.sync(); }
+  function showConflicts(list) {
+    const [conflict, ...rest] = list, returnTo = slotsView && slotsView.mode;
+    const after = () => { if (rest.length) showConflicts(rest); else if (inGame()) showPause(); else if (returnTo) showSlots(returnTo); else hideModal(false); };
+    const pick = async choice => {
+      try { await Zak.Cloud.resolve(conflict,choice); updateSaveCount(); if (choice !== 'later') toast('Ranura ' + conflict.slot + ' actualizada.'); }
+      catch (error) { toast('No se pudo actualizar la ranura ' + conflict.slot + ': ' + error.message,true); }
+      after();
+    };
+    openModal('La ranura ' + conflict.slot + ' tiene dos versiones','ELEGÍ CUÁL QUEDA',parent => {
+      paragraph(parent,'Esta ranura cambió en dos dispositivos. La versión que no elijas se reemplaza y no se puede recuperar.');
+      [['local','En este dispositivo',conflict.local],['cloud','En la nube',conflict.cloud]].forEach(([choice,label,data]) => {
+        const btn = button('',() => pick(choice),'save-slot'), content = el('span','slot-content');
+        content.append(el('strong','',label + ' · ' + saveLabel(data)),el('small','','Guardada: ' + savedDate(data)));
+        btn.append(content,el('span','slot-arrow','→')); parent.append(btn);
+      });
+      const actions = el('div','inline-actions');
+      actions.append(button('Decidir después',() => pick('later')),button('Exportar la de este dispositivo',() => download(conflict.local)));
+      parent.append(actions);
+      paragraph(parent,'Si decidís después, las dos versiones quedan como están.','hint');
+    },() => pick('later'));
+  }
+  function cloudField(form, label, type, autocomplete) {
+    const wrap = el('label','cloud-field'), input = el('input');
+    wrap.append(el('span','',label)); input.type = type; input.autocomplete = autocomplete; input.required = true; input.spellcheck = false;
+    wrap.append(input); form.append(wrap); return input;
+  }
+  // Corre una acción del formulario con los botones bloqueados y muestra el error ahí mismo.
+  function cloudForm(parent, build) {
+    const form = el('form','cloud-form'), error = el('p','cloud-error'); error.setAttribute('role','alert');
+    const run = async action => {
+      const buttons = [...form.querySelectorAll('button')]; buttons.forEach(node => { node.disabled = true; }); error.textContent = '';
+      try { await action(); } catch (failure) { error.textContent = failure.message; buttons.forEach(node => { node.disabled = false; }); }
+    };
+    build(form,run); form.append(error); parent.append(form); return form;
+  }
+  const passwordProblem = value => value.length < 6 ? 'La contraseña tiene que tener al menos 6 caracteres.' : '';
+  function showCloud() {
+    openModal('Tus partidas, en todos lados','CUENTA Y NUBE',parent => {
+      if (Zak.Cloud.session()) {
+        paragraph(parent,'Entraste como ' + Zak.Cloud.email() + '. Tus tres ranuras se sincronizan solas al abrir el juego, al guardar y al borrar.');
+        const line = el('p','cloud-state',cloudStatusText()); line.id = 'cloud-state'; line.setAttribute('aria-live','polite'); parent.append(line);
+        const actions = el('div','modal-actions');
+        actions.append(button('Sincronizar ahora',async () => { await Zak.Cloud.sync(); updateCloudStatus(); if (Zak.Cloud.state.status !== 'ok') toast(Zak.Cloud.state.message,true); },'button primary'),
+          button('Cerrar sesión',() => confirmAction('¿Cerrar sesión?','Tus partidas quedan guardadas en este dispositivo y en la nube. Si es una computadora ajena, borrá las ranuras antes de irte.',async () => { await Zak.Cloud.signOut(); updateCloudStatus(); toast('Sesión cerrada.'); showCloud(); },showCloud,'Cerrar sesión')));
+        parent.append(actions);
+        return;
+      }
+      paragraph(parent,'Con una cuenta, tus partidas te siguen a cualquier dispositivo. Sin cuenta, el juego sigue guardando solo en este navegador.');
+      cloudForm(parent,(form,run) => {
+        const email = cloudField(form,'Mail','email','email'), password = cloudField(form,'Contraseña','password','current-password');
+        const fields = () => { const mail = email.value.trim(); if (!mail) throw new Error('Escribí tu mail.'); return mail; };
+        const entered = message => { updateCloudStatus(); toast(message); showCloud(); Zak.Cloud.sync().then(updateCloudStatus); };
+        const actions = el('div','modal-actions');
+        const signIn = button('Entrar',() => {},'button primary'); signIn.type = 'submit';
+        actions.append(signIn,button('Crear cuenta',() => run(async () => {
+          const mail = fields(), problem = passwordProblem(password.value); if (problem) throw new Error(problem);
+          if (await Zak.Cloud.signUp(mail,password.value)) entered('¡Cuenta creada! Tus partidas ya se sincronizan.');
+          else { toast('Te mandamos un mail para confirmar la cuenta.'); showCloud(); }
+        })),button('Olvidé mi contraseña',() => run(async () => { await Zak.Cloud.recover(fields()); toast('Si el mail tiene cuenta, te llegó un enlace para cambiar la contraseña.'); showCloud(); })));
+        form.append(actions);
+        form.addEventListener('submit',event => { event.preventDefault(); run(async () => { await Zak.Cloud.signIn(fields(),password.value); entered('¡Hola de nuevo! Sincronizando tus partidas.'); }); });
+      });
+    },inGame() ? showPause : null);
+  }
+  function showNewPassword() {
+    openModal('Elegí una contraseña nueva','CUENTA Y NUBE',parent => {
+      cloudForm(parent,(form,run) => {
+        const password = cloudField(form,'Contraseña nueva','password','new-password'), actions = el('div','modal-actions'), save = button('Guardar contraseña',() => {},'button primary');
+        save.type = 'submit'; actions.append(save); form.append(actions);
+        form.addEventListener('submit',event => { event.preventDefault(); run(async () => { const problem = passwordProblem(password.value); if (problem) throw new Error(problem); await Zak.Cloud.updatePassword(password.value); toast('Contraseña cambiada.'); hideModal(false); Zak.Cloud.sync().then(updateCloudStatus); }); });
+      });
+    });
+  }
+  Zak.Cloud.attach({
+    read: readSlot,
+    accept: data => { try { validate(data); return true; } catch (_) { return false; } },
+    write: (index,data) => { Zak.Game.migrateSave(data); validate(data); localStorage.setItem(SAVE_PREFIX + index,JSON.stringify(data)); },
+    remove: index => { localStorage.removeItem(SAVE_PREFIX + index); if (game.currentSlot === index) game.currentSlot = null; },
+    onChange: () => { updateSaveCount(); if (visibleModal() && slotsView) showSlots(slotsView.mode,slotsView.imported); },
+    onConflict: showConflicts,
+    onStatus: updateCloudStatus
+  });
+  $('cloud-button').addEventListener('click',showCloud);
   function showPause() {
     openModal('Un respiro en el camino', 'PARTIDA EN PAUSA', parent => {
       if (game.player) paragraph(parent,saveLabel({player:game.player}) + ' · ' + (game.currentSlot ? 'Ranura ' + game.currentSlot : 'Todavía sin guardar'));
       const actions = el('div','modal-actions');
-      actions.append(button('Continuar la aventura', () => hideModal(), 'button primary'), button('Guardar partida', () => showSlots('save')), button('Ranking de amigos', () => showRanking('level', showPause)), button('Opciones y controles',showSettings), button('Volver al inicio',requestMenu));
+      actions.append(button('Continuar la aventura', () => hideModal(), 'button primary'), button('Guardar partida', () => showSlots('save')), button('Ranking de amigos', () => showRanking('level', showPause)), ...(Zak.Cloud.available() ? [button('Cuenta y nube',showCloud)] : []), button('Opciones y controles',showSettings), button('Volver al inicio',requestMenu));
       parent.append(actions); paragraph(parent,'La partida se guarda manualmente. Cerrá la pausa para seguir explorando.','hint');
     });
   }
@@ -531,10 +638,14 @@
     const ctx = game.context(), biome = ctx.biome || 'village';
     text('hud-biome',Zak.BIOME_NAMES[biome] || biome); text('hud-safety',Zak.isSafe(biome) ? 'ZONA SEGURA' : 'ZONA PELIGROSA');
     $('hud-safety').classList.toggle('danger',!Zak.isSafe(biome));
-    const hours = (8 + Math.floor(number(p.playTime) / 60)) % 24, minutes = Math.floor(number(p.playTime) % 60);
-    text('hud-time',(hours >= 7 && hours < 19 ? '☀ ' : '☾ ') + String(hours).padStart(2,'0') + ':' + String(minutes).padStart(2,'0'));
+    const hours = (Zak.DAY_START + Math.floor(number(p.playTime) / 60)) % 24, minutes = Math.floor(number(p.playTime) % 60);
+    const phase = Zak.DAY_PHASES[Zak.dayClock(p.playTime).phase], clockText = String(hours).padStart(2,'0') + ':' + String(minutes).padStart(2,'0');
+    const zakDimension = Zak.isZakDimension(biome), bloodMoon = p.bloodMoon === true && !zakDimension;
+    text('hud-time',zakDimension ? '☾ NOCHE ETERNA' : bloodMoon ? '☾ LUNA ROJA · ' + clockText : phase.icon + ' ' + phase.name.toUpperCase() + ' · ' + clockText);
+    $('hud-time').classList.toggle('blood-moon',bloodMoon);
     if (lastPortrait !== c.id) { Zak.drawPortrait($('hud-portrait'),c.id); lastPortrait = c.id; }
     const statuses = [];
+    if (bloodMoon) statuses.push('☾ Luna roja: x2 EXP y ◉');
     if (p.poison) statuses.push('☠ Veneno');
     if (p.slow > 0) statuses.push('↓ Mordedura ' + Math.ceil(p.slow) + ' s');
     if (p.exhausted > 0) statuses.push('Sin aliento ' + Math.ceil(p.exhausted) + ' s');
@@ -769,6 +880,16 @@
   renderWeapons(); updateSound(); updateSaveCount();
   const migrated = migrateSlots();
   if (migrated.length) showApology(migrated);
+  updateCloudStatus();
+  // Al volver de un mail de Supabase (recuperar contraseña o confirmar cuenta) y, siempre, al abrir el juego.
+  Zak.Cloud.consumeRedirect().then(result => {
+    if (result && result.error) toast(result.error,true);
+    if (result && result.type === 'recovery') showNewPassword();
+    else if (result) toast('Cuenta confirmada. Tus partidas ya se sincronizan.');
+    updateCloudStatus(); cloudBackground();
+  });
+  document.addEventListener('visibilitychange',() => { if (!document.hidden) cloudBackground(); });
+  window.addEventListener('online',cloudBackground);
   window.addEventListener('beforeunload',event => {
     if (hasStarted && game.player && game.state !== 'menu') { event.preventDefault(); event.returnValue = ''; }
   });

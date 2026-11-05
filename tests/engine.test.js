@@ -709,6 +709,78 @@
       target.hp = target.maxHp; p.weapon = 'elemental'; p.attackCooldown = 0; p.combo = 0; game.attack(); ok(target.maxHp - target.hp > swordHit * 1.4, 'Much stronger');
     });
 
+    // Pone el reloj en una hora de la primera noche (o del día) y decide la tirada de la luna.
+    const NIGHT = 11 * 60, DAWN = 23 * 60;
+    function nightfall(roll) { Math.random = () => roll; game.player.playTime = NIGHT; game.update(1 / 60); Math.random = original.random; }
+    test('The day has morning, afternoon and night, and nights are numbered', () => {
+      const at = minutes => Z.dayClock(minutes * 60);
+      equal(Z.dayClock(0).phase, 'day'); near(Z.dayClock(0).hour, 8); equal(Z.dayClock(0).night, -1);
+      equal(at(5.99).phase, 'day'); equal(at(6).phase, 'afternoon'); equal(at(10.99).phase, 'afternoon');
+      equal(at(11).phase, 'night'); equal(at(11).night, 0); equal(at(16).night, 0, 'Past midnight is the same night'); equal(at(22.99).night, 0);
+      equal(at(23).phase, 'day'); equal(at(23).night, -1); equal(at(35).night, 1); equal(at(59).night, 2);
+      ok(Z.dayClock(NaN).hour === 8 && Z.dayClock(-5).hour === 8, 'Bad clocks fall back to the start');
+    });
+    test('The red moon rolls 5 percent once per night and lasts until dawn', () => {
+      const p = fixture(); near(Z.BLOOD_MOON.chance, .05);
+      nightfall(.0499); equal(p.bloodMoon, true, 'Just under 5 percent'); equal(p.moonNight, 0);
+      p.playTime = DAWN - 1; Math.random = () => .99; game.update(1 / 60); equal(p.bloodMoon, true, 'Lasts the whole night, no reroll');
+      p.playTime = DAWN; game.update(1 / 60); equal(p.bloodMoon, false, 'Dawn ends it');
+      fixture(); nightfall(.05); equal(game.player.bloodMoon, false, 'Exactly 5 percent is not enough');
+      Math.random = () => 0; game.update(1 / 60); equal(game.player.bloodMoon, false, 'Only one roll per night');
+      game.player.playTime = 35 * 60; game.update(1 / 60); equal(game.player.bloodMoon, true, 'The next night rolls again'); equal(game.player.moonNight, 1);
+    });
+    test('Red moon enemies are stronger, faster and tougher, and go back at dawn', () => {
+      const p = fixture(), rat = enemy('rat', p.x + 200), boss = enemy('capo', p.x + 400), before = {...rat.stats}, bossBefore = {...boss.stats}; rat.hp = rat.maxHp / 2;
+      nightfall(0); const s = rat.stats, m = Z.BLOOD_MOON;
+      near(s.strength, before.strength * m.strength, 'Strength'); near(s.moveSpeed, before.moveSpeed * m.speed, 'Speed'); near(s.attackCooldown, before.attackCooldown / m.speed, 'Attack rate');
+      near(s.armor, before.armor + m.armor, 'Armor'); near(rat.maxHp, before.health * m.health, 'Health'); near(rat.hp, rat.maxHp / 2, 'Keeps its share of health');
+      ok(s.strength > before.strength && s.moveSpeed > before.moveSpeed && s.armor > before.armor && rat.maxHp > before.health, 'All of them go up');
+      near(boss.stats.strength, bossBefore.strength * m.strength, 'Bosses too');
+      const late = enemy('snake', p.x + 300); equal(late.stats.bloodMoon, true, 'Enemies that appear during the night are affected');
+      p.playTime = DAWN; game.update(1 / 60); near(rat.stats.strength, before.strength, 'Back to normal'); near(rat.maxHp, before.health); near(rat.hp, rat.maxHp / 2); ok(!rat.stats.bloodMoon);
+    });
+    test('Red moon kills pay double experience and coins', () => {
+      let p = fixture(); Math.random = () => 0; const normal = enemy('thief', p.x + 40); game.hitEnemy(normal, 1e6, true);
+      const xp = p.xp, coins = game.drops.reduce((n, d) => n + d.value, 0); ok(xp > 0 && coins > 0);
+      p = fixture(); nightfall(0); Math.random = () => 0; const moon = enemy('thief', p.x + 40); game.hitEnemy(moon, 1e6, true);
+      near(p.xp, xp * 2, 'Double experience'); near(game.drops.reduce((n, d) => n + d.value, 0), coins * 2, 'Double coins');
+    });
+    test('The Golem keeps the red moon when it rises with its next life', () => {
+      const p = fixture(); nightfall(0); const golem = enemy('golem', p.x + 300); golem.cd = {quake: 99, rock: 99, fortify: 99, ready: 1};
+      game.hitEnemy(golem, 1e7, true); advance(2.4); equal(golem.life, 1); equal(golem.stats.bloodMoon, true);
+    });
+    test('Zak dimension: always night in the HUD rules, no red moon on its enemies', () => {
+      const p = fixture('gero', true); const toasts = []; game.onEvent = (type, detail) => { if (type === 'toast') toasts.push(detail.message); };
+      const inside = game.enemies.filter(e => Z.isZakDimension(e.biome)), outside = game.enemies.filter(e => !Z.isZakDimension(e.biome) && !e.dead);
+      ok(inside.length && outside.length); ok(['sanctum', 'magic', 'throne'].every(Z.isZakDimension)); ok(!['village', 'cave', 'weeds', 'cave2', 'cave3', 'altar'].some(Z.isZakDimension));
+      game.biome = 'magic'; Object.assign(p, Z.DIMENSION_SPOTS.arrive); p.y = Z.MAGIC_ZONE.y + 300; nightfall(0);
+      equal(p.bloodMoon, true, 'The clock keeps running outside'); equal(toasts.length, 0, 'No warning inside the dimension');
+      ok(inside.every(e => !e.stats.bloodMoon), 'Dimension enemies do not change'); ok(outside.every(e => e.stats.bloodMoon), 'Normal world ones do');
+      const spawned = game.makeEnemy({id: 'mage-test', type: 'mage', x: 600, y: Z.MAGIC_ZONE.y + 200}); ok(!spawned.stats.bloodMoon, 'New ones either');
+      Object.assign(p, game.world.spawn); game.biome = 'village'; game.update(1 / 60); equal(toasts.length, 1, 'Warned when coming back'); ok(/Luna roja/.test(toasts[0]));
+      game.update(1 / 60); equal(toasts.length, 1, 'Only once');
+    });
+    test('The red moon survives a save and old or stale saves stay valid', () => {
+      const p = fixture('gero', true); nightfall(0); const target = game.enemies.find(e => e.biome === 'cave'); target.hp = target.maxHp * .5; const hp = target.hp, save = game.snapshot();
+      game.newGame('tena'); game.restore(save, 1); equal(game.player.bloodMoon, true); equal(game.player.moonNight, 0);
+      Math.random = () => .99; game.update(1 / 60); equal(game.player.bloodMoon, true, 'Loading does not roll again');
+      const loaded = game.enemies.find(e => e.id === target.id); equal(loaded.stats.bloodMoon, true); near(loaded.hp, hp, 'Health is kept');
+      const old = game.snapshot(); delete old.player.bloodMoon; delete old.player.moonNight; game.restore(old, 1); equal(game.player.bloodMoon, false); equal(game.player.moonNight, -1);
+      const stale = game.snapshot(); stale.player.bloodMoon = true; stale.player.moonNight = 0; stale.player.playTime = 60; game.restore(stale, 1); equal(game.player.bloodMoon, false, 'A red moon during the day is ignored');
+      const wrong = game.snapshot(); wrong.player.bloodMoon = true; wrong.player.moonNight = 3; wrong.player.playTime = NIGHT; game.restore(wrong, 1); equal(game.player.bloodMoon, false, 'From another night is ignored');
+    });
+    test('Red moon eyes glow red on every enemy of the normal world', () => {
+      // Sin temblor: si la cámara se mueve al azar entre los dos dibujos, el conteo de píxeles no se puede comparar.
+      const p = fixture(); p.playTime = 0; game.shakeTime = 0;
+      const reds = () => { const c = game.renderer.ctx, d = c.getImageData(0, 0, c.canvas.width, c.canvas.height).data; let n = 0; for (let i = 0; i < d.length; i += 4) if (d[i] - d[i + 1] > 90 && d[i] - d[i + 2] > 90) n++; return n; };
+      for (const type of ['thief', 'dog', 'snake', 'rat', 'bat', 'spider', 'worm', 'skeleton', 'archer', 'capo', 'yarara', 'vampire', 'golem', 'cerbero']) {
+        game.enemies = []; p.bloodMoon = false; p.playTime = 0; const e = enemy(type, p.x + 30, p.y + 10); e.alert = false; e.stun = 5;
+        game.renderer.draw(game, 0); const before = reds();
+        p.bloodMoon = true; p.moonNight = 0; game.refreshEnemyStats(); game.renderer.draw(game, 0);
+        ok(reds() > before, type + ' should show red eyes');
+      }
+    });
+
     game.pause(); cancelAnimationFrame(game.frame);
     return {passed: results.filter(r=>r.pass).length, failed: results.filter(r=>!r.pass).length, results};
   };

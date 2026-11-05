@@ -94,11 +94,13 @@ const SCENES = {
  }}
 };
 Object.assign(Z.Game.prototype, {
- enemyStatsFor(type,life=0){
+ enemyStatsFor(type,life=0,biome=null){
   const s=Z.enemyStats(type,this.player.level);
   if(type==='golem'){const l=GOLEM_LIVES[clamp(life,0,3)];s.health*=l.hp;s.maxHealth=s.health;s.strength*=l.str;}
+  if(biome&&this.bloodMoonOver(biome))Z.applyBloodMoon(s);
   return s;
  },
+ bloodMoonOver(biome){return this.player.bloodMoon===true&&!Z.isZakDimension(biome);},
  aimAt(e){const p=this.player,len=distance(e,p)||1;e.aimX=(p.x-e.x)/len;e.aimY=(p.y-e.y)/len;e.dir=Math.abs(e.aimX)>Math.abs(e.aimY)?(e.aimX>0?'right':'left'):(e.aimY>0?'down':'up');},
  // ¿El jugador está delante del jefe, a menos de `range` y dentro del ángulo indicado?
  inFront(e,range,cosine){const p=this.player,dx=p.x-e.x,dy=p.y-e.y,len=Math.hypot(dx,dy);return len<=range&&(len<12||(dx*e.aimX+dy*e.aimY)/len>=cosine);},
@@ -142,7 +144,7 @@ Object.assign(Z.Game.prototype, {
   return true;
  },
  riseComplete(e){
-  e.life++;const stats=this.enemyStatsFor(e.type,e.life);e.stats=stats;e.maxHp=stats.health;e.hp=stats.health;e.act=null;e.lowFortified=false;
+  e.life++;const stats=this.enemyStatsFor(e.type,e.life,e.biome);e.stats=stats;e.maxHp=stats.health;e.hp=stats.health;e.act=null;e.lowFortified=false;
   this.effect(e.x,e.y-20,'level',1.4,{radius:60,text:e.type==='golem'?'¡GÓLEM DE '+GOLEM_LIVES[e.life].name.toUpperCase()+'!':'VIDA '+(e.life+1)+' DE 3'});
   this.sound.play('slam');this.shake(6,.4);
  },

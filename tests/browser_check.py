@@ -5,8 +5,10 @@ import argparse, base64, hashlib, http.client, json, os, socket, struct, subproc
 class Browser:
     def __init__(self):
         self.profile = tempfile.TemporaryDirectory(prefix='zak-browser-')
-        chrome = r'C:\Program Files\Google\Chrome\Application\chrome.exe'
-        self.proc = subprocess.Popen([chrome, '--headless=new', '--disable-gpu', '--no-first-run', '--disable-extensions', '--no-default-browser-check', '--allow-file-access-from-files', '--remote-debugging-port=0', '--remote-allow-origins=http://localhost', '--user-data-dir='+self.profile.name, 'about:blank'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        chrome = os.environ.get('CHROME_PATH') or r'C:\Program Files\Google\Chrome\Application\chrome.exe'
+        # Chrome no arranca como root con su sandbox, y las sesiones en la nube corren como root.
+        sandbox = ['--no-sandbox'] if hasattr(os,'geteuid') and os.geteuid()==0 else []
+        self.proc = subprocess.Popen([chrome, *sandbox, '--headless=new', '--disable-gpu', '--no-first-run', '--disable-extensions', '--no-default-browser-check', '--allow-file-access-from-files', '--remote-debugging-port=0', '--remote-allow-origins=http://localhost', '--user-data-dir='+self.profile.name, 'about:blank'], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         portfile=Path(self.profile.name)/'DevToolsActivePort'
         for _ in range(100):
             if portfile.exists(): break

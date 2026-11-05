@@ -301,7 +301,7 @@
       weapon: 'fists', weapons: ['fists'], kills: 0, deaths: 0,
       abilityCooldown: 0, attackCooldown: 0,
       stoneAmmo: 1, stoneWalkTime: 0, bowCharge: 0,
-      playTime: 0, discovered: ['village'],
+      playTime: 0, moonNight: -1, bloodMoon: false, discovered: ['village'],
       coins: 0, herbs: 0, sharpen: 0, lessons: 0,
       materials: Zak.emptyMaterials(), axe: 0, pickaxe: 0, torch: false,
       offerings: Zak.emptyOfferings(), altar: Zak.emptyAltar(), portal: false, throneKeys: 0, zakBest: 0,
@@ -361,6 +361,29 @@
       power: Zak.strikePower(strength), xpMultiplier, speedTier: movement.tier, speedLabel: movement.label,
       veteran, damageMultiplier: (1 + 0.1 * clamp(Math.floor(finite(player.sharpen)), 0, 5)) * veteran
     };
+  };
+
+  // El día dura 24 minutos: cada hora del juego es un minuto real y toda partida arranca a las 08:00.
+  Zak.DAY_START = 8;
+  Zak.DAY_PHASES = { day: { name: 'Día', icon: '☀' }, afternoon: { name: 'Tarde', icon: '◒' }, night: { name: 'Noche', icon: '☾' } };
+  // `night` numera las noches desde 0 (de 19:00 a 07:00) y vale -1 cuando no es de noche.
+  Zak.dayClock = function (playTime) {
+    const total = Zak.DAY_START + Math.max(0, finite(playTime)) / 60, hour = total % 24;
+    const phase = hour >= 7 && hour < 14 ? 'day' : hour >= 14 && hour < 19 ? 'afternoon' : 'night';
+    return { hour, phase, night: phase === 'night' ? Math.floor((total - 19) / 24) : -1 };
+  };
+
+  // Luna roja: se tira una vez por noche y solo afecta a los enemigos de la dimensión normal.
+  Zak.BLOOD_MOON = { chance: 0.05, health: 1.5, strength: 1.5, armor: 2, speed: 1.25, xp: 2, coins: 2 };
+  Zak.applyBloodMoon = function (stats) {
+    const moon = Zak.BLOOD_MOON;
+    stats.health *= moon.health; stats.maxHealth = stats.health;
+    stats.strength *= moon.strength;
+    stats.armor += moon.armor;
+    stats.moveSpeed *= moon.speed; stats.attackCooldown /= moon.speed;
+    stats.xp *= moon.xp;
+    stats.bloodMoon = true;
+    return stats;
   };
 
   Zak.enemyStats = function (type, playerLevel) {

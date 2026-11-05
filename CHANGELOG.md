@@ -6,6 +6,27 @@ Cada versión lista sus cambios agrupados por tipo:
 - **Change:** algo que ya existía y ahora funciona distinto.
 - **Fix:** un error corregido.
     
+## v2.16 — 2026-11-05
+* Feature
+    - **Día, tarde y noche:** el reloj de arriba a la derecha ahora dice en qué parte del día estás. El día completo dura 24 minutos reales: **día** de 07:00 a 14:00, **tarde** de 14:00 a 19:00 con una luz dorada que crece hasta el atardecer, y **noche** de 19:00 a 07:00.
+    - **Luna roja:** cada noche hay un 5% de que salga, y dura hasta que amanece. Se ve una luna roja en el cielo, el mundo se tiñe de rojo y un aviso te lo dice. En las cuevas no se ve el cielo, pero sus enemigos cambian igual.
+        - Los enemigos, incluidos los jefes, tienen 50% más de vida y de fuerza, 2 más de armadura y se mueven 25% más rápido. Los comunes también atacan más seguido.
+        - A cambio, cada enemigo da **el doble de experiencia y de monedas**.
+        - **Ojos rojos brillantes:** todos los enemigos los tienen durante esa noche, hasta el Capo, que los deja ver a través de los anteojos.
+        - Si guardás durante la luna roja, sigue al cargar la partida.
+    - **Dimensión de Zak:** allá siempre es de noche (el reloj dice «Noche eterna») y la luna roja no llega: sus enemigos no cambian. Si salió mientras estabas adentro, te enterás al volver.
+
+## v2.15 — 2026-11-05
+* Feature
+    - **Partidas en la nube:** con una cuenta (mail y contraseña), las tres ranuras se sincronizan solas entre todos tus dispositivos, sin exportar ni importar. Se entra desde **Cuenta y nube**, en el menú o la pausa. Hay que preparar Supabase una vez ([docs/CLOUD.md](docs/CLOUD.md)).
+        - Cada persona solo puede ver y cambiar sus propias partidas.
+        - Primero se guarda en el dispositivo: sin conexión el juego sigue normal y sincroniza cuando vuelve.
+        - Si una ranura cambió en dos dispositivos, el juego pregunta cuál dejar en vez de pisarla. Borrar una ranura la borra en todos tus dispositivos.
+        - Se puede recuperar la contraseña por mail. Sin cuenta, todo sigue funcionando como antes, con exportar e importar.
+        - El apodo del ranking viaja con la partida, para que en un dispositivo nuevo no figures como «Anónimo».
+* Change
+    - El menú principal se compacta en ventanas bajas, para que entren todas las opciones.
+
 ## v2.14 — 2026-11-04
 * Feature
     - **Animación al cruzar el portal:** el portal te chupa girando mientras se agranda y caen chispas en espiral, la pantalla se va a blanco y salís en el Santuario de otro portal que se cierra atrás tuyo. Dura 2,7 s y se puede saltear.

@@ -406,6 +406,13 @@
     c.save(); c.translate(Math.round(x), Math.round(y)); c.globalAlpha *= alpha; Px.mode = "flash"; Px.flashColor = color; body(); c.restore(); Px.mode = null; Px.flashColor = "#ffffff";
   }
   const localAim = e => Math.atan2(e.aimY || 0, (e.aimX === undefined ? 1 : e.aimX) * (e.dir === "left" ? -1 : 1));
+  // Luna roja: los ojos del enemigo que se está dibujando se vuelven rojos y brillan.
+  let moonEyes = false;
+  function eye(c, x, y, w, h, color) {
+    if (!moonEyes) return rect(c, x, y, w, h, color);
+    rect(c, x, y, w, h, "#ff2a2a");
+    if (!Px.mode) { Px.glow(c, x + w / 2, y + h / 2, w + 2, "#ff1e1e", .6); rect(c, x, y, w, h, "#ff4a3c"); if (w > 1) rect(c, x, y, 1, 1, "#ffd8cc"); }
+  }
 
   // El Capo del Eco: traje a rayas, sombrero, anteojos negros, bigote y faca.
   function capoBody(c, e, time, walk) {
@@ -439,6 +446,7 @@
     rect(c, -3, -32, 6, 2, "#a07c5a");
     rect(c, -6, -41, 12, 9, "#b88b63"); rect(c, -5, -33, 10, 2, "#a07a55"); rect(c, 5, -41, 1, 8, "#9c7450");
     rect(c, -5, -38, 4, 3, "#14161a"); rect(c, 1, -38, 4, 3, "#14161a"); rect(c, -1, -37, 2, 1, "#14161a"); rect(c, -4, -38, 1, 1, "#8aa3a8"); rect(c, 2, -38, 1, 1, "#8aa3a8");
+    if (moonEyes) { eye(c, -4, -37, 2, 1); eye(c, 2, -37, 2, 1); }
     rect(c, -4, -34, 8, 1, "#3b2d27"); rect(c, 3, -38, 1, 5, "#8a5d44");
     rect(c, 4, -33, 4, 1, "#efe9d6"); rect(c, 8, -33, 1, 1, wind || r ? "#ff7a3a" : "#c9502a");
     if (Px.mode !== "outline") { const puff = (time * .9) % 1; rect(c, 8 + Math.round(Math.sin(time * 3)), -35 - puff * 8, 1, 2, "#e6dec533"); }
@@ -472,7 +480,8 @@
     const [hx, hy] = points[N - 1], open = spit && e.telegraph < .5 ? 3 : spit ? 1 : 0;
     poly(c, [[hx - 6, hy - 4], [hx + 3, hy - 6], [hx + 12, hy - 2], [hx + 11, hy + 1], [hx + 3, hy + 2], [hx - 6, hy + 3]], "#8a6bb0");
     poly(c, [[hx - 4, hy - 4], [hx + 3, hy - 6], [hx + 10, hy - 3], [hx + 2, hy - 2]], "#b294d4");
-    rect(c, hx + 3, hy - 4, 3, 2, spit ? "#ff8f7a" : "#f1d36b"); rect(c, hx + 4, hy - 4, 1, 2, "#1d1626");
+    if (moonEyes) eye(c, hx + 3, hy - 4, 3, 2);
+    else { rect(c, hx + 3, hy - 4, 3, 2, spit ? "#ff8f7a" : "#f1d36b"); rect(c, hx + 4, hy - 4, 1, 2, "#1d1626"); }
     poly(c, [[hx - 4, hy + 2 + open], [hx + 3, hy + 3 + open], [hx + 10, hy + 2 + open], [hx + 3, hy + 5 + open], [hx - 4, hy + 5 + open]], "#7a5ca0");
     if (open) {
       rect(c, hx - 2, hy + 2, 12, open, "#3d1830"); rect(c, hx + 7, hy + 2, 1, 2, "#ffffff"); rect(c, hx + 3, hy + 2, 1, 2, "#ffffff");
@@ -509,8 +518,8 @@
     rect(c,-4,-10,8,2,shade);rect(c,-1,-18,2,8,bone);
     for(let k=0;k<3;k++)rect(c,-5,-18+k*2.5,10,1,bone);
     rect(c,-8,-17,2,8,shade);rect(c,6,-17,2,8,shade);
-    rect(c,-5,-27,10,8,P.ink);rect(c,-4,-26,8,7,"#efe9d6");rect(c,-3,-23,2,2,"#1d1a17");rect(c,1,-23,2,2,"#1d1a17");
-    rect(c,-2,-20,4,1,dark);if(e.alert){rect(c,-3,-23,1,1,"#c6a2ff");rect(c,1,-23,1,1,"#c6a2ff");}
+    rect(c,-5,-27,10,8,P.ink);rect(c,-4,-26,8,7,"#efe9d6");eye(c,-3,-23,2,2,"#1d1a17");eye(c,1,-23,2,2,"#1d1a17");
+    rect(c,-2,-20,4,1,dark);if(e.alert&&!moonEyes){rect(c,-3,-23,1,1,"#c6a2ff");rect(c,1,-23,1,1,"#c6a2ff");}
     if(e.type==="skeleton"){
       rect(c,-12,-19,6,11,"#3a3226");rect(c,-11,-18,4,9,"#6b5a3e");rect(c,-10,-15,2,2,"#b7b9be");
       rect(c,7,-23,2,13,"#c9d1d6");rect(c,8,-24,1,11,"#eef2f3");rect(c,5,-11,6,2,"#7a6a4a");
@@ -551,7 +560,7 @@
     rect(c, hx - 7, -40 + hunch, 2, 3, skin); rect(c, hx + 5, -40 + hunch, 2, 3, skin); rect(c, hx - 8, -41 + hunch, 1, 2, skin); rect(c, hx + 7, -41 + hunch, 1, 2, skin);
     rect(c, hx - 6, -44 + hunch, 12, 3, "#15121a"); rect(c, hx - 6, -42 + hunch, 2, 3, "#15121a"); rect(c, hx + 4, -42 + hunch, 2, 3, "#15121a"); rect(c, hx - 1, -42 + hunch, 2, 2, "#15121a"); rect(c, hx - 3, -44 + hunch, 4, 1, "#33303f");
     const hungry = lungeWind || lungeRun || drain || swipeWind;
-    rect(c, hx - 4, -38 + hunch, 3, 2, "#2a0a12"); rect(c, hx + 1, -38 + hunch, 3, 2, "#2a0a12"); rect(c, hx - 3, -38 + hunch, 2, 1, hungry ? "#ff6a4a" : "#ff3b3b"); rect(c, hx + 2, -38 + hunch, 2, 1, hungry ? "#ff6a4a" : "#ff3b3b");
+    rect(c, hx - 4, -38 + hunch, 3, 2, "#2a0a12"); rect(c, hx + 1, -38 + hunch, 3, 2, "#2a0a12"); eye(c, hx - 3, -38 + hunch, 2, 1, hungry ? "#ff6a4a" : "#ff3b3b"); eye(c, hx + 2, -38 + hunch, 2, 1, hungry ? "#ff6a4a" : "#ff3b3b");
     if (hungry) { rect(c, hx - 3, -35 + hunch, 6, 3, "#3d0a14"); rect(c, hx - 3, -35 + hunch, 1, 2, "#ffffff"); rect(c, hx + 2, -35 + hunch, 1, 2, "#ffffff"); }
     else { rect(c, hx - 2, -34 + hunch, 4, 1, "#7a5a6a"); rect(c, hx - 2, -34 + hunch, 1, 2, "#ffffff"); rect(c, hx + 1, -34 + hunch, 1, 2, "#ffffff"); }
     const right = limb(c, 8, -28, ra, 12, 4, "#2a2230"); claws(right, ra);
@@ -566,7 +575,7 @@
       for (let i = 0; i < 18; i++) { const an = i * .9 + time * 2, r = 36 * (1 - k) + 6, s = 4 + i % 4; box(c, Math.cos(an) * r - s / 2, -pile * .6 + Math.sin(an) * r * .55 - s, s, s, i % 2 ? next.color : col); }
       const rock = tone(k > .5 ? next.color : col, .8), seam = tone(rock, .55); box(c, -22, -pile, 44, pile, rock); box(c, -14, -pile - 8, 28, 10, k > .5 ? next.color : col);
       for (let i = 0; i < Math.floor(pile / 9); i++) { rect(c, -20, -pile + 7 + i * 9, 40, 1, seam); rect(c, -14 + (i % 2) * 16, -pile + i * 9, 1, 7, seam); rect(c, -8 + (i % 3) * 12, -pile + 3 + i * 9, 3, 2, "#ffd97a"); }
-      rect(c, -8, -pile - 4, 5, 3, "#ffb347"); rect(c, 3, -pile - 4, 5, 3, "#ffb347");
+      eye(c, -8, -pile - 4, 5, 3, "#ffb347"); eye(c, 3, -pile - 4, 5, 3, "#ffb347");
       return;
     }
     const quake = a.id === "quake", ph = quake ? t % 1.15 : 0, slam = quake && ph >= .9, lift = quake && !slam ? Math.min(1, ph / .55) : 0, thrown = a.id === "throw", tk = thrown ? Math.min(1, t / .7) : 0;
@@ -587,7 +596,7 @@
     box(c, -31, -64, 16, 15, col); box(c, 15, -64, 16, 15, col); rect(c, -29, -62, 6, 2, hi); rect(c, 17, -62, 6, 2, hi);
     const head = lift > .5 ? -1 : 0;
     box(c, -11, -72 + head, 22, 14, mid); box(c, -9, -71 + head, 18, 11, col);
-    rect(c, -7, -66 + head, 5, 3, "#1a1412"); rect(c, 2, -66 + head, 5, 3, "#1a1412"); rect(c, -6, -66 + head, 3, 2, glow); rect(c, 3, -66 + head, 3, 2, glow); rect(c, -4, -61 + head, 8, 1, dark);
+    rect(c, -7, -66 + head, 5, 3, "#1a1412"); rect(c, 2, -66 + head, 5, 3, "#1a1412"); eye(c, -6, -66 + head, 3, 2, glow); eye(c, 3, -66 + head, 3, 2, glow); rect(c, -4, -61 + head, 8, 1, dark);
     // Casco con linterna.
     box(c, -13, -77 + head, 26, 7, "#c9a23c"); rect(c, -15, -71 + head, 30, 2, "#8a6c22"); rect(c, -13, -77 + head, 26, 1, "#ecd27a"); box(c, -3, -80 + head, 6, 5, "#5a5040"); rect(c, -2, -79 + head, 4, 3, "#fff2b0");
     if (Px.mode !== "outline") Px.glow(c, 0, -77 + head, 9, "#ffe9a0", .55);
@@ -616,7 +625,7 @@
     poly(c, [[x - 6, y - 5], [x - 1, y - 8], [x + 5, y - 7], [x + 8, y - 3], [x + 19, y - 1], [x + 19, y], [x + 7, y - 1], [x - 3, y - 3]], light);
     poly(c, [[x + 8, y + 1], [x + 20, y + 1], [x + 20, y + 3], [x + 8, y + 4]], fur);
     rect(c, x + 19, y - 2, 4, 3, "#0f0b0d"); rect(c, x + 20, y - 2, 1, 1, "#6d6268");
-    rect(c, x + 3, y - 5, 5, 1, dark); rect(c, x + 4, y - 4, 3, 2, "#1a1012"); rect(c, x + 5, y - 4, 2, 2, alert ? "#ff5a3c" : "#f0b040"); rect(c, x + 5, y - 4, 1, 1, "#ffe0a0");
+    rect(c, x + 3, y - 5, 5, 1, dark); rect(c, x + 4, y - 4, 3, 2, "#1a1012"); eye(c, x + 5, y - 4, 2, 2, alert ? "#ff5a3c" : "#f0b040"); if (!moonEyes) rect(c, x + 5, y - 4, 1, 1, "#ffe0a0");
     poly(c, [[x - 7, y - 5], [x - 6, y - 19], [x + 1, y - 7]], fur); poly(c, [[x - 5, y - 7], [x - 5, y - 15], [x - 1, y - 7]], "#7a4a52");
     poly(c, [[x - 8, y + 1], [x - 13, y + 7], [x - 7, y + 5], [x - 8, y + 9], [x - 3, y + 6]], fur);
   }
@@ -1206,17 +1215,18 @@
       const wing=wingFrame===0?[[-3,-3],[-13,-10],[-10,-4],[-14,-1],[-4,1]]:wingFrame===2?[[-3,-2],[-12,3],[-9,2],[-11,7],[-4,2]]:[[-3,-3],[-14,-3],[-11,-1],[-14,2],[-4,1]];
       poly(c,wing,"#4a3e58");poly(c,wing.map(([a,b])=>[-a,b]),"#4a3e58");
       rect(c,-4,-5,8,7,"#2e2638");rect(c,-3,-4,6,5,"#5b4d6b");rect(c,-3,-7,2,3,"#2e2638");rect(c,1,-7,2,3,"#2e2638");
-      rect(c,-2,-3,1,1,e.alert?"#ff6a5a":"#d8c27a");rect(c,1,-3,1,1,e.alert?"#ff6a5a":"#d8c27a");rect(c,-1,0,2,1,"#e9e2d0");
+      eye(c,-2,-3,1,1,e.alert?"#ff6a5a":"#d8c27a");eye(c,1,-3,1,1,e.alert?"#ff6a5a":"#d8c27a");rect(c,-1,0,2,1,"#e9e2d0");
     } else if(e.type==="spider"){
       const skitter=Math.round(Math.sin(time*(e.alert?22:9)+x)*1);
       for(let k=0;k<4;k++){const lx=-6+k*4,swing=(k%2?skitter:-skitter);rect(c,lx-3,-6+swing,2,6,"#241c1a");rect(c,lx+1,-6-swing,2,6,"#241c1a");rect(c,lx-4,-1+swing,2,2,"#241c1a");rect(c,lx+2,-1-swing,2,2,"#241c1a");}
       rect(c,-9,-10,11,8,"#2e2420");rect(c,-8,-9,9,6,"#4a3b34");rect(c,-6,-8,4,2,"#7a4e7e");rect(c,-5,-6,2,1,"#9a6a9e");
       rect(c,2,-8,7,6,"#3b2f2a");rect(c,3,-7,5,4,"#5a4a42");
-      rect(c,6,-7,1,1,e.alert?"#ff6a4a":"#e0b050");rect(c,8,-6,1,1,e.alert?"#ff6a4a":"#e0b050");rect(c,8,-3,2,2,"#d9d2c0");
+      eye(c,6,-7,1,1,e.alert?"#ff6a4a":"#e0b050");eye(c,8,-6,1,1,e.alert?"#ff6a4a":"#e0b050");rect(c,8,-3,2,2,"#d9d2c0");
     } else if(e.type==="worm"){
       if(!e.alert){
         poly(c,[[-12,0],[-8,-5],[0,-7],[8,-5],[12,0]],"#4a3a2e");poly(c,[[-9,-1],[-6,-4],[0,-5],[6,-4],[9,-1]],"#6e5643");
         rect(c,-5,-4,2,1,"#8a725c");rect(c,3,-3,2,1,"#8a725c");rect(c,-1,-6,2,2,"#3a2c22");
+        if(moonEyes){eye(c,-3,-4,1,1);eye(c,2,-4,1,1);}
       } else {
         const sway=Math.round(Math.sin(time*5+x)*2),gape=Math.sin(time*7+x)>.3?1:0;
         poly(c,[[-13,0],[-9,-4],[9,-4],[13,0]],"#4a3a2e");
@@ -1226,6 +1236,7 @@
         rect(c,-6+sway,-24,12,3,"#9a5e52");rect(c,-3+sway,-21,6,4+gape,"#4a1e1e");
         rect(c,-3+sway,-21,1,2,"#efe2c8");rect(c,2+sway,-21,1,2,"#efe2c8");rect(c,0+sway,-18+gape,1,1,"#efe2c8");
         rect(c,-5,-10,10,1,"#8a564a");rect(c,-5+sway/2,-17,10,1,"#9a6458");
+        if(moonEyes){eye(c,-5+sway,-23,2,1);eye(c,3+sway,-23,2,1);}
       }
     } else if(e.type==="thief"){
       rect(c,-5,-6,4,6+walk,"#3b3b4d");rect(c,1,-6,4,6-walk,"#3b3b4d");
@@ -1238,7 +1249,7 @@
       rect(c,7,-8+walk,6,1,"#9e8260");
       rect(c,-6,-24,12,9,"#2c2f3b");rect(c,-4,-25,8,2,"#393a49");
       rect(c,-4,-21,8,5,"#ba8c65");rect(c,-5,-18,10,4,"#965258");
-      rect(c,-3,-20,2,1,"#21282c");rect(c,2,-20,2,1,"#21282c");
+      eye(c,-3,-20,2,1,"#21282c");eye(c,2,-20,2,1,"#21282c");
       rect(c,-5,-24,10,3,"#4d485c");rect(c,4,-22,2,5,"#4d485c");
     } else if(e.type==="dog"){
       // Galope: las patas de adelante y de atrás se alternan; la cola se menea.
@@ -1250,7 +1261,7 @@
       rect(c,0,-15,9,11,"#927855");rect(c,1,-14,7,8,"#b59c73");
       rect(c,0,-17,3,5,"#614f40");rect(c,6,-17,3,5,"#614f40");
       rect(c,5,-9,7,4,"#bba47d");rect(c,10,-9,3,3,"#373b35");
-      rect(c,5,-12,2,2,e.alert?"#db8456":"#373b35");
+      eye(c,5,-12,2,2,e.alert?"#db8456":"#373b35");
       rect(c,9,-5,2,e.alert?3:2,"#c58072");
       rect(c,-14,-12+wag,3,6,"#80694e");rect(c,-12,-10,3,3,"#9c825e");
     } else if(e.type==="snake"){
@@ -1258,20 +1269,21 @@
       const speed=e.alert?11:5;
       for(let k=0;k<7;k++){const sx=-13+k*3,sy=-3+Math.round(Math.sin(time*speed+x*.1-k*.95)*1.4);rect(c,sx,sy,4,3,k%2?"#789955":"#557947");rect(c,sx,sy,3,1,k%2?"#adc375":"#789955");}
       const hy=Math.round(Math.sin(time*speed+x*.1)*1);
-      rect(c,4,-8+hy,5,6,"#557947");rect(c,6,-11+hy,6,5,"#93ae63");rect(c,6,-11+hy,5,1,"#bad27b");rect(c,9,-10+hy,1,1,"#2b331f");
+      rect(c,4,-8+hy,5,6,"#557947");rect(c,6,-11+hy,6,5,"#93ae63");rect(c,6,-11+hy,5,1,"#bad27b");eye(c,9,-10+hy,1,1,"#2b331f");
       if(Math.sin(time*7+x)>.2){rect(c,12,-8+hy,2,1,"#c56f68");rect(c,14,-9+hy,1,1,"#c56f68");rect(c,14,-7+hy,1,1,"#c56f68");}
     } else {
       const wiggle=Math.round(Math.sin(time*9+x)*1);
       rect(c,-10,-2+wiggle,6,1,"#ba8a86");rect(c,-13,-3,4,1,"#ba8a86");rect(c,-14,-5-wiggle,2,2,"#ba8a86");
       rect(c,-6,-7,12,7,"#494b53");rect(c,-5,-8,9,6,"#7b7c82");
       rect(c,-4,-7,7,3,"#949196");rect(c,3,-6,6,4,"#a29b9a");
-      rect(c,8,-4,2,1,"#d39a94");rect(c,5,-5,1,1,"#252f2a");
+      rect(c,8,-4,2,1,"#d39a94");eye(c,5,-5,1,1,"#252f2a");
       rect(c,1,-9,4,4,"#6a6470");rect(c,2,-8,2,2,"#b78b93");
       rect(c,-4,-1+walk,3,2,"#b08f8b");rect(c,3,-1-walk,3,2,"#b08f8b");
     }
   }
   function drawEnemy(c, e, time) {
     if(e.dead || e.hp <= 0) return;
+    moonEyes=e.stats?.bloodMoon===true;
     if(e.type==="capo"||e.type==="yarara") return drawBoss(c,e,time);
     if(BIG_BOSSES[e.type]) return drawBigBoss(c,e,time);
     const x=Math.round(e.x), y=Math.round(e.y);
@@ -2007,8 +2019,18 @@
       for(const effect of game.effects||[])this.drawEffect(c,effect,time);
       if(game.biome==="weeds"&&!menu)for(let k=0;k<4;k++)tuft(c,p.x-8+k*5,p.y+2,"#587a43",true,Math.sin(time*2)>0?1:0);
       c.restore();
-      const hour=(8+(menu?0:(p.playTime||0))/60)%24,night=Math.max(0,Math.cos((hour-1)*Math.PI/12)),outdoors=!["throne","sanctum","magic","altar"].includes(game.biome)&&!isCaveZone(game.biome);
+      const hour=Z.dayClock(menu?0:p.playTime).hour,night=Math.max(0,Math.cos((hour-1)*Math.PI/12)),outdoors=!["throne","sanctum","magic","altar"].includes(game.biome)&&!isCaveZone(game.biome);
       if(game.settings?.particles!==false&&!["throne","sanctum","magic"].includes(game.biome)){c.save();c.translate(-ox,-oy);drawAmbient(c,game,ox,oy,W,H,time,outdoors||menu?night:0);c.restore();}
+      // Luna roja: aparece y se va de a poco durante la primera y la última hora de la noche.
+      const nightHours=hour>=19?hour-19:hour+5,moonLight=!menu&&p.bloodMoon===true?Math.max(0,Math.min(1,nightHours,12-nightHours)):0;
+      const redSky=()=>{
+        if(moonLight<=0)return;
+        c.fillStyle="rgba(138,12,28,"+(moonLight*.2)+")";c.fillRect(0,0,W,H);
+        Px.shade(c,W/2,H*.445,W,H,[[150,0],[400,.34]],"#3a0410",moonLight);
+        const mx=Math.round(W*.72),my=30;c.save();c.globalAlpha=moonLight;
+        Px.glow(c,mx,my,34,"#ff2a2a",.45);Px.oval(c,mx,my,13,13,"#b3202a");Px.oval(c,mx-2,my-2,10,10,"#e0433f");
+        rect(c,mx-6,my-6,4,3,"#b3202a");rect(c,mx+2,my+1,5,3,"#b3202a");rect(c,mx-3,my+5,3,2,"#b3202a");c.restore();
+      };
       if(["throne","sanctum","magic"].includes(game.biome)&&!menu){
         c.fillStyle="rgba(22,10,44,.30)";c.fillRect(0,0,W,H);
         if(game.biome==="magic")for(const o of objects)if(o.type==="campfire"&&visible(o.x,o.y,80))Px.glow(c,o.x-ox+o.w/2,o.y-oy,70,"#ff8c3c",.3+Math.sin(time*9+o.x)*.03);
@@ -2027,6 +2049,7 @@
         for(let k=0;k<7;k++){const fx=((hash(k,4)*W*1.5+time*(6+k))%(W+200))-100,fy=hash(k,6)*H;c.globalAlpha=.05;Px.oval(c,fx,fy,90,14,"#cfc8e0");c.globalAlpha=.04;Px.oval(c,fx+12,fy+2,60,8,"#cfc8e0");}
         c.globalAlpha=1;
         Px.shade(c,p.x-ox,p.y-oy-10,W,H,[[120,0],[340,.55]],"#0a0810");
+        redSky();
       } else if(isCaveZone(game.biome)&&game.biome!=="cave"&&!menu){
         const px=Math.round(p.x-ox),py=Math.round(p.y-oy-10),flicker=Math.sin(time*13)*3+Math.sin(time*7)*2,outer=235+Math.round(flicker/3)*3;
         Px.shade(c,px,py,W,H,[[55,0],[Math.round(outer*.72),.36],[outer,.88]],"#07080a");
@@ -2040,9 +2063,11 @@
         for(const o of objects)if(o.type==="lantern"&&visible(o.x,o.y,60))Px.glow(c,o.x-ox+o.w/2,o.y-oy-20,40,"#f3bc59",.3+Math.sin(time*7+o.x)*.03);
       } else {
         Px.shade(c,W/2,H*.445,W,H,[[135,0],[380,.16]],"#1d2d1e");
-        const sunset=Math.max(0,1-Math.abs(hour-18)/2);
+        // Tarde: la luz se vuelve dorada desde las 14:00, llega al máximo a las 18:00 y se apaga a las 20:00.
+        const sunset=hour<14||hour>=20?0:hour<18?(hour-14)/4:(20-hour)/2;
         if(night>.01){c.fillStyle="rgba(24,34,67,"+(night*.34)+")";c.fillRect(0,0,W,H);}
-        if(sunset>.01){c.fillStyle="rgba(217,122,69,"+(sunset*.09)+")";c.fillRect(0,0,W,H);}
+        if(sunset>.01){c.fillStyle="rgba(217,122,69,"+(sunset*.18)+")";c.fillRect(0,0,W,H);}
+        redSky();
         if(night>.05)for(const o of objects){
           if(!visible(o.x,o.y,(H*.445)))continue;
           if(o.type==="lantern")Px.glow(c,o.x-ox+o.w/2,o.y-oy-20,46,"#ffd272",night*.42);

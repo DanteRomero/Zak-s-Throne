@@ -19,6 +19,8 @@ Z.ENCLOSED_ZONES={...Z.DEEP_ZONES,throne:Z.THRONE_ZONE,dimension:Z.DIMENSION_ZON
 Z.VIEW_ZONES={magic:'dimension',sanctum:'dimension'};
 // Zonas seguras: no hay daño y se curan los estados.
 Z.SAFE_ZONES={village:true,sanctum:true};Z.isSafe=biome=>!!Z.SAFE_ZONES[biome];
+// La dimensión de Zak: siempre es de noche y la luna roja no llega.
+Z.ZAK_DIMENSION={sanctum:true,magic:true,throne:true};Z.isZakDimension=biome=>!!Z.ZAK_DIMENSION[biome];
 Z.DIMENSION_SPOTS={arrive:{x:600,y:3610}};
 Z.THRONE_SPOTS={arrive:{x:-400,y:2420},zak:{x:-400,y:2010},seat:{x:-400,y:1968},exit:{x:-400,y:2110}};
 Z.createWorld=function(){

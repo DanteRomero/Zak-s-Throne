@@ -5,5 +5,4 @@ __pycache__/
 *.log
 
 # Contexto para Claude Code (no forma parte del juego)
-CLAUDE.md
 docs/contexto/

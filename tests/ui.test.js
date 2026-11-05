@@ -49,6 +49,15 @@
   const hudWait=()=>new Promise(r=>setTimeout(()=>{g.emit('tick');r();},120));g.settings.tips=false;g.player.x=1062;g.player.y=1462;await hudWait();
   assert('Sin tips no se muestra la tecla para interactuar',!!g.nearbyAction()&&document.getElementById('interaction-hint').classList.contains('hidden'));
   g.settings.tips=true;await hudWait();assert('Con tips vuelve la tecla',!document.getElementById('interaction-hint').classList.contains('hidden'));
+  // El reloj del HUD: día, tarde, noche, luna roja y dimensión de Zak.
+  const clock=document.getElementById('hud-time'),clockAt=async(minutes,moon=false,place=null)=>{const biome=g.biome;g.player.playTime=minutes*60;g.player.bloodMoon=moon;g.player.moonNight=moon?0:-1;if(place)g.biome=place;await hudWait();const shown=clock.textContent,red=clock.classList.contains('blood-moon'),statuses=document.getElementById('status-effects').textContent;g.biome=biome;return{shown,red,statuses};};
+  assert('A la mañana el reloj dice Día',/☀ DÍA · 08:00/.test((await clockAt(0)).shown));
+  assert('A las 15:00 dice Tarde',/TARDE · 15:00/.test((await clockAt(7)).shown));
+  const plainNight=await clockAt(13);assert('A las 21:00 dice Noche, sin luna roja',/☾ NOCHE · 21:00/.test(plainNight.shown)&&!plainNight.red&&!/Luna roja/.test(plainNight.statuses));
+  const redNight=await clockAt(13,true);assert('Con luna roja se ve en rojo y entre los estados',/LUNA ROJA · 21:00/.test(redNight.shown)&&redNight.red&&/Luna roja/.test(redNight.statuses));
+  const eternal=await clockAt(1,false,'magic');assert('En la dimensión de Zak siempre es de noche, aunque afuera sea de día',/NOCHE ETERNA/.test(eternal.shown)&&!/☀/.test(eternal.shown));
+  const noMoon=await clockAt(13,true,'throne');assert('Y la luna roja no se ve allá',/NOCHE ETERNA/.test(noMoon.shown)&&!noMoon.red&&!/Luna roja/.test(noMoon.statuses));
+  await clockAt(0);
   localStorage.setItem('zak.throne.save.3','{roto');document.getElementById('load-game').click();
   assert('Ranura dañada no puede cargarse',document.querySelectorAll('.save-slot')[2].disabled);close();close();
   const time=g.time;document.getElementById('pause-button').click();g.update(1);

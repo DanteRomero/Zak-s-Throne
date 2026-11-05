@@ -2,7 +2,7 @@
 
 Una aventura de acción y exploración en pixel art, vista desde arriba. Elegí a uno de seis amigos, preparate en la aldea y salí a explorar la cueva y los Yuyos.
 
-Versión actual: **v2.2**. Los cambios de cada versión están en [CHANGELOG.md](CHANGELOG.md).
+Versión actual: **v2.16**. Los cambios de cada versión están en [CHANGELOG.md](CHANGELOG.md).
 
 ## Jugar
 
@@ -53,9 +53,9 @@ Sin configuración, el ranking muestra las partidas de cada dispositivo. Para co
 
 ## Guardar y recuperar partidas
 
-Hay **tres ranuras de guardado manual** accesibles desde la pausa. Cada una muestra el personaje y el progreso de esa partida. Al comenzar una aventura nueva las ranuras existentes quedan intactas.
+Hay **tres ranuras de guardado manual** accesibles desde la pausa. Con una cuenta (**Cuenta y nube**, en el menú o la pausa), se sincronizan solas entre tus dispositivos; prepararlo lleva unos minutos ([docs/CLOUD.md](docs/CLOUD.md)). Cada una muestra el personaje y el progreso de esa partida. Al comenzar una aventura nueva las ranuras existentes quedan intactas.
 
-Los guardados se conservan en el almacenamiento local del navegador usado para jugar. Para trasladarlos a otro navegador o equipo, usá **Exportar** y **Importar**: se descarga o carga un archivo JSON de respaldo. Conservá una copia antes de borrar los datos del navegador.
+Los guardados se conservan en el almacenamiento local del navegador usado para jugar. Sin cuenta, para trasladarlos a otro navegador o equipo, usá **Exportar** y **Importar**: se descarga o carga un archivo JSON de respaldo. Conservá una copia antes de borrar los datos del navegador.
 
 ## El mundo
 
@@ -73,6 +73,18 @@ Los guardados se conservan en el almacenamiento local del navegador usado para j
 Las bajadas custodiadas no se abren mientras su jefe esté vivo; si reaparece mientras estás abajo, subir siempre se puede. El mapa marca el almacén ($), el herrero (⚒), las bajadas (▼ ▲), el altar (✝) y las guaridas de los jefes (☠). Dentro de una cueva profunda o del trono, el mapa muestra esa zona. Los enemigos vuelven a aparecer después de **35 segundos**; el Capo y la Yarará, después de **3 minutos**; el Chupasangre, de 4; el Gólem, de 5; y Cerbero, de 10.
 
 Al quedar noqueado volvés a la aldea. Si te vence un chorro aparece «Uhh... este gil me sacó guita»… y es literal: un chorro o el Capo se llevan el **30%** de tus monedas. Cualquier otra derrota cuesta el **10%**. Si Zak te ejecuta, perdés toda la guita, los materiales y las ofrendas (ver [El Trono de Zak](#el-trono-de-zak)).
+
+### Día, tarde y noche
+
+El día completo dura **24 minutos reales** (cada hora del juego es un minuto) y el reloj de la pantalla indica en qué parte estás:
+
+- **Día:** de 07:00 a 14:00.
+- **Tarde:** de 14:00 a 19:00, con una luz dorada que crece hasta el atardecer.
+- **Noche:** de 19:00 a 07:00.
+
+**Luna roja:** cada noche hay un **5%** de que salga, y dura hasta que amanece. Durante esa noche, todos los enemigos de la dimensión normal, jefes incluidos, tienen los **ojos rojos brillantes**, **50%** más de vida y de fuerza, **2** más de armadura y se mueven un **25%** más rápido (los comunes también atacan más seguido). A cambio dan **el doble de experiencia y de monedas**.
+
+En la **dimensión de Zak** siempre es de noche y la luna roja no llega: sus enemigos no cambian. El reloj sigue corriendo afuera, así que al volver puede ser otra hora.
 
 ## Combate
 
@@ -342,6 +354,7 @@ Implementado con **HTML, CSS y JavaScript**, sin paquetes externos. El mundo se 
 - `src/bosses.js`: el Chupasangre, el Gólem Minero, Cerbero y Zak; altar de ofrendas, portales e invocaciones.
 - `src/ui.js`: menús, HUD, tienda, ranking, guardados y controles táctiles.
 - `src/ranking.js` y `src/config.js`: ranking local u online (Supabase).
+- `src/cloud.js`: cuentas y partidas en la nube (Supabase).
 - `tests/rules.test.js`: 37 pruebas de reglas y casos límite.
 
 Si ya tenés Node instalado:
@@ -350,14 +363,15 @@ Si ya tenés Node instalado:
 node tests/rules.test.js
 ```
 
-Abrí `tests/index.html` para ejecutar las 37 pruebas de reglas y las 88 pruebas de integración del motor en el navegador. El resultado detalla cada caso aprobado o fallido.
+Abrí `tests/index.html` para ejecutar las 37 pruebas de reglas y las 99 pruebas de integración del motor en el navegador. El resultado detalla cada caso aprobado o fallido.
 
-También se incluyen 31 pruebas de interfaz y de pixel art, 18 del ranking (con un servidor simulado) y 33 de controles táctiles con Chrome y Python 3, sin librerías adicionales. El verificador abre un perfil temporal aislado; nunca usa tus guardados personales:
+También se incluyen 37 pruebas de interfaz y de pixel art, 18 del ranking (con un servidor simulado) 33 de controles táctiles y 42 de la nube (también con un servidor simulado) con Chrome y Python 3, sin librerías adicionales. El verificador abre un perfil temporal aislado; nunca usa tus guardados personales:
 
 ```sh
 python tests/browser_check.py tests/index.html --script tests/engine.test.js
 python tests/browser_check.py index.html --script tests/ui.test.js
 python tests/browser_check.py index.html --script tests/ranking.test.js
+python tests/browser_check.py index.html --script tests/cloud.test.js
 python tests/browser_check.py index.html --touch --width 844 --height 390 --script tests/touch.test.js
 python tests/browser_check.py index.html --screenshot .screenshots/menu.png
 ```
