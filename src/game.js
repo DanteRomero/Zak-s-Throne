@@ -626,6 +626,8 @@ class Game {
    list.push({id:'weapon:'+w,group:'weapons',icon:{fists:'✊',bow:'➶',sword:'⚔',stone:'◆'}[w],name:Z.WEAPON_TYPES[w].name+(done?' nvl '+level:' nvl '+next),
     detail:done?'Daño ×'+this.number(Z.weaponLevelMultiplier(level))+'.':'Daño ×'+this.number(Z.weaponLevelMultiplier(level))+' → ×'+this.number(Z.weaponLevelMultiplier(next))+'.',cost:done?null:Z.WEAPON_UPGRADES[next],done,doneText:'Nivel máximo'});}
   const forged=p.weapons.includes('elemental');
+  {const tier=Math.floor(p.armorTier||0),next=tier+1,done=next>Z.MAX_ARMOR,a=Z.ARMORS[done?tier:next];
+   list.push({id:'armor',group:'armor',icon:a.icon,name:a.name,detail:(done?'La mejor armadura que hay.':'Armadura '+a.armor+' (resta '+a.armor+' de daño a cada golpe).')+' Ahora: '+(tier?Z.ARMORS[tier].name.toLowerCase()+' (armadura '+Z.ARMORS[tier].armor+')':'sin armadura')+'.',cost:done?null:a.recipe,done,doneText:'Al máximo'});}
   list.push(...this.smithItemOptions());
   list.push({id:'elemental',group:'weapons',icon:'✧',name:'Espada Elemental',detail:'Daño ×'+Z.WEAPON_TYPES.elemental.damageMultiplier+' (la espada común llega a ×'+this.number(Z.WEAPON_TYPES.sword.damageMultiplier*Z.weaponLevelMultiplier(Z.MAX_WEAPON_LEVEL))+' al máximo).',cost:forged?null:Z.ELEMENTAL_RECIPE,done:forged,doneText:'Ya la tenés'});
   return list.map(o=>({...o,missing:o.cost?this.missingFor(o.cost):[]}));
@@ -637,6 +639,7 @@ class Game {
   p.coins-=option.cost.coins;for(const [k,n] of Object.entries(option.cost.materials))p.materials[k]-=n;for(const [k,n] of Object.entries(option.cost.offerings||{}))p.offerings[k]-=n;
   if(option.group==='items'){this.craftItem(option);this.questFlags.crafted=true;this.sound.play('buy');return{ok:true,message:option.name+': ¡listo!'};}
   if(id==='elemental'){p.weapons.push('elemental');this.equip('elemental');this.questFlags.elemental=true;this.shake(4,.3);this.effect(p.x,p.y,'level',1.4,{radius:50,text:'¡ESPADA ELEMENTAL!'});}
+  else if(id==='armor'){p.armorTier=Math.floor(p.armorTier||0)+1;this.effect(p.x,p.y,'level',1.2,{radius:40,text:Z.ARMORS[p.armorTier].name.toUpperCase()});}
   else if(id==='torch')p.torch=true;else if(id==='pickaxe'||id==='axe')p[id]=(p[id]||0)+1;else{const w=id.slice(7);p.weaponLevels[w]=(p.weaponLevels[w]||1)+1;}
   this.questFlags.crafted=true;this.sound.play('buy');return{ok:true,message:option.name+': ¡listo!'};
  }
@@ -730,7 +733,7 @@ class Game {
   if(source.materials)for(const k of Object.keys(Z.MATERIALS))p.materials[k]=Math.floor(clamp(Number(source.materials[k])||0,0,1e6));
   if(source.offerings)for(const k of Object.keys(Z.OFFERINGS))p.offerings[k]=Math.floor(clamp(Number(source.offerings[k])||0,0,1e4));
   if(source.altar)for(const k of Z.ALTAR_OFFERINGS)p.altar[k]=source.altar[k]===true;p.portal=source.portal===true;
-  for(const k of ['axe','pickaxe'])p[k]=Math.floor(clamp(Number(source[k])||0,0,5));p.torch=source.torch===true;
+  for(const k of ['axe','pickaxe'])p[k]=Math.floor(clamp(Number(source[k])||0,0,5));p.armorTier=Math.floor(clamp(Number(source.armorTier)||0,0,Z.MAX_ARMOR));p.torch=source.torch===true;
   if(source.weaponLevels)for(const w of Object.keys(p.weaponLevels))p.weaponLevels[w]=Math.floor(clamp(Number(source.weaponLevels[w])||1,1,Z.MAX_WEAPON_LEVEL));if(typeof source.runId==='string'&&/^[\w-]{6,64}$/.test(source.runId))p.runId=source.runId;
   p.weapon=source.weapon;p.weapons=[...new Set(source.weapons)];p.stoneAmmo=source.stoneAmmo===0?0:1;
   p.discovered=Array.isArray(source.discovered)?source.discovered.filter(z=>Object.hasOwn(names,z)):['village'];p.dir=Object.hasOwn(dirs,source.dir)?source.dir:'down';p.walk=0;p.moving=false;p.attackAnim=0;

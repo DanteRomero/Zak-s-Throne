@@ -6,6 +6,15 @@ Cada versión lista sus cambios agrupados por tipo:
 - **Change:** algo que ya existía y ahora funciona distinto.
 - **Fix:** un error corregido.
     
+## v2.20 — 2026-11-06
+* Feature
+    - **Armaduras:** el herrero las fabrica en orden, y cada una protege más que la anterior: madera (2), hierro (4), oro (6), diamante (9) y piedra elemental (13, lleva 3 Piedras Elementales). Se ven en el personaje: hombreras y cinturón del color del material.
+* Change
+    - **La resistencia es solo la energía:** sigue marcando cuánto corrés, pero ya no resta daño. Lo único que protege de los golpes es la armadura (y el vino de la abuela).
+    - Paco y Fede: su desventaja ahora solo achica la carrera.
+    - Los enemigos no cambian: su armadura sigue saliendo de su resistencia.
+    - Las partidas guardadas cargan igual y arrancan sin armadura. Los puntos que pusiste en resistencia se quedan y siguen alargando la carrera.
+
 ## v2.19 — 2026-11-06
 * Feature
     - **Bolsa de consumibles (B):** hasta 10 de cada uno. F usa el objeto elegido y G cambia cuál; en el celular, el botón 🎒 nuevo de la derecha.

@@ -26,7 +26,7 @@
       ability: 'Afecto animal', abilityDescription: 'Los animales cercanos se apartan durante 10 s. Gana 2 de fuerza por cada animal encantado.',
       abilityCooldown: 30, abilityDuration: 10, abilityRadius: 180, abilityPassive: false,
       advantage: 'Campesino', advantageDescription: 'En los Yuyos aumenta todas sus estadísticas un 15%. El efecto termina al salir.',
-      disadvantage: 'Pulmones desgastados', disadvantageDescription: 'Los beneficios de resistencia para correr y absorber daño son un 10% menores.',
+      disadvantage: 'Pulmones desgastados', disadvantageDescription: 'La resistencia le rinde un 10% menos para correr.',
       appearance: 'Atlético, con boina, pañuelo rojo, bombachas de campo y ropa gaucha.'
     },
     {
@@ -35,7 +35,7 @@
       ability: 'Último aliento', abilityDescription: 'Pasiva: al quedar con 30% de vida o menos gana 15% de velocidad y resistencia.',
       abilityCooldown: 0, abilityPassive: true,
       advantage: 'Acostumbrado a las mujeres', advantageDescription: 'Las mordeduras de serpiente tienen solo un 15% de probabilidad de envenenarlo.',
-      disadvantage: 'Asmático crónico', disadvantageDescription: 'Los beneficios de resistencia para correr y absorber daño son un 20% menores.',
+      disadvantage: 'Asmático crónico', disadvantageDescription: 'La resistencia le rinde un 20% menos para correr.',
       appearance: 'Flaco, con traje rojo y azul inspirado en un superhéroe arácnido.'
     },
     {
@@ -296,6 +296,15 @@
       { coins: 75, materials: { gold: 5 } }, { coins: 90, materials: { diamond: 5 } }] }
   };
   Zak.TORCH_RECIPE = { coins: 0, materials: { wood: 1, coal: 3 } };
+  // Armaduras: lo único que protege del daño. Se fabrican en orden, cada una mejor (y más cara) que la anterior.
+  Zak.ARMORS = [null,
+    { id: 'wood', name: 'Armadura de madera', icon: '🪵', armor: 2, recipe: { coins: 40, materials: { wood: 20 } }, colors: ['#8a6438', '#b48a52'] },
+    { id: 'iron', name: 'Armadura de hierro', icon: '⛓', armor: 4, recipe: { coins: 80, materials: { iron: 20, wood: 5 } }, colors: ['#6d747d', '#b7bec7'] },
+    { id: 'gold', name: 'Armadura de oro', icon: '🟨', armor: 6, recipe: { coins: 120, materials: { gold: 20, iron: 5 } }, colors: ['#b8902c', '#ffe27a'] },
+    { id: 'diamond', name: 'Armadura de diamante', icon: '💎', armor: 9, recipe: { coins: 160, materials: { diamond: 20, gold: 5 } }, colors: ['#4fb8c8', '#bff4ff'] },
+    { id: 'elemental', name: 'Armadura de piedra elemental', icon: '🔮', armor: 13, recipe: { coins: 250, materials: { diamond: 10, gold: 10 }, offerings: { elemental: 3 } }, colors: ['#7a4fc0', '#e6d6ff'] }];
+  Zak.MAX_ARMOR = Zak.ARMORS.length - 1;
+  Zak.armorValue = tier => { const a = Zak.ARMORS[clamp(Math.floor(finite(tier)), 0, Zak.MAX_ARMOR)]; return a ? a.armor : 0; };
   Zak.MAX_WEAPON_LEVEL = 6;
   // Receta para llevar un arma al nivel indicado (2 a 6).
   Zak.WEAPON_UPGRADES = [null, null,
@@ -360,7 +369,7 @@
       weaponLevels: { fists: 1, bow: 1, sword: 1, stone: 1 }, gather: null,
       combo: 0, comboTime: 0, roll: 0, rollCooldown: 0, rollX: 0, rollY: 1,
       // Bolsa de consumibles, amuletos, pedidos de los vecinos y pesca.
-      items: {}, selectedItem: null, amulets: [], equipped: [], amuletSlots: 1, requests: {},
+      armorTier: 0, items: {}, selectedItem: null, amulets: [], equipped: [], amuletSlots: 1, requests: {},
       rod: false, horsePets: 0, invuln: 0, calm: 0, fishing: null
     };
   };
@@ -417,7 +426,8 @@
       maxHealth: health, strength, speed, endurance, intelligence,
       moveSpeed, attackCooldown: movement.attackCooldown,
       runDuration: resistance.runDuration * resistanceFactor,
-      armor: resistance.armor * resistanceFactor + (finite(buffs.wine) > 0 ? 3 : 0),
+      // La resistencia ya no protege: la armadura sale de la pieza que llevás puesta (y del vino).
+      armor: Zak.armorValue(player.armorTier) + (finite(buffs.wine) > 0 ? 3 : 0),
       power: Zak.strikePower(strength), xpMultiplier, speedTier: movement.tier, speedLabel: movement.label,
       veteran, damageMultiplier: (1 + 0.1 * clamp(Math.floor(finite(player.sharpen)), 0, 5)) * veteran * (finite(buffs.rune) > 0 ? 1.15 : 1)
     };

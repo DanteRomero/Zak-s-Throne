@@ -283,6 +283,17 @@
     if (axe) { rrect(c, ox + cos * 11, oy + sin * 11, a, -2, -1, 5, 5, "#6d7276"); rrect(c, ox + cos * 11, oy + sin * 11, a, 0, 1, 3, 2, "#c7cdd2"); }
     else rrect(c, ox + cos * 12, oy + sin * 12, a, -1, -6, 3, 12, "#8d949a");
   }
+  // Hombreras y cinturón con el color de la armadura puesta.
+  function armorPlates(c, player, v) {
+    const a = Z.ARMORS && Z.ARMORS[Math.floor(player.armorTier || 0)]; if (!a) return;
+    const [dark, light] = a.colors;
+    // characterBody ya dejó aplicado el balanceo del cuerpo.
+    c.save();
+    if (v.side) { rect(c, -3, -16, 5, 3, dark); rect(c, -2, -16, 3, 1, light); }
+    else { rect(c, -9, -16, 4, 3, dark); rect(c, 5, -16, 4, 3, dark); rect(c, -8, -16, 2, 1, light); rect(c, 6, -16, 2, 1, light); }
+    rect(c, -6, -8, 12, 2, dark); rect(c, -1, -8, 2, 2, light);
+    c.restore();
+  }
   function drawCharacter(c, player, time = 0, portrait = false) {
     const id = player.characterId || player.id || "dante", L = LOOKS[id] || LOOKS.pepe, dir = player.dir || "down";
     const side = dir === "left" || dir === "right", back = dir === "up", moving = !!player.moving && !portrait && !(player.roll > 0);
@@ -298,7 +309,7 @@
     c.save(); c.translate(Math.round(player.x || 0), Math.round(player.y || 0));
     if (!portrait) shadow(c, 0, 0, id === "dante" ? 19 : 16, 5);
     if (attacking) { const lunge = Math.sin(player.attackAnim / .24 * Math.PI) * 2; c.translate(Math.round(ax * lunge), Math.round(ay * lunge)); }
-    const body = () => { if (dir === "left") c.scale(-1, 1); characterBody(c, id, L, v, time); };
+    const body = () => { if (dir === "left") c.scale(-1, 1); characterBody(c, id, L, v, time); armorPlates(c, player, v); };
     if (rolling) {
       // Vuelta en cuatro cuadros de 90°: girar de a cuartos no deforma los píxeles.
       const sign = (player.rollX || 0) < 0 ? -1 : 1, turn = (Math.floor((1 - player.roll / .3) * 4) * sign % 4 + 4) % 4, q = [[1, 0], [0, 1], [-1, 0], [0, -1]][turn];

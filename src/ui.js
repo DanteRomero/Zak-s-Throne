@@ -443,7 +443,7 @@
         upgrade.setAttribute('aria-label','Mejorar ' + Zak.STAT_LABELS[key]); upgrade.disabled = p.points < 1; row.append(upgrade); parent.append(row);
       });
       const summary = el('div','stats-summary');
-      ['Vida efectiva: ' + fmt(s.maxHealth), 'Fuerza efectiva: ' + fmt(s.strength) + ' · Poder de golpe: ' + fmt(s.power) + ' · Armadura: ' + fmt(s.armor),
+      ['Vida efectiva: ' + fmt(s.maxHealth), 'Fuerza efectiva: ' + fmt(s.strength) + ' · Poder de golpe: ' + fmt(s.power) + ' · Armadura: ' + fmt(s.armor) + ' (' + (p.armorTier ? Zak.ARMORS[p.armorTier].name.toLowerCase() : 'sin armadura') + ')',
        'Movimiento: ' + fmt(s.moveSpeed) + ' px/s · Golpe cada ' + fmt(s.attackCooldown) + ' s',
        'Carrera: ' + fmt(s.runDuration) + ' s · Experiencia: ×' + fmt(s.xpMultiplier),
        'Daño de armas: ×' + fmt(s.damageMultiplier) + (s.veteran > 1 ? ' (veteranía ×' + fmt(s.veteran) + ')' : '') + ' · Cuarto golpe seguido: crítico ×1,75',
@@ -531,13 +531,13 @@
       const bag = el('div','smith-bag'); bag.append(el('span','bag-coins','◉ ' + p.coins));
       Object.entries(Zak.MATERIALS).forEach(([k,m]) => bag.append(el('span','',m.icon + ' ' + m.name + ' ' + (p.materials[k] || 0)))); parent.append(bag);
       const options = game.craftOptions();
-      [['tools','Herramientas'],['items','Petardos y amuletos'],['weapons','Mejorar armas']].forEach(([group,title]) => {
+      [['tools','Herramientas'],['armor','Armaduras'],['items','Petardos y amuletos'],['weapons','Mejorar armas']].forEach(([group,title]) => {
         parent.append(el('h3','smith-heading',title));
         options.filter(o => o.group === group).forEach(option => {
           const row = el('div','shop-item' + (option.done ? ' sold-out' : '')), body = el('div');
           body.append(el('strong','',option.icon + ' ' + option.name),el('small','',option.detail));
           if (option.cost) body.append(costLine(option));
-          const action = option.group === 'items' ? (option.id.startsWith('amulet:') ? 'Tallar' : 'Fabricar') : option.id === 'elemental' ? 'Forjar' : option.id === 'torch' || (option.group === 'tools' && !p[option.id]) ? 'Fabricar' : 'Mejorar';
+          const action = option.group === 'armor' ? 'Fabricar' : option.group === 'items' ? (option.id.startsWith('amulet:') ? 'Tallar' : 'Fabricar') : option.id === 'elemental' ? 'Forjar' : option.id === 'torch' || (option.group === 'tools' && !p[option.id]) ? 'Fabricar' : 'Mejorar';
           const go = button(option.done ? option.doneText : action,() => { const result = game.craft(option.id); showSmith(result.message); updateHud(true); },'shop-buy');
           go.disabled = option.done || option.missing.length > 0; go.setAttribute('aria-label',action + ' ' + option.name);
           row.append(body,go); parent.append(row);

@@ -1080,6 +1080,16 @@
       game.restore(bad, 1); equal(game.itemCount('water'), Z.ITEM_STACK); equal(game.player.items.nope, undefined); equal(Z.hasAmulet(game.player, 'ring'), false, 'cannot wear what you do not own'); equal(game.player.requests.funes.count, 10); equal(game.player.requests.fake, undefined);
     });
 
+    test('v2.20: the smith makes armors in order and they cut the damage of each hit', () => {
+      const p = fixture('gero'); p.coins = 5000; Object.assign(p.materials, {wood: 25, iron: 25, gold: 35, diamond: 30}); p.offerings.elemental = 3;
+      const opt = () => game.craftOptions().find(o => o.id === 'armor');
+      equal(opt().name, 'Armadura de madera'); p.stats.endurance = 100; const hp = p.hp; game.hurtPlayer(10, 'thief'); near(hp - p.hp, 10, 'endurance does not protect');
+      for (const name of ['wood', 'iron', 'gold', 'diamond', 'elemental']) { ok(game.craft('armor').ok, name); equal(Z.ARMORS[p.armorTier].id, name); }
+      equal(opt().done, true); equal(game.craft('armor').ok, false, 'nothing above elemental'); equal(p.offerings.elemental, 0);
+      const before = p.hp; game.hurtPlayer(20, 'thief'); near(before - p.hp, 7, '20 - 13 of armor');
+      const save = JSON.parse(JSON.stringify(game.snapshot())); game.newGame('tena'); game.restore(save, 1); equal(game.player.armorTier, 5, 'saved');
+      delete save.player.armorTier; game.restore(save, 1); equal(game.player.armorTier, 0, 'old saves start without armor');
+    });
     game.pause(); cancelAnimationFrame(game.frame);
     return {passed: results.filter(r=>r.pass).length, failed: results.filter(r=>!r.pass).length, results};
   };

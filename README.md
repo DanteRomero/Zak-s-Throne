@@ -2,7 +2,7 @@
 
 Una aventura de acción y exploración en pixel art, vista desde arriba. Elegí a uno de siete amigos, preparate en la aldea y salí a explorar la cueva y los Yuyos.
 
-Versión actual: **v2.19**. Los cambios de cada versión están en [CHANGELOG.md](CHANGELOG.md).
+Versión actual: **v2.20**. Los cambios de cada versión están en [CHANGELOG.md](CHANGELOG.md).
 
 ## Jugar
 
@@ -310,8 +310,8 @@ Al vencerlo, Zak no muere: vuelve al trono, dice «Dejémoslo acá y volvé a tu
 | Mer | 85 | 5 | 30 | 20 | 10 |
 
 - **Gero — Fé Judía:** recupera 5 de vida por segundo y gana 25 de velocidad durante 5 segundos. Si con el bono supera 100 de velocidad, salta a la banda Extraordinaria. Las ratas lo ignoran hasta que las golpea. Su experiencia parte de ×0,75.
-- **Paco — Afecto animal:** encanta animales cercanos durante 10 segundos; se apartan y le dan 2 de fuerza por animal. En los Yuyos sus estadísticas aumentan 15%. Obtiene 10% menos de los beneficios de resistencia.
-- **Fede — Último aliento, pasiva:** con 30% de vida o menos gana 15% de velocidad y resistencia. Las serpientes tienen solo 15% de probabilidad de envenenarlo. Obtiene 20% menos de los beneficios de resistencia.
+- **Paco — Afecto animal:** encanta animales cercanos durante 10 segundos; se apartan y le dan 2 de fuerza por animal. En los Yuyos sus estadísticas aumentan 15%. La resistencia le rinde 10% menos para correr.
+- **Fede — Último aliento, pasiva:** con 30% de vida o menos gana 15% de velocidad y resistencia. Las serpientes tienen solo 15% de probabilidad de envenenarlo. La resistencia le rinde 20% menos para correr.
 - **Pepe — DeboraMundos, pasiva:** derrotar un enemigo recupera 5 de vida y da 15% de velocidad por 3 segundos. Gana 50% más de experiencia. Los perros le hacen 10% más de daño y lo ralentizan 20%.
 - **Tena — Baile del 7-0:** aturde a los enemigos cercanos durante 7 segundos. Las ratas huyen de él. Con tres o más perseguidores pierde 10% de todas las estadísticas salvo vida.
 - **Dante — Tobi:** golpea el suelo tres veces con un enorme bastón de carne; cada onda inflige 10 de daño a los enemigos cercanos. Gana 1 de fuerza automática por nivel además del punto a elección. Se mueve 10% más lento.
@@ -323,7 +323,7 @@ Las habilidades activas tienen enfriamiento: Gero **25 s**, Paco **30 s**, Tena 
 
 ## Estadísticas y progresión
 
-**Ninguna estadística del personaje tiene tope**: vida, fuerza, velocidad, resistencia, inteligencia y nivel pueden crecer sin límite. La velocidad y la resistencia rinden cada vez menos pasado 100 (ver sus tablas).
+**Ninguna estadística del personaje tiene tope**: vida, fuerza, velocidad, resistencia, inteligencia y nivel pueden crecer sin límite. La velocidad rinde cada vez menos pasado 100 y la resistencia deja de alargar la carrera en 80 (ver sus tablas).
 
 **Veteranía.** Desde el nivel 8, los enemigos ganan vida y fuerza extra por nivel; tu personaje crece al mismo ritmo para que el juego nunca se vuelva imposible:
 
@@ -363,16 +363,31 @@ Correr aumenta el movimiento **25%**. Tras dejar de correr durante **2 segundos*
 
 ### Resistencia
 
-| Resistencia efectiva | Carrera hasta agotarse | Daño físico absorbido |
-| --- | ---: | ---: |
-| Menor que 15 | 3 s | 0 |
-| 15 a menos de 30 | 5 s | 2 |
-| 30 a menos de 60 | 7 s | 4 |
-| 60 a menos de 80 | 10 s | 6 |
-| 80 a 100 | 12 s | 8 |
-| Más de 100 | 12 s | 8 + 1 cada 10 puntos (150: 13) |
+La resistencia es **solo la energía**: cuánto podés correr antes de agotarte. Ya no protege de los golpes; eso lo hace la [armadura](#armaduras).
 
-Paco recibe el **90%** de la duración y protección de su banda; Fede, el **80%**. La armadura conserva un mínimo de **1 de daño por golpe**. El veneno ignora por completo esta protección.
+| Resistencia efectiva | Carrera hasta agotarse |
+| --- | ---: |
+| Menor que 15 | 3 s |
+| 15 a menos de 30 | 5 s |
+| 30 a menos de 60 | 7 s |
+| 60 a menos de 80 | 10 s |
+| 80 o más | 12 s |
+
+Paco corre el **90%** de lo que marca su banda; Fede, el **80%**.
+
+### Armaduras
+
+La armadura resta su valor a cada golpe, con un mínimo de **1 de daño por golpe**. El veneno, el desangrado, las quemaduras y los golpes de Zak la ignoran. Se fabrican en El Taller, **en orden**: cada una necesita la anterior y protege más.
+
+| Armadura | Armadura | Costo |
+| --- | ---: | --- |
+| 🪵 Madera | 2 | 20 madera + 40 de guita |
+| ⛓ Hierro | 4 | 20 hierro + 5 madera + 80 |
+| 🟨 Oro | 6 | 20 oro + 5 hierro + 120 |
+| 💎 Diamante | 9 | 20 diamante + 5 oro + 160 |
+| 🔮 Piedra elemental | 13 | 3 Piedras Elementales + 10 diamante + 10 oro + 250 |
+
+La que tenés puesta se ve en el personaje: hombreras y cinturón del color del material. El vino de la abuela suma 3 más mientras dura. Los enemigos no cambian: su armadura sigue saliendo de su resistencia.
 
 ## Enemigos
 
@@ -444,7 +459,7 @@ Implementado con **HTML, CSS y JavaScript**, sin paquetes externos. El mundo se 
 - `src/ui.js`: menús, HUD, tienda, ranking, guardados y controles táctiles.
 - `src/ranking.js` y `src/config.js`: ranking local u online (Supabase).
 - `src/cloud.js`: cuentas y partidas en la nube (Supabase).
-- `tests/rules.test.js`: 40 pruebas de reglas y casos límite.
+- `tests/rules.test.js`: 41 pruebas de reglas y casos límite.
 
 Si ya tenés Node instalado:
 
@@ -452,7 +467,7 @@ Si ya tenés Node instalado:
 node tests/rules.test.js
 ```
 
-Abrí `tests/index.html` para ejecutar las 40 pruebas de reglas y las 142 pruebas de integración del motor en el navegador. El resultado detalla cada caso aprobado o fallido.
+Abrí `tests/index.html` para ejecutar las 41 pruebas de reglas y las 143 pruebas de integración del motor en el navegador. El resultado detalla cada caso aprobado o fallido.
 
 También se incluyen 47 pruebas de interfaz y de pixel art, 18 del ranking (con un servidor simulado) 36 de controles táctiles y 42 de la nube (también con un servidor simulado) con Chrome y Python 3, sin librerías adicionales. El verificador abre un perfil temporal aislado; nunca usa tus guardados personales:
 
