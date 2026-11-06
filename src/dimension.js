@@ -10,6 +10,8 @@ const burnFrom = e => Math.max(2,Math.round(e.stats.strength*.08));
 Object.assign(Z.Game.prototype, {
  burnPlayer(damage){
   const p=this.player,fresh=!p.burn;
+  // Hoja seca: a Mer el fuego la quema 50% más.
+  if(p.characterId==='mer')damage=Math.ceil(damage*1.5);
   p.burn={time:5,tick:p.burn?p.burn.tick:1,damage:Math.max(damage,p.burn?p.burn.damage:0)};
   if(fresh)this.emit('toast',{message:'¡Te quemaste! '+damage+' de vida por segundo durante 5 s.',error:true});
  },

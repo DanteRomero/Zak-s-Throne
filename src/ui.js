@@ -657,6 +657,7 @@
     if (p.heavySlow > 0) statuses.push('↓↓ Muy lento ' + Math.ceil(p.heavySlow) + ' s');
     if (game.darkness > 0 && biome === 'throne') statuses.push('☾ Ira del gobernante ' + Math.ceil(game.darkness) + ' s');
     if (p.buffs.gero > 0) statuses.push('✦ Fé Judía ' + Math.ceil(p.buffs.gero) + ' s');
+    if (game.spirits && game.spirits.length) statuses.push('✦ Madre tierra ' + Math.ceil(Math.max(...game.spirits.map(s => s.life))) + ' s');
     if (p.buffs.paco > 0) statuses.push('♥ ' + p.buffs.pacoAnimals + ' animales encantados');
     if (p.buffs.pepe > 0) statuses.push('✦ DeboraMundos');
     if (p.buffs.mate > 0) statuses.push('☕ Mate ' + Math.ceil(p.buffs.mate) + ' s');

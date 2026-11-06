@@ -1,8 +1,8 @@
 # Zak's Throne — Crónicas de los Aromos
 
-Una aventura de acción y exploración en pixel art, vista desde arriba. Elegí a uno de seis amigos, preparate en la aldea y salí a explorar la cueva y los Yuyos.
+Una aventura de acción y exploración en pixel art, vista desde arriba. Elegí a uno de siete amigos, preparate en la aldea y salí a explorar la cueva y los Yuyos.
 
-Versión actual: **v2.17**. Los cambios de cada versión están en [CHANGELOG.md](CHANGELOG.md).
+Versión actual: **v2.18**. Los cambios de cada versión están en [CHANGELOG.md](CHANGELOG.md).
 
 ## Jugar
 
@@ -242,6 +242,7 @@ Al vencerlo, Zak no muere: vuelve al trono, dice «Dejémoslo acá y volvé a tu
 | Pepe | 100 | 6 | 15 | 15 | 15 |
 | Tena | 100 | 2 | 20 | 5 | 5 |
 | Dante | 110 | 8 | 5 | 20 | 15 |
+| Mer | 85 | 5 | 30 | 20 | 10 |
 
 - **Gero — Fé Judía:** recupera 5 de vida por segundo y gana 25 de velocidad durante 5 segundos. Si con el bono supera 100 de velocidad, salta a la banda Extraordinaria. Las ratas lo ignoran hasta que las golpea. Su experiencia parte de ×0,75.
 - **Paco — Afecto animal:** encanta animales cercanos durante 10 segundos; se apartan y le dan 2 de fuerza por animal. En los Yuyos sus estadísticas aumentan 15%. Obtiene 10% menos de los beneficios de resistencia.
@@ -249,10 +250,11 @@ Al vencerlo, Zak no muere: vuelve al trono, dice «Dejémoslo acá y volvé a tu
 - **Pepe — DeboraMundos, pasiva:** derrotar un enemigo recupera 5 de vida y da 15% de velocidad por 3 segundos. Gana 50% más de experiencia. Los perros le hacen 10% más de daño y lo ralentizan 20%.
 - **Tena — Baile del 7-0:** aturde a los enemigos cercanos durante 7 segundos. Las ratas huyen de él. Con tres o más perseguidores pierde 10% de todas las estadísticas salvo vida.
 - **Dante — Tobi:** golpea el suelo tres veces con un enorme bastón de carne; cada onda inflige 10 de daño a los enemigos cercanos. Gana 1 de fuerza automática por nivel además del punto a elección. Se mueve 10% más lento.
+- **Mer — Madre tierra:** invoca 3 espíritus del bosque durante 7 segundos. La siguen y les pegan 2 veces por segundo a los enemigos que estén a 150 píxeles o menos de ella, con el 150% de su daño (el de su arma, contando armadura del enemigo y bloqueos). Cada espíritu toma un enemigo distinto mientras alcancen. Son inmortales: los enemigos no los ven ni los pueden atacar. Las serpientes la ignoran hasta que ella o sus espíritus las golpean. Las quemaduras le hacen 50% más de daño.
 
 **Nombre y apariencia:** la lista de habilidades nombra a Pepe y la descripción física nombra a Martín. Para mantener los seis personajes, Pepe usa el disfraz de pollo atribuido a Martín.
 
-Las habilidades activas tienen enfriamiento: Gero **25 s**, Paco **30 s**, Tena **26 s** y Dante **28 s**. Las habilidades de Fede y Pepe se activan automáticamente al cumplir su condición. Las bonificaciones temporales se calculan sobre los valores base: no se acumulan de forma permanente.
+Las habilidades activas tienen enfriamiento: Gero **25 s**, Paco **30 s**, Tena **26 s**, Dante **28 s** y Mer **45 s**. Las habilidades de Fede y Pepe se activan automáticamente al cumplir su condición. Las bonificaciones temporales se calculan sobre los valores base: no se acumulan de forma permanente.
 
 ## Estadísticas y progresión
 
@@ -365,7 +367,7 @@ Implementado con **HTML, CSS y JavaScript**, sin paquetes externos. El mundo se 
 - `src/ui.js`: menús, HUD, tienda, ranking, guardados y controles táctiles.
 - `src/ranking.js` y `src/config.js`: ranking local u online (Supabase).
 - `src/cloud.js`: cuentas y partidas en la nube (Supabase).
-- `tests/rules.test.js`: 37 pruebas de reglas y casos límite.
+- `tests/rules.test.js`: 38 pruebas de reglas y casos límite.
 
 Si ya tenés Node instalado:
 
@@ -373,7 +375,7 @@ Si ya tenés Node instalado:
 node tests/rules.test.js
 ```
 
-Abrí `tests/index.html` para ejecutar las 37 pruebas de reglas y las 115 pruebas de integración del motor en el navegador. El resultado detalla cada caso aprobado o fallido.
+Abrí `tests/index.html` para ejecutar las 38 pruebas de reglas y las 121 pruebas de integración del motor en el navegador. El resultado detalla cada caso aprobado o fallido.
 
 También se incluyen 41 pruebas de interfaz y de pixel art, 18 del ranking (con un servidor simulado) 36 de controles táctiles y 42 de la nube (también con un servidor simulado) con Chrome y Python 3, sin librerías adicionales. El verificador abre un perfil temporal aislado; nunca usa tus guardados personales:
 

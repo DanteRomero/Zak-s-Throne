@@ -17,7 +17,7 @@ create table if not exists public.scores (
   run_id     text primary key check (char_length(run_id) between 6 and 64),
   player_id  text not null check (char_length(player_id) between 6 and 64),
   name       text not null check (char_length(name) between 1 and 16),
-  character  text not null check (character in ('gero','paco','fede','pepe','tena','dante')),
+  character  text not null check (character in ('gero','paco','fede','pepe','tena','dante','mer')),
   level      int  not null check (level between 1 and 500),
   kills      int  not null check (kills between 0 and 100000),
   bosses     int  not null check (bosses between 0 and 10000),
@@ -61,6 +61,18 @@ alter table public.scores add column if not exists zak_time int check (zak_time 
 ```
 
 Mientras no la agregues, el resto del ranking sigue andando (el juego reintenta sin esa columna), pero la pestaña Récord Zak muestra un aviso y solo las partidas de este dispositivo.
+
+### Mer (v2.18)
+
+La tabla solo acepta los personajes de la lista. Para que las partidas de Mer entren al ranking, corré esto una vez en **SQL Editor**:
+
+```sql
+alter table public.scores drop constraint if exists scores_character_check;
+alter table public.scores add constraint scores_character_check
+  check (character in ('gero','paco','fede','pepe','tena','dante','mer'));
+```
+
+Mientras no lo corras, el resto del ranking sigue andando, pero las partidas de Mer no se publican.
 
 ## 3. Copiar la URL y la clave pública
 

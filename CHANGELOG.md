@@ -6,6 +6,20 @@ Cada versión lista sus cambios agrupados por tipo:
 - **Change:** algo que ya existía y ahora funciona distinto.
 - **Fix:** un error corregido.
     
+## v2.18 — 2026-11-06
+* Feature
+    - **Mer, la cuidadora del bosque:** personaje jugable nuevo, con cuernos de ciervo, orejas puntiagudas, flores en el pelo largo y vestido de hojas. Tiene poca vida (85), es veloz (30), con fuerza normal (5) y buena resistencia (20).
+    - **Madre tierra (Q, cada 45 s):** invoca 3 espíritus del bosque durante 7 s.
+        - La siguen a todos lados y les pegan 2 veces por segundo a los enemigos cercanos, cada golpe con el 150% de su daño.
+        - Son inmortales: los enemigos ni los ven. Cada uno toma un enemigo distinto mientras alcancen.
+        - Sus golpes no empujan al enemigo, para que no se les escape.
+    - **Hija del monte:** las serpientes la ignoran hasta que ella o sus espíritus las golpean.
+    - **Hoja seca:** las quemaduras le hacen 50% más de daño.
+* Change
+    - La pantalla de personajes muestra a los siete: en el celular, en dos filas de 4 y 3.
+    - Las partidas guardadas no cambian: los espíritus no se guardan, y si guardás con Madre tierra en espera, la espera se conserva.
+    - **Ranking online:** para que entren las partidas de Mer hay que correr una vez el SQL de [docs/RANKING.md](docs/RANKING.md#mer-v218) en Supabase.
+
 ## v2.17 — 2026-11-05
 * Feature
     - **Más vecinos en Palihue City:** ahora son 17, cada uno con su propia ropa: la seño Clara, Doña Rosa, Tito el almacenero, Rulo el cartero, Cacho el intendente, Mirta la chusma, el Tano Carmelo, Facu, Sor Inés, el Cabo Funes, Don Chiche el pescador y los de siempre.

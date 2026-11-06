@@ -11,7 +11,7 @@
   document.getElementById('load-game').click();
   assert('Tres ranuras vacías deshabilitadas',document.querySelectorAll('.save-slot:disabled').length===3);close();
   document.getElementById('new-game').click();
-  assert('Seis personajes seleccionables',document.querySelectorAll('.character-card').length===6);
+  assert('Siete personajes seleccionables',document.querySelectorAll('.character-card').length===7);
   document.querySelector('[data-character="gero"]').click();document.getElementById('player-name').value='   ';document.getElementById('begin-adventure').click();
   assert('Sin apodo no se puede empezar',g.state!=='playing'&&document.getElementById('player-name').classList.contains('invalid'));
   document.getElementById('player-name').value='Probador';document.getElementById('begin-adventure').click();

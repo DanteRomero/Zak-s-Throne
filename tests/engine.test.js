@@ -887,6 +887,45 @@
     });
     function distance2(a, b) { return Math.hypot(a.x - b.x, a.y - b.y); }
 
+    // Mer y Madre tierra.
+    test('Madre tierra summons three spirits for 7 s and waits 45 s', () => {
+      const p = fixture('mer'); game.ability();
+      equal(game.spirits.length, 3); near(p.abilityCooldown, 45);
+      advance(6.9); equal(game.spirits.length, 3); advance(.2); equal(game.spirits.length, 0);
+      game.ability(); equal(game.spirits.length, 0, 'still on cooldown');
+      advance(38); game.ability(); equal(game.spirits.length, 3);
+    });
+    test('Each spirit hits twice per second for 150% of Mer damage, without knockback', () => {
+      const p = fixture('mer'), dog = enemy('dog', p.x + 40); dog.stun = 30; dog.stats.armor = 0; dog.hp = dog.maxHp = 1e6;
+      const each = game.spiritDamage(), s = game.stats(), w = Z.WEAPON_TYPES[p.weapon];
+      near(each, s.power * w.damageMultiplier * s.damageMultiplier * game.weaponLevelMultiplier() * 1.5, 'x1.5');
+      const x = dog.x, y = dog.y; game.ability(); advance(3);
+      near(dog.hp, 1e6 - 3 * 6 * each, 'six hits per spirit in 3 s'); near(dog.x, x, 'no knockback'); near(dog.y, y);
+      advance(5); near(dog.hp, 1e6 - 3 * 14 * each, '14 hits per spirit in 7 s'); equal(game.spirits.length, 0);
+    });
+    test('Spirits spread over the nearby enemies and leave the far ones alone', () => {
+      const p = fixture('mer'), list = [40, -40, 0].map((dx, i) => enemy('thief', p.x + dx, p.y + (i === 2 ? 45 : 0))), far = enemy('thief', p.x + 400);
+      for (const e of [...list, far]) { e.stun = 30; e.hp = e.maxHp = 1e6; }
+      game.ability(); advance(2); ok(list.every(e => e.hp < 1e6), 'each nearby enemy gets hit'); equal(far.hp, 1e6, 'far one untouched');
+    });
+    test('Spirits follow Mer, enemies never see them and they leave with a knockout', () => {
+      const p = fixture('mer'); game.ability(); advance(.5); p.x += 300; advance(1);
+      ok(game.spirits.every(s => distance2(s, {x: p.x, y: p.y - 14}) < 40), 'they follow her');
+      ok(game.spirits.every(s => !game.enemies.includes(s)), 'they are not enemies');
+      const thief = enemy('thief', p.x + 15); advance(.3); ok(thief.alert, 'the thief chases Mer'); game.knockout('thief'); equal(game.spirits.length, 0);
+    });
+    test('Snakes ignore Mer until she or her spirits hit them; fire burns her 50% more', () => {
+      const p = fixture('mer'), snake = enemy('snake', p.x + 60); advance(.2); equal(snake.alert, false, 'ignored');
+      game.hitEnemy(snake, 1); advance(.1); equal(snake.alert, true, 'provoked');
+      game.burnPlayer(2); equal(p.burn.damage, 3); fixture('gero'); game.burnPlayer(2); equal(game.player.burn.damage, 2);
+    });
+    test('A Mer save keeps the 45 s cooldown and loads without spirits', () => {
+      fixture('mer', true); game.ability(); advance(1); const save = JSON.parse(JSON.stringify(game.snapshot()));
+      game.newGame('tena'); game.restore(save, 1); equal(game.player.characterId, 'mer'); ok(game.player.abilityCooldown > 43, 'cooldown kept');
+      equal(game.spirits.length, 0); const old = JSON.parse(JSON.stringify(save)); old.player.characterId = 'gero'; old.player.abilityCooldown = 40;
+      game.restore(old, 1); near(game.player.abilityCooldown, 30, 'other characters keep the old limit');
+    });
+
     game.pause(); cancelAnimationFrame(game.frame);
     return {passed: results.filter(r=>r.pass).length, failed: results.filter(r=>!r.pass).length, results};
   };

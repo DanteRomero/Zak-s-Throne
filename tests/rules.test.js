@@ -15,10 +15,19 @@
       if (Math.abs(actual - expected) > 1e-8) throw new Error(message + ': esperado ' + expected + ', recibido ' + actual);
     };
     const test = (name, fn) => { fn(); count++; results.push(name); };
-    test('Los seis personajes tienen estadísticas independientes', () => {
-      equal(Zak.CHARACTERS.length, 6);
+    test('Los siete personajes tienen estadísticas independientes', () => {
+      equal(Zak.CHARACTERS.length, 7);
       const a = Zak.createPlayer('gero'), b = Zak.createPlayer('gero');
       a.stats.health = 1; equal(b.stats.health, 105); equal(Zak.CHARACTERS[0].stats.health, 105);
+    });
+    test('Mer: poca vida, veloz, fuerza normal, buena resistencia y Madre tierra cada 45 s', () => {
+      const mer = Zak.CHARACTERS.find(c => c.id === 'mer'), others = Zak.CHARACTERS.filter(c => c.id !== 'mer');
+      ok(mer, 'Mer existe'); ok(others.every(c => mer.stats.health < c.stats.health), 'la que menos vida tiene');
+      ok(others.every(c => mer.stats.speed >= c.stats.speed), 'de las más rápidas'); equal(mer.stats.strength, 5);
+      ok(others.every(c => mer.stats.endurance >= c.stats.endurance), 'de las más resistentes');
+      equal(mer.abilityCooldown, 45); equal(mer.abilityDuration, 7); equal(mer.abilityPassive, false);
+      equal(Zak.SPIRITS.count, 3); equal(Zak.SPIRITS.interval, .5); equal(Zak.SPIRITS.multiplier, 1.5);
+      const p = Zak.createPlayer('mer'); equal(p.hp, 85); equal(p.characterId, 'mer');
     });
     test('Velocidad: límites exactos de todas las bandas', () => {
       [[0,3,72],[14.99,3,72],[15,2,92],[29.99,2,92],[30,1,118],[59.99,1,118],[60,.5,148],[100,.5,148],[200,.375,163],[400,.3125,170.5]].forEach(([speed, cooldown, movement]) => {

@@ -118,7 +118,7 @@ class Game {
  setAim(e){const r=this.canvas.getBoundingClientRect();this.aim={x:(e.clientX-r.left)/r.width*this.canvas.width+this.camera.x,y:(e.clientY-r.top)/r.height*this.canvas.height+this.camera.y};}
  newGame(id){
   this.world=Z.createWorld();this.player=Z.createPlayer(id);Object.assign(this.player,{...this.world.spawn,dir:'down',moving:false,walk:0,attackAnim:0,runId:(window.crypto&&crypto.randomUUID)?crypto.randomUUID():Date.now().toString(36)+Math.random().toString(36).slice(2,12)});
-  this.biome='village';this.time=0;this.effects=[];this.projectiles=[];this.drops=[];this.queuedWaves=[];this.questFlags={};this.currentSlot=null;this.bolts=[];this.darkness=0;this.exitPortal=null;this.cutscene=null;this.cutsceneFade=0;
+  this.biome='village';this.time=0;this.effects=[];this.projectiles=[];this.drops=[];this.queuedWaves=[];this.spirits=[];this.questFlags={};this.currentSlot=null;this.bolts=[];this.darkness=0;this.exitPortal=null;this.cutscene=null;this.cutsceneFade=0;
   this.enemies=this.world.enemySpawns.map(s=>this.makeEnemy(s));this.clearInput();this.aim=null;this.state='playing';this.renderer.resize(true);this.emit('start');
  }
  makeEnemy(s){const biome=Z.biomeAt(s.x,s.y),stats=this.enemyStatsFor(s.type,0,biome);return{...s,homeX:s.x,homeY:s.y,biome,stats,hp:stats.health,maxHp:stats.health,level:stats.level,dir:'down',walk:0,moving:false,dead:false,respawn:0,cooldown:.6,stun:0,charm:0,latched:0,latchRest:0,alert:false,provoked:false,hitFlash:0,special:2.5,telegraph:0,dash:0,aimX:0,aimY:1,life:0,act:null,cd:{},rain:null,rainCd:KNIFE_FIRST,shield:0,seated:false,yielding:null,pose:null,air:false,lift:0,lowFortified:false,backoff:0};}
@@ -160,7 +160,7 @@ class Game {
   if(this.attackQueue){this.attackQueue.time-=dt;if(this.attackQueue.time<=0||this.attack(this.attackQueue))this.attackQueue=null;}
   this.updatePortals(dt);if(this.state!=='playing')return;
   if(this.queuedWaves&&this.queuedWaves.length)this.queuedWaves=this.queuedWaves.filter(w=>{w.delay-=dt;if(w.delay>0)return true;this.wave();return false;});
-  this.updateNpcs(dt);this.updateEnemies(dt);if(this.state!=='playing')return;this.updateBolts(dt);if(this.state!=='playing')return;this.updateProjectiles(dt);if(this.state!=='playing')return;this.updateDrops(dt);
+  this.updateNpcs(dt);this.updateEnemies(dt);if(this.state!=='playing')return;this.updateSpirits(dt);this.updateBolts(dt);if(this.state!=='playing')return;this.updateProjectiles(dt);if(this.state!=='playing')return;this.updateDrops(dt);
   for(const item of this.world.pickups)if(item.type==='herb'&&item.collected&&item.regrow>0){item.regrow-=dt;if(item.regrow<=0)item.collected=false;}
   this.updateNodes(dt);
   this.effects.forEach(e=>e.life-=dt);this.effects=this.effects.filter(e=>e.life>0);this.sound.update(dt,this.biome);this.checkQuests();
@@ -287,7 +287,7 @@ class Game {
   const damage=exact?raw:Z.damageAfterArmor(raw,e.stats.armor);e.hp-=damage;e.hitFlash=.16;e.provoked=true;e.alert=true;this.bossHitReact(e);
   this.effect(e.x,e.y-23,'hit',.8,{text:(crit?'¡':'')+this.number(damage)+(crit?'!':''),crit});this.effect(e.x,e.y-10,'spark',.35,{seed:Math.random()*99,crit});
   this.sound.play(crit?'crit':'hit');if(crit)this.shake(3,.2);
-  if(definition.knockback&&!exact){const dx=e.x-this.player.x,dy=e.y-this.player.y,len=Math.hypot(dx,dy)||1;this.move(e,dx/len*18,dy/len*18,7,e.biome);}
+  if(definition.knockback&&!exact&&source!=='spirit'){const dx=e.x-this.player.x,dy=e.y-this.player.y,len=Math.hypot(dx,dy)||1;this.move(e,dx/len*18,dy/len*18,7,e.biome);}
   // Gólem y Zak tienen varias vidas: al vaciar una, se levantan con la siguiente.
   if(e.hp<=0&&this.bossNextLife(e))return;
   if(e.hp<=0){const first=!this.questFlags['defeat_'+e.type];e.hp=0;e.dead=true;e.respawn=definition.respawn||35;e.alert=false;e.telegraph=0;e.dash=0;this.player.kills++;this.questFlags['defeat_'+e.type]=true;
@@ -331,7 +331,7 @@ class Game {
     if(e.latched>1e-8&&e.cooldown<=0)this.enemyAttack(e);if(this.state!=='playing')break;
     if(e.latched<=1e-8){e.latched=0;e.latchRest=1.6;e.cooldown=.6;const[dx,dy]=dirs[p.dir];e.x=p.x;e.y=p.y;this.move(e,-dx*85,-dy*85,7,e.biome);if(distance(e,p)<28){e.x=e.homeX;e.y=e.homeY;}}continue;
    }
-   const len=distance(e,p),ratFlees=e.type==='rat'&&p.characterId==='tena',ratIgnores=e.type==='rat'&&p.characterId==='gero'&&!e.provoked;
+   const len=distance(e,p),ratFlees=e.type==='rat'&&p.characterId==='tena',ratIgnores=(e.type==='rat'&&p.characterId==='gero'||e.type==='snake'&&p.characterId==='mer')&&!e.provoked;
    const fleeing=sameZone&&len<210&&(e.charm>0||ratFlees),wasAlert=e.alert;e.alert=sameZone&&!ratIgnores&&!fleeing&&(e.summoned||len<(e.type==='worm'?120:e.type==='archer'?260:195)||(e.alert&&len<320));
    if(e.alert&&!wasAlert)this.sound.play('alert');
    let tx,ty,velocity=e.stats.moveSpeed;
@@ -439,7 +439,7 @@ class Game {
   Object.assign(p,this.world.spawn,{hp:1,poison:null,slow:0,stamina:1,exhausted:0,restTime:0,attackCooldown:0,moving:false,roll:0,combo:0,comboTime:0,gather:null,bleed:null,burn:null,stunned:0,frozen:0,grabbed:0,heavySlow:0});p.buffs={gero:0,pepe:0,paco:0,pacoAnimals:0,mate:0};this.biome='village';p.hp=this.stats().maxHealth;
   this.enemies=this.enemies.filter(e=>!e.summoned);
   this.enemies.forEach(e=>{if(!e.dead){if(isBoss(e))Object.assign(e,this.makeEnemy({id:e.id,type:e.type,x:e.homeX,y:e.homeY}));e.x=e.homeX;e.y=e.homeY;}e.latched=0;e.alert=false;e.telegraph=0;e.dash=0;});
-  this.queuedWaves=[];this.projectiles=[];this.bolts=[];this.darkness=0;this.exitPortal=null;this.cutscene=null;this.cutsceneFade=0;this.state='paused';this.clearInput();this.emit('knockout',{source,quote,lost,execute});
+  this.queuedWaves=[];this.spirits=[];this.projectiles=[];this.bolts=[];this.darkness=0;this.exitPortal=null;this.cutscene=null;this.cutsceneFade=0;this.state='paused';this.clearInput();this.emit('knockout',{source,quote,lost,execute});
  }
  heal(amount){const before=this.player.hp;this.player.hp=Math.min(this.stats().maxHealth,before+amount);if(this.player.hp>before)this.effect(this.player.x,this.player.y-30,'heal',.9,{text:'+'+this.number(this.player.hp-before)});}
  updateProjectiles(dt){
@@ -469,7 +469,38 @@ class Game {
   if(p.characterId==='gero'){p.buffs.gero=5;p.healClock=0;}
   if(p.characterId==='paco'){let count=0;this.enemies.forEach(e=>{if(!e.dead&&e.type!=='thief'&&!isBoss(e)&&distance(e,p)<=c.abilityRadius&&e.biome===this.biome){e.charm=10;e.latched=0;e.alert=false;count++;this.effect(e.x,e.y-25,'heart',1.4);}});p.buffs.paco=10;p.buffs.pacoAnimals=count;this.effect(p.x,p.y,'wave',.8,{radius:c.abilityRadius});this.emit('toast',{message:count+' animales encantados. +'+count*2+' de fuerza por 10 s.'});}
   if(p.characterId==='tena'){this.enemies.forEach(e=>{if(!e.dead&&distance(e,p)<=c.abilityRadius&&e.biome===this.biome){e.stun=isBoss(e)?2.5:7;e.latched=0;e.alert=false;e.telegraph=0;e.dash=0;}});p.dance=7;this.effect(p.x,p.y,'wave',1,{radius:c.abilityRadius});}
-  if(p.characterId==='dante'){this.wave();this.queuedWaves=[{delay:.55},{delay:1.1}];}this.emit('toast',{message:'✦ '+c.ability});
+  if(p.characterId==='dante'){this.wave();this.queuedWaves=[{delay:.55},{delay:1.1}];}
+  if(p.characterId==='mer')this.summonSpirits(c.abilityDuration);this.emit('toast',{message:'✦ '+c.ability});
+ }
+ // Madre tierra: los espíritus salen escalonados para que los golpes no caigan todos juntos.
+ summonSpirits(time){
+  const p=this.player,S=Z.SPIRITS;this.spirits=[];
+  for(let k=0;k<S.count;k++){const a=k*Math.PI*2/S.count;this.spirits.push({k,x:p.x+Math.cos(a)*20,y:p.y-12+Math.sin(a)*12,life:time,maxLife:time,clock:k*S.interval/S.count,target:null,strike:0,dir:1});}
+  this.effect(p.x,p.y,'bloom',1.1,{seed:Math.random()*99});
+ }
+ // Daño de un golpe de espíritu: el de Mer con el arma que tiene en la mano, por 1,5.
+ spiritDamage(){const p=this.player,stats=this.stats(),weapon=Z.WEAPON_TYPES[p.weapon]||Z.WEAPON_TYPES.fists;return stats.power*weapon.damageMultiplier*stats.damageMultiplier*this.weaponLevelMultiplier()*Z.SPIRITS.multiplier;}
+ // Siguen a Mer y les pegan a los enemigos cercanos. Nadie los ve ni les puede pegar.
+ updateSpirits(dt){
+  if(!this.spirits||!this.spirits.length)return;const p=this.player,S=Z.SPIRITS;
+  const near=this.enemies.filter(e=>!e.dead&&!(e.latched>0)&&!e.air&&e.biome===this.biome&&distance(e,p)<=S.range).sort((a,b)=>distance(a,p)-distance(b,p));
+  for(const s of this.spirits){
+   const step=Math.min(dt,s.life);s.life-=dt;s.strike=Math.max(0,s.strike-dt);
+   // Cada espíritu toma un enemigo distinto mientras alcancen; si no, comparten.
+   const target=near.length?near[s.k%near.length]:null;s.target=target?target.id:null;
+   const orbit=this.time*2.4+s.k*Math.PI*2/S.count;
+   const tx=target?target.x+Math.cos(orbit)*13:p.x+Math.cos(orbit)*22,ty=target?target.y-14+Math.sin(orbit)*6:p.y-14+Math.sin(orbit)*10;
+   const dx=tx-s.x,dy=ty-s.y,len=Math.hypot(dx,dy),move=Math.min(len,(len>120?900:420)*dt);
+   if(len>0){s.x+=dx/len*move;s.y+=dy/len*move;if(Math.abs(dx)>1)s.dir=dx>0?1:-1;}
+   // Si todavía no llegó al enemigo, el golpe espera a que llegue.
+   s.clock+=step;
+   if(target&&s.clock>=S.interval-1e-8&&Math.hypot(target.x-s.x,target.y-14-s.y)<28){
+    s.clock-=S.interval;s.strike=.18;
+    this.effect(target.x,target.y-12,'leafslash',.3,{seed:Math.random()*99,dir:target.x>=s.x?1:-1});
+    this.hitEnemy(target,this.spiritDamage(),false,false,'spirit');if(this.state!=='playing')return;
+   }else s.clock=Math.min(s.clock,S.interval);
+  }
+  if(this.spirits.some(s=>s.life<=1e-8)){for(const s of this.spirits)if(s.life<=1e-8)this.effect(s.x,s.y,'leafpoof',.6,{seed:s.k*13+1});this.spirits=this.spirits.filter(s=>s.life>1e-8);}
  }
  wave(){const p=this.player;p.attackAnim=.45;p.tobi=.45;this.effect(p.x,p.y,'wave',.65,{radius:165});this.sound.play('wave');this.shake(3,.2);this.enemies.forEach(e=>{if(!e.dead&&distance(e,p)<=165&&e.biome===this.biome)this.hitEnemy(e,10,true,false,'ability');});}
  equip(weapon){if(this.player.weapons.includes(weapon)){this.player.weapon=weapon;this.emit('tick');}else this.emit('toast',{message:'Todavía no encontraste esa arma.'});}
@@ -659,7 +690,7 @@ class Game {
   for(const k of ['kills','deaths','playTime','abilityCooldown','attackCooldown','stoneWalkTime','restTime','slow','exhausted'])p[k]=typeof source[k]==='number'&&Number.isFinite(source[k])?clamp(source[k],0,1e9):0;
   // Luna roja: solo vale si el guardado es de esa misma noche. Las partidas viejas tiran al volver a jugar.
   p.moonNight=Number.isInteger(source.moonNight)?clamp(source.moonNight,-1,1e9):-1;{const night=Z.dayClock(p.playTime).night;p.bloodMoon=source.bloodMoon===true&&night>=0&&night===p.moonNight;}this.moonNotified=false;
-  p.abilityCooldown=Math.min(p.abilityCooldown,30);p.attackCooldown=Math.min(p.attackCooldown,3);p.slow=Math.min(p.slow,4);p.exhausted=Math.min(p.exhausted,10);p.stamina=clamp(p.stamina,0,1);p.stoneWalkTime=clamp(p.stoneWalkTime,0,2);
+  p.abilityCooldown=Math.min(p.abilityCooldown,Math.max(30,Z.CHARACTERS.find(c=>c.id===p.characterId).abilityCooldown||0));p.attackCooldown=Math.min(p.attackCooldown,3);p.slow=Math.min(p.slow,4);p.exhausted=Math.min(p.exhausted,10);p.stamina=clamp(p.stamina,0,1);p.stoneWalkTime=clamp(p.stoneWalkTime,0,2);
   p.coins=Math.floor(clamp(Number(source.coins)||0,0,1e7));p.herbs=Math.floor(clamp(Number(source.herbs)||0,0,Z.HERB_BAG));p.sharpen=Math.floor(clamp(Number(source.sharpen)||0,0,5));p.lessons=Math.floor(clamp(Number(source.lessons)||0,0,1e4));
   p.bossKills=Math.floor(clamp(Number(source.bossKills)||0,0,1e4));p.throneKeys=Math.floor(clamp(Number(source.throneKeys)||0,0,99));p.zakBest=clamp(Number(source.zakBest)||0,0,1e7);
   if(source.materials)for(const k of Object.keys(Z.MATERIALS))p.materials[k]=Math.floor(clamp(Number(source.materials[k])||0,0,1e6));
@@ -684,7 +715,7 @@ class Game {
    const e=this.makeEnemy(spawn),saved=data.enemies.find(i=>i&&i.id===e.id);if(saved){const lives=Z.ENEMY_TYPES[e.type].lives||1;if(e.type==='golem'&&Number.isInteger(saved.life)&&saved.life>0&&saved.life<lives){e.life=saved.life;e.stats=this.enemyStatsFor(e.type,e.life,e.biome);e.maxHp=e.stats.health;}if(Number.isFinite(saved.hp))e.hp=clamp(saved.hp,0,e.maxHp);e.dead=saved.dead===true||e.hp<=0;e.respawn=clamp(Number(saved.respawn)||0,0,Z.ENEMY_TYPES[e.type].respawn||35);e.provoked=saved.provoked===true;e.cooldown=clamp(Number(saved.cooldown)||0,0,3);e.stun=clamp(Number(saved.stun)||0,0,7);e.charm=clamp(Number(saved.charm)||0,0,10);e.latched=clamp(Number(saved.latched)||0,0,3);e.latchRest=clamp(Number(saved.latchRest)||0,0,1.6);e.alert=saved.alert===true;if(this.biome==='village'||e.dead)e.latched=0;
     if(Number.isFinite(saved.x)&&Number.isFinite(saved.y)&&Z.biomeAt(saved.x,saved.y)===e.biome&&!Z.collides(this.world,saved.x,saved.y,7)){e.x=saved.x;e.y=saved.y;}}
    return e;});
-  this.effects=[];this.projectiles=[];this.drops=[];this.bolts=[];this.darkness=0;this.exitPortal=null;this.cutscene=null;this.cutsceneFade=0;this.queuedWaves=Array.isArray(data.queuedWaves)&&p.characterId==='dante'?data.queuedWaves.slice(0,2).filter(w=>w&&Number.isFinite(w.delay)).map(w=>({delay:clamp(w.delay,0,1.1)})):[];this.currentSlot=slot;this.clearInput();this.aim=null;this.state='playing';this.renderer.resize(true);this.emit('start',{loaded:true});
+  this.effects=[];this.projectiles=[];this.drops=[];this.bolts=[];this.spirits=[];this.darkness=0;this.exitPortal=null;this.cutscene=null;this.cutsceneFade=0;this.queuedWaves=Array.isArray(data.queuedWaves)&&p.characterId==='dante'?data.queuedWaves.slice(0,2).filter(w=>w&&Number.isFinite(w.delay)).map(w=>({delay:clamp(w.delay,0,1.1)})):[];this.currentSlot=slot;this.clearInput();this.aim=null;this.state='playing';this.renderer.resize(true);this.emit('start',{loaded:true});
  }
 }
 Z.Game=Game;

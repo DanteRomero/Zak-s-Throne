@@ -64,8 +64,19 @@
       advantage: 'Fuerza estratégica', advantageDescription: 'Cada nivel suma 1 de fuerza automáticamente y concede un punto para la estadística elegida.',
       disadvantage: 'Paso pesado', disadvantageDescription: 'Su velocidad de movimiento final es un 10% menor.',
       appearance: 'Robusto, con barba, anteojos y remera violeta de informático.'
+    },
+    {
+      id: 'mer', name: 'Mer', title: 'La cuidadora del bosque', color: '#9dbb6e',
+      stats: { health: 85, strength: 5, speed: 30, endurance: 20, intelligence: 10 },
+      ability: 'Madre tierra', abilityDescription: 'Invoca 3 espíritus del bosque durante 7 s. La siguen y les pegan 2 veces por segundo a los enemigos cercanos, cada golpe con el 150% de su daño. Son inmortales y los enemigos ni los ven.',
+      abilityCooldown: 45, abilityDuration: 7, abilityRadius: 150, abilityPassive: false,
+      advantage: 'Hija del monte', advantageDescription: 'Las serpientes la ignoran hasta que ella o sus espíritus las golpean.',
+      disadvantage: 'Hoja seca', disadvantageDescription: 'Las quemaduras le hacen 50% más de daño.',
+      appearance: 'Menuda, de pelo castaño muy largo, cuernos de ciervo, orejas puntiagudas, flores en el pelo y vestido de hojas.'
     }
   ];
+  // Madre tierra (Mer): cuántos espíritus salen, cada cuánto pega cada uno y cuánto de su daño.
+  Zak.SPIRITS = { count: 3, interval: 0.5, multiplier: 1.5, range: 150 };
 
   // Los enemigos tienen el mismo nivel que el personaje; los crecimientos son por nivel.
   Zak.ENEMY_TYPES = {

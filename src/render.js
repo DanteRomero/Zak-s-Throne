@@ -71,10 +71,38 @@
     paco: { shirt: "#937044", shade: "#684f36", light: "#b18d59", pants: "#384749", pantsShade: "#2a3638", boot: "#293330", skin: "#bf8861", skinShade: "#946547", hair: "#554633", fat: 0 },
     fede: { shirt: "#ba434a", shade: "#873747", light: "#d9625f", pants: "#3f597a", pantsShade: "#2f4460", boot: "#293330", skin: "#d9a476", skinShade: "#b47c55", hair: "#554633", fat: 0 },
     pepe: { shirt: "#e3c95f", shade: "#b89742", light: "#f4e394", pants: "#cf9b44", pantsShade: "#a67a32", boot: "#de8e3f", skin: "#f0dc87", skinShade: "#d1b95f", hair: "#554633", fat: 0 },
-    tena: { shirt: "#ede6cb", shade: "#b5b8a6", light: "#fffbea", pants: "#384749", pantsShade: "#2a3638", boot: "#293330", skin: "#d9a476", skinShade: "#b47c55", hair: "#5d4831", fat: 0 }
+    tena: { shirt: "#ede6cb", shade: "#b5b8a6", light: "#fffbea", pants: "#384749", pantsShade: "#2a3638", boot: "#293330", skin: "#d9a476", skinShade: "#b47c55", hair: "#5d4831", fat: 0 },
+    // Mer va descalza: las piernas y los pies son de piel.
+    mer: { shirt: "#6f8a45", shade: "#536b35", light: "#93ad5e", pants: "#edbf9c", pantsShade: "#cf9a78", boot: "#c48a68", skin: "#edbf9c", skinShade: "#cf9a78", hair: "#4b3324", fat: 0 }
   };
+  // Detalles de Mer: cuernos de ciervo, orejas de elfa, flores y el pelo hasta la cintura.
+  const MER = { antler: "#dcc690", antlerShade: "#a88d5a", antlerLight: "#f1e2b4", hairLight: "#6b4a32", hairDark: "#33231a", flower: "#f4eed2", pollen: "#e7c55a", leaf: "#93ad5e", leafDark: "#56703a", dress: "#6f8a45", wrap: "#c9aa6e", skin: "#edbf9c", skinLight: "#f6d3b5", blush: "#e9a58b" };
+  function merAntlers(c, dx, far) {
+    const A = far ? MER.antlerShade : MER.antler;
+    for (const s of [-1, 1]) {
+      const r = (x, y, w, h, col) => rect(c, dx + (s > 0 ? x : -x - w), y, w, h, col);
+      r(2, -27, 2, 3, A); r(3, -29, 2, 2, A); r(5, -30, 2, 2, A); r(7, -31, 1, 2, A); r(3, -31, 1, 2, A);
+      if (!far) { r(2, -27, 1, 2, MER.antlerLight); r(5, -30, 1, 1, MER.antlerLight); }
+      r(3, -25, 1, 1, MER.antlerShade);
+    }
+  }
+  function merFlower(c, x, y) {
+    rect(c, x - 1, y, 3, 1, MER.flower); rect(c, x, y - 1, 1, 3, MER.flower); rect(c, x, y, 1, 1, MER.pollen); rect(c, x + 1, y + 1, 2, 1, MER.leaf);
+  }
+  // Vestido de hojas: hombros al aire, una franja de hojas en el pecho y la pollera de hojas sueltas.
+  function merDress(c, v, tx, tw, swing) {
+    const { side, back } = v;
+    if (!back) { rect(c, tx, -15, tw, 2, MER.skin); rect(c, tx + 1, -15, tw - 2, 1, MER.skinLight); }
+    rect(c, tx, -13, tw, 3, MER.dress); rect(c, tx + 1, -13, 2, 1, MER.leaf); rect(c, tx + tw - 3, -12, 2, 1, MER.leaf);
+    rect(c, tx, -10, tw, 1, MER.wrap);
+    const sway = side ? swing : 0, colors = [MER.dress, MER.leaf, MER.leafDark], n = Math.ceil(tw / 2) + 1;
+    for (let i = 0; i < n; i++) {
+      const lx = tx - 1 + i * 2 + (i % 2 ? sway : 0), drop = (i % 2 ? 5 : 4) - (!side && (i === 0 || i === n - 1) ? 1 : 0);
+      rect(c, lx, -9, 2, drop, colors[i % 3]); rect(c, lx, -9 + drop, 1, 1, colors[(i + 1) % 3]);
+    }
+  }
   const FACING = { down: [0, 1], up: [0, -1], left: [-1, 0], right: [1, 0] };
-  const SEEDS = { dante: .3, gero: 1.1, paco: 2.3, fede: 3.7, pepe: 4.4, tena: 5.2 };
+  const SEEDS = { dante: .3, gero: 1.1, paco: 2.3, fede: 3.7, pepe: 4.4, tena: 5.2, mer: 6.1 };
   const weaponId = player => typeof player.weapon === "string" ? player.weapon : player.weapon && player.weapon.id;
   const elementalHue = time => ["#7fe6f2", "#f2c94c", "#9ad16a", "#e0574b"][Math.floor(time * 3) % 4];
   // El arma en la mano, con la empuñadura a la altura de ox; se mueve con el brazo.
@@ -108,7 +136,7 @@
       rect(c, id === "pepe" ? -6 : -5 - fat, -2 - liftL, id === "pepe" ? 6 : 5, 2, L.boot); rect(c, 1, -2 - liftR, id === "pepe" ? 6 : 5 + fat, 2, L.boot);
     }
     c.translate(0, up);
-    const hand = id === "fede" ? "#b4424b" : id === "pepe" ? "#ebd776" : L.skin, sleeve = id === "pepe" ? "#ebd776" : L.shade;
+    const hand = id === "fede" ? "#b4424b" : id === "pepe" ? "#ebd776" : L.skin, sleeve = id === "pepe" ? "#ebd776" : id === "mer" ? L.skin : L.shade;
     const armL = moving ? swing : 0, armR = moving ? -swing : 0, reach = attacking ? (side ? 5 : 0) : 0;
     const showWeapon = weapon && !attacking && weapon !== "fists";
     if (back && showWeapon) heldWeapon(c, weapon, 9 + fat, armR, time);
@@ -124,6 +152,7 @@
       if (id === "tena") rect(c, 0, -15, 2, 8, "#b94e46");
       if (id === "fede") { rect(c, -1, -14, 2, 5, "#422e39"); rect(c, -4, -8, 8, 2, "#344e72"); }
     } else if (back && id === "tena") { rect(c, -3, -14, 1, 5, "#aa453f"); rect(c, 2, -14, 1, 5, "#aa453f"); rect(c, -1, -12, 2, 1, "#b69753"); }
+    if (id === "mer") merDress(c, v, tx, tw, swing);
     // Brazos
     if (side) {
       const ax = -1 + swing * 2;
@@ -134,6 +163,8 @@
       if (attacking) { rect(c, 5 + fat, -15, 3, 5, sleeve); rect(c, 5 + fat, -11, 3, 2, hand); }
       else { rect(c, 5 + fat, -14 + armR, 3, 6, sleeve); rect(c, 5 + fat, -9 + armR, 3, 3, hand); if (!back && showWeapon) heldWeapon(c, weapon, 9 + fat, armR, time); }
       if (id === "pepe") { rect(c, -9, -14 + armL, 3, 6, "#ebd776"); if (!attacking) rect(c, 7, -14 + armR, 3, 6, "#ebd776"); }
+      // Mer: tiras de hoja en los hombros y brazaletes de cuero en los antebrazos.
+      if (id === "mer") { rect(c, -8, -14 + armL, 3, 1, MER.dress); rect(c, -8, -10 + armL, 3, 1, MER.wrap); rect(c, 5, -14 + (attacking ? -1 : armR), 3, 1, MER.dress); if (!attacking) rect(c, 5, -10 + armR, 3, 1, MER.wrap); }
     }
     // Cabeza
     const fx = side ? 2 : 0;
@@ -172,6 +203,32 @@
       if (id === "paco") {
         rect(c, -5, -27, 10, 5, "#78613f"); rect(c, -4, -28, 8, 2, "#a0804d"); rect(c, -5, -24, 10, 2, "#564837"); rect(c, -9, -23, 18, 2, "#b19660"); rect(c, -7, -21, 14, 1, "#6d583d");
         rect(c, -3 + fx, -15, 6, 2, "#c45245"); if (!back) rect(c, -1 + fx, -13, 2, 3, "#c45245");
+      }
+      if (id === "mer") {
+        // Cara más fina: ojos grandes con brillo, boca chiquita y sin sombra de mandíbula.
+        if (!back && side) { rect(c, 2, -16, 3, 1, L.skin); rect(c, 3, -16, 2, 1, "#c9776a"); rect(c, -4, -16, 8, 2, L.skin); rect(c, -3, -15, 7, 1, L.skinShade); if (!blink) { rect(c, 1, -21, 2, 3, "#2b2420"); rect(c, 2, -21, 1, 1, "#ffffff"); } }
+        else if (!back) {
+          rect(c, -4, -16, 8, 2, L.skin); rect(c, -3, -15, 6, 1, L.skinShade); rect(c, 0, -18, 1, 2, L.skin); rect(c, -1, -16, 3, 1, L.skin); rect(c, 0, -16, 2, 1, "#c9776a");
+          if (!blink) { rect(c, -4, -21, 2, 3, "#2b2420"); rect(c, 3, -21, 2, 3, "#2b2420"); rect(c, -4, -21, 1, 1, "#ffffff"); rect(c, 3, -21, 1, 1, "#ffffff"); }
+        }
+        // Pelo largo y ondulado: en la espalda llega a la cintura; de frente cae sobre los hombros.
+        if (back) {
+          rect(c, -6, -22, 12, 15, hair); rect(c, -7, -19, 1, 9, hair); rect(c, 6, -18, 1, 8, hair);
+          rect(c, -6, -7, 2, 1, hair); rect(c, -2, -7, 3, 2, hair); rect(c, 3, -7, 2, 1, hair);
+          rect(c, -4, -20, 1, 10, MER.hairLight); rect(c, 1, -19, 1, 9, MER.hairLight); rect(c, 4, -16, 1, 6, MER.hairDark); rect(c, -1, -14, 1, 6, MER.hairDark);
+        } else if (side) {
+          rect(c, -6, -22, 5, 13, hair); rect(c, -7, -18, 1, 8, hair); rect(c, -5, -9, 3, 2, hair);
+          rect(c, -5, -20, 1, 9, MER.hairLight); rect(c, -3, -16, 1, 6, MER.hairDark); rect(c, 3, -23, 2, 2, hair);
+        } else {
+          rect(c, -7, -22, 2, 10, hair); rect(c, 5, -22, 2, 10, hair); rect(c, -8, -17, 1, 6, hair); rect(c, 7, -16, 1, 6, hair);
+          rect(c, -7, -21, 1, 7, MER.hairLight); rect(c, 6, -20, 1, 6, MER.hairDark); rect(c, -2, -23, 3, 1, MER.hairLight);
+          rect(c, -4, -17, 1, 1, MER.blush); rect(c, 4, -17, 1, 1, MER.blush);
+        }
+        // Orejas puntiagudas que asoman entre el pelo.
+        if (side) { rect(c, -2, -20, 2, 2, L.skin); rect(c, -3, -22, 1, 2, L.skin); rect(c, -2, -19, 1, 1, L.skinShade); }
+        else { rect(c, -8, -19, 2, 2, L.skin); rect(c, -9, -21, 1, 2, L.skin); rect(c, -10, -22, 1, 1, L.skin); rect(c, 6, -19, 2, 2, L.skin); rect(c, 8, -21, 1, 2, L.skin); rect(c, 9, -22, 1, 1, L.skin); }
+        if (side) { merAntlers(c, -2, true); merAntlers(c, 0, false); merFlower(c, -3, -24); }
+        else { merAntlers(c, 0, false); merFlower(c, back ? 3 : -5, -23); merFlower(c, back ? -4 : 4, -24); }
       }
       if (id === "dante") {
         if (!back) {
@@ -213,7 +270,7 @@
       if (k < .5) { const r = 4 + k * 22; rect(c, Math.cos(angle) * r - 2, Math.sin(angle) * r - 2, 5, 4, "#606a70"); rect(c, Math.cos(angle) * r - 1, Math.sin(angle) * r - 2, 3, 2, "#a8b3ad"); }
     } else {
       const look = LOOKS[p.characterId] || LOOKS.pepe, r = 7 + Math.sin(k * Math.PI) * 13, sx = -Math.sin(angle) * 6, sy = Math.cos(angle) * 4, fx = sx + Math.cos(angle) * r, fy = sy + Math.sin(angle) * r;
-      sprite(c, P.ink, false, () => { Px.line(c, sx + Math.cos(angle) * 3, sy + Math.sin(angle) * 3, fx, fy, look.shade, 3); rect(c, fx - 3, fy - 3, 6, 6, p.characterId === "fede" ? "#b4424b" : look.skin); rect(c, fx - 2, fy - 3, 3, 1, "#ffffff55"); });
+      sprite(c, P.ink, false, () => { Px.line(c, sx + Math.cos(angle) * 3, sy + Math.sin(angle) * 3, fx, fy, p.characterId === "mer" ? look.skin : look.shade, 3); rect(c, fx - 3, fy - 3, 6, 6, p.characterId === "fede" ? "#b4424b" : look.skin); rect(c, fx - 2, fy - 3, 3, 1, "#ffffff55"); });
       if (k >= .34 && k <= .67) for (let i = 0; i < 4; i++) { const a = angle + i * Math.PI / 2 + .78, d = 4 + k * 5; rect(c, fx + Math.cos(angle) * 6 + Math.cos(a) * d, fy + Math.sin(angle) * 6 + Math.sin(a) * d, 2, 2, "#f6e2b8"); }
     }
     c.restore();
@@ -275,6 +332,24 @@
     c.restore();
     if (attacking && !behind) drawAttack(c, player, time);
     if (!portrait && player.gather && player.gather.tool) drawTool(c, player, time);
+  }
+  // Espíritu del bosque de Madre tierra: una lucecita de hojas que flota, con brotes y ojitos.
+  function drawSpirit(c, s, time) {
+    const bob = Math.round(Math.sin(time * 5 + s.k * 2.1) * 2), fade = Math.max(0, Math.min(1, s.life / .5, (s.maxLife - s.life) / .3 + .15)), lunge = s.strike > 0 ? Math.round(s.strike / .18 * 3) : 0;
+    c.save(); c.translate(Math.round(s.x), Math.round(s.y) + bob); c.globalAlpha *= fade;
+    Px.oval(c, 0, 14 - bob, 4, 1.5, "rgba(24,38,30,.18)");
+    Px.glow(c, 0, 0, 15, "#c8f2a6", .45);
+    if (s.dir < 0) c.scale(-1, 1);
+    for (let k = 0; k < 3; k++) { const t = (time * 2.2 + k / 3 + s.k * .2) % 1; c.globalAlpha = fade * (1 - t) * .8; rect(c, -5 - t * 7, 2 + Math.round(Math.sin(time * 6 + k * 2) * 2), 2, 2, k % 2 ? "#e2f8c4" : "#9fd07c"); }
+    c.globalAlpha = fade * .92; c.translate(lunge, 0);
+    sprite(c, "#2c4527", false, () => {
+      rect(c, -3, -5, 6, 10, "#a9dc86"); rect(c, -4, -3, 8, 7, "#a9dc86"); rect(c, -5, -1, 10, 3, "#a9dc86");
+      rect(c, -3, 4, 6, 1, "#7cbc5f"); rect(c, -1, 5, 3, 1, "#7cbc5f"); rect(c, 4, -1, 1, 3, "#7cbc5f");
+      rect(c, -3, -4, 3, 2, "#eaffd4"); rect(c, -4, -2, 1, 2, "#eaffd4");
+      rect(c, -2, -7, 1, 2, "#6fae58"); rect(c, -3, -8, 1, 1, "#6fae58"); rect(c, 2, -7, 1, 2, "#6fae58"); rect(c, 3, -9, 1, 2, "#6fae58"); rect(c, 4, -9, 1, 1, "#9fd07c");
+      rect(c, 0, -1, 1, 2, "#1f331d"); rect(c, 3, -1, 1, 2, "#1f331d");
+    });
+    c.restore();
   }
   // Indicador mientras se mantiene el analógico de ataque.
   // A distancia: la línea del recorrido real del tiro. Cuerpo a cuerpo: el área que alcanza el golpe.
@@ -2180,6 +2255,7 @@
       for(const npc of world.npcs||[])if(visible(npc.x,npc.y,50))renderables.push({y:npc.y,kind:"npc",data:npc});
       for(const e of game.enemies||[])if(!e.dead&&visible(e.x,e.y,35))renderables.push({y:e.y,kind:"enemy",data:e});
       if(game.player&&!menu)renderables.push({y:p.y,kind:"player",data:p});
+      if(!menu)for(const s of game.spirits||[])if(visible(s.x,s.y,30))renderables.push({y:s.y+14,kind:"spirit",data:s});
       renderables.sort((a,b)=>a.y-b.y);
       for(const item of renderables){
         if(item.kind==="object"){
@@ -2188,6 +2264,7 @@
           c.globalAlpha=!menu&&hiding&&["tree","house","arch","cliff","pillar","deadtree","zakthrone","wall"].includes(o.type)?.62:1;
           drawObject(c,o,time);c.globalAlpha=1;
         }else if(item.kind==="enemy")drawEnemy(c,item.data,time);
+        else if(item.kind==="spirit")drawSpirit(c,item.data,time);
         else if(item.kind==="npc"&&item.data.kind==="smith"){
           const n=item.data;drawSmith(c,n,time);
           if(Math.hypot(p.x-n.x,p.y-n.y)<60&&!menu)pixelText(c,n.name,n.x,n.y-44,"#f2c98a",6);
@@ -2409,6 +2486,21 @@
         c.strokeStyle="#b99c71";c.lineWidth=1;c.beginPath();c.ellipse(x,y-3,Math.max(0,radius-5),Math.max(0,radius*.65-3),0,0,Math.PI*2);c.stroke();
         for(let k=0;k<12;k++){const a=k*Math.PI/6;rect(c,x+Math.cos(a)*radius,y-3+Math.sin(a)*radius*.65,2,3,"#edd9a3");}
       } else if(e.type==="heart"){heart(c,x,y-12-progress*16,"#e9ac9a");}
+      else if(e.type==="bloom"){
+        // Madre tierra: un anillo verde se abre, brotan flores y suben hojas.
+        const r=8+progress*46,seed=Math.floor(e.seed||0);
+        c.strokeStyle="#a9dc86";c.lineWidth=2;c.beginPath();c.ellipse(x,y-3,r,r*.6,0,0,Math.PI*2);c.stroke();
+        for(let k=0;k<10;k++){const a=k*Math.PI/5+hash(k,seed,2),d=r*(.5+hash(k,seed,3)*.5),fx=x+Math.cos(a)*d,fy=y-3+Math.sin(a)*d*.6;if(k%2)merFlower(c,fx,fy);else rect(c,fx,fy-progress*22,3,2,k%4?"#9fd07c":"#6fae58");}
+        if(progress<.3){c.globalAlpha=(.3-progress)/.3*.7;Px.glow(c,x,y-14,40,"#d6f5b8",1);}
+      } else if(e.type==="leafslash"){
+        // Golpe de espíritu: una medialuna de hojas, como un zarpazo verde.
+        const sgn=e.dir||1,r=11,seed=Math.floor(e.seed||0),tilt=(hash(1,seed,4)-.5)*1.2,head=-1.3+2.6*Math.min(1,progress*2),tail=-1.3+2.6*Math.max(0,progress*2-.6),outer=[],inner=[];
+        for(let k=0;k<=7;k++){const t=k/7,an=tilt+tail+(head-tail)*t;outer.push([x-sgn*4+sgn*Math.cos(an)*r,y+Math.sin(an)*r]);inner.push([x-sgn*4+sgn*Math.cos(an)*(r-t*5),y+Math.sin(an)*(r-t*5)]);}
+        if(head>tail)poly(c,outer.concat(inner.reverse()),"#c8f2a6");
+        for(let k=0;k<4;k++){const a=hash(k,seed,7)*Math.PI*2,d=4+progress*12;rect(c,x+Math.cos(a)*d,y+Math.sin(a)*d*.7,2,2,k%2?"#e2f8c4":"#6fae58");}
+      } else if(e.type==="leafpoof"){
+        for(let k=0;k<8;k++){const a=k*.8+(e.seed||0),d=3+progress*14;rect(c,x+Math.cos(a)*d,y+Math.sin(a)*d*.6-progress*10,2,2,k%3?"#9fd07c":"#e2f8c4");}
+      }
       else if(e.type==="bolt"){
         c.globalAlpha=1-progress;c.strokeStyle="#e6d6ff";c.lineWidth=3;c.beginPath();let bx=x,by=y-180;c.moveTo(bx,by);
         for(let k=1;k<=6;k++){bx=x+(hash(k,Math.floor(x),Math.floor(y))-.5)*18;by=y-180+k*30;c.lineTo(bx,by);}c.stroke();
@@ -2484,12 +2576,12 @@
     if(!canvas.width)canvas.width=96;
     if(!canvas.height)canvas.height=96;
     c.clearRect(0,0,canvas.width,canvas.height);c.imageSmoothingEnabled=false;
-    const colors=({gero:["#779a8c","#3b5c56"],paco:["#b39b6e","#756745"],fede:["#967585","#514859"],pepe:["#b9a868","#797243"],tena:["#a68576","#66564e"],dante:["#7e95a0","#475c64"]})[id]||["#b9a868","#797243"];
+    const colors=({gero:["#779a8c","#3b5c56"],paco:["#b39b6e","#756745"],fede:["#967585","#514859"],pepe:["#b9a868","#797243"],tena:["#a68576","#66564e"],dante:["#7e95a0","#475c64"],mer:["#8aa36d","#4c6040"]})[id]||["#b9a868","#797243"];
     rect(c,0,0,canvas.width,canvas.height,colors[1]);
     rect(c,3,3,canvas.width-6,canvas.height-6,colors[0]);
     for(let k=0;k<12;k++)rect(c,hash(k,2)*canvas.width,hash(k,8)*canvas.height,2,2,"#e7dcc42b");
     const bust=canvas.height<64,s=scale||(bust?2:Math.max(1,Math.floor(Math.min(canvas.width/17,canvas.height/29))));
-    c.save();c.translate(Math.round(canvas.width/2),bust?s*29:canvas.height-5);Px.scale=s;
+    c.save();c.translate(Math.round(canvas.width/2),bust?s*(id==="mer"?32:29):canvas.height-5);Px.scale=s;
     drawCharacter(c,{x:0,y:0,characterId:id,dir:"down"},0,true);Px.scale=1;c.restore();
   }
   function drawMinimap(canvas,game) {
