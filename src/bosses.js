@@ -40,7 +40,7 @@ const SCENES = {
  // Charla con un vecino: queda el texto en pantalla hasta que el jugador sigue.
  talk:{plain:true,steps:[
   {at:0,run(s){this.say(s,s.speaker,s.text);}},
-  {at:3600,skip:true,run(){this.endCutscene();this.cutsceneFade=0;}}
+  {at:3600,skip:true,run(s){this.endCutscene();this.cutsceneFade=0;if(s.menu)this.emit('npc',{npc:s.menu});}}
  ],tick(s){
   const l=s.line,sip=l?l.text.indexOf('*ruido de mate*'):-1;
   if(sip>=0&&!s.sipped&&(s.t-l.at)*CPS>=sip){s.sipped=true;this.sound.play('mate');}

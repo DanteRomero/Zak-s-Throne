@@ -193,6 +193,21 @@
     test('Experiencia inválida no corrompe el personaje', () => {
       const p=Zak.createPlayer('tena'); equal(Zak.grantXp(p,NaN),0); equal(Zak.grantXp(p,Infinity),0); equal(Zak.grantXp(p,-20),0); equal(p.xp,0);
     });
+    test('v2.19: choripán, vino, runa y Herradura cambian la ficha; partidas nuevas arrancan sin nada', () => {
+      const p=Zak.createPlayer('gero'), base=Zak.getStats(p);
+      p.buffs.chori=10; near(Zak.getStats(p).strength,base.strength*1.2,'choripán'); p.buffs.chori=0;
+      p.buffs.wine=10; near(Zak.getStats(p).armor,base.armor+3,'vino: armadura'); near(Zak.getStats(p).moveSpeed,base.moveSpeed*.9,'vino: paso'); p.buffs.wine=0;
+      p.buffs.rune=5; near(Zak.getStats(p).damageMultiplier,base.damageMultiplier*1.15,'runa'); p.buffs.rune=0;
+      p.amulets=['horseshoe']; p.equipped=['horseshoe']; near(Zak.getStats(p).moveSpeed,base.moveSpeed*1.08,'herradura');
+      p.equipped=['eye','horseshoe']; equal(Zak.hasAmulet(p,'horseshoe'),false,'un solo engarce: cuenta el primero'); p.amuletSlots=2; equal(Zak.hasAmulet(p,'horseshoe'),true,'con dos engarces cuentan los dos');
+      const fresh=Zak.createPlayer('mer'); equal(Object.keys(fresh.items).length,0); equal(fresh.amulets.length,0); equal(fresh.amuletSlots,1); equal(fresh.rod,false); equal(fresh.materials.arcane,0);
+      ok(Object.keys(Zak.BUFF_LIMITS).every(k => fresh.buffs[k]===0),'todos los efectos en cero');
+    });
+    test('v2.19: los cinco enemigos nuevos de la dimensión y el cristal arcano', () => {
+      for (const t of ['book','imp','gargoyle','shadow','mimic']) { ok(Zak.ENEMY_TYPES[t],t); ok(!Zak.ENEMY_TYPES[t].boss,t+' no es jefe'); }
+      equal(Zak.ENEMY_TYPES.mimic.loot,true); equal(Zak.NODES.arcane.tier,5); equal(Zak.NODES.arcane.material,'arcane'); ok(Zak.MATERIALS.arcane);
+      ok(['water','bandage','choripan','wine','scroll'].every(id => Zak.SHOP_ITEMS.some(i => i.id===id && i.item)),'El Almacén vende los consumibles');
+    });
     return { passed: count, results };
   }
   root.runZakRulesTests = runZakRulesTests;

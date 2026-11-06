@@ -6,6 +6,28 @@ Cada versión lista sus cambios agrupados por tipo:
 - **Change:** algo que ya existía y ahora funciona distinto.
 - **Fix:** un error corregido.
     
+## v2.19 — 2026-11-06
+* Feature
+    - **Bolsa de consumibles (B):** hasta 10 de cada uno. F usa el objeto elegido y G cambia cuál; en el celular, el botón 🎒 nuevo de la derecha.
+        - El Almacén vende **agua bendita** (inmune al fuego 10 s y apaga fogatas), **vendas** (cortan el desangrado), **choripán** (+20% de fuerza 45 s), **vino de la abuela** (+3 de armadura y −10% de paso 40 s) y **pergamino de regreso** (vuelve a la plaza, salvo en la dimensión de Zak).
+        - El Gaucho vende **mate con yuyos**: energía al máximo y 40% de la vida en 10 s.
+        - El herrero hace **petardos**: aturden 1,5 s a los enemigos comunes cercanos.
+    - **Amuletos:** Medallita de la Virgen (regenera vida si no te pegan), Herradura de Zaino (+8% de paso), Diente de la Yarará (inmune al veneno), Anillo del Capo (+25% de monedas) y Ojo de Cerbero (ves en las cuevas oscuras y bajás sin antorcha). Un engarce para empezar; el segundo se compra.
+    - **Pesca:** Don Chiche vende la caña. E al lado de una laguna, quieto, y E otra vez cuando pica. Mojarras, pejerreyes, bagres y, con un 5%, el **Dorado**: cura todo, 3 s sin recibir daño y 5 s de energía infinita.
+    - **Pedidos de los vecinos:** Sor Inés, Cabo Funes, Tito, Clara, el Gaucho, Don Chiche y Doña Rosa en la aldea; Ánima, la Bruja Pocha y Merlín en la dimensión. Se aceptan después de la charla y pagan guita, consumibles o amuletos.
+    - **Dimensión de Zak más grande:**
+        - **Feria de las Almas** (segura): vecinos de la dimensión, dos almas jugando al truco y el **Mercader del Vacío**, que vende elixires, polvo de estrellas (+1 punto de mejora), el segundo engarce y arma amuletos.
+        - **Biblioteca del Rey Mago:** libros voladores y duendes ilusionistas que se dividen en tres.
+        - **Patio de las Gárgolas:** gárgolas que parecen estatuas, sombras de Zak que copian tu último ataque y vetas de **cristal arcano** (pico de diamante).
+        - **Runas en el piso:** prendidas explotan; apagadas dan +15% de daño 8 s.
+        - **Carpas del Pueblo Mágico:** se revisan con E. Pueden tener guita, consumibles, cristal arcano o un **mimic**.
+        - **Fogatas:** se apagan con agua bendita, y los magos las vuelven a prender.
+* Change
+    - Los vecinos con pedido o tienda abren su menú cuando termina la charla.
+    - La fuente del Santuario también llena botellas de agua bendita, hasta tener dos.
+    - El mapa de la dimensión muestra las cinco zonas y el puesto del Mercader.
+    - Las partidas guardadas siguen cargando: las de antes arrancan con la bolsa vacía, sin amuletos, sin caña y sin pedidos. Las vetas, árboles y enemigos de antes conservan su identificador.
+
 ## v2.18 — 2026-11-06
 * Feature
     - **Mer, la cuidadora del bosque:** personaje jugable nuevo, con cuernos de ciervo, orejas puntiagudas, flores en el pelo largo y vestido de hojas. Tiene poca vida (85), es veloz (30), con fuerza normal (5) y buena resistencia (20).

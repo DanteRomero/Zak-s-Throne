@@ -147,6 +147,37 @@
       xp: 180, coins: [12, 20], color: '#8a929c', visionRange: 200, knockback: false, pace: 0.45,
       description: 'Hierro hueco con mucha vida y mucho daño. Extremadamente lenta y tarda en pegar, pero gira con la espada y golpea todo a su alrededor.'
     },
+    // Más de la dimensión de Zak: Biblioteca del Rey Mago, Patio de las Gárgolas y las carpas del Pueblo Mágico.
+    book: {
+      name: 'Libro volador', base: { health: 32, strength: 14, speed: 40, endurance: 5 },
+      growth: { health: 1, strength: 0.8, speed: 0.5, endurance: 0.3 },
+      xp: 40, coins: [3, 6], color: '#8a5a3a', visionRange: 240, knockback: true,
+      description: 'Andan de a cuatro: te rodean volando y se tiran en picada a picarte. Tienen poca vida.'
+    },
+    imp: {
+      name: 'Duende ilusionista', base: { health: 110, strength: 20, speed: 32, endurance: 20 },
+      growth: { health: 2, strength: 1, speed: 0.5, endurance: 0.8 },
+      xp: 120, coins: [8, 14], color: '#5aa06a', visionRange: 230, knockback: true,
+      description: 'Se divide en tres y salta de un lado a otro. Dos son copias: pegan la mitad y se deshacen de un golpe. Solo uno es real.'
+    },
+    gargoyle: {
+      name: 'Gárgola', base: { health: 300, strength: 28, speed: 26, endurance: 70 },
+      growth: { health: 8, strength: 1.2, speed: 0.3, endurance: 1 },
+      xp: 170, coins: [12, 20], color: '#7d7a86', visionRange: 90, knockback: false,
+      description: 'Parece una estatua y mientras es de piedra no le entra nada. Si pasás cerca o le pegás, se despierta, vuela y se tira en picada.'
+    },
+    shadow: {
+      name: 'Sombra de Zak', base: { health: 160, strength: 24, speed: 30, endurance: 30 },
+      growth: { health: 3, strength: 1, speed: 0.4, endurance: 0.8 },
+      xp: 150, coins: [10, 16], color: '#3a2a52', visionRange: 260, knockback: false,
+      description: 'Copia tu último ataque con un poquito de demora y atraviesa las paredes. Si atacás, ella también.'
+    },
+    mimic: {
+      name: 'Mimic', base: { health: 240, strength: 30, speed: 22, endurance: 55 },
+      growth: { health: 6, strength: 1.2, speed: 0.3, endurance: 1 },
+      xp: 200, coins: [30, 50], color: '#8a5a2a', visionRange: 300, knockback: false, loot: true,
+      description: 'Un cofre con dientes escondido en alguna carpa del Pueblo Mágico. Muerde fuerte, pero suelta buena guita.'
+    },
     capo: {
       name: 'El Capo del Eco', boss: true, base: { health: 520, strength: 12, speed: 22, endurance: 35 },
       growth: { health: 30, strength: 0.8, speed: 1, endurance: 1.5 },
@@ -225,16 +256,23 @@
     { id: 'herb', name: 'Hierba medicinal', icon: '❦', detail: 'Va a la bolsa (máx. 5). R la usa: cura y quita el veneno.', price: () => 10 },
     { id: 'mate', name: 'Mate cebado', icon: '☕', detail: 'Energía al máximo y +10% de movimiento durante 30 s.', price: () => 6 },
     { id: 'sharpen', name: 'Afilar y tensar', icon: '⚒', detail: '+10% de daño con todas las armas. Hasta 5 veces.', price: p => 30 + p.sharpen * 30 },
-    { id: 'lesson', name: 'Clase con Beto', icon: '✎', detail: '+1 punto de mejora para tu ficha.', price: p => 60 + p.lessons * 40 }
+    { id: 'lesson', name: 'Clase con Beto', icon: '✎', detail: '+1 punto de mejora para tu ficha.', price: p => 60 + p.lessons * 40 },
+    // Consumibles: van a la bolsa (B) y se usan con F.
+    { id: 'water', item: true, name: 'Agua bendita', icon: '💧', detail: 'Apaga la quemadura y te hace inmune al fuego durante 10 s. También apaga fogatas.', price: () => 15 },
+    { id: 'bandage', item: true, name: 'Vendas', icon: '🩹', detail: 'Cortan el desangrado y curan 10 de vida.', price: () => 12 },
+    { id: 'choripan', item: true, name: 'Choripán', icon: '🌭', detail: '+20% de fuerza durante 45 s.', price: () => 25 },
+    { id: 'wine', item: true, name: 'Vino de la abuela', icon: '🍷', detail: '+3 de armadura, pero −10% de movimiento, durante 40 s.', price: () => 20 },
+    { id: 'scroll', item: true, name: 'Pergamino de regreso', icon: '📜', detail: 'Te lleva a la plaza. No anda en la dimensión de Zak.', price: () => 80 }
   ];
   Zak.HERB_BAG = 5;
 
   // Materiales que se recolectan con hacha o pico.
   Zak.MATERIALS = {
     wood: { name: 'Madera', icon: '🪵' }, stone: { name: 'Piedra', icon: '🪨' }, coal: { name: 'Carbón', icon: '⬛' },
-    iron: { name: 'Hierro', icon: '⛓' }, gold: { name: 'Oro', icon: '🟨' }, diamond: { name: 'Diamante', icon: '💎' }
+    iron: { name: 'Hierro', icon: '⛓' }, gold: { name: 'Oro', icon: '🟨' }, diamond: { name: 'Diamante', icon: '💎' },
+    arcane: { name: 'Cristal arcano', icon: '🔷' }
   };
-  Zak.emptyMaterials = () => ({ wood: 0, stone: 0, coal: 0, iron: 0, gold: 0, diamond: 0 });
+  Zak.emptyMaterials = () => ({ wood: 0, stone: 0, coal: 0, iron: 0, gold: 0, diamond: 0, arcane: 0 });
   // Vetas y árboles: herramienta, nivel mínimo, segundos base de trabajo, botín y regeneración.
   Zak.NODES = {
     tree: { material: 'wood', tool: 'axe', tier: 1, time: 3, yield: 2, regrow: 60, name: 'árbol' },
@@ -242,7 +280,9 @@
     coal: { material: 'coal', tool: 'pickaxe', tier: 1, time: 3.2, yield: 2, regrow: 180, name: 'carbón' },
     iron: { material: 'iron', tool: 'pickaxe', tier: 2, time: 4, yield: 2, regrow: 300, name: 'hierro' },
     gold: { material: 'gold', tool: 'pickaxe', tier: 3, time: 4.5, yield: 2, regrow: 420, name: 'oro' },
-    diamond: { material: 'diamond', tool: 'pickaxe', tier: 4, time: 5.5, yield: 2, regrow: 600, name: 'diamante' }
+    diamond: { material: 'diamond', tool: 'pickaxe', tier: 4, time: 5.5, yield: 2, regrow: 600, name: 'diamante' },
+    // Patio de las Gárgolas, en la dimensión de Zak.
+    arcane: { material: 'arcane', tool: 'pickaxe', tier: 5, time: 6, yield: 2, regrow: 600, name: 'cristal arcano' }
   };
   Zak.TIER_NAMES = ['', 'madera', 'piedra', 'hierro', 'oro', 'diamante'];
   // Cada nivel de herramienta trabaja más rápido que el anterior.
@@ -308,7 +348,7 @@
       characterId: character.id, name: character.name, level: 1, xp: 0, points: 0,
       stats: { ...character.stats }, hp: character.stats.health,
       stamina: 1, exhausted: 0, restTime: 0, poison: null, slow: 0,
-      buffs: { gero: 0, pepe: 0, paco: 0, pacoAnimals: 0, mate: 0 },
+      buffs: Zak.emptyBuffs(),
       weapon: 'fists', weapons: ['fists'], kills: 0, deaths: 0,
       abilityCooldown: 0, attackCooldown: 0,
       stoneAmmo: 1, stoneWalkTime: 0, bowCharge: 0,
@@ -318,9 +358,16 @@
       offerings: Zak.emptyOfferings(), altar: Zak.emptyAltar(), portal: false, throneKeys: 0, zakBest: 0,
       stunned: 0, frozen: 0, grabbed: 0, bleed: null, burn: null, heavySlow: 0,
       weaponLevels: { fists: 1, bow: 1, sword: 1, stone: 1 }, gather: null,
-      combo: 0, comboTime: 0, roll: 0, rollCooldown: 0, rollX: 0, rollY: 1
+      combo: 0, comboTime: 0, roll: 0, rollCooldown: 0, rollX: 0, rollY: 1,
+      // Bolsa de consumibles, amuletos, pedidos de los vecinos y pesca.
+      items: {}, selectedItem: null, amulets: [], equipped: [], amuletSlots: 1, requests: {},
+      rod: false, horsePets: 0, invuln: 0, calm: 0, fishing: null
     };
   };
+  // Efectos temporales: los de los personajes, el mate y los consumibles.
+  Zak.BUFF_LIMITS = { gero: 10, pepe: 10, paco: 10, pacoAnimals: 25, mate: 30, chori: 45, wine: 40, yuyos: 10, fireproof: 10, dorado: 5, rune: 8 };
+  Zak.emptyBuffs = () => Object.fromEntries(Object.keys(Zak.BUFF_LIMITS).map(k => [k, 0]));
+  Zak.hasAmulet = (player, id) => Array.isArray(player && player.equipped) && player.equipped.slice(0, Math.max(1, player.amuletSlots || 1)).includes(id);
 
   Zak.getStats = function (player, context = {}) {
     const id = player.characterId;
@@ -331,7 +378,7 @@
     // El daño sube como la vida extra de ellos y la vida, como su fuerza extra.
     const late = Zak.lateFactor(player.level);
     let health = Math.max(1, finite(s.health, 100)) * late.strength;
-    let strength = Math.max(0, finite(s.strength, 1));
+    let strength = Math.max(0, finite(s.strength, 1)) * (finite(buffs.chori) > 0 ? 1.2 : 1);
     let speed = Math.max(0, finite(s.speed, 1));
     const baseSpeed = speed;
     let endurance = Math.max(0, finite(s.endurance));
@@ -364,13 +411,15 @@
     if (finite(player.slow) > 0) moveSpeed *= (id === 'pepe' ? 0.8 : 0.85);
     if (finite(player.heavySlow) > 0) moveSpeed *= 0.5;
     if (finite(buffs.mate) > 0) moveSpeed *= 1.1;
+    if (finite(buffs.wine) > 0) moveSpeed *= 0.9;
+    if (Zak.hasAmulet(player, 'horseshoe')) moveSpeed *= 1.08;
     return {
       maxHealth: health, strength, speed, endurance, intelligence,
       moveSpeed, attackCooldown: movement.attackCooldown,
       runDuration: resistance.runDuration * resistanceFactor,
-      armor: resistance.armor * resistanceFactor,
+      armor: resistance.armor * resistanceFactor + (finite(buffs.wine) > 0 ? 3 : 0),
       power: Zak.strikePower(strength), xpMultiplier, speedTier: movement.tier, speedLabel: movement.label,
-      veteran, damageMultiplier: (1 + 0.1 * clamp(Math.floor(finite(player.sharpen)), 0, 5)) * veteran
+      veteran, damageMultiplier: (1 + 0.1 * clamp(Math.floor(finite(player.sharpen)), 0, 5)) * veteran * (finite(buffs.rune) > 0 ? 1.15 : 1)
     };
   };
 

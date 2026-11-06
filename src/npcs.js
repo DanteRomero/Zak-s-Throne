@@ -116,6 +116,49 @@ const ANIMALS=[
 ];
 // Corral de los caballos, con la entrada del lado del camino.
 const CORRAL={x:1210,y:1205,w:130,h:80,gate:1280};
+// Dimensión de Zak: el alma del Santuario y los vecinos de la Feria de las Almas.
+const WIZARD=(robe,shade,light,hat)=>({...top(robe,shade,light),...skirt(robe,shade),shoe:'#17161b',hat:'wizard',hatColor:hat||robe});
+const REALM_PEOPLE=[
+ {id:'anima',kind:'soul',name:'Ánima',zone:'sanctum',x:300,y:3500,roam:[30,20],rest:[3,8],speed:10,tint:'#c9b8ff',lines:[
+  'Hace tanto que estoy acá que ya ni me acuerdo de qué color era el cielo. Violeta, creo. No: eso es acá.',
+  'Las sombras de Zak copian lo que hacés. Si no atacás, te tantean. Si atacás, te devuelven el golpe.',
+  'La fuente te llena las botellas de agua bendita. Apagá las fogatas antes de que te quemen los pies.']},
+ {id:'merchant',kind:'merchant',name:'El Mercader del Vacío',zone:'bazaar',x:1936,y:3436,static:true,dir:'down',shop:'merchant',label:'Hablar con el Mercader del Vacío',lines:[
+  'Compro, vendo, permuto. Ofrendas, cristales, lo que traigas. Lo que no hago es fiar: el vacío no devuelve nada.',
+  'Con dos anillos de la mafia y unos cristales te armo el Anillo del Capo. Monedas, monedas, monedas.',
+  '¿Un segundo engarce para amuletos? Sale caro. Todo lo bueno sale caro.']},
+ {id:'pocha',name:'La Bruja Pocha',zone:'bazaar',x:1520,y:3450,roam:[40,24],rest:[2,6],speed:16,look:{...PALE,...WIZARD('#2c3a2a','#1d281c','#46593f','#1d281c'),hair:'#d9d6cc',hairStyle:'long',earrings:'#a77bff'},lines:[
+  '¿Qué mirás? ¿Nunca viste una bruja de barrio? Leo la borra del café, curo el empacho y tiro las cartas.',
+  'La escoba no anda a nafta, querido. Anda a cristal arcano. Y está carísimo.',
+  'En la Biblioteca los duendes se hacen los vivos: se dividen en tres. Pegale al que se queda quieto menos.']},
+ {id:'merlin',name:'Merlín de Quilmes',zone:'bazaar',x:1660,y:3600,roam:[50,18],rest:[3,8],speed:14,look:{...TAN,...WIZARD('#4b3fa0','#2f2766','#6a5ac0','#2f2766'),hair:'#d9d6cc',hairStyle:'short',beard:'#e4e1d8',cane:true},lines:[
+  'Fui mago del Rey cuarenta años. Me jubilé con la mínima, como todos.',
+  'Los libros voladores son mis apuntes. Se me escaparon en el '+"'"+'89 y nunca más volvieron.',
+  'Si una runa del piso brilla, no la pises. Si está apagada, pisala: te da fuerza un rato.']},
+ {id:'eulalia',name:'Tía Eulalia',zone:'bazaar',x:2282,y:3420,static:true,dir:'down',label:'Hablar con Tía Eulalia, la vidente',look:{...BROWN,...top('#7a2a4a','#4a1830','#a84a6a'),...skirt('#7a2a4a','#4a1830'),shoe:'#17161b',hair:'#1d1a17',hairStyle:'curly',earrings:'#f2c94c',flowers:'#f2c94c'},lines:[
+  'Veo... veo... un pescado dorado. Muy dorado. Del otro lado, en una laguna.',
+  'Veo una gárgola que se despierta. Y veo que no le hiciste caso a la tía.',
+  'Las cartas dicen que vas a ganar. O que vas a perder. Las cartas no se comprometen, nene.']},
+ {id:'ramiro',name:'Ramiro, el gnomo',zone:'bazaar',x:1420,y:3610,roam:[60,20],rest:[1,4],speed:24,look:{...LIGHT,...top('#a13a3a','#7a2a2a','#c45a5a'),...pants('#3f597a','#2f4460'),shoe:'#3a2c26',hair:'#e4e1d8',hairStyle:'short',beard:'#e4e1d8',hat:'wizard',hatColor:'#a13a3a',kid:true},lines:[
+  '¡No soy un enano! Soy un gnomo. Los enanos son de otra dimensión, más fea.',
+  'Una vez abrí una carpa del Pueblo Mágico y el cofre me abrió a mí. Literal.',
+  'El Mercader te compra todo, pero el precio lo pone él. Así funciona el vacío.']},
+ {id:'ernesto',kind:'soul',name:'Ernesto, alma en pena',zone:'bazaar',x:1990,y:3370,roam:[70,25],rest:[2,6],speed:12,tint:'#9fd6e8',lines:[
+  'Me morí en el '+"'"+'87 esperando el colectivo. Todavía no pasó.',
+  '¿Te puedo pedir algo? No, nada. Ya fue. Seguí, seguí.',
+  'Lo bueno de estar muerto es que no hay que pagar el alquiler. Lo malo es todo lo demás.']},
+ {id:'truco',kind:'soul',name:'Truco',zone:'bazaar',x:2030,y:3594,static:true,dir:'right',seated:true,tint:'#e6d6ff',lines:[
+  '¡Truco! ...No, esperá, esperá. Retiro lo dicho. Me voy al mazo.',
+  'Hace trescientos años que jugamos. Vamos uno a uno. Bah, eso dice él.',
+  'Si ves a un gaucho que quiere jugar, traelo. Este ya me tiene podrido.']},
+ {id:'retruco',kind:'soul',name:'Retruco',zone:'bazaar',x:2090,y:3594,static:true,dir:'left',seated:true,tint:'#ffd6e6',lines:[
+  '¡Quiero retruco! Y vale cuatro, y lo que venga.',
+  'No le creas: va perdiendo. Treinta a uno, desde el siglo diecisiete.',
+  'Envido, real envido y falta envido. Sí, todo junto. Acá no hay reglamento.']}
+];
+Z.addRealmPeople=function(world){
+ REALM_PEOPLE.forEach(n=>world.npcs.push({homeX:n.x,homeY:n.y,targetX:n.x,targetY:n.y,dir:'down',walk:0,moving:false,wait:1+world.npcs.length*.13,label:'Hablar con '+n.name,...n}));
+};
 Z.NPC_SPECIES=SPECIES;
 Z.addVillagers=function(world,object){
  const fresh=(id,n)=>({id,x:n.x,y:n.y,homeX:n.x,homeY:n.y,targetX:n.x,targetY:n.y,dir:'down',walk:0,moving:false,wait:1+world.npcs.length*.17,...n});

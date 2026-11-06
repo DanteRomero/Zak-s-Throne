@@ -10,6 +10,8 @@ const burnFrom = e => Math.max(2,Math.round(e.stats.strength*.08));
 Object.assign(Z.Game.prototype, {
  burnPlayer(damage){
   const p=this.player,fresh=!p.burn;
+  // El agua bendita te deja un rato a salvo del fuego.
+  if(p.buffs&&p.buffs.fireproof>0)return;
   // Hoja seca: a Mer el fuego la quema 50% más.
   if(p.characterId==='mer')damage=Math.ceil(damage*1.5);
   p.burn={time:5,tick:p.burn?p.burn.tick:1,damage:Math.max(damage,p.burn?p.burn.damage:0)};
@@ -23,13 +25,14 @@ Object.assign(Z.Game.prototype, {
  // Pisar una fogata del Pueblo Mágico quema (rodar no salva: es fuego, no un golpe).
  updateCampfires(){
   if(this.biome!=='magic')return;const p=this.player;
-  for(const o of this.world.objects)if(o.type==='campfire'&&Math.hypot(p.x-(o.x+o.w/2),p.y-(o.y+o.h/2))<CAMPFIRE_RADIUS){this.burnPlayer(2);return;}
+  for(const o of this.world.objects)if(o.type==='campfire'&&!(o.out>0)&&Math.hypot(p.x-(o.x+o.w/2),p.y-(o.y+o.h/2))<CAMPFIRE_RADIUS){this.burnPlayer(2);return;}
  },
  fireball(e,angle,damage,burn){
   this.projectiles.push({x:e.x+Math.cos(angle)*14,y:e.y-16+Math.sin(angle)*14,dx:Math.cos(angle),dy:Math.sin(angle),type:'fireball',hostile:true,damage,burn,source:e.type,traveled:0,range:420});
  },
  aimAngle(e){const p=this.player;return Math.atan2(p.y-8-(e.y-16),p.x-e.x);},
  updateDimensionEnemy(e,dt,sameZone){
+  if(Z.REALM_AI[e.type]){this[Z.REALM_AI[e.type]](e,dt,distance(e,this.player),sameZone);return;}
   const p=this.player,def=Z.ENEMY_TYPES[e.type],len=distance(e,p),wasAlert=e.alert;
   e.alert=sameZone&&!(e.charm>0)&&(e.summoned||len<def.visionRange||(e.alert&&len<def.visionRange*1.5));
   if(e.alert&&!wasAlert)this.sound.play('alert');

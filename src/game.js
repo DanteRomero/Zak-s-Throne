@@ -7,7 +7,7 @@ const dirs = {down:[0,1],up:[0,-1],left:[-1,0],right:[1,0]};
 const ATTACK_QUEUE_TIME = .35;
 // Lluvia de cuchillos del Capo: aviso, duración y ritmo en segundos reales.
 const KNIFE_WINDUP = .9, KNIFE_TIME = 5, KNIFE_RATE = 3, KNIFE_KO = 5, KNIFE_COOLDOWN = 18, KNIFE_FIRST = 7;
-const names = Z.BIOME_NAMES = {village:'Palihue City',cave:'Cueva del Eco',weeds:'Los Yuyos',cave2:'Cueva Profunda',cave3:'Las Entrañas',altar:'Altar del gobernante',throne:'Trono de Zak',sanctum:'Santuario',magic:'Pueblo Mágico'};
+const names = Z.BIOME_NAMES = {village:'Palihue City',cave:'Cueva del Eco',weeds:'Los Yuyos',cave2:'Cueva Profunda',cave3:'Las Entrañas',altar:'Altar del gobernante',throne:'Trono de Zak',sanctum:'Santuario',magic:'Pueblo Mágico',bazaar:'Feria de las Almas',library:'Biblioteca del Rey Mago',gargoyles:'Patio de las Gárgolas'};
 const isCave = biome => /^cave/.test(biome||'');
 const ROLL_TIME=.3,ROLL_COOLDOWN=.55,ROLL_COST=.2,COMBO_CRIT=4,CRIT_MULTIPLIER=1.75,HERB_REGROW=90,TAIL_RADIUS=62;
 // Guita por cada objetivo del diario: más difícil, más guita, sin romper la economía.
@@ -71,8 +71,14 @@ class Sound {
   if(kind==='woof')[0,.17].forEach(d=>this.tone(170,.11,'square',.035,d,90));
   if(kind==='meow')this.tone(520,.32,'sine',.04,0,780);
   if(kind==='mate')[170,240,195,300,225,360,260].forEach((n,i)=>this.tone(n,.08,'triangle',.04,i*.07,n*1.25));
+  // Pesca, petardos, runas y el Dorado.
+  if(kind==='cast-line')this.tone(700,.25,'sine',.03,0,300);
+  if(kind==='splash')[0,.06].forEach(d=>this.tone(320+Math.random()*80,.09,'triangle',.04,d,140));
+  if(kind==='boom'){this.tone(80,.4,'sawtooth',.08,0,30);this.tone(400,.12,'square',.03,0,80);}
+  if(kind==='rune')[880,1175,1568].forEach((n,i)=>this.tone(n,.2,'sine',.035,i*.05));
+  if(kind==='legend')[392,494,587,784,988,1175].forEach((n,i)=>this.tone(n,.35,'triangle',.05,i*.09));
  }
- update(dt,biome){if(!this.enabled)return;this.ambientTime-=dt;if(this.ambientTime<=0){this.ambientTime=3+Math.random()*3;if(biome==='throne'||biome==='altar'||biome==='sanctum'||biome==='magic')this.tone(biome==='altar'?58:46,2.8,'sawtooth',.012);else if(isCave(biome))this.tone(biome==='cave'?65:52,2.5,'sine',.018);else{const n=[262,330,392,440,523][Math.floor(Math.random()*5)];this.tone(n,1.8,'sine',.016);this.tone(n*1.5,1.5,'sine',.009,.7);}}}
+ update(dt,biome){if(!this.enabled)return;this.ambientTime-=dt;if(this.ambientTime<=0){this.ambientTime=3+Math.random()*3;if(biome==='altar'||Z.isZakDimension(biome))this.tone(biome==='altar'?58:46,2.8,'sawtooth',.012);else if(isCave(biome))this.tone(biome==='cave'?65:52,2.5,'sine',.018);else{const n=[262,330,392,440,523][Math.floor(Math.random()*5)];this.tone(n,1.8,'sine',.016);this.tone(n*1.5,1.5,'sine',.009,.7);}}}
 }
 class Game {
  constructor(canvas){
@@ -102,6 +108,7 @@ class Game {
    if(key==='Escape'){this.emit('escape');return;}if(this.state!=='playing')return;
    if(this.cutscene){if([' ','e','Enter'].includes(key))this.advanceCutscene();return;}
    if(key==='e')this.interact();if(key==='q')this.ability();if(key==='Control')this.roll();if(key==='r')this.useHerb();
+   if(key==='f')this.useSelected();if(key==='g')this.cycleItem();if(key==='b')this.emit('bag');
    if(key==='c')this.emit('stats');if(key==='m')this.emit('map');if(key==='j')this.emit('journal');
    if(['1','2','3','4','5'].includes(key))this.equip(WEAPON_ORDER[+key-1]);
   });
@@ -118,7 +125,7 @@ class Game {
  setAim(e){const r=this.canvas.getBoundingClientRect();this.aim={x:(e.clientX-r.left)/r.width*this.canvas.width+this.camera.x,y:(e.clientY-r.top)/r.height*this.canvas.height+this.camera.y};}
  newGame(id){
   this.world=Z.createWorld();this.player=Z.createPlayer(id);Object.assign(this.player,{...this.world.spawn,dir:'down',moving:false,walk:0,attackAnim:0,runId:(window.crypto&&crypto.randomUUID)?crypto.randomUUID():Date.now().toString(36)+Math.random().toString(36).slice(2,12)});
-  this.biome='village';this.time=0;this.effects=[];this.projectiles=[];this.drops=[];this.queuedWaves=[];this.spirits=[];this.questFlags={};this.currentSlot=null;this.bolts=[];this.darkness=0;this.exitPortal=null;this.cutscene=null;this.cutsceneFade=0;
+  this.biome='village';this.time=0;this.lastStrike=null;this.bombs=[];this.effects=[];this.projectiles=[];this.drops=[];this.queuedWaves=[];this.spirits=[];this.questFlags={};this.currentSlot=null;this.bolts=[];this.darkness=0;this.exitPortal=null;this.cutscene=null;this.cutsceneFade=0;
   this.enemies=this.world.enemySpawns.map(s=>this.makeEnemy(s));this.clearInput();this.aim=null;this.state='playing';this.renderer.resize(true);this.emit('start');
  }
  makeEnemy(s){const biome=Z.biomeAt(s.x,s.y),stats=this.enemyStatsFor(s.type,0,biome);return{...s,homeX:s.x,homeY:s.y,biome,stats,hp:stats.health,maxHp:stats.health,level:stats.level,dir:'down',walk:0,moving:false,dead:false,respawn:0,cooldown:.6,stun:0,charm:0,latched:0,latchRest:0,alert:false,provoked:false,hitFlash:0,special:2.5,telegraph:0,dash:0,aimX:0,aimY:1,life:0,act:null,cd:{},rain:null,rainCd:KNIFE_FIRST,shield:0,seated:false,yielding:null,pose:null,air:false,lift:0,lowFortified:false,backoff:0};}
@@ -144,19 +151,20 @@ class Game {
   if(this.cutscene){this.time+=dt;this.updateCutscene(dt);this.effects.forEach(e=>e.life-=dt);this.effects=this.effects.filter(e=>e.life>0);return;}
   this.cutsceneFade=Math.max(0,(this.cutsceneFade||0)-dt);
   this.time+=dt;const p=this.player;p.playTime+=dt;this.updateDayCycle();const stats=this.stats();p.hp=Math.min(p.hp,stats.maxHealth);
-  for(const k of ['attackCooldown','abilityCooldown','attackAnim','hitFlash','slow','dance','tobi','roll','rollCooldown','comboTime','stunned','frozen','grabbed','heavySlow'])p[k]=Math.max(0,(p[k]||0)-dt);
+  for(const k of ['attackCooldown','abilityCooldown','attackAnim','hitFlash','slow','dance','tobi','roll','rollCooldown','comboTime','stunned','frozen','grabbed','heavySlow','invuln'])p[k]=Math.max(0,(p[k]||0)-dt);
   this.darkness=Math.max(0,(this.darkness||0)-dt);
   // Al terminar de congelarte, el hielo se rompe.
   if(this.wasFrozen&&!(p.frozen>0)){this.effect(p.x,p.y-14,'iceshatter',.55,{seed:Math.random()*99});this.sound.play('block');}this.wasFrozen=p.frozen>0;
   if(p.comboTime<=0)p.combo=0;
   // Regeneración exacta: cinco pulsos en t=1,2,3,4,5, aun con delta fraccionado.
   if(p.buffs.gero>0){p.healClock=(p.healClock||0)+Math.min(dt,p.buffs.gero);if(p.healClock>=1-1e-8){p.healClock-=1;this.heal(5);}}
-  for(const buff of ['gero','pepe','paco','mate'])p.buffs[buff]=Math.max(0,(p.buffs[buff]||0)-dt);
+  this.updateItemBuffs(dt);
+  for(const buff of Object.keys(Z.BUFF_LIMITS))if(buff!=='pacoAnimals')p.buffs[buff]=Math.max(0,(p.buffs[buff]||0)-dt);
   if(p.poison){p.poison.time-=dt;p.poison.tick-=dt;if(p.poison.tick<=1e-8){p.poison.tick+=1;this.hurtPlayer(p.poison.damage,'snake',true);}if(p.poison&&p.poison.time<=.000001)p.poison=null;if(this.state!=='playing')return;}
   // Desangrado (mordida de Cerbero): 5 de vida por segundo, ignora la armadura.
   if(p.bleed){p.bleed.time-=dt;p.bleed.tick-=dt;if(p.bleed.tick<=1e-8){p.bleed.tick+=1;this.hurtPlayer(p.bleed.damage,'cerbero',true);}if(p.bleed&&p.bleed.time<=.000001)p.bleed=null;if(this.state!=='playing')return;}
   if(p.burn){p.burn.time-=dt;p.burn.tick-=dt;if(p.burn.tick<=1e-8){p.burn.tick+=1;this.hurtPlayer(p.burn.damage,'fire',true);}if(p.burn&&p.burn.time<=.000001)p.burn=null;if(this.state!=='playing')return;}
-  this.updateMovement(dt,stats);this.updateCampfires();this.updateGather(dt);if((this.keys.has(' ')||this.mouseHeld)&&p.roll<=0)this.attack();
+  this.updateMovement(dt,stats);this.updateCampfires();this.updateRealm(dt);this.updateGather(dt);this.updateFishing(dt);if(this.state!=='playing')return;if((this.keys.has(' ')||this.mouseHeld)&&p.roll<=0)this.attack();
   if(this.attackQueue){this.attackQueue.time-=dt;if(this.attackQueue.time<=0||this.attack(this.attackQueue))this.attackQueue=null;}
   this.updatePortals(dt);if(this.state!=='playing')return;
   if(this.queuedWaves&&this.queuedWaves.length)this.queuedWaves=this.queuedWaves.filter(w=>{w.delay-=dt;if(w.delay>0)return true;this.wave();return false;});
@@ -192,6 +200,7 @@ class Game {
   if(p.moving){p.walk+=dt*(p.running?13:9);this.stepTime+=dt;if(this.stepTime>.36){this.stepTime=0;this.sound.play('step');if(p.running)this.effect(p.x,p.y,'dust',.4);}
    if(p.stoneAmmo===0){p.stoneWalkTime+=dt;if(p.stoneWalkTime>=2-1e-8){p.stoneAmmo=1;p.stoneWalkTime=0;this.emit('toast',{message:'Una piedra más para el camino.'});}}}
   if(p.exhausted>0){p.exhausted=Math.max(0,p.exhausted-dt);p.stamina=1-p.exhausted/10;if(p.exhausted<=0)p.stamina=1;}
+  else if(p.running&&p.buffs.dorado>0){p.stamina=1;p.restTime=0;}
   else if(p.running){p.stamina=Math.max(0,p.stamina-dt/stats.runDuration);p.restTime=0;if(p.stamina<=.0001){p.stamina=0;p.exhausted=10;this.emit('toast',{message:'Te quedaste sin aire. Recuperación: 10 segundos.'});}}
   else if(p.roll<=0){p.restTime+=dt;if(p.restTime>=2)p.stamina=Math.min(1,p.stamina+dt/10);}
   const newBiome=Z.biomeAt(p.x,p.y);if(newBiome!==this.biome){const oldMax=this.stats().maxHealth;this.biome=newBiome;const newMax=this.stats().maxHealth;
@@ -203,10 +212,10 @@ class Game {
  // Siempre rueda hacia donde te movés; quieto, hacia donde mirás.
  roll(){
   const p=this.player;if(this.state!=='playing'||this.cutscene||p.roll>0||p.rollCooldown>0||p.stunned>0||p.grabbed>0)return false;
-  if(p.exhausted>0||p.stamina<ROLL_COST){if(!this.noRollNotice||this.time-this.noRollNotice>2){this.noRollNotice=this.time;this.emit('toast',{message:'No te queda aire para rodar.'});}return false;}
+  if(!(p.buffs.dorado>0)&&(p.exhausted>0||p.stamina<ROLL_COST)){if(!this.noRollNotice||this.time-this.noRollNotice>2){this.noRollNotice=this.time;this.emit('toast',{message:'No te queda aire para rodar.'});}return false;}
   let[x,y]=this.movementInput();
   if(!x&&!y)[x,y]=dirs[p.dir];
-  p.rollX=x;p.rollY=y;p.roll=ROLL_TIME;p.rollCooldown=ROLL_TIME+ROLL_COOLDOWN;p.stamina=Math.max(0,p.stamina-ROLL_COST);p.restTime=0;
+  p.rollX=x;p.rollY=y;p.roll=ROLL_TIME;p.rollCooldown=ROLL_TIME+ROLL_COOLDOWN;if(!(p.buffs.dorado>0))p.stamina=Math.max(0,p.stamina-ROLL_COST);p.restTime=0;p.fishing=null;
   p.dir=Math.abs(x)>Math.abs(y)?(x>0?'right':'left'):(y>0?'down':'up');
   this.sound.play('roll');this.effect(p.x,p.y,'dust',.45);
   // Rodar sacude a las ratas prendidas.
@@ -224,7 +233,7 @@ class Game {
    if(n.wait<=0&&Math.hypot(n.targetX-n.x,n.targetY-n.y)<7){n.wait=restMin+Math.random()*(restMax-restMin);n.targetX=n.homeX+(Math.random()*2-1)*roamX;n.targetY=n.homeY+(Math.random()*2-1)*roamY;}
    if(n.wait>0){n.moving=false;return;}const dx=n.targetX-n.x,dy=n.targetY-n.y,len=Math.hypot(dx,dy),before={x:n.x,y:n.y};
    // Nunca se acerca tanto como para encerrar al jugador: si se pisaran, este no podría moverse.
-   if(len>3){const nx=n.x+dx/len*speed*dt,ny=n.y+dy/len*speed*dt;if(Math.hypot(nx-this.player.x,ny-this.player.y)>Math.max(20,radius+11))this.move(n,nx-n.x,ny-n.y,radius,'village',n.id);n.dir=this.dirOf(dx,dy);if(Math.abs(dx)>1)n.faceLeft=dx<0;n.walk+=dt*speed*.23;}
+   if(len>3){const nx=n.x+dx/len*speed*dt,ny=n.y+dy/len*speed*dt;if(Math.hypot(nx-this.player.x,ny-this.player.y)>Math.max(20,radius+11))this.move(n,nx-n.x,ny-n.y,radius,n.zone||'village',n.id);n.dir=this.dirOf(dx,dy);if(Math.abs(dx)>1)n.faceLeft=dx<0;n.walk+=dt*speed*.23;}
    n.moving=distance(before,n)>.01;if(!n.moving&&len>7){n.targetX=n.x;n.targetY=n.y;n.wait=1;}
   });
  }
@@ -234,7 +243,9 @@ class Game {
   p.dir=this.dirOf(n.x-p.x,n.y-p.y);
   if(!n.static){n.dir=this.dirOf(p.x-n.x,p.y-n.y);n.faceLeft=p.x<n.x;n.moving=false;n.wait=Math.max(n.wait||0,2.5);}
   if(n.voice)this.sound.play(n.voice);if(n.species)this.effect(n.x,n.y-(n.tag||20)+2,'heart',1.3);
-  this.startCutscene('talk',{speaker:n.name,text:pool[turn%pool.length],focus:{x:(p.x+n.x)/2,y:(p.y+n.y)/2}});
+  if(n.species==='horse')this.petHorse(n);
+  // Si tiene un pedido o algo para vender, al terminar la charla se abre su menú.
+  this.startCutscene('talk',{speaker:n.name,text:pool[turn%pool.length],focus:{x:(p.x+n.x)/2,y:(p.y+n.y)/2},menu:this.npcHasMenu(n)?n:null});
  }
  // Cada golpe que conecta suma al combo; el cuarto seguido es crítico.
  landStrike(){const p=this.player;p.combo=(p.comboTime>0?p.combo:0)+1;p.comboTime=Math.max(1.6,this.stats().attackCooldown+.7);return p.combo%COMBO_CRIT===0;}
@@ -267,7 +278,7 @@ class Game {
   const p=this.player;if(this.state!=='playing'||this.cutscene||p.attackCooldown>0||p.roll>0||p.stunned>0||p.grabbed>0)return false;const stats=this.stats(),weapon=Z.WEAPON_TYPES[p.weapon];
   if(p.weapon==='stone'&&!p.stoneAmmo){if(!this.noAmmoNotice||this.time-this.noAmmoNotice>3){this.noAmmoNotice=this.time;this.emit('toast',{message:'Caminá 2 segundos para recoger otra piedra.'});}return false;}
   const[dx,dy]=this.attackVector(direction);p.dir=this.dirOf(dx,dy);
-  p.attackX=dx;p.attackY=dy;p.gather=null;p.attackCooldown=Math.max(stats.attackCooldown,p.weapon==='bow'?.7:0);p.attackAnim=.24;const damage=stats.power*weapon.damageMultiplier*stats.damageMultiplier*this.weaponLevelMultiplier();
+  p.attackX=dx;p.attackY=dy;p.gather=null;p.fishing=null;this.lastStrike={time:this.time,weapon:p.weapon};p.attackCooldown=Math.max(stats.attackCooldown,p.weapon==='bow'?.7:0);p.attackAnim=.24;const damage=stats.power*weapon.damageMultiplier*stats.damageMultiplier*this.weaponLevelMultiplier();
   if(p.weapon==='bow'||p.weapon==='stone'){
    this.projectiles.push({x:p.x+dx*12,y:p.y-7+dy*12,dx,dy,type:p.weapon,damage,traveled:0,range:weapon.range});
    if(p.weapon==='stone'){p.stoneAmmo=0;p.stoneWalkTime=0;}this.sound.play('bow');
@@ -281,6 +292,8 @@ class Game {
  }
  hitEnemy(e,raw,exact=false,crit=false,source=null){
   if(e.dead||e.latched>0)return;const definition=Z.ENEMY_TYPES[e.type];
+  // Las copias del duende se deshacen de un golpe y no dan nada.
+  if(e.illusion){e.dead=true;e.hp=0;this.effect(e.x,e.y-12,'poof',.6,{seed:Math.random()*99});this.effect(e.x,e.y-28,'miss',.8,{text:'¡Era una copia!'});this.sound.play('teleport');return;}
   // Escudos, refuerzos y momentos invulnerables de los jefes.
   const immune=this.bossShield(e,source);if(immune){e.provoked=true;e.alert=true;this.effect(e.x,e.y-28,'miss',.7,{text:immune});this.sound.play('block');return;}
   if(definition.block&&!exact&&Math.random()<definition.block){e.provoked=true;e.alert=true;this.effect(e.x,e.y-28,'miss',.7,{text:'¡Bloqueó!'});this.sound.play('block');return;}
@@ -293,7 +306,8 @@ class Game {
   if(e.hp<=0){const first=!this.questFlags['defeat_'+e.type];e.hp=0;e.dead=true;e.respawn=definition.respawn||35;e.alert=false;e.telegraph=0;e.dash=0;this.player.kills++;this.questFlags['defeat_'+e.type]=true;
    this.effect(e.x,e.y-8,'poof',.6,{seed:Math.random()*99});this.effect(e.x,e.y,'corpse',definition.boss?.8:.45,{seed:Math.random()*99,enemy:{...e,act:null,rain:null,dash:0,moving:false,telegraph:0,alert:false,hitFlash:0}});this.sound.play(definition.boss?'boss':'death');
    const levels=Z.grantXp(this.player,e.stats.xp,this.context());this.effect(e.x,e.y-38,'heal',1.1,{text:'+'+this.number(e.stats.xp*this.stats().xpMultiplier)+' EXP'});
-   const[min,max]=definition.coins||[0,0];if(!e.summoned)this.dropCoins(e.x,e.y,(min+Math.floor(Math.random()*(max-min+1))+Math.floor((e.level-1)/2))*(e.stats.bloodMoon?Z.BLOOD_MOON.coins:1));
+   const[min,max]=definition.coins||[0,0];if(!e.summoned||definition.loot)this.dropCoins(e.x,e.y,(min+Math.floor(Math.random()*(max-min+1))+Math.floor((e.level-1)/2))*(e.stats.bloodMoon?Z.BLOOD_MOON.coins:1)*(Z.hasAmulet(this.player,'ring')?1.25:1));
+   this.onKill(e);
    if(definition.drop&&!e.summoned)this.dropOffering(e.x,e.y,definition.drop);
    if(definition.key&&!e.summoned)this.dropOffering(e.x+14,e.y,'key');
    if(definition.boss&&!e.summoned){this.player.bossKills=(this.player.bossKills||0)+1;this.emit('progress');this.shake(6,.5);if(first){this.player.points+=1;this.emit('toast',{message:'¡Derrotaste a '+definition.name+'! Trofeo: +1 punto de mejora.'});}else this.emit('toast',{message:definition.name+' vuelve a caer.'});}
@@ -325,7 +339,7 @@ class Game {
    e.cooldown=Math.max(0,e.cooldown-dt*(isBoss(e)?Z.BOSS_TEMPO:1));e.hitFlash=Math.max(0,e.hitFlash-dt);e.latchRest=Math.max(0,e.latchRest-dt);e.stun=Math.max(0,e.stun-dt);e.charm=Math.max(0,e.charm-dt);e.moving=false;
    if(e.stun>0){e.alert=false;e.telegraph=0;e.dash=0;e.backoff=0;if(e.rain){e.rain=null;e.rainCd=KNIFE_COOLDOWN;}if(!isBoss(e))e.act=null;continue;}const sameZone=e.biome===this.biome&&!Z.isSafe(this.biome);
    if(isBoss(e)){const bossDt=dt*Z.BOSS_TEMPO;if(e.type==='capo'||e.type==='yarara')this.updateBoss(e,bossDt,sameZone);else this.updateBigBoss(e,bossDt,sameZone);if(this.state!=='playing')break;continue;}
-   if(e.type==='mage'||e.type==='armor'){this.updateDimensionEnemy(e,dt,sameZone);if(this.state!=='playing')break;continue;}
+   if(Z.DIMENSION_AI[e.type]){this.updateDimensionEnemy(e,dt,sameZone);if(this.state!=='playing')break;continue;}
    if(e.latched>0){
     if(!sameZone){e.latched=0;e.x=e.homeX;e.y=e.homeY;continue;}e.latched=Math.max(0,e.latched-dt);e.x=p.x+5;e.y=p.y-8;
     if(e.latched>1e-8&&e.cooldown<=0)this.enemyAttack(e);if(this.state!=='playing')break;
@@ -420,26 +434,28 @@ class Game {
   if(e.type==='snake'&&Math.random()<(p.characterId==='fede'?.15:.4))this.poisonPlayer(e.stats.poison);
   if(e.type==='spider'&&Math.random()<(p.characterId==='fede'?.05:.15))this.poisonPlayer(e.stats.poison);
  }
- poisonPlayer(damage){this.player.poison={time:5,tick:1,damage};this.emit('toast',{message:'Envenenado: '+damage+' de vida por segundo durante 5 s.',error:true});}
+ poisonPlayer(damage){if(Z.hasAmulet(this.player,'fang')){if(!this.lastFang||this.time-this.lastFang>1){this.lastFang=this.time;this.effect(this.player.x,this.player.y-29,'miss',.7,{text:'Inmune al veneno'});}return;}this.player.poison={time:5,tick:1,damage};this.emit('toast',{message:'Envenenado: '+damage+' de vida por segundo durante 5 s.',error:true});}
  hurtPlayer(raw,source,poison=false,opts={}){
   if(this.state!=='playing'||Z.isSafe(this.biome))return false;const p=this.player;
+  // El Dorado te deja unos segundos sin recibir daño de ningún tipo.
+  if(p.invuln>0){if(!this.lastInvuln||this.time-this.lastInvuln>.4){this.lastInvuln=this.time;this.effect(p.x,p.y-29,'miss',.7,{text:'¡Inmune!'});}return false;}
   if(!poison&&!opts.unavoidable&&p.roll>0){if(!this.lastDodge||this.time-this.lastDodge>.25){this.lastDodge=this.time;this.effect(p.x,p.y-29,'miss',.7,{text:'¡Esquivado!'});this.sound.play('dodge');}return false;}
   const damage=poison||opts.pierce?raw:Z.damageAfterArmor(raw,this.stats().armor);if(!poison)p.gather=null;
-  p.hp=Math.max(0,p.hp-damage);p.hitFlash=.22;this.hurtFlash=poison?.12:.3;this.effect(p.x,p.y-29,'hit',.8,{text:'-'+this.number(damage),poison});this.sound.play('hurt');if(!poison){this.shake(2.5,.18);this.vibrate(35);}
+  p.hp=Math.max(0,p.hp-damage);p.calm=0;p.fishing=null;p.hitFlash=.22;this.hurtFlash=poison?.12:.3;this.effect(p.x,p.y-29,'hit',.8,{text:'-'+this.number(damage),poison});this.sound.play('hurt');if(!poison){this.shake(2.5,.18);this.vibrate(35);}
   if(p.hp<=0)this.knockout(source);return true;
  }
  knockout(source){
   const p=this.player;p.deaths++;
   const quotes={thief:'Uhh... este gil me sacó guita',dog:'¿Por qué Firulais? :c',snake:'La próxima miro dónde piso...',rat:'Me ganaron las ratas. No se lo cuenten a nadie.',capo:'El Capo me dejó en patas y sin un mango.',bat:'Un murciélago me dejó viendo estrellas.',spider:'Odio las arañas. Las odio.',worm:'Me comió un gusano. Literal.',yarara:'La Yarará Madre me mandó a dormir la siesta.',
-   skeleton:'Me ganó uno que ni carne tiene.',archer:'Un flechazo... y no de amor.',vampire:'El Chupasangre me dejó seco.',golem:'Me aplastó una montaña con patas.',cerbero:'Tres cabezas y ninguna con piedad.',mage:'Me hicieron un asado con magia.',armor:'Una armadura vacía me dio vuelta.',archmage:'El Rey Mago me desapareció de un chasquido.',fire:'Me quemé por pasar de largo.',zak:'Zak ni se despeinó.',execute:'Eso por querer hacerle el poronga...'};
+   skeleton:'Me ganó uno que ni carne tiene.',archer:'Un flechazo... y no de amor.',vampire:'El Chupasangre me dejó seco.',golem:'Me aplastó una montaña con patas.',cerbero:'Tres cabezas y ninguna con piedad.',mage:'Me hicieron un asado con magia.',armor:'Una armadura vacía me dio vuelta.',book:'Me liquidó la biblioteca. Literal.',imp:'Le pegué a la copia equivocada.',gargoyle:'Esa estatua no era una estatua.',shadow:'Me ganó mi propia sombra... bueno, la de Zak.',mimic:'Abrí la carpa equivocada.',rune:'Pisé la runa que no era.',archmage:'El Rey Mago me desapareció de un chasquido.',fire:'Me quemé por pasar de largo.',zak:'Zak ni se despeinó.',execute:'Eso por querer hacerle el poronga...'};
   const quote=quotes[source]||quotes.rat;
   // Los chorros se llevan la guita de verdad; el resto se pierde en el apuro. Si Zak te ejecuta, te deja sin nada.
   const execute=source==='execute',lost=execute?(p.coins||0):Math.floor((p.coins||0)*(source==='thief'||source==='capo'?.3:.1));p.coins=Math.max(0,(p.coins||0)-lost);
   if(execute){p.materials=Z.emptyMaterials();p.offerings=Z.emptyOfferings();}
-  Object.assign(p,this.world.spawn,{hp:1,poison:null,slow:0,stamina:1,exhausted:0,restTime:0,attackCooldown:0,moving:false,roll:0,combo:0,comboTime:0,gather:null,bleed:null,burn:null,stunned:0,frozen:0,grabbed:0,heavySlow:0});p.buffs={gero:0,pepe:0,paco:0,pacoAnimals:0,mate:0};this.biome='village';p.hp=this.stats().maxHealth;
+  Object.assign(p,this.world.spawn,{hp:1,poison:null,slow:0,stamina:1,exhausted:0,restTime:0,attackCooldown:0,moving:false,roll:0,combo:0,comboTime:0,gather:null,bleed:null,burn:null,stunned:0,frozen:0,grabbed:0,heavySlow:0});p.buffs=Z.emptyBuffs();p.invuln=0;p.fishing=null;this.biome='village';p.hp=this.stats().maxHealth;
   this.enemies=this.enemies.filter(e=>!e.summoned);
   this.enemies.forEach(e=>{if(!e.dead){if(isBoss(e))Object.assign(e,this.makeEnemy({id:e.id,type:e.type,x:e.homeX,y:e.homeY}));e.x=e.homeX;e.y=e.homeY;}e.latched=0;e.alert=false;e.telegraph=0;e.dash=0;});
-  this.queuedWaves=[];this.spirits=[];this.projectiles=[];this.bolts=[];this.darkness=0;this.exitPortal=null;this.cutscene=null;this.cutsceneFade=0;this.state='paused';this.clearInput();this.emit('knockout',{source,quote,lost,execute});
+  this.queuedWaves=[];this.spirits=[];this.bombs=[];this.projectiles=[];this.bolts=[];this.darkness=0;this.exitPortal=null;this.cutscene=null;this.cutsceneFade=0;this.state='paused';this.clearInput();this.emit('knockout',{source,quote,lost,execute});
  }
  heal(amount){const before=this.player.hp;this.player.hp=Math.min(this.stats().maxHealth,before+amount);if(this.player.hp>before)this.effect(this.player.x,this.player.y-30,'heal',.9,{text:'+'+this.number(this.player.hp-before)});}
  updateProjectiles(dt){
@@ -512,16 +528,25 @@ class Game {
  }
  herbHealing(){return Math.max(25,Math.round(this.stats().maxHealth*.2));}
  interact(){
-  if(this.state!=='playing'||this.cutscene)return;const p=this.player,item=Z.nearbyInteractable(this.world,p.x,p.y,46,p);if(!item)return;
+  if(this.state!=='playing'||this.cutscene)return;const p=this.player;
+  if(p.fishing){this.reelIn();return;}
+  const item=Z.nearbyInteractable(this.world,p.x,p.y,46,p);if(!item)return;
   if(item.lines){this.talkTo(item);return;}
+  if(item.type==='pond'){this.startFishing(item);return;}
+  if(item.type==='tent'){this.searchTent(item);return;}
+  if(item.type==='campfire'){this.douseCampfire(item);return;}
   if(item.type==='forge'){this.emit('smith');return;}
   if(item.type==='door'){this.openThroneDoor();return;}
   if(item.type==='altar'){this.useAltar();return;}
   if(item.type==='stairs'){this.takeStairs(item);return;}
   if(item.type==='ore'||item.type==='tree'){this.startGather(item);return;}
-  if(item.type==='well'){this.heal(this.stats().maxHealth);p.poison=null;p.burn=null;p.stamina=1;p.exhausted=0;this.sound.play('pickup');this.emit('toast',{message:'Agua fresca, vida y energía renovadas.'});return;}
+  if(item.type==='well'){this.heal(this.stats().maxHealth);p.poison=null;p.burn=null;p.stamina=1;p.exhausted=0;this.sound.play('pickup');
+   // La fuente del Santuario también llena botellas de agua bendita, hasta tener dos.
+   if(item.dark&&this.itemCount('water')<2){const got=2-this.itemCount('water');this.addItem('water',got);this.emit('toast',{message:'Vida y energía renovadas. Llenaste '+got+' botella'+(got>1?'s':'')+' de agua bendita.'});return;}
+   this.emit('toast',{message:'Agua fresca, vida y energía renovadas.'});return;}
   if(item.type==='sign'){this.emit('toast',{message:item.text||'Todos los caminos empiezan en Los Aromos.'});return;}
   if(item.type==='stall'){this.emit('shop');return;}
+  if(item.type==='voidstall'){const m=this.world.npcs.find(n=>n.shop==='merchant');if(m)this.emit('npc',{npc:m});return;}
   if(item.type==='herb'){
    if(p.herbs<Z.HERB_BAG){item.collected=true;item.regrow=HERB_REGROW;p.herbs++;this.sound.play('pickup');this.emit('toast',{message:'Hierba a la bolsa ('+p.herbs+'/'+Z.HERB_BAG+'). Usala con R.'});return;}
    if(p.hp>=this.stats().maxHealth&&!p.poison){this.emit('toast',{message:'La bolsa está llena y tenés toda la vida.'});return;}
@@ -530,8 +555,14 @@ class Game {
  }
  // Texto del aviso de interacción, con lo que falta para usar bajadas y vetas.
  nearbyAction(){
-  const p=this.player,item=Z.nearbyInteractable(this.world,p.x,p.y,46,p);if(!item)return null;
-  if(item.type==='stairs'){const guard=this.stairsGuard(item);return{item,label:item.label+(guard?' · la custodia '+Z.ENEMY_TYPES[guard.type].name:item.dir==='down'&&!p.torch?' · necesitás antorcha':'')};}
+  const p=this.player;
+  if(p.fishing)return{item:p.fishing,label:p.fishing.bit?'¡Pica! Apretá E para sacarlo':'Esperando que pique… (E levanta la línea)'};
+  const item=Z.nearbyInteractable(this.world,p.x,p.y,46,p);if(!item)return null;
+  if(item.type==='stairs'){const guard=this.stairsGuard(item);return{item,label:item.label+(guard?' · la custodia '+Z.ENEMY_TYPES[guard.type].name:item.dir==='down'&&!this.seesInDark()?' · necesitás antorcha':'')};}
+  if(item.type==='pond')return{item,label:'Pescar'};
+  if(item.type==='tent')return{item,label:'Revisar la carpa'};
+  if(item.type==='campfire')return{item,label:'Apagar la fogata con agua bendita (💧 '+this.itemCount('water')+')'};
+  if(item.lines&&this.npcHasMenu(item))return{item,label:item.label+' · '+this.npcMenuHint(item)};
   if(item.type==='door')return{item,label:p.throneKeys>0?'Abrir la puerta del trono (🗝 '+p.throneKeys+')':'Puerta del trono · necesitás la llave del Rey Mago'};
   if(item.type==='altar'){const placed=Object.values(p.altar||{}).filter(Boolean).length;return{item,label:this.cerberoGuards()?'Altar de ofrendas · lo custodia Cerbero':p.portal?'El portal ya está abierto':'Dejar ofrendas en el altar ('+placed+'/5)'};}
   if(item.type==='ore'||item.type==='tree'){const def=this.nodeDef(item),tool=Z.TOOLS[def.tool],have=p[def.tool]||0;
@@ -571,7 +602,7 @@ class Game {
   const p=this.player;
   const guard=this.stairsGuard(stairs);
   if(guard){this.emit('toast',{message:Z.ENEMY_TYPES[guard.type].name+' custodia la bajada. Derrotalo para pasar.',error:true});return false;}
-  if(stairs.dir==='down'&&!p.torch){this.emit('toast',{message:'Abajo no se ve nada. Necesitás una antorcha: el herrero la hace con 1 de madera y 3 de carbón.',error:true});return false;}
+  if(stairs.dir==='down'&&!this.seesInDark()){this.emit('toast',{message:'Abajo no se ve nada. Necesitás una antorcha: el herrero la hace con 1 de madera y 3 de carbón.',error:true});return false;}
   Object.assign(p,{x:stairs.arrive.x,y:stairs.arrive.y,gather:null,roll:0,moving:false});
   this.projectiles=[];this.enemies.forEach(e=>{if(e.latched>0){e.x=e.homeX;e.y=e.homeY;}e.latched=0;e.alert=false;e.telegraph=0;e.dash=0;});
   this.renderer.initialized=false;this.clearInput();this.sound.play('stairs');return true;
@@ -595,6 +626,7 @@ class Game {
    list.push({id:'weapon:'+w,group:'weapons',icon:{fists:'✊',bow:'➶',sword:'⚔',stone:'◆'}[w],name:Z.WEAPON_TYPES[w].name+(done?' nvl '+level:' nvl '+next),
     detail:done?'Daño ×'+this.number(Z.weaponLevelMultiplier(level))+'.':'Daño ×'+this.number(Z.weaponLevelMultiplier(level))+' → ×'+this.number(Z.weaponLevelMultiplier(next))+'.',cost:done?null:Z.WEAPON_UPGRADES[next],done,doneText:'Nivel máximo'});}
   const forged=p.weapons.includes('elemental');
+  list.push(...this.smithItemOptions());
   list.push({id:'elemental',group:'weapons',icon:'✧',name:'Espada Elemental',detail:'Daño ×'+Z.WEAPON_TYPES.elemental.damageMultiplier+' (la espada común llega a ×'+this.number(Z.WEAPON_TYPES.sword.damageMultiplier*Z.weaponLevelMultiplier(Z.MAX_WEAPON_LEVEL))+' al máximo).',cost:forged?null:Z.ELEMENTAL_RECIPE,done:forged,doneText:'Ya la tenés'});
   return list.map(o=>({...o,missing:o.cost?this.missingFor(o.cost):[]}));
  }
@@ -603,13 +635,14 @@ class Game {
   if(option.done)return{ok:false,message:option.doneText+'.'};
   if(option.missing.length)return{ok:false,message:'Te falta: '+option.missing.join(', ')+'.'};
   p.coins-=option.cost.coins;for(const [k,n] of Object.entries(option.cost.materials))p.materials[k]-=n;for(const [k,n] of Object.entries(option.cost.offerings||{}))p.offerings[k]-=n;
+  if(option.group==='items'){this.craftItem(option);this.questFlags.crafted=true;this.sound.play('buy');return{ok:true,message:option.name+': ¡listo!'};}
   if(id==='elemental'){p.weapons.push('elemental');this.equip('elemental');this.questFlags.elemental=true;this.shake(4,.3);this.effect(p.x,p.y,'level',1.4,{radius:50,text:'¡ESPADA ELEMENTAL!'});}
   else if(id==='torch')p.torch=true;else if(id==='pickaxe'||id==='axe')p[id]=(p[id]||0)+1;else{const w=id.slice(7);p.weaponLevels[w]=(p.weaponLevels[w]||1)+1;}
   this.questFlags.crafted=true;this.sound.play('buy');return{ok:true,message:option.name+': ¡listo!'};
  }
  shopItems(){const p=this.player;return Z.SHOP_ITEMS.map(item=>{
-  const price=item.price(p),soldOut=(item.id==='herb'&&p.herbs>=Z.HERB_BAG)||(item.id==='sharpen'&&p.sharpen>=5);
-  const note=item.id==='herb'?'En la bolsa: '+p.herbs+'/'+Z.HERB_BAG:item.id==='sharpen'?'Nivel '+p.sharpen+'/5':item.id==='lesson'?'Clases tomadas: '+p.lessons:item.id==='mate'&&p.buffs.mate>0?'Activo: '+Math.ceil(p.buffs.mate)+' s':'';
+  const price=item.price(p),soldOut=(item.id==='herb'&&p.herbs>=Z.HERB_BAG)||(item.id==='sharpen'&&p.sharpen>=5)||(item.item&&this.itemCount(item.id)>=Z.ITEM_STACK);
+  const note=item.item?'En la bolsa: '+this.itemCount(item.id)+'/'+Z.ITEM_STACK:item.id==='herb'?'En la bolsa: '+p.herbs+'/'+Z.HERB_BAG:item.id==='sharpen'?'Nivel '+p.sharpen+'/5':item.id==='lesson'?'Clases tomadas: '+p.lessons:item.id==='mate'&&p.buffs.mate>0?'Activo: '+Math.ceil(p.buffs.mate)+' s':'';
   return{...item,price,soldOut,affordable:p.coins>=price,note};});}
  // El Almacén compra las ofrendas de los jefes.
  sellOptions(){const p=this.player;return Object.entries(Z.OFFERINGS).map(([id,o])=>({id,...o,count:p.offerings[id]||0}));}
@@ -618,10 +651,11 @@ class Game {
   p.offerings[id]--;p.coins+=o.price;this.sound.play('buy');return{ok:true,message:o.name+' vendido por ◉ '+o.price+'.'};}
  buy(id){
   const p=this.player,item=this.shopItems().find(i=>i.id===id);if(!item)return{ok:false,message:'Ese artículo no existe.'};
-  if(item.soldOut)return{ok:false,message:item.id==='herb'?'La bolsa ya está llena.':'Ya no se puede mejorar más.'};
+  if(item.soldOut)return{ok:false,message:item.id==='herb'||item.item?'La bolsa ya está llena.':'Ya no se puede mejorar más.'};
   if(p.coins<item.price)return{ok:false,message:'Te faltan '+(item.price-p.coins)+' monedas. Acá no se fía.'};
   p.coins-=item.price;this.questFlags.bought=true;this.sound.play('buy');
   if(id==='herb')p.herbs++;
+  if(item.item)this.addItem(id,1);
   if(id==='mate'){p.stamina=1;p.exhausted=0;p.restTime=2;p.buffs.mate=30;}
   if(id==='sharpen')p.sharpen++;
   if(id==='lesson'){p.lessons++;p.points++;}
@@ -676,7 +710,7 @@ class Game {
   if(p.offerings!==undefined&&(!p.offerings||typeof p.offerings!=='object'||Object.values(p.offerings).some(n=>!isNumber(n)||n<0)))throw new Error('Inventario inválido.');
   if(p.weaponLevels!==undefined&&(!p.weaponLevels||typeof p.weaponLevels!=='object'||Object.values(p.weaponLevels).some(n=>!isNumber(n)||n<1||n>Z.MAX_WEAPON_LEVEL)))throw new Error('Inventario inválido.');
   if(data.nodes!==undefined&&(!Array.isArray(data.nodes)||data.nodes.length>1000))throw new Error('El archivo es demasiado grande.');
-  if(data.enemies.length>100||data.collected.length>500)throw new Error('El archivo es demasiado grande.');return true;
+  if(data.enemies.length>300||data.collected.length>500)throw new Error('El archivo es demasiado grande.');return true;
  }
  // Partidas de antes del rebalanceo: el nivel baja a la mitad y se compensa con guita. Las estadísticas no se tocan.
  static migrateSave(data){
@@ -700,12 +734,13 @@ class Game {
   if(source.weaponLevels)for(const w of Object.keys(p.weaponLevels))p.weaponLevels[w]=Math.floor(clamp(Number(source.weaponLevels[w])||1,1,Z.MAX_WEAPON_LEVEL));if(typeof source.runId==='string'&&/^[\w-]{6,64}$/.test(source.runId))p.runId=source.runId;
   p.weapon=source.weapon;p.weapons=[...new Set(source.weapons)];p.stoneAmmo=source.stoneAmmo===0?0:1;
   p.discovered=Array.isArray(source.discovered)?source.discovered.filter(z=>Object.hasOwn(names,z)):['village'];p.dir=Object.hasOwn(dirs,source.dir)?source.dir:'down';p.walk=0;p.moving=false;p.attackAnim=0;
-  if(source.buffs)for(const key of ['gero','pepe','paco','pacoAnimals','mate'])p.buffs[key]=clamp(Number(source.buffs[key])||0,0,key==='pacoAnimals'?25:key==='mate'?30:10);
+  if(source.buffs)for(const [key,limit] of Object.entries(Z.BUFF_LIMITS))p.buffs[key]=clamp(Number(source.buffs[key])||0,0,limit);
+  this.restoreInventory(p,source);
   p.healClock=clamp(Number(source.healClock)||0,0,1);
   if(source.poison&&Number.isFinite(source.poison.damage))p.poison={time:clamp(Number(source.poison.time)||0,0,5),tick:clamp(Number(source.poison.tick)||1,.01,1),damage:clamp(source.poison.damage,0,100)};
   this.player=p;this.world=Z.createWorld();this.biome=Z.biomeAt(p.x,p.y);if(Z.collides(this.world,p.x,p.y,8)){Object.assign(p,this.world.spawn);this.biome='village';}
   if(Z.isSafe(this.biome)){p.poison=null;p.slow=0;}this.zakFightStart=null;this.time=Number.isFinite(data.time)?clamp(data.time,0,1e9):0;this.questFlags={};
-  if(data.questFlags&&typeof data.questFlags==='object')for(const k of Object.keys(data.questFlags))if(/^((quest|claimed)_(bow|cave|stone|weeds|sword|shop|bestiary|level5|capo|yarara|smith|deep|deepest|vampire|golem|elemental|cerbero|altar|archmage|zak)|defeat_(thief|dog|snake|rat|bat|spider|worm|skeleton|archer|mage|armor|capo|yarara|vampire|golem|cerbero|archmage|zak)|bought|crafted|gathered|elemental|altar|complete)$/.test(k))this.questFlags[k]=data.questFlags[k]===true;
+  if(data.questFlags&&typeof data.questFlags==='object')for(const k of Object.keys(data.questFlags))if(/^((quest|claimed)_(bow|cave|stone|weeds|sword|shop|bestiary|level5|capo|yarara|smith|deep|deepest|vampire|golem|elemental|cerbero|altar|archmage|zak)|defeat_(thief|dog|snake|rat|bat|spider|worm|skeleton|archer|mage|armor|book|imp|gargoyle|shadow|mimic|capo|yarara|vampire|golem|cerbero|archmage|zak)|bought|crafted|gathered|elemental|altar|complete)$/.test(k))this.questFlags[k]=data.questFlags[k]===true;
   if(!this.quests().every(q=>q.done))delete this.questFlags.complete;
   // Antes el portal se apagaba al cruzarlo: si ya lo abriste, queda prendido y te devuelve lo que dejaste de nuevo en el altar.
   if(this.questFlags.altar){p.portal=true;for(const k of Z.ALTAR_OFFERINGS)if(p.altar[k]){p.altar[k]=false;p.offerings[k]++;}}
@@ -715,7 +750,7 @@ class Game {
    const e=this.makeEnemy(spawn),saved=data.enemies.find(i=>i&&i.id===e.id);if(saved){const lives=Z.ENEMY_TYPES[e.type].lives||1;if(e.type==='golem'&&Number.isInteger(saved.life)&&saved.life>0&&saved.life<lives){e.life=saved.life;e.stats=this.enemyStatsFor(e.type,e.life,e.biome);e.maxHp=e.stats.health;}if(Number.isFinite(saved.hp))e.hp=clamp(saved.hp,0,e.maxHp);e.dead=saved.dead===true||e.hp<=0;e.respawn=clamp(Number(saved.respawn)||0,0,Z.ENEMY_TYPES[e.type].respawn||35);e.provoked=saved.provoked===true;e.cooldown=clamp(Number(saved.cooldown)||0,0,3);e.stun=clamp(Number(saved.stun)||0,0,7);e.charm=clamp(Number(saved.charm)||0,0,10);e.latched=clamp(Number(saved.latched)||0,0,3);e.latchRest=clamp(Number(saved.latchRest)||0,0,1.6);e.alert=saved.alert===true;if(this.biome==='village'||e.dead)e.latched=0;
     if(Number.isFinite(saved.x)&&Number.isFinite(saved.y)&&Z.biomeAt(saved.x,saved.y)===e.biome&&!Z.collides(this.world,saved.x,saved.y,7)){e.x=saved.x;e.y=saved.y;}}
    return e;});
-  this.effects=[];this.projectiles=[];this.drops=[];this.bolts=[];this.spirits=[];this.darkness=0;this.exitPortal=null;this.cutscene=null;this.cutsceneFade=0;this.queuedWaves=Array.isArray(data.queuedWaves)&&p.characterId==='dante'?data.queuedWaves.slice(0,2).filter(w=>w&&Number.isFinite(w.delay)).map(w=>({delay:clamp(w.delay,0,1.1)})):[];this.currentSlot=slot;this.clearInput();this.aim=null;this.state='playing';this.renderer.resize(true);this.emit('start',{loaded:true});
+  this.lastStrike=null;this.bombs=[];this.effects=[];this.projectiles=[];this.drops=[];this.bolts=[];this.spirits=[];this.darkness=0;this.exitPortal=null;this.cutscene=null;this.cutsceneFade=0;this.queuedWaves=Array.isArray(data.queuedWaves)&&p.characterId==='dante'?data.queuedWaves.slice(0,2).filter(w=>w&&Number.isFinite(w.delay)).map(w=>({delay:clamp(w.delay,0,1.1)})):[];this.currentSlot=slot;this.clearInput();this.aim=null;this.state='playing';this.renderer.resize(true);this.emit('start',{loaded:true});
  }
 }
 Z.Game=Game;
