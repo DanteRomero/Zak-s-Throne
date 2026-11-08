@@ -424,7 +424,7 @@
       },'toggle');
       sizeToggle.setAttribute('aria-label','Tamaño de los controles táctiles'); sizeRow.append(sizeToggle); parent.append(sizeRow);
       const help = el('div','help-grid');
-      [['Moverte','WASD / flechas'],['Talar o picar','E, quieto'],['Correr','Shift'],['Atacar','Espacio / clic'],['Rodar','Ctrl / clic derecho (hacia donde vas)'],['Habilidad','Q'],['Interactuar','E'],['Usar hierba','R'],['Armas','1 — 5'],['Personaje','C'],['Diario','J'],['Mapa','M'],['Pausa','Esc']].forEach(([action,key]) => { const row = el('div'); row.append(el('span','',action),el('kbd','',key)); help.append(row); });
+      [['Moverte','WASD / flechas'],['Talar o picar','E, quieto'],['Correr','Shift'],['Atacar','Espacio / clic'],['Rodar','Ctrl / clic derecho (hacia donde vas)'],['Habilidad','Q'],['Interactuar','E'],['Usar hierba','R'],['Usar objeto','F'],['Cambiar objeto','G'],['Bolsa y amuletos','B'],['Pescar','E en una laguna'],['Armas','1 — 5'],['Personaje','C'],['Diario','J'],['Mapa','M'],['Pausa','Esc']].forEach(([action,key]) => { const row = el('div'); row.append(el('span','',action),el('kbd','',key)); help.append(row); });
       parent.append(help);
       paragraph(parent,'Los controles táctiles aparecen en pantallas compatibles. En un teléfono, giralo horizontalmente para ver mejor. El sonido se activa después de tu primera interacción.','hint');
     },returnToPause ? showPause : null);
@@ -443,12 +443,14 @@
         upgrade.setAttribute('aria-label','Mejorar ' + Zak.STAT_LABELS[key]); upgrade.disabled = p.points < 1; row.append(upgrade); parent.append(row);
       });
       const summary = el('div','stats-summary');
-      ['Vida efectiva: ' + fmt(s.maxHealth), 'Fuerza efectiva: ' + fmt(s.strength) + ' · Poder de golpe: ' + fmt(s.power) + ' · Armadura: ' + fmt(s.armor),
+      ['Vida efectiva: ' + fmt(s.maxHealth), 'Fuerza efectiva: ' + fmt(s.strength) + ' · Poder de golpe: ' + fmt(s.power) + ' · Armadura: ' + fmt(s.armor) + ' (' + (p.armorTier ? Zak.ARMORS[p.armorTier].name.toLowerCase() : 'sin armadura') + ')',
        'Movimiento: ' + fmt(s.moveSpeed) + ' px/s · Golpe cada ' + fmt(s.attackCooldown) + ' s',
        'Carrera: ' + fmt(s.runDuration) + ' s · Experiencia: ×' + fmt(s.xpMultiplier),
        'Daño de armas: ×' + fmt(s.damageMultiplier) + (s.veteran > 1 ? ' (veteranía ×' + fmt(s.veteran) + ')' : '') + ' · Cuarto golpe seguido: crítico ×1,75',
        'Velocidad: ' + s.speedLabel.toLowerCase() + ' · Movimiento ' + fmt(s.moveSpeed) + ' px/s',
        'Monedas: ' + fmt(p.coins) + ' · Hierbas: ' + p.herbs + ' / ' + Zak.HERB_BAG + ' · Derrotas: ' + p.kills,
+       'Amuletos puestos: ' + ((p.equipped || []).length ? p.equipped.map(a => Zak.AMULETS[a].icon + ' ' + Zak.AMULETS[a].name).join(' · ') : 'ninguno') + ' · Engarces: ' + (p.amuletSlots || 1),
+       'Bolsa: ' + (game.ownedItems().length ? game.ownedItems().map(id => Zak.ITEMS[id].icon + ' ' + game.itemCount(id)).join(' · ') : 'vacía') + ' · Caña: ' + (p.rod ? 'sí' : 'no'),
        'Próximo nivel: ' + fmt(p.xp) + ' / ' + Zak.xpNeeded(p.level) + ' XP',
        'Materiales: ' + Object.entries(Zak.MATERIALS).map(([k,m]) => m.name + ' ' + (p.materials[k] || 0)).join(' · '),
        'Llaves del trono: ' + (p.throneKeys || 0) + ' · Récord contra Zak: ' + (p.zakBest > 0 ? Zak.formatTime(p.zakBest) : '—'),
@@ -529,13 +531,13 @@
       const bag = el('div','smith-bag'); bag.append(el('span','bag-coins','◉ ' + p.coins));
       Object.entries(Zak.MATERIALS).forEach(([k,m]) => bag.append(el('span','',m.icon + ' ' + m.name + ' ' + (p.materials[k] || 0)))); parent.append(bag);
       const options = game.craftOptions();
-      [['tools','Herramientas'],['weapons','Mejorar armas']].forEach(([group,title]) => {
+      [['tools','Herramientas'],['armor','Armaduras'],['items','Petardos y amuletos'],['weapons','Mejorar armas']].forEach(([group,title]) => {
         parent.append(el('h3','smith-heading',title));
         options.filter(o => o.group === group).forEach(option => {
           const row = el('div','shop-item' + (option.done ? ' sold-out' : '')), body = el('div');
           body.append(el('strong','',option.icon + ' ' + option.name),el('small','',option.detail));
           if (option.cost) body.append(costLine(option));
-          const action = option.id === 'elemental' ? 'Forjar' : option.id === 'torch' || (option.group === 'tools' && !p[option.id]) ? 'Fabricar' : 'Mejorar';
+          const action = option.group === 'armor' ? 'Fabricar' : option.group === 'items' ? (option.id.startsWith('amulet:') ? 'Tallar' : 'Fabricar') : option.id === 'elemental' ? 'Forjar' : option.id === 'torch' || (option.group === 'tools' && !p[option.id]) ? 'Fabricar' : 'Mejorar';
           const go = button(option.done ? option.doneText : action,() => { const result = game.craft(option.id); showSmith(result.message); updateHud(true); },'shop-buy');
           go.disabled = option.done || option.missing.length > 0; go.setAttribute('aria-label',action + ' ' + option.name);
           row.append(body,go); parent.append(row);
@@ -567,6 +569,82 @@
         row.append(body,go); parent.append(row);
       });
       paragraph(parent,'Chorros y jefes dejan más monedas. Si un chorro te noquea, se lleva parte de tu guita.','hint');
+    });
+  }
+  // Una fila de tienda: lo que cuesta, lo que tenés y el botón.
+  function offerRow(parent, o, onClick) {
+    const row = el('div','shop-item' + (o.done || (o.kind === 'sell' && !o.count) ? ' sold-out' : '')), body = el('div');
+    body.append(el('strong','',o.icon + ' ' + o.name),el('small','',o.detail));
+    if (o.kind === 'sell') body.append(el('small','shop-note','Tenés: ' + o.count));
+    else { if (o.cost && (Object.keys(o.cost.materials).length || o.cost.offerings)) body.append(costLine(o)); if (o.note) body.append(el('small','shop-note',o.note)); }
+    const label = o.kind === 'sell' ? 'Vender ◉ ' + o.price : o.done ? o.doneText : o.kind === 'craft' ? 'Armar' : '◉ ' + o.cost.coins;
+    const go = button(label,onClick,'shop-buy');
+    go.disabled = o.kind === 'sell' ? !o.count : o.done || o.missing.length > 0;
+    go.setAttribute('aria-label',(o.kind === 'sell' ? 'Vender ' : 'Conseguir ') + o.name);
+    row.append(body,go); parent.append(row);
+  }
+  // Vecinos con pedido o tienda: se abre al terminar la charla.
+  function showNpc(n, message) {
+    if (!game.player || !n) return;
+    const reqId = game.npcRequest(n), shop = game.npcShop(n);
+    openModal(n.name, Zak.isZakDimension(Zak.biomeAt(n.x,n.y)) ? 'DIMENSIÓN DE ZAK' : 'VECINOS DE PALIHUE CITY', parent => {
+      const purse = el('p','shop-purse'); purse.append(el('span','','Tu guita'),el('strong','','◉ ' + game.player.coins)); parent.append(purse);
+      if (message) paragraph(parent,message,'hint shop-message');
+      if (reqId) {
+        const q = Zak.REQUESTS[reqId], state = game.requestState(reqId), box = el('div','request-box');
+        box.append(el('strong','',(state === 'done' ? '✓ ' : '◇ ') + 'Pedido · ' + q.title));
+        if (state === 'done') paragraph(box,'«' + q.thanks + '»');
+        else {
+          paragraph(box,'«' + q.ask + '»');
+          box.append(el('small','',game.requestText(reqId)),el('small','','Recompensa: ' + game.rewardText(reqId)));
+          const actions = el('div','modal-actions');
+          if (state === 'new') actions.append(button('Aceptar el pedido',() => { const r = game.acceptRequest(reqId); showNpc(n,r.message); updateHud(true); },'button primary'));
+          else { const ready = game.requestProgress(reqId).ready, go = button(ready ? 'Entregar' : 'Todavía te falta',() => { const r = game.completeRequest(reqId); showNpc(n,r.message); updateHud(true); },'button primary'); go.disabled = !ready; actions.append(go); }
+          box.append(actions);
+        }
+        parent.append(box);
+      }
+      const offers = game.npcOffers(n);
+      if (offers.length) {
+        parent.append(el('h3','smith-heading',shop === 'chiche' ? 'La caña y lo que pesques' : shop === 'merchant' ? 'Cosas del otro lado' : 'Lo que tiene para vos'));
+        offers.forEach(o => offerRow(parent,o,() => { const r = game.npcTrade(n,o.id); showNpc(n,r.message); updateHud(true); }));
+      }
+      if (shop === 'chiche') paragraph(parent,'Hay tres lagunas en la aldea. Mojarras, pejerreyes, bagres… y uno de cada veinte, un dorado.','hint');
+      const actions = el('div','modal-actions'); actions.append(button('Listo, gracias',() => hideModal(),'button secondary')); parent.append(actions);
+    });
+  }
+  // Bolsa: consumibles, amuletos y pedidos en curso.
+  function showBag(message) {
+    if (!game.player) return;
+    const p = game.player;
+    openModal('Tu bolsa','BOLSA Y AMULETOS',parent => {
+      if (message) paragraph(parent,message,'hint shop-message');
+      paragraph(parent,isTouch() ? 'El botón 🎒 de la derecha usa el objeto elegido.' : 'F usa el objeto elegido y G cambia cuál. También podés usarlos desde acá.','hint');
+      const owned = game.ownedItems(), chosen = game.selected();
+      if (!owned.length) paragraph(parent,'Todavía no tenés nada. El Almacén vende agua bendita, vendas, choripanes, vino y pergaminos; con la caña de Don Chiche podés pescar, y en las carpas del Pueblo Mágico siempre aparece algo.');
+      owned.forEach(id => {
+        const item = Zak.ITEMS[id], row = el('div','shop-item'), body = el('div'), title = el('strong','',item.icon + ' ' + item.name + ' ×' + game.itemCount(id));
+        if (id === chosen) title.append(el('span','bag-tag','ELEGIDO'));
+        body.append(title,el('small','',item.detail));
+        const acts = el('div','bag-actions');
+        const use = button('Usar',() => { const r = game.useItem(id); updateHud(true); if (r.ok && (id === 'scroll' || id === 'firecracker')) { hideModal(); return; } showBag(r.message); },'shop-buy');
+        use.setAttribute('aria-label','Usar ' + item.name);
+        const pick = button(id === chosen ? 'Elegido' : 'Elegir',() => { p.selectedItem = id; showBag(); updateHud(true); },'shop-buy'); pick.disabled = id === chosen;
+        acts.append(use,pick); row.append(body,acts); parent.append(row);
+      });
+      parent.append(el('h3','smith-heading','Amuletos · ' + (p.equipped || []).length + ' de ' + (p.amuletSlots || 1) + ' puesto' + ((p.amuletSlots || 1) > 1 ? 's' : '')));
+      Object.entries(Zak.AMULETS).forEach(([id,a]) => {
+        const has = (p.amulets || []).includes(id), on = (p.equipped || []).includes(id), row = el('div','shop-item' + (has ? '' : ' sold-out')), body = el('div');
+        body.append(el('strong','',a.icon + ' ' + a.name + (on ? ' · puesto' : '')),el('small','',a.detail),el('small','shop-note',has ? 'Lo tenés.' : 'Cómo se consigue: ' + a.how));
+        const go = button(!has ? 'No lo tenés' : on ? 'Sacármelo' : 'Ponérmelo',() => { const r = on ? game.unequipAmulet(id) : game.equipAmulet(id); showBag(r.message); updateHud(true); },'shop-buy');
+        go.disabled = !has; row.append(body,go); parent.append(row);
+      });
+      const active = Object.keys(Zak.REQUESTS).filter(id => game.requestState(id) === 'active');
+      if (active.length) {
+        parent.append(el('h3','smith-heading','Pedidos en curso'));
+        active.forEach(id => { const row = el('div','journal-task'), body = el('div'); body.append(el('strong','',Zak.REQUESTS[id].title + ' · ' + Zak.REQUESTS[id].npc),el('small','',game.requestText(id))); row.append(el('b','',game.requestProgress(id).ready ? '✓' : '◇'),body); parent.append(row); });
+      }
+      paragraph(parent,(p.rod ? '🎣 Tenés la caña: E al lado de una laguna para pescar. ' : '🎣 Don Chiche, en la Laguna de las Libélulas, vende una caña de pescar. ') + 'Los vecinos con pedidos te lo cuentan cuando hablás con ellos.','hint');
     });
   }
   // Publica el progreso como mucho cada 8 s; los pedidos que llegan antes se agrupan.
@@ -661,6 +739,13 @@
     if (p.buffs.paco > 0) statuses.push('♥ ' + p.buffs.pacoAnimals + ' animales encantados');
     if (p.buffs.pepe > 0) statuses.push('✦ DeboraMundos');
     if (p.buffs.mate > 0) statuses.push('☕ Mate ' + Math.ceil(p.buffs.mate) + ' s');
+    if (p.buffs.yuyos > 0) statuses.push('🧉 Yuyos ' + Math.ceil(p.buffs.yuyos) + ' s');
+    if (p.buffs.chori > 0) statuses.push('🌭 Fuerza +20% ' + Math.ceil(p.buffs.chori) + ' s');
+    if (p.buffs.wine > 0) statuses.push('🍷 Armadura +3 ' + Math.ceil(p.buffs.wine) + ' s');
+    if (p.buffs.fireproof > 0) statuses.push('💧 Sin fuego ' + Math.ceil(p.buffs.fireproof) + ' s');
+    if (p.buffs.rune > 0) statuses.push('✦ Runa +15% ' + Math.ceil(p.buffs.rune) + ' s');
+    if (p.invuln > 0) statuses.push('🐠 Inmune ' + Math.ceil(p.invuln) + ' s');
+    if (p.buffs.dorado > 0) statuses.push('🐠 Energía infinita ' + Math.ceil(p.buffs.dorado) + ' s');
     if (c.id === 'fede' && p.hp <= s.maxHealth * .3) statuses.push('✦ Último aliento');
     if (c.id === 'paco' && biome === 'weeds') statuses.push('↑ Campesino +15%');
     if (c.id === 'tena' && ctx.pursuers >= 3) statuses.push('↓ Miedoso −10%');
@@ -668,6 +753,10 @@
     if ($('status-effects').dataset.status !== statusKey) { $('status-effects').dataset.status = statusKey; $('status-effects').replaceChildren(...statuses.map(label => el('span','status-tag',label))); }
     text('hud-coins','◉ ' + p.coins); text('hud-herbs',p.herbs + '/' + Zak.HERB_BAG);
     $('herb-button').disabled = p.herbs < 1;
+    const chosen = game.selected(), itemLabel = chosen ? Zak.ITEMS[chosen].icon + ' ' + game.itemCount(chosen) : '—';
+    text('hud-item',itemLabel); text('touch-item-count',chosen ? Zak.ITEMS[chosen].icon + game.itemCount(chosen) : '—');
+    $('item-button').disabled = !chosen; $('touch-item').disabled = !chosen;
+    $('item-button').title = chosen ? 'Usar ' + Zak.ITEMS[chosen].name + ' (F). G cambia de objeto' : 'La bolsa está vacía';
     const comboReady = p.comboTime > 0 && p.combo % 4 === 3;
     text('hud-combo',p.comboTime > 0 && p.combo > 1 ? '×' + p.combo + (comboReady ? ' ✦' : '') : '');
     $('hud-combo').classList.toggle('ready',comboReady);
@@ -729,6 +818,8 @@
   $('stats-button').addEventListener('click',showStats); $('journal-button').addEventListener('click',() => showJournal()); $('map-button').addEventListener('click',showMap); $('pause-button').addEventListener('click',showPause);
   $('ability-button').addEventListener('click',() => game.ability());
   $('herb-button').addEventListener('click',() => { game.useHerb(); $('world').focus(); });
+  $('item-button').addEventListener('click',() => { game.useSelected(); $('world').focus(); });
+  $('bag-button').addEventListener('click',() => showBag());
   const isTouch = () => game.touchMode || (window.matchMedia && matchMedia('(pointer:coarse)').matches);
   const capture = (node,id) => { try { node.setPointerCapture(id); } catch (_) {} };
   function touchButton(id,action) {
@@ -790,6 +881,7 @@
   touchButton('touch-ability',() => game.ability());
   touchButton('touch-interact',() => game.interact());
   touchButton('touch-herb',() => game.useHerb());
+  touchButton('touch-item',() => game.useSelected());
   touchButton('touch-weapon',() => game.cycleWeapon());
   touchButton('touch-run',() => { game.runToggle = !game.runToggle; updateHud(true); });
   const standalone = () => (window.matchMedia && matchMedia('(display-mode: fullscreen), (display-mode: standalone)').matches) || navigator.standalone === true;
@@ -843,6 +935,8 @@
     else if (type === 'journal') showJournal();
     else if (type === 'shop') showShop();
     else if (type === 'smith') showSmith();
+    else if (type === 'npc') showNpc(detail.npc);
+    else if (type === 'bag') showBag();
     else if (type === 'progress') submitScore();
     else if (type === 'boss') { if (game.settings.notices) toast('☠ ' + detail.name + ' te vio. Mirá sus avisos y rodá a tiempo.',true); }
     else if (type === 'biome') { updateHud(true); if (game.settings.notices) toast(detail.name + (detail.safe ? ' · Zona segura' : ' · Mirá por dónde pisás')); }

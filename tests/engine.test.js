@@ -788,7 +788,8 @@
     const standNear = n => { Object.assign(game.player, {x: n.x, y: n.y + (n.radius || 9) + 12}); game.biome = Z.biomeAt(game.player.x, game.player.y); };
     test('Saved games: new neighbors do not move any vein or tree', () => {
       // Huella tomada en v2.16: si cambia, las partidas guardadas recordarían vetas y árboles equivocados.
-      const nodes = Z.createWorld().objects.filter(o => o.type === 'ore' || o.type === 'tree'); let hash = 0;
+      // Las vetas de cristal arcano (v2.19) se agregan al final: no cuentan en la huella de antes.
+      const nodes = Z.createWorld().objects.filter(o => (o.type === 'ore' || o.type === 'tree') && o.ore !== 'arcane'); let hash = 0;
       for (const o of nodes) for (const ch of [o.id, o.type, o.x, o.y].join('|') + ';') hash = Math.imul(hash, 31) + ch.charCodeAt(0) | 0;
       equal(nodes.length, 307, 'veins and trees'); equal(hash, 1825658723, 'fingerprint');
     });
@@ -853,7 +854,8 @@
     });
     test('Every neighbor starts on free ground in the village and cannot reach the respawn point', () => {
       fixture('gero', true); const w = game.world;
-      for (const n of game.world.npcs) { if (n.kind === 'smith') continue; const r = n.radius || 9; equal(Z.biomeAt(n.x, n.y), 'village', n.name); ok(!Z.collides(w, n.x, n.y, r, n.id), n.name + ' starts stuck');
+      for (const n of game.world.npcs) { if (n.kind === 'smith') continue; const r = n.radius || 9; equal(Z.biomeAt(n.x, n.y), n.zone || 'village', n.name); ok(!Z.collides(w, n.x, n.y, r, n.id), n.name + ' starts stuck');
+        if (n.zone) continue;
         if (n.static) { ok(Math.hypot(n.x - w.spawn.x, n.y - w.spawn.y) > r + 11, n.name + ' on spawn'); continue; }
         const [rx, ry] = n.roam || [65, 55], dx = Math.max(0, Math.abs(n.homeX - w.spawn.x) - rx), dy = Math.max(0, Math.abs(n.homeY - w.spawn.y) - ry); ok(Math.hypot(dx, dy) > r + 11, n.name + ' can step on spawn'); }
     });
@@ -861,7 +863,7 @@
       fixture('gero', true); const w = game.world, p = game.player; Object.assign(p, w.spawn);
       for (let i = 0; i < 900; i++) { game.time += 1 / 15; game.updateNpcs(1 / 15); }
       const moved = w.npcs.filter(n => !n.static && n.kind !== 'smith' && (n.x !== n.homeX || n.y !== n.homeY)); ok(moved.length > 20, 'most of them walked: ' + moved.length);
-      for (const n of w.npcs) { if (n.kind === 'smith') continue; const r = n.radius || 9, [rx, ry] = n.roam || [65, 55]; equal(Z.biomeAt(n.x, n.y), 'village', n.name); ok(!Z.collides(w, n.x, n.y, r, n.id), n.name + ' got stuck');
+      for (const n of w.npcs) { if (n.kind === 'smith') continue; const r = n.radius || 9, [rx, ry] = n.roam || [65, 55]; equal(Z.biomeAt(n.x, n.y), n.zone || 'village', n.name); ok(!Z.collides(w, n.x, n.y, r, n.id), n.name + ' got stuck');
         if (!n.static) ok(Math.abs(n.x - n.homeX) <= rx + 4 && Math.abs(n.y - n.homeY) <= ry + 4, n.name + ' wandered off'); else ok(n.x === n.homeX && n.y === n.homeY, n.name + ' must stay'); }
     });
     test('No animal or neighbor can trap the player, not even a horse', () => {
@@ -926,6 +928,168 @@
       game.restore(old, 1); near(game.player.abilityCooldown, 30, 'other characters keep the old limit');
     });
 
+    // v2.19: consumibles, amuletos, pedidos, pesca y la dimensión ampliada.
+    const realm = (spot, biome) => { const p = fixture('gero', true); game.travel(spot, biome); game.state = 'playing'; Object.assign(p, {level: 10, hp: 1e6}); p.stats.health = 1e6; game.refreshEnemyStats(); return p; };
+    const pondNear = () => { const pond = game.world.objects.find(o => o.type === 'pond' && o.label === 'Laguna de las Libélulas'); Object.assign(game.player, {x: pond.x + pond.w / 2, y: pond.y + pond.h + 14}); game.biome = 'village'; return pond; };
+    test('Fishing: E casts, a bite must be answered in time, and moving lifts the line', () => {
+      const p = fixture('gero', true); pondNear(); equal(Z.nearbyInteractable(game.world, p.x, p.y, 46, p) && Z.nearbyInteractable(game.world, p.x, p.y, 46, p).type === 'pond', false, 'no rod, no fishing');
+      p.rod = true; game.world.npcs = game.world.npcs.filter(n => n.name !== 'Don Chiche'); equal(Z.nearbyInteractable(game.world, p.x, p.y, 46, p).type, 'pond');
+      Math.random = () => .5; game.interact(); ok(p.fishing, 'line cast'); advance(p.fishing.bite + .05); ok(p.fishing.bit, 'it bites');
+      game.interact(); equal(p.fishing, null); equal(game.itemCount('pejerrey'), 1, '.5 → pejerrey');
+      game.interact(); advance(p.fishing.bite + 1.4); equal(p.fishing, null, 'it got away'); equal(game.itemCount('pejerrey'), 1);
+      game.interact(); advance(.5); game.keys.add('d'); advance(.1); game.keys.clear(); equal(p.fishing, null, 'walking lifts the line');
+    });
+    test('The Dorado is exactly a 5% catch', () => {
+      fixture('gero'); const rolls = [[0, 'dorado'], [.0499, 'dorado'], [.05, 'bagre'], [.2499, 'bagre'], [.25, 'pejerrey'], [.5999, 'pejerrey'], [.6, 'mojarra'], [.9999, 'mojarra']];
+      for (const [r, fish] of rolls) { Math.random = () => r; equal(game.catchFish(), fish, 'roll ' + r); }
+    });
+    test('The Dorado cures everything, gives 3 s without damage and 5 s of endless stamina', () => {
+      const p = fixture('gero'), max = game.stats().maxHealth; game.addItem('dorado', 1);
+      Object.assign(p, {hp: 5, stamina: 0, exhausted: 6, slow: 3, heavySlow: 2, stunned: 1, frozen: 1, poison: {time: 5, tick: 1, damage: 3}, bleed: {time: 5, tick: 1, damage: 5}, burn: {time: 5, tick: 1, damage: 2}});
+      ok(game.useItem('dorado').ok); near(p.hp, max); equal(p.stamina, 1); equal(p.exhausted, 0);
+      ok(!p.poison && !p.bleed && !p.burn && !p.slow && !p.heavySlow && !p.stunned && !p.frozen, 'no ailments left');
+      equal(game.hurtPlayer(50, 'thief'), false, 'immune'); equal(game.hurtPlayer(50, 'snake', true), false, 'poison too'); near(p.hp, max);
+      game.keys.add('d'); game.keys.add('Shift'); advance(2.9); equal(p.stamina, 1, 'running does not tire'); game.keys.clear();
+      equal(game.hurtPlayer(50, 'thief'), false, 'still immune at 2.9 s'); advance(.2); ok(game.hurtPlayer(50, 'thief'), 'damage again after 3 s');
+      p.rollCooldown = 0; ok(game.roll()); equal(p.stamina, 1, 'rolling is free'); advance(2); equal(p.buffs.dorado, 0, 'endless stamina lasts 5 s');
+      p.rollCooldown = 0; p.roll = 0; game.roll(); ok(p.stamina < 1, 'rolling costs again');
+    });
+    test('Consumables: holy water, bandages, choripán, wine and mate con yuyos', () => {
+      const p = fixture('gero'), max = game.stats().maxHealth;
+      for (const id of ['water', 'bandage', 'choripan', 'wine', 'mateyuyos']) game.addItem(id, 2);
+      game.burnPlayer(3); ok(p.burn); game.useItem('water'); equal(p.burn, null); game.burnPlayer(3); equal(p.burn, null, 'fireproof'); advance(10.1); game.burnPlayer(3); ok(p.burn, 'fire again after 10 s'); p.burn = null;
+      p.bleed = {time: 5, tick: 1, damage: 5}; p.hp = 50; game.useItem('bandage'); equal(p.bleed, null); near(p.hp, 60);
+      const strength = game.stats().strength; game.useItem('choripan'); near(game.stats().strength, strength * 1.2); advance(45.1); near(game.stats().strength, strength);
+      const armor = game.stats().armor; game.useItem('wine'); near(game.stats().armor, armor + 3); advance(40.1); near(game.stats().armor, armor);
+      p.hp = 10; p.stamina = .1; game.useItem('mateyuyos'); equal(p.stamina, 1); advance(10.05); near(p.hp, 10 + max * .4, 'heals 40% in 10 s');
+      equal(game.itemCount('water'), 1); for (let i = 0; i < 20; i++) game.addItem('water', 1); equal(game.itemCount('water'), Z.ITEM_STACK, 'bag holds 10 of each');
+    });
+    test('The return scroll takes you to the square, but not out of Zak’s dimension', () => {
+      const p = realm({x: 1800, y: 3060}, 'library'); game.addItem('scroll', 2);
+      equal(game.useItem('scroll').ok, false); equal(game.itemCount('scroll'), 2, 'not spent');
+      game.travel({x: 300, y: 300}, 'cave'); ok(game.useItem('scroll').ok); equal(game.biome, 'village'); equal(p.x, game.world.spawn.x); equal(game.itemCount('scroll'), 1);
+    });
+    test('A firecracker stuns common enemies around it, but not bosses', () => {
+      const p = fixture('gero'); p.dir = 'right'; const thief = enemy('thief', p.x + 110, p.y), boss = enemy('capo', p.x + 120, p.y + 20), far = enemy('thief', p.x + 300, p.y);
+      for (const e of [thief, boss, far]) { e.hp = e.maxHp = 1e5; e.cooldown = 99; e.stats.moveSpeed = 0; e.special = 99; e.rainCd = 99; }
+      game.addItem('firecracker', 1); game.useItem('firecracker'); equal(game.itemCount('firecracker'), 0); advance(.75);
+      ok(thief.stun > 1.3 && thief.hp < 1e5, 'thief stunned and hurt'); ok(!(boss.stun > 0) && boss.hp < 1e5, 'boss hurt, not stunned'); equal(far.hp, 1e5);
+    });
+    test('Amulets: the Yarará fang stops poison, the Capo ring pays 25% more and slots limit how many you wear', () => {
+      const p = fixture('gero'); game.grantAmulet('fang'); ok(Z.hasAmulet(p, 'fang'), 'first amulet is worn right away'); game.poisonPlayer(5); equal(p.poison, null);
+      game.grantAmulet('ring'); equal(Z.hasAmulet(p, 'ring'), false, 'only one slot'); equal(game.equipAmulet('ring').ok, false);
+      game.unequipAmulet('fang'); ok(game.equipAmulet('ring').ok); game.poisonPlayer(5); ok(p.poison, 'poison again without the fang'); p.poison = null;
+      Math.random = () => 0; const thief = enemy('thief'); thief.hp = 1; game.hitEnemy(thief, 999, true);
+      const def = Z.ENEMY_TYPES.thief, base = def.coins[0] + Math.floor((thief.level - 1) / 2), total = game.drops.reduce((sum, d) => sum + d.value, 0); equal(total, Math.floor(base * 1.25));
+      p.amuletSlots = 2; ok(game.equipAmulet('fang').ok); ok(Z.hasAmulet(p, 'fang') && Z.hasAmulet(p, 'ring'), 'two slots');
+    });
+    test('The Virgin medal heals 1 per second after 5 s without damage', () => {
+      const p = fixture('gero'); game.grantAmulet('medal'); p.hp = 50; game.hurtPlayer(1, 'thief'); const hurt = p.hp;
+      advance(4.9); near(p.hp, hurt, 'nothing before 5 s'); advance(1.2); near(p.hp, hurt + 1); advance(2); near(p.hp, hurt + 3);
+    });
+    test('Ten pets to the horses give the Herradura de Zaino; the Cerbero eye replaces the torch', () => {
+      const p = fixture('gero', true), zaino = npc('Zaino'); for (let i = 0; i < 9; i++) game.petHorse(zaino); equal(game.hasAmuletOwned('horseshoe'), false); game.petHorse(zaino); ok(game.hasAmuletOwned('horseshoe'));
+      const stairs = game.world.objects.find(o => o.type === 'stairs' && o.to === 'cave2'); game.enemies.find(e => e.type === 'capo').dead = true; p.torch = false;
+      equal(game.takeStairs(stairs), false, 'no torch'); p.amulets.push('eye'); p.equipped = ['eye']; ok(game.takeStairs(stairs), 'the eye sees in the dark');
+    });
+    test('Requests: kills count only after accepting, deliveries take the goods and pay', () => {
+      const p = fixture('gero'); const kill = () => { const t = enemy('thief'); t.hp = 1; game.hitEnemy(t, 999, true); };
+      kill(); equal(game.requestState('funes'), 'new'); ok(game.acceptRequest('funes').ok); equal(game.acceptRequest('funes').ok, false);
+      for (let i = 0; i < 9; i++) kill(); equal(game.requestProgress('funes').ready, false); equal(game.completeRequest('funes').ok, false);
+      kill(); ok(game.requestProgress('funes').ready); const coins = p.coins; ok(game.completeRequest('funes').ok); equal(p.coins, coins + 150); equal(game.itemCount('firecracker'), 3); equal(game.requestState('funes'), 'done');
+      game.acceptRequest('tito'); p.materials.wood = 25; ok(game.completeRequest('tito').ok); equal(p.materials.wood, 5); equal(game.itemCount('choripan'), 3);
+      game.acceptRequest('ines'); for (let i = 0; i < 8; i++) { const s = enemy(i % 2 ? 'archer' : 'skeleton'); s.hp = 1; game.hitEnemy(s, 999, true); } ok(game.completeRequest('ines').ok); ok(game.hasAmuletOwned('medal'), 'Sor Inés gives the medal');
+    });
+    test('A neighbor with a request opens their menu when the talk ends; one without keeps just talking', () => {
+      fixture('gero', true); const events = []; game.onEvent = (type, d) => events.push([type, d]);
+      standNear(npc('Tito')); game.interact(); advance(.1); game.finishCutscene(); ok(events.some(([t, d]) => t === 'npc' && d.npc.name === 'Tito'), 'menu after the talk');
+      events.length = 0; standNear(npc('Juli')); game.interact(); advance(.1); game.finishCutscene(); ok(!events.some(([t]) => t === 'npc'), 'Juli only talks');
+      game.player.requests.tito = {state: 'done', count: 0}; equal(game.npcHasMenu(npc('Tito')), false, 'after the request, back to talking');
+      ok(game.npcHasMenu(npc('El Gaucho')) && game.npcHasMenu(npc('Don Chiche')), 'the gaucho and Don Chiche always sell something');
+    });
+    test('Shops: El Almacén, the gaucho, Don Chiche and the void merchant', () => {
+      const p = fixture('gero', true); p.coins = 20000;
+      ok(game.buy('water').ok); equal(game.itemCount('water'), 1); for (let i = 0; i < 12; i++) game.buy('water'); equal(game.itemCount('water'), 10); equal(game.buy('water').ok, false, 'full bag');
+      const gaucho = npc('El Gaucho'), chiche = npc('Don Chiche'), merchant = game.world.npcs.find(n => n.shop === 'merchant');
+      ok(game.npcTrade(gaucho, 'buy:mateyuyos').ok); equal(game.itemCount('mateyuyos'), 1);
+      ok(game.npcTrade(chiche, 'rod').ok); ok(p.rod); equal(game.npcTrade(chiche, 'rod').ok, false, 'one rod');
+      game.addItem('dorado', 1); const coins = p.coins; ok(game.npcTrade(chiche, 'sell:dorado').ok); equal(p.coins, coins + Z.ITEMS.dorado.price); equal(game.itemCount('dorado'), 0);
+      const points = p.points; ok(game.npcTrade(merchant, 'stardust').ok); equal(p.points, points + 1); equal(game.npcOffers(merchant).find(o => o.id === 'stardust').cost.coins, 750, 'each one costs more');
+      ok(game.npcTrade(merchant, 'slot').ok); equal(p.amuletSlots, 2);
+      equal(game.npcTrade(merchant, 'amulet:eye').ok, false, 'needs an Ojo del alma and crystals'); p.offerings.eye = 1; p.materials.arcane = 8; ok(game.npcTrade(merchant, 'amulet:eye').ok); ok(Z.hasAmulet(p, 'eye')); equal(p.offerings.eye, 0); equal(p.materials.arcane, 0);
+      const vs = game.world.objects.find(o => o.type === 'voidstall'), events = []; game.onEvent = (type, d) => events.push([type, d]); Object.assign(p, {x: vs.x + vs.w / 2, y: vs.y + vs.h + 12}); game.biome = 'bazaar'; game.interact(); ok(events.some(([t, d]) => t === 'npc' && d.npc === merchant), 'the stall opens the merchant');
+    });
+    test('The smith makes firecrackers and carves the Yarará fang', () => {
+      const p = fixture('gero'); p.coins = 500; p.materials.coal = 4; p.materials.gold = 5; p.offerings.fang = 3;
+      ok(game.craft('item:firecracker').ok); ok(game.craft('item:firecracker').ok); equal(game.itemCount('firecracker'), 2); equal(game.craft('item:firecracker').ok, false, 'out of coal');
+      ok(game.craft('amulet:fang').ok); ok(game.hasAmuletOwned('fang')); equal(p.offerings.fang, 0); equal(game.craft('amulet:fang').ok, false, 'only once');
+    });
+    test('The imp splits in three: copies vanish in one hit and give nothing', () => {
+      const p = fixture('gero'), imp = enemy('imp', p.x + 60); imp.hp = imp.maxHp = 500; advance(1);
+      const copies = game.enemies.filter(e => e.illusion && !e.dead); equal(copies.length, 2); ok(copies.every(c => c.hp === imp.hp && c.maxHp === imp.maxHp), 'copies look the same');
+      const coins = game.drops.length, kills = p.kills, xp = p.xp; game.hitEnemy(copies[0], 1); ok(copies[0].dead); equal(game.drops.length, coins); equal(p.kills, kills); equal(p.xp, xp);
+      imp.hp = 1; game.hitEnemy(imp, 999, true); advance(.1); ok(copies[1].dead, 'the other copy goes with it');
+    });
+    test('Gargoyles are stone until you come close or hit them', () => {
+      const p = fixture('gero'), g = enemy('gargoyle', p.x + 200); advance(.5); game.hitEnemy(g, 50, true); equal(g.hp, g.maxHp, 'stone takes no damage');
+      advance(.1); equal(g.statue, false, 'the hit wakes it up'); advance(1); game.hitEnemy(g, 50, true); near(g.hp, g.maxHp - 50);
+      const g2 = enemy('gargoyle', p.x + 70); advance(.2); equal(g2.statue, false, 'walking close wakes it up');
+    });
+    test('A Zak shadow copies your last attack', () => {
+      const p = fixture('gero'), sh = enemy('shadow', p.x + 40); sh.cooldown = 99; advance(.3); const hp = p.hp;
+      p.attackCooldown = 0; game.attack([1, 0]); advance(.2); ok(sh.act && sh.act.id === 'mimic', 'it copies'); advance(.5); ok(p.hp < hp, 'the copy hurts');
+    });
+    test('Runes: a lit one explodes, a dark one gives +15% damage', () => {
+      const p = realm({x: 600, y: 3000}, 'magic'); game.enemies = []; const rune = game.world.objects.find(o => o.type === 'rune' && Z.biomeAt(o.x, o.y) === 'magic');
+      p.hp = 100; p.stats.health = 100; const step = () => { Object.assign(p, {x: rune.x + rune.w / 2, y: rune.y + rune.h / 2}); game.updateRealm(0); };
+      game.time = Z.RUNE_CYCLE * 10 - (rune.phase || 0) + .5; step(); ok(p.hp < 100, 'lit: it explodes'); const after = p.hp; step(); near(p.hp, after, 'then it rests');
+      rune.rest = 0; game.time = Z.RUNE_CYCLE * 20 - (rune.phase || 0) + 3; p.buffs.rune = 0; step(); ok(p.buffs.rune > 0, 'dark: +15% damage');
+    });
+    test('Tents: a mimic, nothing or loot, and then a 5 minute wait', () => {
+      const p = realm({x: 600, y: 3000}, 'magic'); game.enemies = []; const tent = game.world.objects.find(o => o.type === 'tent' && !o.decor);
+      Object.assign(p, {x: tent.x + tent.w / 2, y: tent.y + tent.h + 10}); equal(Z.nearbyInteractable(game.world, p.x, p.y, 46, p), tent);
+      Math.random = () => .1; equal(game.searchTent(tent), 'mimic'); ok(game.enemies.some(e => e.type === 'mimic' && e.summoned)); ok(Z.nearbyInteractable(game.world, p.x, p.y, 46, p) !== tent, 'searched tents wait');
+      tent.searched = 0; Math.random = () => .3; equal(game.searchTent(tent), 'empty');
+      tent.searched = 0; let n = 0; Math.random = () => [.9, .4][n++ % 2]; equal(game.searchTent(tent), 'water'); equal(game.itemCount('water'), 1);
+      const mimic = game.enemies.find(e => e.type === 'mimic'); mimic.hp = 1; game.drops = []; Math.random = original.random; game.hitEnemy(mimic, 999, true); ok(game.drops.length > 0, 'the mimic drops coins');
+    });
+    test('Holy water puts out a campfire; a nearby mage relights it faster', () => {
+      const p = realm({x: 600, y: 3000}, 'magic'), fire = game.world.objects.find(o => o.type === 'campfire'); game.enemies = [];
+      Object.assign(p, {x: fire.x + fire.w / 2, y: fire.y + 30}); ok(Z.nearbyInteractable(game.world, p.x, p.y, 46, p) !== fire, 'without water you cannot');
+      game.addItem('water', 1); equal(Z.nearbyInteractable(game.world, p.x, p.y, 46, p), fire); game.interact(); equal(game.itemCount('water'), 0); equal(fire.out, Z.FIRE_OUT);
+      Object.assign(p, {x: fire.x + fire.w / 2, y: fire.y + fire.h / 2}); game.updateCampfires(); equal(p.burn, null, 'a dead fire does not burn');
+      game.updateRealm(10); near(fire.out, Z.FIRE_OUT - 10); const mage = enemy('mage', fire.x + 30, fire.y); mage.stun = 99; game.updateRealm(5); near(fire.out, Z.FIRE_OUT - 30, 'four times faster');
+      game.updateRealm(20); equal(fire.out, 0); game.updateCampfires(); ok(p.burn, 'lit again');
+    });
+    test('The new zones: the Feria is safe, the rest is Zak’s dimension and every spawn has room', () => {
+      fixture('gero', true); const w = game.world;
+      equal(Z.biomeAt(1800, 2700), 'gargoyles'); equal(Z.biomeAt(1800, 3100), 'library'); equal(Z.biomeAt(1800, 3500), 'bazaar'); equal(Z.biomeAt(1100, 3500), 'sanctum'); equal(Z.biomeAt(1100, 2700), 'magic');
+      ok(Z.isSafe('bazaar') && !Z.isSafe('library') && !Z.isSafe('gargoyles')); ok(['gargoyles', 'library', 'bazaar'].every(Z.isZakDimension));
+      for (const s of w.enemySpawns.filter(s => s.id.startsWith('realm-'))) { ok(!Z.collides(w, s.x, s.y, 7), s.id + ' stuck'); ok(['gargoyles', 'library'].includes(Z.biomeAt(s.x, s.y)), s.id + ' zone'); }
+      for (const [x, y] of [[1190, 2830], [1190, 3500], [1800, 2957], [1800, 3317]]) ok(!Z.collides(w, x, y, 8), 'passage at ' + x + ',' + y);
+      equal(w.npcs.filter(n => n.zone === 'bazaar').length, 8); ok(w.npcs.some(n => n.zone === 'sanctum'), 'a soul in the Sanctuary');
+    });
+    test('Saves keep the bag, amulets, requests and rod; a v2.18 save loads with everything empty', () => {
+      const p = fixture('gero', true); game.addItem('dorado', 1); game.addItem('water', 3); game.grantAmulet('fang'); game.acceptRequest('funes'); p.requests.funes.count = 4; p.rod = true; p.materials.arcane = 7; p.buffs.chori = 20; p.amuletSlots = 2; p.stardust = 2;
+      const save = JSON.parse(JSON.stringify(game.snapshot())); game.newGame('tena'); game.restore(save, 1); const q = game.player;
+      equal(game.itemCount('dorado'), 1); equal(game.itemCount('water'), 3); ok(Z.hasAmulet(q, 'fang')); equal(q.requests.funes.count, 4); equal(q.rod, true); equal(q.materials.arcane, 7); near(q.buffs.chori, 20); equal(q.amuletSlots, 2); equal(q.stardust, 2);
+      const old = JSON.parse(JSON.stringify(save)); for (const k of ['items', 'selectedItem', 'amulets', 'equipped', 'amuletSlots', 'requests', 'rod', 'horsePets', 'invuln', 'calm', 'fishing', 'stardust']) delete old.player[k];
+      delete old.player.materials.arcane; old.player.buffs = {gero: 0, pepe: 0, paco: 0, pacoAnimals: 0, mate: 3};
+      game.restore(old, 1); const r = game.player; equal(Object.keys(r.items).length, 0); equal(r.amulets.length, 0); equal(r.amuletSlots, 1); equal(r.rod, false); equal(r.materials.arcane, 0); near(r.buffs.mate, 3); equal(r.buffs.chori, 0);
+      const bad = JSON.parse(JSON.stringify(save)); bad.player.items = {water: 999, nope: 4}; bad.player.equipped = ['ring']; bad.player.requests = {funes: {state: 'active', count: 9999}, fake: {state: 'done'}};
+      game.restore(bad, 1); equal(game.itemCount('water'), Z.ITEM_STACK); equal(game.player.items.nope, undefined); equal(Z.hasAmulet(game.player, 'ring'), false, 'cannot wear what you do not own'); equal(game.player.requests.funes.count, 10); equal(game.player.requests.fake, undefined);
+    });
+
+    test('v2.20: the smith makes armors in order and they cut the damage of each hit', () => {
+      const p = fixture('gero'); p.coins = 5000; Object.assign(p.materials, {wood: 25, iron: 25, gold: 35, diamond: 30}); p.offerings.elemental = 3;
+      const opt = () => game.craftOptions().find(o => o.id === 'armor');
+      equal(opt().name, 'Armadura de madera'); p.stats.endurance = 100; const hp = p.hp; game.hurtPlayer(10, 'thief'); near(hp - p.hp, 10, 'endurance does not protect');
+      for (const name of ['wood', 'iron', 'gold', 'diamond', 'elemental']) { ok(game.craft('armor').ok, name); equal(Z.ARMORS[p.armorTier].id, name); }
+      equal(opt().done, true); equal(game.craft('armor').ok, false, 'nothing above elemental'); equal(p.offerings.elemental, 0);
+      const before = p.hp; game.hurtPlayer(20, 'thief'); near(before - p.hp, 7, '20 - 13 of armor');
+      const save = JSON.parse(JSON.stringify(game.snapshot())); game.newGame('tena'); game.restore(save, 1); equal(game.player.armorTier, 5, 'saved');
+      delete save.player.armorTier; game.restore(save, 1); equal(game.player.armorTier, 0, 'old saves start without armor');
+    });
     game.pause(); cancelAnimationFrame(game.frame);
     return {passed: results.filter(r=>r.pass).length, failed: results.filter(r=>!r.pass).length, results};
   };

@@ -144,3 +144,11 @@ canvas{image-rendering:crisp-edges;image-rendering:pixelated}
  .menu-copy{top:82px}.eyebrow{font-size:9px}#menu-screen h1{font-size:clamp(58px,6vw,84px);margin:12px 0 12px;letter-spacing:-3px}#menu-screen h1>i{top:8px;left:215px}.menu-description{font-size:13px;line-height:1.5;margin:10px 0 12px}.main-actions{gap:6px}.main-actions .button{padding:10px 16px;font-size:15px}.main-actions .quiet{padding-top:7px;padding-bottom:7px}.menu-note{display:none}
 }
 @media(min-width:701px) and (min-height:521px) and (max-height:680px){.menu-copy{top:68px}}
+/* v2.19: bolsa, amuletos, pedidos y tiendas de los vecinos. */
+.purse-item b{font-weight:normal}
+.bag-section{margin-top:18px}.bag-tag{font:9px 'Courier New',monospace;color:var(--gold);border:1px solid #d1b86a66;padding:2px 5px;margin-left:6px}
+.bag-actions{display:flex;flex-direction:column;gap:5px;align-items:stretch}.bag-actions .shop-buy{min-width:92px}
+.request-box{background:#10281f;border:1px solid var(--line);border-left:2px solid var(--gold);padding:12px 14px;margin:14px 0}.request-box strong{display:block;font-weight:normal;color:var(--gold);font-size:15px}.request-box small{display:block;color:var(--muted);font:11px/1.6 'Courier New',monospace;margin-top:6px}.request-box .modal-actions{margin-top:12px}
+@media(pointer:coarse){
+ #touch-controls #touch-item{right:112px;bottom:142px;width:44px;height:44px;font-size:17px}
+}

@@ -2,7 +2,7 @@
 
 Una aventura de acción y exploración en pixel art, vista desde arriba. Elegí a uno de siete amigos, preparate en la aldea y salí a explorar la cueva y los Yuyos.
 
-Versión actual: **v2.18**. Los cambios de cada versión están en [CHANGELOG.md](CHANGELOG.md).
+Versión actual: **v2.20**. Los cambios de cada versión están en [CHANGELOG.md](CHANGELOG.md).
 
 ## Jugar
 
@@ -26,6 +26,9 @@ El juego funciona directamente desde sus archivos: no requiere servidor, instala
 | Recoger / usar el pozo / comprar / hablar con el herrero / bajar y subir / dejar ofrendas en el altar | E |
 | Talar o picar | E cerca del árbol o la veta, y quedarse quieto |
 | Usar hierba de la bolsa | R |
+| Usar el objeto elegido / cambiar de objeto | F / G |
+| Bolsa y amuletos | B |
+| Pescar (con la caña) | E al lado de una laguna; E otra vez cuando pica |
 | Cambiar arma | 1 a 5; también sus botones |
 | Ficha y mejoras | C |
 | Diario de viaje | J |
@@ -39,8 +42,8 @@ La dirección de movimiento orienta al personaje; el ratón permite dirigir ataq
 
 - **Joystick analógico:** apoyá el pulgar en cualquier parte de la mitad izquierda y arrastrá. Inclinarlo poco camina más despacio.
 - **Analógico de ataque:** mantené ⚔ y arrastralo para apuntar; al soltarlo se hace el ataque. Mientras apuntás se ve el indicador: con arco y piedra, una línea con el recorrido del tiro hasta donde va a pegar; con puños, el área recta del golpe; con espadas, su abanico. Podés caminar para un lado y atacar para el otro. Sin arrastrar, apunta solo al enemigo más cercano. Volver al centro antes de soltar cancela el golpe.
-- **Botones para el pulgar derecho:** ⟲ rueda, ✦ usa la habilidad, E se ilumina cuando hay algo para usar cerca, ❦ usa una hierba, » activa o desactiva la carrera y el botón de arma rota entre las conseguidas.
-- **Arriba:** ficha, diario, mapa, pausa y ⛶ para pantalla completa, que también intenta fijar la orientación horizontal.
+- **Botones para el pulgar derecho:** ⟲ rueda, ✦ usa la habilidad, E se ilumina cuando hay algo para usar cerca, ❦ usa una hierba, 🎒 usa el objeto elegido de la bolsa, » activa o desactiva la carrera y el botón de arma rota entre las conseguidas.
+- **Arriba:** ficha, bolsa y amuletos (🎒), diario, mapa, pausa y ⛶ para pantalla completa, que también intenta fijar la orientación horizontal.
 - El teléfono vibra al recibir daño (se desactiva junto con la sacudida de pantalla). Se juega en horizontal o en vertical, aunque en horizontal se ve más mundo. Los botones de la interfaz también permiten acceder a habilidades, armas, ficha, mapa y pausa.
 
 El juego se adapta al tamaño de pantalla; en teléfonos conviene usar orientación horizontal. Los indicadores combinan texto, iconos y color. Las opciones permiten ajustar sonido, efectos visuales y la sacudida de pantalla.
@@ -65,9 +68,13 @@ Los guardados se conservan en el almacenamiento local del navegador usado para j
 - **Cueva Profunda (Nvl 2):** se baja por la escalera del fondo noroeste de la Cueva del Eco; **hace falta una antorcha y haber vencido al Capo**. Está a oscuras: ves lo que alumbra la antorcha. Hay murciélagos, arañas, hierro y oro, y **no crecen hierbas medicinales**. En su extremo sureste baja otra escalera, custodiada por **El Chupasangre**.
 - **Las Entrañas (Nvl 3):** pocos gusanos de tierra, enterrados hasta que te acercás, las únicas vetas de diamante y **El Gólem Minero**.
 - **Altar del gobernante:** un cementerio al oeste de la aldea; se entra por el portón al final de la calle principal. Lo pueblan esqueletos con escudo y esqueletos arqueros. **Cerbero** custodia el altar de ofrendas.
-- **Dimensión de Zak:** el portal del altar lleva acá, y **no se sale** hasta vencer o perder contra Zak. Las ofrendas se gastan una sola vez: **el portal queda prendido para siempre** y lo podés volver a cruzar, salvo mientras **Cerbero** esté vivo (se ve rojo y no deja pasar). Tiene dos partes, con el mismo estilo oscuro y violeta del trono:
-  - **Santuario** (zona segura): una fuente que, como el pozo de la aldea, devuelve la vida y la energía y apaga las quemaduras.
-  - **Pueblo Mágico** (al norte): carpas, fogatas, magos y armaduras vivientes. **Pisar una fogata quema**: 2 de vida por segundo durante 5 s, ignorando la armadura (rodar no te salva). Al fondo, el **Rey Mago** custodia la **puerta del trono**, que se abre con su **Llave del trono** (se gasta al usarla).
+- **Dimensión de Zak:** el portal del altar lleva acá, y **no se sale** hasta vencer o perder contra Zak. Las ofrendas se gastan una sola vez: **el portal queda prendido para siempre** y lo podés volver a cruzar, salvo mientras **Cerbero** esté vivo (se ve rojo y no deja pasar). Tiene cinco partes, con el mismo estilo oscuro y violeta del trono:
+  - **Santuario** (zona segura): una fuente que, como el pozo de la aldea, devuelve la vida y la energía y apaga las quemaduras, y además te llena botellas de **agua bendita** hasta tener 2. Ahí vaga **Ánima**, un alma que tiene un pedido.
+  - **Pueblo Mágico** (al norte): carpas, fogatas, magos y armaduras vivientes. **Pisar una fogata quema**: 2 de vida por segundo durante 5 s, ignorando la armadura (rodar no te salva). Con **agua bendita** (E cerca) la apagás durante 45 s; si un mago anda cerca, la vuelve a prender cuatro veces más rápido. Las **carpas** se revisan con E (cada una, cada 5 minutos): guita, agua bendita, vendas, petardos, cristal arcano, un elixir… o un **mimic** (15%). Al fondo, el **Rey Mago** custodia la **puerta del trono**, que se abre con su **Llave del trono** (se gasta al usarla).
+  - **Feria de las Almas** (zona segura, al este del Santuario): vecinos de la dimensión, una mesa de truco eterna y el **Mercader del Vacío**.
+  - **Biblioteca del Rey Mago** (al norte de la Feria): estantes sueltos, atriles, **libros voladores** y **duendes ilusionistas**.
+  - **Patio de las Gárgolas** (al norte de la Biblioteca, y con un paso al Pueblo Mágico): **gárgolas** que parecen estatuas, **sombras de Zak** y las únicas vetas de **cristal arcano**.
+  - **Runas en el piso** (Pueblo Mágico, Biblioteca y Patio): se prenden 2 s de cada 6. Pisar una **prendida** explota y te saca el 15% de la vida (rodando la esquivás). Pisar una **apagada** te da **+15% de daño durante 8 s**. Después de pisarla, cada runa descansa 12 s.
 - **Trono de Zak:** sala gótica de ladrillo negro, siempre de noche pero bien visible. Se llega solo por la puerta del Pueblo Mágico. No hay enemigos: solo **Zak** y su trono.
 
 Las bajadas custodiadas no se abren mientras su jefe esté vivo; si reaparece mientras estás abajo, subir siempre se puede. El mapa marca el almacén ($), el herrero (⚒), las bajadas (▼ ▲), el altar (✝) y las guaridas de los jefes (☠). Dentro de una cueva profunda o del trono, el mapa muestra esa zona. Los enemigos vuelven a aparecer después de **35 segundos**; el Capo y la Yarará, después de **3 minutos**; el Chupasangre, de 4; el Gólem, de 5; y Cerbero, de 10.
@@ -149,6 +156,63 @@ El Almacén también **compra las ofrendas** de los jefes, una por vez:
 
 La Esfera mágica no va al altar: es un trofeo que solo sirve para vender. El Rey Mago también suelta siempre una **🗝 Llave del trono**.
 
+## Bolsa, consumibles y amuletos
+
+Los consumibles van a la **bolsa** (B, o 🎒): hasta **10 de cada uno**. **F** usa el objeto elegido y **G** cambia cuál; en el celular, el botón 🎒 de la derecha usa el elegido. Desde la bolsa también podés usarlos o elegirlos.
+
+| Objeto | Dónde | Precio | Efecto |
+| --- | --- | ---: | --- |
+| 💧 Agua bendita | El Almacén, la fuente del Santuario y las carpas | 15 | Apaga la quemadura y te hace inmune al fuego 10 s. También apaga fogatas |
+| 🩹 Vendas | El Almacén y las carpas | 12 | Cortan el desangrado y curan 10 de vida |
+| 🧉 Mate con yuyos | El Gaucho | 20 | Energía al máximo y cura el 40% de tu vida de a poco, en 10 s |
+| 🌭 Choripán | El Almacén | 25 | +20% de fuerza durante 45 s |
+| 🍷 Vino de la abuela | El Almacén | 20 | +3 de armadura, pero −10% de movimiento, durante 40 s |
+| 🧨 Petardo | El herrero (2 de carbón + 15) y las carpas | — | Se tira hacia adelante y a los 0,7 s explota: aturde 1,5 s a los enemigos cercanos (a los jefes, no) y les saca un poco de vida |
+| 📜 Pergamino de regreso | El Almacén | 80 | Te lleva a la plaza. No anda en la dimensión de Zak |
+| ⚗ Elixir del vacío | El Mercader del Vacío y las carpas | 150 | Vida y energía al máximo, y te saca todos los males |
+
+**Amuletos.** Se ponen y se sacan desde la bolsa. Empezás con **un engarce**; el Mercader del Vacío vende el segundo.
+
+| Amuleto | Efecto | Cómo se consigue |
+| --- | --- | --- |
+| 🏅 Medallita de la Virgen | Si pasás 5 s sin recibir daño, recuperás 1 de vida por segundo | El pedido de Sor Inés |
+| 🐴 Herradura de Zaino | +8% de movimiento | Mimar a los caballos de la aldea 10 veces |
+| 🐍 Diente de la Yarará | Inmune al veneno | El herrero: 3 Colmillos Tóxicos, 5 de oro y ◉ 100 |
+| 💰 Anillo del Capo | +25% de monedas de los enemigos | El Mercader del Vacío: 2 Anillos de la mafia, 6 cristales arcanos y ◉ 300 |
+| 🧿 Ojo de Cerbero | Ves en la oscuridad de las cuevas profundas y podés bajar sin antorcha | El Mercader del Vacío: 1 Ojo del alma, 8 cristales arcanos y ◉ 500 |
+
+### Pesca
+
+**Don Chiche**, en la Laguna de las Libélulas, vende una **caña de pescar** (◉ 30) y te compra lo que saques. Con la caña, E al lado de cualquiera de las tres lagunas de la aldea tira la línea. Quedate quieto: a los pocos segundos **pica** (sale «¡PICA!» sobre el corcho) y tenés 1,3 s para apretar E otra vez. Si te movés, rodás o atacás, levantás la línea.
+
+| Pescado | Probabilidad | Efecto | Don Chiche paga |
+| --- | ---: | --- | ---: |
+| 🐟 Mojarra | 40% | Cura 15 de vida | 4 |
+| 🐟 Pejerrey | 35% | Cura 30 de vida | 10 |
+| 🐡 Bagre | 20% | Cura 60 de vida y quita el veneno | 20 |
+| 🐠 **Dorado** | **5%** | Te cura **todo**: vida y energía al máximo y sin ningún mal (veneno, desangrado, quemadura, lentitud, aturdimiento, congelamiento, agotamiento). Además, **3 s sin recibir daño** y **5 s de energía infinita** (correr y rodar no gastan) | 300 |
+
+### Pedidos de los vecinos
+
+Algunos vecinos tienen un pedido: después de hablar con ellos (E) se abre su menú para aceptarlo. Los enemigos cuentan **desde que lo aceptás**; las entregas se llevan lo que piden. La bolsa muestra los pedidos en curso.
+
+| Vecino | Pedido | Recompensa |
+| --- | --- | --- |
+| Sor Inés | Derrotar 8 esqueletos (con escudo o arqueros) | 🏅 Medallita de la Virgen |
+| Cabo Funes | Derrotar 10 chorros | ◉ 150 y 3 petardos |
+| Tito | Traer 20 de madera | ◉ 90 y 3 choripanes |
+| Clara | Traer 5 hierbas medicinales | ◉ 50 y 2 aguas benditas |
+| El Gaucho | Traer 15 de carbón | ◉ 60 y 3 mates con yuyos |
+| Don Chiche | Traer 3 pejerreyes | ◉ 80 y un bagre |
+| Doña Rosa | Traer 2 bagres | ◉ 60 y 3 vinos de la abuela |
+| Ánima (Santuario) | Derrotar 6 sombras de Zak | ◉ 300 y 4 cristales arcanos |
+| La Bruja Pocha (Feria) | Traer 4 cristales arcanos | ◉ 150 y 2 elixires |
+| Merlín de Quilmes (Feria) | Derrotar 12 libros voladores | ◉ 350 y 3 petardos |
+
+### El Mercader del Vacío
+
+Atiende su puesto en la Feria de las Almas (E en el puesto o hablándole). Vende **⚗ Elixir del vacío** (◉ 150), **✨ Polvo de estrellas** (+1 punto de mejora: ◉ 500, y cada uno sale ◉ 250 más), el **◈ Segundo engarce** para amuletos (◉ 4000) y arma el **Anillo del Capo** y el **Ojo de Cerbero** con ofrendas y cristal arcano. En la Feria también viven la Bruja Pocha, Merlín de Quilmes, Tía Eulalia la vidente, Ramiro el gnomo, Ernesto (un alma en pena) y Truco y Retruco, dos almas que juegan al truco desde hace trescientos años.
+
 ## Materiales, herramientas y El Taller
 
 Al sur de la aldea, junto a **El Taller**, atiende **El Herrero**: E en su mesa de trabajo abre su taller. Él te recibe con un «Acá todo con verdes, pa.». Fabrica herramientas y mejora armas a cambio de materiales y guita.
@@ -163,8 +227,9 @@ Al sur de la aldea, junto a **El Taller**, atiende **El Herrero**: E en su mesa 
 | Hierro | Cueva Profunda (gris metálica) | Pico de piedra | 2 | 5 min |
 | Oro | Cueva Profunda (amarilla, hay menos) | Pico de hierro | 2 | 7 min |
 | Diamante | Las Entrañas (pedazos celestes, muy pocas) | Pico de oro | 2 | 10 min |
+| Cristal arcano | Patio de las Gárgolas (violeta, brilla) | Pico de diamante | 2 | 10 min |
 
-Hay 8 vetas de piedra, 6 de carbón, 9 de hierro, 5 de oro y 4 de diamante. Cada nivel de herramienta trabaja más rápido que el anterior: madera ×1, piedra ×1,3, hierro ×1,6, oro ×1,95 y diamante ×2,4.
+Hay 8 vetas de piedra, 6 de carbón, 9 de hierro, 5 de oro, 4 de diamante y 5 de cristal arcano. El herrero también hace **petardos** y talla el **Diente de la Yarará** (ver [Bolsa, consumibles y amuletos](#bolsa-consumibles-y-amuletos)). Cada nivel de herramienta trabaja más rápido que el anterior: madera ×1, piedra ×1,3, hierro ×1,6, oro ×1,95 y diamante ×2,4.
 
 **Herramientas.** Cada pico y cada hacha requiere el nivel anterior. Las hachas solo aceleran la tala.
 
@@ -245,8 +310,8 @@ Al vencerlo, Zak no muere: vuelve al trono, dice «Dejémoslo acá y volvé a tu
 | Mer | 85 | 5 | 30 | 20 | 10 |
 
 - **Gero — Fé Judía:** recupera 5 de vida por segundo y gana 25 de velocidad durante 5 segundos. Si con el bono supera 100 de velocidad, salta a la banda Extraordinaria. Las ratas lo ignoran hasta que las golpea. Su experiencia parte de ×0,75.
-- **Paco — Afecto animal:** encanta animales cercanos durante 10 segundos; se apartan y le dan 2 de fuerza por animal. En los Yuyos sus estadísticas aumentan 15%. Obtiene 10% menos de los beneficios de resistencia.
-- **Fede — Último aliento, pasiva:** con 30% de vida o menos gana 15% de velocidad y resistencia. Las serpientes tienen solo 15% de probabilidad de envenenarlo. Obtiene 20% menos de los beneficios de resistencia.
+- **Paco — Afecto animal:** encanta animales cercanos durante 10 segundos; se apartan y le dan 2 de fuerza por animal. En los Yuyos sus estadísticas aumentan 15%. La resistencia le rinde 10% menos para correr.
+- **Fede — Último aliento, pasiva:** con 30% de vida o menos gana 15% de velocidad y resistencia. Las serpientes tienen solo 15% de probabilidad de envenenarlo. La resistencia le rinde 20% menos para correr.
 - **Pepe — DeboraMundos, pasiva:** derrotar un enemigo recupera 5 de vida y da 15% de velocidad por 3 segundos. Gana 50% más de experiencia. Los perros le hacen 10% más de daño y lo ralentizan 20%.
 - **Tena — Baile del 7-0:** aturde a los enemigos cercanos durante 7 segundos. Las ratas huyen de él. Con tres o más perseguidores pierde 10% de todas las estadísticas salvo vida.
 - **Dante — Tobi:** golpea el suelo tres veces con un enorme bastón de carne; cada onda inflige 10 de daño a los enemigos cercanos. Gana 1 de fuerza automática por nivel además del punto a elección. Se mueve 10% más lento.
@@ -258,7 +323,7 @@ Las habilidades activas tienen enfriamiento: Gero **25 s**, Paco **30 s**, Tena 
 
 ## Estadísticas y progresión
 
-**Ninguna estadística del personaje tiene tope**: vida, fuerza, velocidad, resistencia, inteligencia y nivel pueden crecer sin límite. La velocidad y la resistencia rinden cada vez menos pasado 100 (ver sus tablas).
+**Ninguna estadística del personaje tiene tope**: vida, fuerza, velocidad, resistencia, inteligencia y nivel pueden crecer sin límite. La velocidad rinde cada vez menos pasado 100 y la resistencia deja de alargar la carrera en 80 (ver sus tablas).
 
 **Veteranía.** Desde el nivel 8, los enemigos ganan vida y fuerza extra por nivel; tu personaje crece al mismo ritmo para que el juego nunca se vuelva imposible:
 
@@ -298,16 +363,31 @@ Correr aumenta el movimiento **25%**. Tras dejar de correr durante **2 segundos*
 
 ### Resistencia
 
-| Resistencia efectiva | Carrera hasta agotarse | Daño físico absorbido |
-| --- | ---: | ---: |
-| Menor que 15 | 3 s | 0 |
-| 15 a menos de 30 | 5 s | 2 |
-| 30 a menos de 60 | 7 s | 4 |
-| 60 a menos de 80 | 10 s | 6 |
-| 80 a 100 | 12 s | 8 |
-| Más de 100 | 12 s | 8 + 1 cada 10 puntos (150: 13) |
+La resistencia es **solo la energía**: cuánto podés correr antes de agotarte. Ya no protege de los golpes; eso lo hace la [armadura](#armaduras).
 
-Paco recibe el **90%** de la duración y protección de su banda; Fede, el **80%**. La armadura conserva un mínimo de **1 de daño por golpe**. El veneno ignora por completo esta protección.
+| Resistencia efectiva | Carrera hasta agotarse |
+| --- | ---: |
+| Menor que 15 | 3 s |
+| 15 a menos de 30 | 5 s |
+| 30 a menos de 60 | 7 s |
+| 60 a menos de 80 | 10 s |
+| 80 o más | 12 s |
+
+Paco corre el **90%** de lo que marca su banda; Fede, el **80%**.
+
+### Armaduras
+
+La armadura resta su valor a cada golpe, con un mínimo de **1 de daño por golpe**. El veneno, el desangrado, las quemaduras y los golpes de Zak la ignoran. Se fabrican en El Taller, **en orden**: cada una necesita la anterior y protege más.
+
+| Armadura | Armadura | Costo |
+| --- | ---: | --- |
+| 🪵 Madera | 2 | 20 madera + 40 de guita |
+| ⛓ Hierro | 4 | 20 hierro + 5 madera + 80 |
+| 🟨 Oro | 6 | 20 oro + 5 hierro + 120 |
+| 💎 Diamante | 9 | 20 diamante + 5 oro + 160 |
+| 🔮 Piedra elemental | 13 | 3 Piedras Elementales + 10 diamante + 10 oro + 250 |
+
+La que tenés puesta se ve en el personaje: hombreras y cinturón del color del material. El vino de la abuela suma 3 más mientras dura. Los enemigos no cambian: su armadura sigue saliendo de su resistencia.
 
 ## Enemigos
 
@@ -326,6 +406,11 @@ Casi todos comparten un radio de detección de **195 píxeles**. Tienen **el mis
 | Esqueleto arquero | 1 | 18 | 30 | 0 | +0 / +1 / +0,5 / +0 |
 | Mago | 90 | 18 | 14 | 20 | +2,5 / +1 / +0,3 / +0,8 |
 | Armadura viviente | 420 | 30 | 5 | 75 | +12 / +1,4 / +0,1 / +1 |
+| Libro volador | 32 | 14 | 40 | 5 | +1 / +0,8 / +0,5 / +0,3 |
+| Duende ilusionista | 110 | 20 | 32 | 20 | +2 / +1 / +0,5 / +0,8 |
+| Gárgola | 300 | 28 | 26 | 70 | +8 / +1,2 / +0,3 / +1 |
+| Sombra de Zak | 160 | 24 | 30 | 30 | +3 / +1 / +0,4 / +0,8 |
+| Mimic | 240 | 30 | 22 | 55 | +6 / +1,2 / +0,3 / +1 |
 
 - Los **chorros** atacan con cuchillo y no retroceden al recibir golpes.
 - Los **perros** reducen el movimiento un 15% durante 4 segundos; contra Pepe, un 20%.
@@ -338,6 +423,11 @@ Casi todos comparten un radio de detección de **195 píxeles**. Tienen **el mis
 - Los **esqueletos arqueros** (cementerio) te ven desde 260 píxeles, disparan flechas cada 1,7 s y se alejan si te acercás. Sus flechas pegan un **75% más** que su fuerza (también por encima del tope de 100). Se rompen de un golpe.
 - Los **magos** (Pueblo Mágico) se quedan quietos **2 s conjurando** (un anillo naranja se va llenando) y tiran una **bola de fuego** que pega un 50% más que su fuerza y **quema**. Caminan algo lento y siempre buscan distancia.
 - Las **armaduras vivientes** (Pueblo Mágico) tienen mucha vida y armadura, caminan muy despacio y tardan en pegar: levantan la espada 1,1 s (círculo rojo) y **giran**, golpeando todo a su alrededor con el 150% de su fuerza.
+- Los **libros voladores** (Biblioteca) andan de a cuatro: te rodean volando y se tiran en picada a picarte. Tienen poca vida.
+- Los **duendes ilusionistas** (Biblioteca) se dividen en tres y saltan de costado cuando te acercás. Dos son **copias** idénticas: pegan la mitad, se deshacen de un golpe y no dan nada. Las copias desaparecen con el duende real, y cada 14 s se vuelve a dividir.
+- Las **gárgolas** (Patio) parecen estatuas: mientras son de piedra no les entra ningún golpe. Se despiertan si pasás a menos de 90 píxeles o si les pegás; vuelan, apuntan 0,6 s (línea roja) y se tiran en picada con el 140% de su fuerza. Si te alejás, vuelven a su pedestal y se hacen piedra otra vez, con la vida llena.
+- Las **sombras de Zak** (Patio) atraviesan las paredes y **copian tu último ataque** con 0,55 s de demora: si pegás cuerpo a cuerpo, te devuelven un zarpazo; si tirás con arco o piedra, te tiran un proyectil de sombra. Si no atacás, igual cada tanto te tantean.
+- Los **mimics** salen de algunas carpas del Pueblo Mágico. Son lentos, muerden fuerte (130% de su fuerza), te frenan 2 s y sueltan buena guita.
 
 Los ataques empujan a perros, serpientes y ratas; las ratas prendidas deben terminar su agarre. Los aumentos propios de vida de cada enemigo se aplican según la tabla, sin sumarles los 2 de vida automáticos del jugador. El daño de veneno también respeta el límite de fuerza de 100.
 
@@ -363,11 +453,13 @@ Implementado con **HTML, CSS y JavaScript**, sin paquetes externos. El mundo se 
 - `src/pixel.js`: herramientas de pixel art: dibujo sin suavizado, contornos y destellos de sprites, fuente de píxeles propia, luces con tramado y ruido para el terreno.
 - `src/render.js`: sprites, terreno, cámara y efectos visuales.
 - `src/game.js`: simulación, movimiento, combate, esquiva, combos, monedas, tienda, jefes y habilidades.
+- `src/items.js`: consumibles, amuletos, pedidos de los vecinos, pesca y las tiendas del Gaucho, Don Chiche y el Mercader del Vacío.
+- `src/realm.js`: Patio de las Gárgolas, Biblioteca del Rey Mago y Feria de las Almas; sus enemigos, las runas, las carpas y las fogatas.
 - `src/bosses.js`: el Chupasangre, el Gólem Minero, Cerbero y Zak; altar de ofrendas, portales e invocaciones.
 - `src/ui.js`: menús, HUD, tienda, ranking, guardados y controles táctiles.
 - `src/ranking.js` y `src/config.js`: ranking local u online (Supabase).
 - `src/cloud.js`: cuentas y partidas en la nube (Supabase).
-- `tests/rules.test.js`: 38 pruebas de reglas y casos límite.
+- `tests/rules.test.js`: 41 pruebas de reglas y casos límite.
 
 Si ya tenés Node instalado:
 
@@ -375,9 +467,9 @@ Si ya tenés Node instalado:
 node tests/rules.test.js
 ```
 
-Abrí `tests/index.html` para ejecutar las 38 pruebas de reglas y las 121 pruebas de integración del motor en el navegador. El resultado detalla cada caso aprobado o fallido.
+Abrí `tests/index.html` para ejecutar las 41 pruebas de reglas y las 143 pruebas de integración del motor en el navegador. El resultado detalla cada caso aprobado o fallido.
 
-También se incluyen 41 pruebas de interfaz y de pixel art, 18 del ranking (con un servidor simulado) 36 de controles táctiles y 42 de la nube (también con un servidor simulado) con Chrome y Python 3, sin librerías adicionales. El verificador abre un perfil temporal aislado; nunca usa tus guardados personales:
+También se incluyen 47 pruebas de interfaz y de pixel art, 18 del ranking (con un servidor simulado) 36 de controles táctiles y 42 de la nube (también con un servidor simulado) con Chrome y Python 3, sin librerías adicionales. El verificador abre un perfil temporal aislado; nunca usa tus guardados personales:
 
 ```sh
 python tests/browser_check.py tests/index.html --script tests/engine.test.js

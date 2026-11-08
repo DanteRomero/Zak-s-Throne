@@ -86,7 +86,7 @@
       const p=Zak.createPlayer('tena'); p.stats.health=499; p.hp=499; Zak.grantXp(p,100);
       equal(p.stats.health,501); equal(p.hp,501); equal(Zak.upgradeStat(p,'health'),true); equal(p.stats.health,506); equal(Zak.getStats(p).maxHealth,506);
       p.stats.strength=150; p.stats.speed=200; p.stats.endurance=150; const s=Zak.getStats(p);
-      equal(s.strength,150); equal(s.speed,200); equal(s.attackCooldown,.375); equal(s.armor,13);
+      equal(s.strength,150); equal(s.speed,200); equal(s.attackCooldown,.375); equal(s.runDuration,12); equal(s.armor,0,'la resistencia ya no da armadura');
     });
     test('Las mejoras no gastan puntos si son inválidas', () => {
       const p=Zak.createPlayer('tena'); p.points=2; p.stats.speed=100;
@@ -115,11 +115,11 @@
       near(a.maxHealth,115); near(a.strength,6.9); near(a.speed,17.25); near(a.intelligence,11.5); near(a.endurance,23); near(a.moveSpeed,92*1.15);
       near(b.strength,a.strength); equal(JSON.stringify(p.stats),before); equal(Zak.getStats(p,{biome:'village'}).strength,6);
     });
-    test('Pulmones: descuentos sobre duración y protección', () => {
+    test('Pulmones: descuento sobre la carrera, no sobre la armadura', () => {
       const paco=Zak.createPlayer('paco'), fede=Zak.createPlayer('fede');
       paco.stats.endurance=100; fede.stats.endurance=100;
-      near(Zak.getStats(paco).runDuration,10.8); near(Zak.getStats(paco).armor,7.2);
-      near(Zak.getStats(fede).runDuration,9.6); near(Zak.getStats(fede).armor,6.4);
+      near(Zak.getStats(paco).runDuration,10.8); paco.armorTier=4; near(Zak.getStats(paco).armor,9);
+      near(Zak.getStats(fede).runDuration,9.6); equal(Zak.getStats(fede).armor,0);
     });
     test('Fede activa Último aliento exactamente al 30%', () => {
       const p=Zak.createPlayer('fede'); p.hp=27; near(Zak.getStats(p).speed,34.5); near(Zak.getStats(p).endurance,5.75); near(Zak.getStats(p).moveSpeed,118*1.15);
@@ -192,6 +192,30 @@
     test('La espada inflige 50% de daño adicional', () => { equal(Zak.WEAPON_TYPES.sword.damageMultiplier,1.5); });
     test('Experiencia inválida no corrompe el personaje', () => {
       const p=Zak.createPlayer('tena'); equal(Zak.grantXp(p,NaN),0); equal(Zak.grantXp(p,Infinity),0); equal(Zak.grantXp(p,-20),0); equal(p.xp,0);
+    });
+    test('v2.19: choripán, vino, runa y Herradura cambian la ficha; partidas nuevas arrancan sin nada', () => {
+      const p=Zak.createPlayer('gero'), base=Zak.getStats(p);
+      p.buffs.chori=10; near(Zak.getStats(p).strength,base.strength*1.2,'choripán'); p.buffs.chori=0;
+      p.buffs.wine=10; near(Zak.getStats(p).armor,base.armor+3,'vino: armadura'); near(Zak.getStats(p).moveSpeed,base.moveSpeed*.9,'vino: paso'); p.buffs.wine=0;
+      p.buffs.rune=5; near(Zak.getStats(p).damageMultiplier,base.damageMultiplier*1.15,'runa'); p.buffs.rune=0;
+      p.amulets=['horseshoe']; p.equipped=['horseshoe']; near(Zak.getStats(p).moveSpeed,base.moveSpeed*1.08,'herradura');
+      p.equipped=['eye','horseshoe']; equal(Zak.hasAmulet(p,'horseshoe'),false,'un solo engarce: cuenta el primero'); p.amuletSlots=2; equal(Zak.hasAmulet(p,'horseshoe'),true,'con dos engarces cuentan los dos');
+      const fresh=Zak.createPlayer('mer'); equal(Object.keys(fresh.items).length,0); equal(fresh.amulets.length,0); equal(fresh.amuletSlots,1); equal(fresh.rod,false); equal(fresh.materials.arcane,0);
+      ok(Object.keys(Zak.BUFF_LIMITS).every(k => fresh.buffs[k]===0),'todos los efectos en cero');
+    });
+    test('v2.19: los cinco enemigos nuevos de la dimensión y el cristal arcano', () => {
+      for (const t of ['book','imp','gargoyle','shadow','mimic']) { ok(Zak.ENEMY_TYPES[t],t); ok(!Zak.ENEMY_TYPES[t].boss,t+' no es jefe'); }
+      equal(Zak.ENEMY_TYPES.mimic.loot,true); equal(Zak.NODES.arcane.tier,5); equal(Zak.NODES.arcane.material,'arcane'); ok(Zak.MATERIALS.arcane);
+      ok(['water','bandage','choripan','wine','scroll'].every(id => Zak.SHOP_ITEMS.some(i => i.id===id && i.item)),'El Almacén vende los consumibles');
+    });
+    test('v2.20: cada armadura protege más que la anterior y la resistencia solo alarga la carrera', () => {
+      equal(Zak.MAX_ARMOR,5); equal(Zak.ARMORS.slice(1).map(a=>a.id).join(),'wood,iron,gold,diamond,elemental');
+      for (let t=2;t<=5;t++) { ok(Zak.ARMORS[t].armor>Zak.ARMORS[t-1].armor,'mejor que la anterior: '+t); ok(Zak.ARMORS[t].recipe.coins>Zak.ARMORS[t-1].recipe.coins,'más cara: '+t); }
+      equal(Zak.ARMORS[5].recipe.offerings.elemental,3,'la elemental lleva Piedras Elementales');
+      const p=Zak.createPlayer('gero'); equal(p.armorTier,0); equal(Zak.getStats(p).armor,0);
+      p.stats.endurance=90; equal(Zak.getStats(p).armor,0,'con mucha resistencia, igual sin armadura'); equal(Zak.getStats(p).runDuration,12);
+      [0,2,4,6,9,13].forEach((value,tier) => { p.armorTier=tier; equal(Zak.getStats(p).armor,value,'nivel '+tier); });
+      p.armorTier=99; equal(Zak.getStats(p).armor,13,'tope'); equal(Zak.enduranceBand(80).armor,8,'los enemigos siguen igual');
     });
     return { passed: count, results };
   }

@@ -87,5 +87,18 @@
   assert('La fuente chica también escribe nombres y carteles',[...g.world.objects.map(o=>o.label||''),...g.world.npcs.map(n=>n.name||'')].every(text=>Array.from(text).every(ch=>Px.hasGlyph(ch,6))));
   g.renderer.resize(true);const world=document.getElementById('world'),scale=world.getBoundingClientRect().width*devicePixelRatio/world.width;
   assert('Con lugar suficiente, cada píxel del juego mide un número entero de píxeles reales',Math.abs(scale-Math.round(scale))<.01);
+  // v2.19: bolsa, amuletos, pedidos y tiendas de los vecinos.
+  if(!document.getElementById('modal-overlay').classList.contains('hidden'))close();
+  g.state='playing';g.addItem('water',2);g.addItem('dorado',1);g.player.selectedItem='water';await new Promise(resolve=>setTimeout(resolve,120));g.emit('tick');
+  assert('El HUD muestra el objeto elegido',document.getElementById('hud-item').textContent.includes('💧'));
+  document.getElementById('bag-button').click();
+  assert('La bolsa muestra los objetos y todos los amuletos',document.querySelectorAll('#modal-content .shop-item').length===2+Object.keys(Zak.AMULETS).length);
+  clickText('Usar');assert('Usar desde la bolsa gasta uno y la bolsa sigue abierta',g.itemCount('water')===1&&!document.getElementById('modal-overlay').classList.contains('hidden'));close();
+  const tito=g.world.npcs.find(n=>n.name==='Tito');g.emit('npc',{npc:tito});
+  assert('Tito cuenta su pedido',(document.querySelector('.request-box')||{}).textContent?.includes('Leña para el horno'));
+  clickText('Aceptar el pedido');assert('Aceptar el pedido lo deja en curso',g.requestState('tito')==='active');close();
+  const merchant=g.world.npcs.find(n=>n.shop==='merchant');g.player.coins=5000;g.emit('npc',{npc:merchant});
+  document.querySelector('#modal-content [aria-label="Conseguir Segundo engarce"]').click();
+  assert('El Mercader del Vacío vende el segundo engarce',g.player.amuletSlots===2&&g.player.coins===1000);close();
   return {passed:results.filter(r=>r.pass).length,failed:results.filter(r=>!r.pass).length,results};
 })()
