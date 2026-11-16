@@ -189,6 +189,8 @@ Z.createWorld=function(){
  Z.addVillagers(world,object);
  // Lo nuevo de la dimensión va después de todo, por la misma razón.
  Z.buildRealm(world,object,path,(type,x,y)=>world.enemySpawns.push({id:'realm-'+type+'-'+world.enemySpawns.length,type,x,y}));
+ // La guardería, sus vecinos y los compañeros por domesticar (companions.js). Al final, por lo mismo.
+ if(Z.buildExtras)Z.buildExtras(world,object,path);
  return world;
 };
 // Valla de Los Yuyos, Altar del gobernante y Trono de Zak. Se agregan al final para no cambiar

@@ -50,6 +50,14 @@
     await Z.Ranking.submit(g); const posts = sent.filter(r => r.options.method === 'POST');
     assert('Sin la columna en Supabase reintenta sin zak_time', posts.length === 2 && !posts[1].options.body.includes('zak_time'));
     window.fetch = okFetch; g.player.zakBest = 0;
+    // v2.21: revancha contra Zak furioso y medallas, con su propia columna.
+    g.player.zakFuryBest = 130.2; g.player.medals = ['capo', 'golem']; sent.length = 0; await Z.Ranking.submit(g);
+    const v221 = JSON.parse(sent.find(r => r.options.method === 'POST').options.body);
+    assert('Manda el récord de la revancha y la cantidad de medallas', v221.zak_fury_time === 130 && v221.medals === 2);
+    sent.length = 0; window.fetch = async (url, options = {}) => { sent.push({url, options}); if ((options.method || 'GET') === 'POST') return new Response(null, {status: /medals|zak_fury_time/.test(String(options.body)) ? 400 : 201}); return okFetch(url, options); };
+    await Z.Ranking.submit(g); const retried = sent.filter(r => r.options.method === 'POST');
+    assert('Sin las columnas nuevas reintenta sin ellas', retried.length === 2 && !/medals|zak_fury_time/.test(retried[1].options.body));
+    window.fetch = okFetch; g.player.zakFuryBest = 0; g.player.medals = [];
     document.getElementById('ranking-button').click(); await wait(50);
     [...document.querySelectorAll('.rank-tab')].find(b => b.textContent === 'Récord Zak').click(); await wait(50);
     assert('La pestaña Récord Zak pide solo quienes lo vencieron, del más rápido al más lento', sent.some(r => String(r.url).includes('zak_time=not.is.null') && String(r.url).includes('order=zak_time.asc')));
@@ -61,6 +69,10 @@
     assert('Los nombres se muestran como texto, sin HTML', !document.querySelector('.rank-list script') && rows()[0].textContent.includes('Paco script'));
     [...document.querySelectorAll('.rank-tab')].find(b => b.textContent === 'Jefes').click(); await wait(50);
     assert('Las pestañas piden otro orden al servidor', sent.some(r => String(r.url).includes('order=bosses.desc')));
+    [...document.querySelectorAll('.rank-tab')].find(b => b.textContent === 'Revancha Zak').click(); await wait(50);
+    assert('La pestaña Revancha Zak pide solo quienes ganaron la revancha', sent.some(r => String(r.url).includes('zak_fury_time=not.is.null') && String(r.url).includes('order=zak_fury_time.asc')));
+    [...document.querySelectorAll('.rank-tab')].find(b => b.textContent === 'Medallas').click(); await wait(50);
+    assert('La pestaña Medallas ordena por medallas', sent.some(r => String(r.url).includes('order=medals.desc')));
     close();
     await Z.Ranking.remove('friend-run-1');
     const del = sent.find(r => r.options.method === 'DELETE');

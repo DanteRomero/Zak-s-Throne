@@ -479,6 +479,8 @@
       if (!side && L.hood) rect(c, -2, -12, 4, 2, shade);
     }
     if (L.bag) { if (!side) Px.line(c, -5 - fat, -15, 4 + fat, -8, "#5a3f26", 1); rect(c, side ? -5 : 3, -10, 6, 5, L.bag); rect(c, side ? -5 : 3, -10, 6, 1, "#5a3f26"); }
+    // Doña Herminia lleva una víbora mansa enroscada en los hombros.
+    if (L.snake && !back) { const s = L.snake, wig = Math.round(Math.sin(time * 3) * 1); rect(c, -6, -16, 12, 2, s); rect(c, -7, -15, 2, 6, s); rect(c, 5, -15, 2, 4, s); rect(c, 5, -12, 3, 2, s); rect(c, 7 + wig, -13, 2, 2, s); rect(c, 8 + wig, -13, 1, 1, "#1a1512"); rect(c, -6, -16, 12, 1, "#ffffff33"); }
     // Brazos y lo que llevan en la mano.
     if (side) {
       const ax = -1 + swing * 2;
@@ -692,6 +694,7 @@
     c.restore();
   }
   function drawNpc(c, n, time) {
+    if (n.kind === "pet" && Z.drawPetNpc) return Z.drawPetNpc(c, n, time);
     if (n.kind === "soul") return drawSoul(c, n, time);
     if (n.kind === "merchant") return drawMerchant(c, n, time);
     if (n.kind === "gaucho") return drawGaucho(c, n, time);
@@ -2423,6 +2426,8 @@
       const objects=world.objects||[];
       const FLOOR=["pond","flower","grass","rune","pedestal"];
       for(const o of objects)if(FLOOR.includes(o.type)&&visible(o.x+o.w/2,o.y+o.h/2,Math.max(o.w||0,o.h||0)+80))drawObject(c,o,time);
+      // Charcos y pasto mojado (weather.js).
+      if(!menu&&Z.drawFloorExtras)Z.drawFloorExtras(c,game,visible,time);
       for(const item of world.pickups||[])if(visible(item.x,item.y,30))pickup(c,item,time);
       for(const d of game.drops||[])if(visible(d.x,d.y,20))coin(c,d,time);
       const renderables=[];
@@ -2431,6 +2436,8 @@
       for(const e of game.enemies||[])if(!e.dead&&visible(e.x,e.y,35))renderables.push({y:e.y,kind:"enemy",data:e});
       if(game.player&&!menu)renderables.push({y:p.y,kind:"player",data:p});
       if(!menu)for(const s of game.spirits||[])if(visible(s.x,s.y,30))renderables.push({y:s.y+14,kind:"spirit",data:s});
+      // Compañeros, la viborita en brazos y otros agregados: cada uno trae su propia función de dibujo.
+      if(!menu&&Z.extraRenderables)for(const r of Z.extraRenderables(game,visible,time))renderables.push(r);
       renderables.sort((a,b)=>a.y-b.y);
       for(const item of renderables){
         if(item.kind==="object"){
@@ -2440,6 +2447,7 @@
           drawObject(c,o,time);c.globalAlpha=1;
         }else if(item.kind==="enemy")drawEnemy(c,item.data,time);
         else if(item.kind==="spirit")drawSpirit(c,item.data,time);
+        else if(item.kind==="custom")item.draw(c,time);
         else if(item.kind==="npc"&&item.data.kind==="smith"){
           const n=item.data;drawSmith(c,n,time);
           if(Math.hypot(p.x-n.x,p.y-n.y)<60&&!menu)pixelText(c,n.name,n.x,n.y-44,"#f2c98a",6);
@@ -2471,7 +2479,7 @@
         const ang=Math.atan2(projectile.dy||projectile.vy||0,projectile.dx||projectile.vx||1),ca=Math.cos(ang),sa=Math.sin(ang),quarter=Math.floor(time*12)%4;
         // Sombra en el piso: separa el tiro del suelo y ayuda a calcularlo.
         if(!["boomerang","fireball"].includes(projectile.type))rect(c,-2,7,4,1,P.shadow);
-        if(projectile.type==="stone"){
+        if(projectile.type==="stone"||projectile.type==="pebble"){
           // La piedra gira de a cuartos: cuatro cuadros exactos.
           const q=[[0,0],[1,0],[1,1],[0,1]][quarter];rect(c,-3,-3,6,5,"#3f5154");rect(c,-3+1,-3+1,4,3,"#7f938f");rect(c,-2+q[0],-3+q[1],2,2,"#c3d0c6");
         }
@@ -2589,6 +2597,8 @@
           }
         }
       }
+      // Lluvia (weather.js): gotas en pantalla, cielo más oscuro y salpicaduras.
+      if(!menu&&Z.drawWeather)Z.drawWeather(c,game,ox,oy,W,H,time);
       if(game.hurtFlash>0&&!menu){c.fillStyle="rgba(190,52,44,"+(game.hurtFlash*.55)+")";c.fillRect(0,0,W,H);}
       const maxHealth=p.maxHp||(game.stats?game.stats().maxHealth:0);
       if(p.hp>0&&maxHealth&&p.hp/maxHealth<.3&&!menu)Px.shade(c,W/2,H/2,W,H,[[130,0],[370,.2]],"#882d2a",.8+Math.sin(time*3)*.2);
@@ -2670,6 +2680,8 @@
       const max=e.maxLife||e.duration||.6;
       const progress=Math.min(1,Math.max(0,1-(e.life===undefined?max:e.life)/max));
       const x=e.x,y=e.y;
+      // Efectos de los módulos nuevos (el cascarón que se rompe, medallas, cartas).
+      if(Z.drawExtraEffect){c.save();const done=Z.drawExtraEffect(c,e,time,progress);c.restore();if(done)return;}
       c.save();c.globalAlpha=Math.max(0,Math.min(1,(1-progress)*1.8));
       if(e.type==="wave"){
         const radius=(e.radius||120)*Math.max(.06,progress);
@@ -2827,5 +2839,7 @@
   }
   Z.Renderer=Renderer;Z.drawPortrait=drawPortrait;Z.drawCharacter=drawCharacter;Z.drawEnemy=drawEnemy;Z.drawMinimap=drawMinimap;Z.drawSmithPortrait=drawSmithPortrait;Z.drawNpc=drawNpc;Z.dialogLines=dialogLines;
   Renderer.drawPortrait=drawPortrait;
+  // Pinceles compartidos con los módulos que dibujan cosas nuevas (compañeros, clima, medallas y cartas).
+  Z.Draw={P,hash,rect,poly,sprite,shadow,heart,pixelText,blob,eye,tone,box,dogBody,tuft,flower,zoneAt,isCaveZone,enemyBody,drawEnemy};
 })();
 

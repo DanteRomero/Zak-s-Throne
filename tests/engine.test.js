@@ -1090,6 +1090,152 @@
       const save = JSON.parse(JSON.stringify(game.snapshot())); game.newGame('tena'); game.restore(save, 1); equal(game.player.armorTier, 5, 'saved');
       delete save.player.armorTier; game.restore(save, 1); equal(game.player.armorTier, 0, 'old saves start without armor');
     });
+
+    // v2.21: compañeros, lluvia, medallas, Zak furioso y truco.
+    const wild = id => game.world.npcs.find(n => n.id === id);
+    const nearNpc = n => { Object.assign(game.player, {x: n.x, y: n.y + (n.radius || 7) + 10}); game.biome = Z.biomeAt(game.player.x, game.player.y); };
+    const keepPet = id => { const p = game.player; p.pets[id] = {name: 'Prueba'}; p.pet = id; game.pet = null; return game.ensurePet(); };
+    test('v2.21: old saves load with no companions, medals or truco and bad data is cleaned', () => {
+      fixture('gero', true); const save = JSON.parse(JSON.stringify(game.snapshot()));
+      for (const k of ['pets', 'pet', 'petProgress', 'carrying', 'petEats', 'medals', 'trucoWins', 'trucoLosses', 'trucoRematchWins', 'puddles', 'furyWins', 'zakFuryBest']) delete save.player[k];
+      game.restore(save, 1); const r = game.player;
+      equal(Object.keys(r.pets).length, 0); equal(r.pet, null); equal(r.carrying, null); equal(r.medals.length, 0); equal(r.trucoWins, 0); equal(r.puddles, 0);
+      equal(r.petProgress.dog.fed, 0); equal(r.petProgress.snake.state, 'none'); equal(r.petProgress.golem.found, false);
+      const bad = JSON.parse(JSON.stringify(save)); bad.player.pets = {dog: {name: '<b>Toby</b>'}, dragon: {name: 'x'}}; bad.player.pet = 'bat'; bad.player.carrying = 'dragon'; bad.player.medals = ['zak', 'nope', 'zak'];
+      bad.player.petProgress = {dog: {fed: 99, next: 1e12}, snake: {state: 'carried', readyAt: 5}, golem: {found: true, x: 5, y: 5, given: {stone: 99}}};
+      game.restore(bad, 1); const b = game.player;
+      equal(b.pets.dog.name, 'bToby/b'); equal(b.pets.dragon, undefined); equal(b.pet, null, 'cannot follow you if you do not own it'); equal(b.medals.join(), 'zak');
+      equal(b.petProgress.dog.fed, 5); equal(b.carrying, null, 'nothing in your arms without the state'); equal(b.petProgress.snake.state, 'hatched');
+      equal(b.petProgress.golem.x, 1905, 'golemsín stays in Las Entrañas'); equal(b.petProgress.golem.given.stone, 2);
+    });
+    test('v2.21: the kennel, its dog and Doña Herminia stand on free ground and move no vein or tree', () => {
+      const world = Z.createWorld(), dog = world.npcs.find(n => n.id === 'pet-wild-dog'), lady = world.npcs.find(n => n.name === 'Doña Herminia'), bat = world.npcs.find(n => n.id === 'pet-wild-bat');
+      ok(world.objects.some(o => o.type === 'house' && o.label === 'La guardería')); equal(Z.biomeAt(dog.x, dog.y), 'village'); equal(Z.biomeAt(bat.x, bat.y), 'cave2');
+      for (const n of [dog, lady, bat]) equal(Z.collides(world, n.x, n.y, 7, n.id), false, n.name + ' is not inside a wall');
+      for (const [x, y] of Z.KENNEL.spots) equal(Z.collides({...world, npcs: []}, x, y, 7), false, 'kennel spot ' + x + ',' + y);
+      const kennel = world.objects.find(o => o.label === 'La guardería'); ok(world.objects.indexOf(kennel) > world.objects.findIndex(o => o.type === 'ore' && o.ore === 'arcane'), 'added after everything else');
+    });
+    test('v2.21: the hungry dog eats five plates two minutes apart, licks you and follows you', () => {
+      const p = fixture('gero', true), events = []; game.onEvent = (type, d) => events.push(type); const dog = wild('pet-wild-dog'); nearNpc(dog);
+      equal(game.nearbyAction().label.includes('perro'), true); game.interact(); equal(game.cutscene.id, 'talk', 'without food it only looks at you'); game.finishCutscene();
+      ok(game.shopItems().some(i => i.id === 'dogfood' && i.price === 15), 'El Almacén sells dog food'); p.coins = 100; ok(game.buy('dogfood').ok); game.addItem('dogfood', 4);
+      equal(game.useItem('dogfood').ok, false, 'not for you');
+      game.interact(); game.finishCutscene(); equal(p.petProgress.dog.fed, 1); equal(game.itemCount('dogfood'), 4);
+      game.interact(); game.finishCutscene(); equal(p.petProgress.dog.fed, 1, 'still eating'); equal(game.itemCount('dogfood'), 4);
+      for (let k = 2; k <= 4; k++) { p.playTime += 120; game.feedDog(dog); game.finishCutscene(); equal(p.petProgress.dog.fed, k); }
+      p.playTime += 120; game.feedDog(dog); equal(game.cutscene.id, 'lick', 'the lick scene'); advance(0); game.update(1.3); ok(Math.hypot(dog.x - p.x, dog.y - p.y) < 40, 'the dog runs to you');
+      game.finishCutscene(); ok(game.ownsPet('dog')); equal(p.pet, 'dog'); ok(game.pet && game.pet.id === 'dog'); ok(events.includes('namePet'));
+      advance(.1); equal(wild('pet-wild-dog'), undefined, 'it left the kennel door');
+      ok(game.namePet('dog', 'Firulais <3').ok); equal(game.petName('dog'), 'Firulais 3');
+    });
+    test('v2.21: the dog bites and every 13 s immobilizes an enemy for 3 s; bosses 1,5 s and Zak nothing', () => {
+      const p = fixture('gero'); const pet = keepPet('dog'); pet.special = 0; Object.assign(pet, {x: p.x + 20, y: p.y});
+      const thief = enemy('thief', p.x + 40); thief.cooldown = 9; const hp = thief.hp; advance(1.1);
+      ok(thief.hp < hp, 'bites'); ok(thief.stun > 2.5 && thief.stun <= 3, 'immobilized 3 s'); ok(pet.special > 11, 'special every 13 s');
+      thief.stun = 0; const before = thief.hp; advance(1.1); ok(thief.hp < before && !(thief.stun > 0), 'plain bites in between');
+      game.enemies = []; const capo = enemy('capo', p.x + 30); pet.special = 0; game.petStrike(pet, capo); near(capo.stun, 1.5);
+      const zak = enemy('zak', p.x + 30); pet.special = 0; game.petStrike(pet, zak); ok(!(zak.stun > 0), 'Zak is not immobilized');
+    });
+    test('v2.21: the baby bat needs full health, three times your blood, and then bleeds enemies', () => {
+      const p = fixture('gero', true), bat = wild('pet-wild-bat'); nearNpc(bat); p.hp = 50;
+      game.interact(); equal(game.cutscene.text, 'Un murciélago chiquito... el pobre parece tener hambre.'); game.finishCutscene();
+      equal(game.feedBat().ok, false, 'needs full health');
+      for (let k = 1; k <= 3; k++) { p.hp = game.stats().maxHealth; const r = game.feedBat(); ok(r.ok); equal(p.hp, 1, 'leaves you at 1'); }
+      ok(game.ownsPet('bat')); equal(p.pet, 'bat');
+      fixture('gero'); const pet = keepPet('bat'); pet.special = 0; Object.assign(pet, {x: game.player.x + 20, y: game.player.y}); const rat = enemy('thief', game.player.x + 35); rat.cooldown = 99; rat.stats.armor = 50;
+      advance(.9); ok(rat.bleeding && rat.bleeding.time > 4, 'bleeding 5 s'); const hp = rat.hp; rat.stun = 99; Object.assign(pet, {x: rat.x + 400}); game.pet.clock = -99;
+      advance(1.02); ok(rat.hp < hp, 'bleeding ignores armor'); advance(5); equal(rat.bleeding, null);
+    });
+    test('v2.21: damage order is bat < dog < snake < golemsín', () => {
+      fixture('gero'); const d = id => game.petDamage(id);
+      ok(d('bat') < d('dog') && d('dog') < d('snake') && d('snake') < d('golem'));
+      const dps = id => d(id) / Z.PETS[id].every; ok(dps('bat') < dps('dog') && dps('dog') < dps('snake') && dps('snake') < dps('golem'), 'also per second');
+    });
+    test('v2.21: a golemsín appears 5% after the cave golem, throws 5-damage stones and takes the materials', () => {
+      const p = fixture('gero', true); Math.random = () => .05; equal(game.maybeGolemsin({x: 1850, y: 2290, summoned: false}), false, 'exactly 5%');
+      Math.random = () => 0; equal(game.maybeGolemsin({x: 1850, y: 2290, summoned: true}), false, 'not from Zak');
+      ok(game.maybeGolemsin({x: 1850, y: 2290, summoned: false})); const g = wild('pet-wild-golem'); ok(g); equal(Z.biomeAt(g.x, g.y), 'cave3');
+      Math.random = original.random; game.enemies = game.enemies.filter(e => e.biome !== 'cave3'); Object.assign(p, {x: g.x - 60, y: g.y}); game.biome = 'cave3'; p.armorTier = 5; p.stats.health = 400; p.hp = 400;
+      advance(2.4); near(400 - p.hp, 5, 'one stone, ignoring 13 of armor'); advance(2); near(400 - p.hp, 10, 'one every 2 s');
+      nearNpc(g); p.hp = 400; Object.assign(p.materials, {stone: 2, iron: 1}); game.interact(); game.finishCutscene();
+      equal(p.petProgress.golem.given.stone, 2); equal(p.petProgress.golem.given.iron, 1); equal(game.ownsPet('golem'), false);
+      Object.assign(p.materials, {iron: 1, gold: 2, diamond: 2}); p.offerings.elemental = 3; game.interact(); game.finishCutscene();
+      ok(game.ownsPet('golem')); equal(p.offerings.elemental, 1); equal(p.materials.diamond, 0); advance(.1); equal(wild('pet-wild-golem'), undefined);
+    });
+    test('v2.21: the golemsín shields you 3 s every 20 s in a fight and gives +1 of every material', () => {
+      const p = fixture('gero'); const pet = keepPet('golem'); pet.shieldCd = 0; const thief = enemy('thief', p.x + 60); thief.alert = true; thief.cooldown = 99;
+      advance(.05); ok(p.invuln > 2.9, 'protected'); equal(game.hurtPlayer(99999, 'zak', false, {pierce: true, unavoidable: true}), false, 'blocks everything, even Zak'); ok(pet.shieldCd > 19);
+      equal(game.gatherBonus(), 1); const before = p.offerings.elemental || 0; game.drops.push({x: p.x, y: p.y - 6, vx: 0, vy: 0, item: 'elemental', value: 0, life: 9, delay: 0, seed: 1}); game.updateDrops(0);
+      equal(p.offerings.elemental, before + 2, 'Piedra Elemental +1');
+      advance(3); const hp = thief.hp; thief.stun = 99; advance(2.2); ok(thief.hp < hp, 'throws stones from far away');
+    });
+    test('v2.21: the Yarará egg hatches 5%, you carry the baby without attacking and Herminia raises it for 2000 in 10 minutes', () => {
+      const p = fixture('gero', true); Math.random = () => .06; equal(game.maybeHatch({summoned: false}), false);
+      Math.random = () => 0; ok(game.maybeHatch({summoned: false})); equal(game.cutscene.id, 'hatch'); game.finishCutscene(); Math.random = original.random;
+      const baby = wild('pet-wild-snake'); ok(baby); nearNpc(baby); game.enemies = []; game.interact(); equal(p.carrying, 'snake'); equal(game.attack(), false, 'no attacks while carrying');
+      game.knockout('snake'); game.resume(); equal(p.carrying, null); equal(p.petProgress.snake.state, 'hatched', 'it goes back to the nest');
+      game.syncPetNpcs(); nearNpc(wild('pet-wild-snake')); game.interact(); equal(p.carrying, 'snake');
+      const lady = game.world.npcs.find(n => n.name === 'Doña Herminia'); ok(game.npcHasMenu(lady)); game.talkTo(lady); ok(game.cutscene.text.includes('muy rara, leal y letal')); game.finishCutscene();
+      p.coins = 500; ok(game.leaveSnake().ok); equal(p.coins, 500, 'pays later'); equal(p.carrying, null);
+      equal(game.collectSnake().ok, false, 'needs 10 minutes'); p.playTime += 600; equal(game.collectSnake().ok, false, 'needs the money');
+      p.coins = 2500; ok(game.collectSnake().ok); equal(p.coins, 500); ok(game.ownsPet('snake')); equal(p.pet, 'snake');
+    });
+    test('v2.21: the snake poisons every 15 s and eats a common enemy 15% of the time, taking 3 s', () => {
+      const p = fixture('gero'); const pet = keepPet('snake'); Math.random = () => .2; pet.special = 0; const thief = enemy('thief', p.x + 30); thief.cooldown = 99;
+      game.petStrike(pet, thief); ok(thief.venom && thief.venom.time === 5); ok(!thief.dead);
+      Math.random = () => .1; const kills = p.kills; game.petStrike(pet, thief); ok(thief.dead, 'eaten'); equal(p.kills, kills + 1); near(pet.eat, 3); equal(p.petEats, 1);
+      const other = enemy('thief', p.x + 30); other.cooldown = 99; const hp = other.hp; Object.assign(pet, {x: other.x - 14, y: other.y}); advance(2.5); equal(other.hp, hp, 'swallowing'); advance(1.5); ok(other.hp < hp, 'back to work');
+      const capo = enemy('capo', p.x + 30); game.petStrike(pet, capo); ok(!capo.dead, 'bosses are not eaten');
+    });
+    test('v2.21: the kennel keeps the companions you are not taking and swaps them', () => {
+      const p = fixture('gero', true); p.pets = {dog: {name: 'Toby'}, bat: {name: 'Draco'}}; p.pet = 'dog'; advance(.05);
+      ok(game.world.npcs.some(n => n.id === 'kennel-bat') && !game.world.npcs.some(n => n.id === 'kennel-dog'));
+      const events = []; game.onEvent = (t, d) => events.push([t, d]); nearNpc(game.world.npcs.find(n => n.id === 'kennel-bat')); game.interact(); ok(events.some(([t, d]) => t === 'kennel' && d.pet === 'bat'));
+      ok(game.equipPet('bat').ok); equal(p.pet, 'bat'); advance(.05); ok(game.world.npcs.some(n => n.id === 'kennel-dog' && n.name === 'Toby'));
+      const save = JSON.parse(JSON.stringify(game.snapshot())); game.newGame('tena'); game.restore(save, 1); advance(.05); equal(game.player.pet, 'bat'); equal(game.petName('dog'), 'Toby'); ok(game.pet && game.pet.id === 'bat');
+    });
+    test('v2.21: rain comes from the clock, leaves puddles where you can walk and makes fish bite sooner', () => {
+      const p = fixture('gero', true); let t = 240; while (Z.rainAt(t + 60, p.runId) < 1 && t < 240 * 500) t += 240; ok(Z.rainAt(t + 60, p.runId) === 1, 'it rains sometimes');
+      equal(Z.rainAt(100, p.runId), 0, 'never in the first minutes'); equal(Z.rainAt(t + 60, p.runId), Z.rainAt(t + 60, p.runId));
+      const puddles = Z.puddlesOf(game.world); ok(puddles.length > 40);
+      for (const q of puddles) ok(!game.world.objects.some(o => o.solid && q.x > o.x - 2 && q.x < o.x + o.w + 2 && q.y > o.y - 2 && q.y < o.y + o.h + 2), 'puddle on free ground');
+      p.playTime = t + 60; advance(.1); ok(game.raining()); p.rod = true; const pond = game.world.objects.find(o => o.type === 'pond');
+      Object.assign(p, {x: pond.x - 10, y: pond.y + pond.h / 2}); Math.random = () => .5; game.startFishing(pond); near(p.fishing.bite, (2.5 + .5 * 4.5) * Z.RAIN.bite);
+      game.wetness = 1; p.fishing = null; const q = puddles.find(q => Z.biomeAt(q.x, q.y) === 'village'); Object.assign(p, {x: q.x, y: q.y, moving: true}); game.biome = 'village'; game.lastPuddle = null; game.updateWeather(0); equal(p.puddles, 1, 'splash'); game.updateWeather(0); equal(p.puddles, 1, 'once per puddle');
+    });
+    test('v2.21: medals arrive for what you already did, for events and stay in the save', () => {
+      const p = fixture('gero', true), toasts = []; game.onEvent = (t, d) => { if (t === 'toast') toasts.push(d.message); };
+      game.questFlags.defeat_golem = true; game.questFlags.defeat_capo = true; const save = JSON.parse(JSON.stringify(game.snapshot())); delete save.player.medals;
+      game.restore(save, 1); game.onEvent = (t, d) => { if (t === 'toast') toasts.push(d.message); }; advance(.05);
+      ok(game.hasMedal('golem') && game.hasMedal('capo')); equal(toasts.filter(m => m.includes('medalla')).length, 1, 'one notice for all of them');
+      Math.random = () => 0; game.addItem('mojarra', 0); game.catchFish(); ok(game.hasMedal('dorado'), 'Dorado'); Math.random = original.random;
+      game.knockout('execute'); ok(game.hasMedal('executed'));
+      ok(Z.MEDALS.every(m => typeof Z.drawMedal === 'function' && m.name && m.detail && ['bronze', 'silver', 'gold'].includes(m.tier)));
+      const canvas = document.createElement('canvas'); canvas.width = 88; canvas.height = 96; for (const m of Z.MEDALS) Z.drawMedalCanvas(canvas, m.id, false);
+      const again = JSON.parse(JSON.stringify(game.snapshot())); game.restore(again, 1); ok(game.player.medals.includes('executed'));
+    });
+    test('v2.21: Zak furioso is a rematch for whoever beat him: 50% more health, 30% faster and its own record', () => {
+      const p = fixture('gero', true), events = []; game.onEvent = t => events.push(t); p.throneKeys = 2;
+      game.openThroneDoor(); equal(game.biome, 'throne', 'the first time there is no choice'); game.leaveThrone(); p.throneKeys = 2; game.questFlags.defeat_zak = true;
+      equal(game.openThroneDoor(), false); ok(events.includes('throneChoice')); equal(p.throneKeys, 2, 'choosing does not spend the key');
+      ok(game.openThroneDoor('normal')); const normal = game.enemies.find(e => e.type === 'zak').maxHp; equal(game.zakFury, false); game.leaveThrone();
+      ok(game.openThroneDoor('fury')); equal(p.throneKeys, 0); const zak = game.enemies.find(e => e.type === 'zak'); near(zak.maxHp, normal * 1.5); game.finishCutscene();
+      const coins = p.coins; game.time += 200; zak.life = 2; game.hitEnemy(zak, 1e9, true); ok(p.zakFuryBest > 199 && p.zakFuryBest < 201); equal(p.zakBest, 0, 'the normal record is untouched'); equal(p.furyWins, 1);
+      game.leaveThrone(); equal(game.zakFury, false); advance(.05); ok(game.hasMedal('fury'));
+    });
+    test('v2.21: truco bets pay double; the ghost may ask a rematch that costs double or gives a random item', () => {
+      const p = fixture('gero'); p.coins = 1000;
+      equal(game.trucoStart(5000).ok, false); ok(game.trucoStart(100, 'Truco').ok); equal(p.coins, 900, 'the bet is on the table');
+      Math.random = () => .29; Object.assign(game.truco.match, {over: true, winner: 'player'}); game.trucoSettle(); equal(p.coins, 1100); ok(game.truco.offer, '30% rematch'); equal(p.trucoWins, 1);
+      ok(game.trucoRematch().ok); equal(game.truco.rematch, true); equal(p.coins, 1100, 'nothing up front');
+      Object.assign(game.truco.match, {over: true, winner: 'player'}); game.trucoSettle(); ok(game.truco.prize && game.truco.prize.name, 'random item'); equal(p.trucoRematchWins, 1);
+      Math.random = () => .31; game.trucoStart(100); Object.assign(game.truco.match, {over: true, winner: 'player'}); game.trucoSettle(); equal(game.truco.offer, false, 'not always');
+      Math.random = () => 0; game.trucoStart(100); Object.assign(game.truco.match, {over: true, winner: 'player'}); game.trucoSettle(); const before = p.coins; game.trucoRematch();
+      Object.assign(game.truco.match, {over: true, winner: 'ghost'}); game.trucoSettle(); equal(p.coins, before - 200, 'losing the rematch costs double');
+      Math.random = original.random; const left = p.coins; game.trucoStart(50); game.trucoLeave(); equal(p.coins, left - 50, 'leaving the table loses the bet');
+      game.trucoStart(50); const t = game.truco; for (let guard = 0; guard < 400 && !t.match.over; guard++) { const h = t.match.hand; if (h.finished) { game.trucoAct('next'); continue; } const o = Z.Truco.options(t.match, 'player'); if (o.answer) game.trucoAct('quiero'); else if (o.play) game.trucoAct('play', h.cards.player[0].id); }
+      ok(t.match.over && t.settled, 'a whole match against the ghost ends');
+    });
     game.pause(); cancelAnimationFrame(game.frame);
     return {passed: results.filter(r=>r.pass).length, failed: results.filter(r=>!r.pass).length, results};
   };

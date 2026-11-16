@@ -6,6 +6,25 @@ Cada versión lista sus cambios agrupados por tipo:
 - **Change:** algo que ya existía y ahora funciona distinto.
 - **Fix:** un error corregido.
     
+## v2.21 — 2026-11-16
+* Feature
+    - **Truco a 15 en la Feria de las Almas:** Truco y Retruco, las almas de la mesa, juegan con envido, real envido, falta envido, truco, retruco, vale cuatro y al mazo (sin flor). Se apuesta guita (◉ 50 a 1000) y, si ganás, te llevás el doble.
+        - Si el alma pierde, un 30% de las veces te pide la **revancha**: si gana ella, te saca el doble; si ganás vos, te da un objeto al azar.
+    - **Revancha contra Zak furioso:** quien ya venció a Zak elige, en la puerta del trono, entre la pelea de siempre y la revancha. Zak furioso tiene 50% más de vida, hace todo un 30% más rápido y suelta más guita. Su tiempo va a la pestaña nueva **Revancha Zak** del ranking.
+    - **Medallas:** 25 logros, cada uno con una medalla dibujada que lo cuenta (una noche roja, un gólem roto, una corona partida…). Se ven con L o desde el diario, y la cantidad tiene su pestaña en el ranking.
+    - **Lluvia:** cada tanto llueve en la superficie. Quedan charcos que salpican, el pasto brilla mojado y los peces pican más rápido.
+    - **Compañeros:** cuatro bichos para domesticar, que te siguen y pelean con vos. Al domesticarlos les ponés nombre.
+        - **Perro:** el del plato vacío de La guardería. Cinco platos de comida para perro (El Almacén), con 2 minutos entre uno y otro, y te lame. Cada 13 s inmoviliza 3 s.
+        - **Murciélago:** el murcielaguito de la Cueva Profunda. Tres veces de tu sangre, con la vida llena, y cada vez te deja con 1. Cada 15 s desangra 5 s.
+        - **Serpiente:** 5% de que nazca de un huevo al caer la Yarará. Se lleva en brazos (sin poder atacar) hasta Doña Herminia, que la cría en 10 minutos por ◉ 2000. Cada 15 s envenena, y a veces se come de un bocado a un enemigo común.
+        - **Golemsín:** 5% de que aparezca al caer el Gólem en Las Entrañas. Te tira piedras hasta que le das 2 de piedra, hierro, oro, diamante y Piedra Elemental. Tira piedras de lejos, cada 20 s te protege 3 s de todo y te da +1 de cada material.
+    - **La guardería:** casa nueva al noreste de la plaza, con Doña Herminia. Ahí esperan los compañeros que no llevás, y se cambian hablándoles.
+* Change
+    - El Almacén vende comida para perro.
+    - La bolsa muestra tus compañeros y cómo se consiguen los que faltan.
+    - **Ranking online:** para las pestañas Revancha Zak y Medallas hay que correr una vez el SQL de [docs/RANKING.md](docs/RANKING.md#revancha-zak-y-medallas-v221) en Supabase. Sin eso, el resto del ranking sigue andando.
+    - Las partidas guardadas cargan igual: arrancan sin compañeros y reciben solas las medallas que ya les correspondían.
+
 ## v2.20 — 2026-11-06
 * Feature
     - **Armaduras:** el herrero las fabrica en orden, y cada una protege más que la anterior: madera (2), hierro (4), oro (6), diamante (9) y piedra elemental (13, lleva 3 Piedras Elementales). Se ven en el personaje: hombreras y cinturón del color del material.

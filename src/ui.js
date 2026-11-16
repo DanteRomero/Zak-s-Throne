@@ -424,7 +424,7 @@
       },'toggle');
       sizeToggle.setAttribute('aria-label','Tamaño de los controles táctiles'); sizeRow.append(sizeToggle); parent.append(sizeRow);
       const help = el('div','help-grid');
-      [['Moverte','WASD / flechas'],['Talar o picar','E, quieto'],['Correr','Shift'],['Atacar','Espacio / clic'],['Rodar','Ctrl / clic derecho (hacia donde vas)'],['Habilidad','Q'],['Interactuar','E'],['Usar hierba','R'],['Usar objeto','F'],['Cambiar objeto','G'],['Bolsa y amuletos','B'],['Pescar','E en una laguna'],['Armas','1 — 5'],['Personaje','C'],['Diario','J'],['Mapa','M'],['Pausa','Esc']].forEach(([action,key]) => { const row = el('div'); row.append(el('span','',action),el('kbd','',key)); help.append(row); });
+      [['Moverte','WASD / flechas'],['Talar o picar','E, quieto'],['Correr','Shift'],['Atacar','Espacio / clic'],['Rodar','Ctrl / clic derecho (hacia donde vas)'],['Habilidad','Q'],['Interactuar','E'],['Usar hierba','R'],['Usar objeto','F'],['Cambiar objeto','G'],['Bolsa y amuletos','B'],['Pescar','E en una laguna'],['Armas','1 — 5'],['Personaje','C'],['Diario','J'],['Medallas','L'],['Mapa','M'],['Pausa','Esc']].forEach(([action,key]) => { const row = el('div'); row.append(el('span','',action),el('kbd','',key)); help.append(row); });
       parent.append(help);
       paragraph(parent,'Los controles táctiles aparecen en pantallas compatibles. En un teléfono, giralo horizontalmente para ver mejor. El sonido se activa después de tu primera interacción.','hint');
     },returnToPause ? showPause : null);
@@ -465,6 +465,7 @@
     openModal(completed ? 'Los Aromos ya te conoce' : 'Cada paso deja una historia', 'DIARIO DE VIAJE', parent => {
       paragraph(parent,completed ? 'Completaste los objetivos del diario. Podés seguir explorando, mejorar tu personaje y guardar tu aventura.' : 'Explorá a tu ritmo. Cada objetivo cumplido da guita: reclamala acá.');
       if (message) paragraph(parent,message,'hint shop-message');
+      if (Zak.MEDALS && Zak.UI.showMedals) parent.append(button('🏅 Medallero · ' + (game.player.medals || []).length + ' de ' + Zak.MEDALS.length + ' (L)',() => Zak.UI.showMedals(() => showJournal(completed)),'button secondary journal-medals'));
       const pending = game.unclaimedRewards();
       if (pending.length > 1) {
         const all = button('Reclamar todo · ◉ ' + pending.reduce((sum,q) => sum + q.reward,0),() => { pending.forEach(q => game.claimQuest(q.id)); showJournal(completed,'Cobraste todas las recompensas pendientes.'); updateHud(true); },'button primary journal-claim-all');
@@ -610,6 +611,8 @@
         offers.forEach(o => offerRow(parent,o,() => { const r = game.npcTrade(n,o.id); showNpc(n,r.message); updateHud(true); }));
       }
       if (shop === 'chiche') paragraph(parent,'Hay tres lagunas en la aldea. Mojarras, pejerreyes, bagres… y uno de cada veinte, un dorado.','hint');
+      // Secciones de otros módulos: el truco de las almas y la viborita de Doña Herminia (ui-extras.js).
+      (Zak.UI.npcSections || []).forEach(section => section(n, parent));
       const actions = el('div','modal-actions'); actions.append(button('Listo, gracias',() => hideModal(),'button secondary')); parent.append(actions);
     });
   }
@@ -644,6 +647,7 @@
         parent.append(el('h3','smith-heading','Pedidos en curso'));
         active.forEach(id => { const row = el('div','journal-task'), body = el('div'); body.append(el('strong','',Zak.REQUESTS[id].title + ' · ' + Zak.REQUESTS[id].npc),el('small','',game.requestText(id))); row.append(el('b','',game.requestProgress(id).ready ? '✓' : '◇'),body); parent.append(row); });
       }
+      (Zak.UI.bagSections || []).forEach(section => section(parent));
       paragraph(parent,(p.rod ? '🎣 Tenés la caña: E al lado de una laguna para pescar. ' : '🎣 Don Chiche, en la Laguna de las Libélulas, vende una caña de pescar. ') + 'Los vecinos con pedidos te lo cuentan cuando hablás con ellos.','hint');
     });
   }
@@ -657,7 +661,7 @@
       Zak.Ranking.submit(game).catch(error => { if (!submitWarned) { submitWarned = true; toast('No se pudo publicar en el ranking online: ' + error.message + '. Se guardó en este dispositivo.',true); } });
     }, Math.max(0,8000 - (Date.now() - lastSubmit)));
   }
-  const RANK_TABS = [['level','Nivel'],['kills','Enemigos'],['bosses','Jefes'],['zak','Récord Zak']];
+  const RANK_TABS = [['level','Nivel'],['kills','Enemigos'],['bosses','Jefes'],['zak','Récord Zak'],['fury','Revancha Zak'],['medals','Medallas']];
   function showRanking(sort = 'level', back = null) {
     const own = Zak.Ranking.profile().id, version = modalVersion + 1;
     if (game.player && game.state !== 'menu') Zak.Ranking.saveLocal(Zak.Ranking.entryFor(game));
@@ -675,14 +679,15 @@
       function render(entries,append = false) {
         if (version !== modalVersion) return;
         if (!append) list.replaceChildren();
-        // En «Récord Zak» solo aparecen las partidas que vencieron a Zak, de la más rápida a la más lenta.
-        const zak = sort === 'zak'; if (zak) entries = entries.filter(entry => entry.zak_time > 0);
-        if (!entries.length) { list.append(el('p','hint',zak ? 'Todavía nadie venció a Zak. ¿Vas a ser el primero?' : 'Todavía no hay partidas. ¡Salí a la aventura y estrená el ranking!')); return; }
-        const head = el('div','rank-row rank-head'); ['#','Jugador','Nvl.',zak ? 'Tiempo' : 'Enemigos','Jefes'].forEach(label => head.append(el('span','',label))); list.append(head);
+        // En «Récord Zak» y «Revancha Zak» solo aparecen las partidas que lo vencieron, de la más rápida a la más lenta.
+        const zak = sort === 'zak', fury = sort === 'fury', medals = sort === 'medals', timed = zak || fury, timeOf = entry => fury ? entry.zak_fury_time : entry.zak_time;
+        if (timed) entries = entries.filter(entry => timeOf(entry) > 0);
+        if (!entries.length) { list.append(el('p','hint',zak ? 'Todavía nadie venció a Zak. ¿Vas a ser el primero?' : fury ? 'Todavía nadie le ganó la revancha a Zak furioso.' : 'Todavía no hay partidas. ¡Salí a la aventura y estrená el ranking!')); return; }
+        const head = el('div','rank-row rank-head'); ['#','Jugador','Nvl.',timed ? 'Tiempo' : medals ? 'Medallas' : 'Enemigos','Jefes'].forEach(label => head.append(el('span','',label))); list.append(head);
         entries.slice(0,50).forEach((entry,index) => {
           const row = el('div','rank-row' + (entry.player_id === own ? ' mine' : '') + (index < 3 ? ' top' : ''));
           const who = el('span','rank-player'); who.append(el('strong','',entry.name),el('small','',character(entry.character).name + (entry.player_id === own ? ' · vos' : '')));
-          row.append(el('span','rank-pos',index < 3 ? ['♛','②','③'][index] : index + 1),who,el('span','',entry.level),el('span','',zak ? Zak.formatTime(entry.zak_time) : entry.kills),el('span','',entry.bosses));
+          row.append(el('span','rank-pos',index < 3 ? ['♛','②','③'][index] : index + 1),who,el('span','',entry.level),el('span','',timed ? Zak.formatTime(timeOf(entry)) : medals ? '🏅 ' + (entry.medals || 0) : entry.kills),el('span','',entry.bosses));
           list.append(row);
         });
       }
@@ -719,11 +724,14 @@
     const hours = (Zak.DAY_START + Math.floor(number(p.playTime) / 60)) % 24, minutes = Math.floor(number(p.playTime) % 60);
     const phase = Zak.DAY_PHASES[Zak.dayClock(p.playTime).phase], clockText = String(hours).padStart(2,'0') + ':' + String(minutes).padStart(2,'0');
     const zakDimension = Zak.isZakDimension(biome), bloodMoon = p.bloodMoon === true && !zakDimension;
-    text('hud-time',zakDimension ? '☾ NOCHE ETERNA' : bloodMoon ? '☾ LUNA ROJA · ' + clockText : phase.icon + ' ' + phase.name.toUpperCase() + ' · ' + clockText);
+    const rainy = !!(game.raining && game.raining());
+    text('hud-time',zakDimension ? '☾ NOCHE ETERNA' : bloodMoon ? '☾ LUNA ROJA · ' + clockText : (rainy ? '🌧 LLUVIA' : phase.icon + ' ' + phase.name.toUpperCase()) + ' · ' + clockText);
     $('hud-time').classList.toggle('blood-moon',bloodMoon);
     if (lastPortrait !== c.id) { Zak.drawPortrait($('hud-portrait'),c.id); lastPortrait = c.id; }
     const statuses = [];
     if (bloodMoon) statuses.push('☾ Luna roja: x2 EXP y ◉');
+    if (rainy) statuses.push('🌧 Lluvia: los peces pican más rápido');
+    (Zak.UI.statusTags || []).forEach(tags => tags(statuses));
     if (p.poison) statuses.push('☠ Veneno');
     if (p.slow > 0) statuses.push('↓ Mordedura ' + Math.ceil(p.slow) + ' s');
     if (p.exhausted > 0) statuses.push('Sin aliento ' + Math.ceil(p.exhausted) + ' s');
@@ -764,7 +772,7 @@
     $('boss-bar').classList.toggle('hidden',!boss);
     if (boss) {
       const lives = Zak.ENEMY_TYPES[boss.type].lives, warning = bossWarning(boss);
-      text('boss-name',Zak.ENEMY_TYPES[boss.type].name + ' · Nivel ' + boss.level + (lives ? ' · Vida ' + ((boss.life || 0) + 1) + '/' + lives + (boss.type === 'golem' ? ' (' + Zak.GOLEM_LIVES[boss.life || 0].name + ')' : '') : ''));
+      text('boss-name',Zak.ENEMY_TYPES[boss.type].name + (boss.type === 'zak' && game.zakFury ? ' FURIOSO' : '') + ' · Nivel ' + boss.level + (lives ? ' · Vida ' + ((boss.life || 0) + 1) + '/' + lives + (boss.type === 'golem' ? ' (' + Zak.GOLEM_LIVES[boss.life || 0].name + ')' : '') : ''));
       $('boss-fill').style.width = Math.max(0,boss.hp / boss.maxHp * 100) + '%';
       text('boss-hint',warning || fmt(boss.hp) + ' / ' + fmt(boss.maxHp));
       $('boss-bar').classList.toggle('warning',!!warning);
@@ -921,6 +929,8 @@
   }
   $('exit-game').addEventListener('click',exitGame);
   document.querySelector('.brand').addEventListener('click',event => { event.preventDefault(); if (game.state === 'characters') showMenu(); });
+  // Lo que usan las ventanas nuevas (ui-extras.js).
+  Zak.UI = Object.assign(Zak.UI || {}, { el, button, paragraph, openModal, hideModal, closeModal, toast, updateHud, showNpc, showBag, isTouch, showPause, showJournal, confirmAction });
   game.onEvent = (type, detail = {}) => {
     if (type === 'tick') { document.body.classList.toggle('cutscene', !!game.cutscene && game.state === 'playing'); updateHud(); if (game.player && game.state === 'playing' && game.player.kills - lastKills >= 5) submitScore(); }
     else if (type === 'toast') { if (game.settings.notices || detail.error) toast(detail.message,detail.error); }

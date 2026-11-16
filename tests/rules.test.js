@@ -2,7 +2,7 @@
 (function (root) {
   'use strict';
   const node = typeof module !== 'undefined' && module.exports;
-  if (node) require('../src/data.js');
+  if (node) { require('../src/data.js'); require('../src/truco.js'); }
   const Zak = root.Zak;
   function runZakRulesTests() {
     let count = 0;
@@ -216,6 +216,57 @@
       p.stats.endurance=90; equal(Zak.getStats(p).armor,0,'con mucha resistencia, igual sin armadura'); equal(Zak.getStats(p).runDuration,12);
       [0,2,4,6,9,13].forEach((value,tier) => { p.armorTier=tier; equal(Zak.getStats(p).armor,value,'nivel '+tier); });
       p.armorTier=99; equal(Zak.getStats(p).armor,13,'tope'); equal(Zak.enduranceBand(80).armor,8,'los enemigos siguen igual');
+    });
+
+    // v2.21: truco a 15 con las almas de la Feria.
+    const T = Zak.Truco, card = (n, s) => ({n, s, id: n + '-' + s});
+    const hand = (m, player, ghost, mano = 'player') => { m.mano = mano; Object.assign(m.hand, {cards: {player: player.slice(), ghost: ghost.slice()}, start: {player, ghost}, turn: mano}); return m; };
+    test('Truco: el ancho de espada es la más alta y el cuatro la más baja; el envido suma 20 con dos del mismo palo', () => {
+      const order = [card(1, 'espada'), card(1, 'basto'), card(7, 'espada'), card(7, 'oro'), card(3, 'copa'), card(2, 'oro'), card(1, 'copa'), card(12, 'oro'), card(11, 'oro'), card(10, 'oro'), card(7, 'copa'), card(6, 'oro'), card(5, 'oro'), card(4, 'oro')];
+      for (let i = 1; i < order.length; i++) ok(T.rank(order[i - 1]) > T.rank(order[i]), Zak.cardName ? 'orden' : 'orden ' + i);
+      equal(T.envidoPoints([card(7, 'espada'), card(6, 'espada'), card(1, 'oro')]), 33); equal(T.envidoPoints([card(12, 'oro'), card(11, 'oro'), card(4, 'copa')]), 20);
+      equal(T.envidoPoints([card(7, 'oro'), card(5, 'copa'), card(12, 'espada')]), 7);
+    });
+    test('Truco: con pardas decide la siguiente y, si todas son pardas, gana el mano', () => {
+      equal(T.handWinner(['player', 'player'], 'ghost'), 'player'); equal(T.handWinner(['parda', 'ghost'], 'player'), 'ghost'); equal(T.handWinner(['player', 'parda'], 'ghost'), 'player');
+      equal(T.handWinner(['player', 'ghost'], 'ghost'), null); equal(T.handWinner(['player', 'ghost', 'parda'], 'ghost'), 'player'); equal(T.handWinner(['parda', 'parda', 'parda'], 'ghost'), 'ghost');
+    });
+    test('Truco: truco no querido da 1, retruco no querido 2 y vale cuatro querido se juega por 4', () => {
+      let m = T.createMatch({rng: () => .5}); hand(m, [card(1, 'espada'), card(7, 'espada'), card(3, 'oro')], [card(4, 'oro'), card(5, 'copa'), card(6, 'basto')]);
+      ok(T.act(m, 'player', 'truco')); ok(T.act(m, 'ghost', 'noquiero')); equal(m.score.player, 1); ok(m.hand.finished);
+      m = T.createMatch({rng: () => .5}); hand(m, [card(4, 'oro'), card(5, 'copa'), card(6, 'basto')], [card(1, 'espada'), card(7, 'espada'), card(3, 'oro')]);
+      ok(T.act(m, 'player', 'truco')); ok(T.act(m, 'ghost', 'truco'), 'quiero retruco'); ok(T.act(m, 'player', 'noquiero')); equal(m.score.ghost, 2);
+      m = T.createMatch({rng: () => .5}); hand(m, [card(1, 'espada'), card(7, 'espada'), card(3, 'oro')], [card(4, 'oro'), card(5, 'copa'), card(6, 'basto')]);
+      T.act(m, 'player', 'truco'); T.act(m, 'ghost', 'truco'); T.act(m, 'player', 'truco'); ok(T.act(m, 'ghost', 'quiero')); equal(m.hand.truco.level, 3);
+      equal(T.act(m, 'ghost', 'truco'), false, 'no hay más que vale cuatro');
+      for (let i = 0; i < 2; i++) { T.act(m, 'player', 'play', m.hand.cards.player[0].id); T.act(m, 'ghost', 'play', m.hand.cards.ghost[0].id); }
+      equal(m.score.player, 4);
+    });
+    test('Truco: el envido se canta en la primera; no querido vale lo anterior y la falta lo que le falta al que va ganando', () => {
+      let m = T.createMatch({rng: () => .5}); hand(m, [card(7, 'oro'), card(6, 'oro'), card(4, 'copa')], [card(1, 'copa'), card(5, 'basto'), card(12, 'espada')]);
+      ok(T.act(m, 'player', 'envido', 'envido')); ok(T.act(m, 'ghost', 'envido', 'real')); ok(T.act(m, 'player', 'quiero')); equal(m.score.player, 5, '33 le gana a 5: envido + real');
+      equal(T.options(m, 'player').envido.length, 0, 'un solo envido por mano');
+      m = T.createMatch({rng: () => .5}); hand(m, [card(7, 'oro'), card(6, 'oro'), card(4, 'copa')], [card(1, 'copa'), card(5, 'basto'), card(12, 'espada')]);
+      T.act(m, 'player', 'envido', 'envido'); T.act(m, 'ghost', 'envido', 'envido'); T.act(m, 'ghost', 'noquiero') || T.act(m, 'player', 'noquiero'); equal(m.score.ghost, 2, 'envido envido no querido: 2');
+      m = T.createMatch({rng: () => .5}); m.score.ghost = 11; hand(m, [card(7, 'oro'), card(6, 'oro'), card(4, 'copa')], [card(1, 'copa'), card(5, 'basto'), card(12, 'espada')]);
+      T.act(m, 'player', 'envido', 'falta'); T.act(m, 'ghost', 'quiero'); equal(m.score.player, 4, 'a 15: le faltaban 4 al que va ganando');
+      m = T.createMatch({rng: () => .5}); hand(m, [card(4, 'oro'), card(5, 'copa'), card(6, 'basto')], [card(7, 'oro'), card(6, 'oro'), card(12, 'espada')], 'ghost');
+      T.act(m, 'ghost', 'truco'); ok(T.act(m, 'player', 'envido', 'envido'), 'el envido está primero'); T.act(m, 'ghost', 'quiero'); equal(m.score.ghost, 2);
+      ok(T.options(m, 'player').answer && m.hand.pending.type === 'truco', 'después hay que contestar el truco');
+      T.act(m, 'player', 'play', m.hand.cards.player[0].id) || T.act(m, 'player', 'fold'); equal(m.score.ghost, 3, 'al mazo con el truco cantado: 1');
+    });
+    test('Truco: el partido termina en 15 y nunca se traba', () => {
+      let seed = 7; const rng = () => { seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0; return seed / 4294967296; };
+      for (let g = 0; g < 60; g++) {
+        const m = T.createMatch({rng});
+        for (let steps = 0; !m.over; steps++) {
+          ok(steps < 4000, 'sin trabas');
+          if (m.hand.finished) { T.nextHand(m); continue; }
+          const choice = T.ghostChoice(m); if (choice) { ok(T.act(m, 'ghost', choice[0], choice[1]), 'jugada válida del alma'); continue; }
+          const o = T.options(m, 'player'); if (o.answer) T.act(m, 'player', rng() < .5 ? 'quiero' : 'noquiero'); else T.act(m, 'player', 'play', m.hand.cards.player[0].id);
+        }
+        equal(m.score[m.winner], 15);
+      }
     });
     return { passed: count, results };
   }

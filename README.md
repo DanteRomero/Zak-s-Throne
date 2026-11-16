@@ -2,7 +2,7 @@
 
 Una aventura de acción y exploración en pixel art, vista desde arriba. Elegí a uno de siete amigos, preparate en la aldea y salí a explorar la cueva y los Yuyos.
 
-Versión actual: **v2.20**. Los cambios de cada versión están en [CHANGELOG.md](CHANGELOG.md).
+Versión actual: **v2.21**. Los cambios de cada versión están en [CHANGELOG.md](CHANGELOG.md).
 
 ## Jugar
 
@@ -32,6 +32,7 @@ El juego funciona directamente desde sus archivos: no requiere servidor, instala
 | Cambiar arma | 1 a 5; también sus botones |
 | Ficha y mejoras | C |
 | Diario de viaje | J |
+| Medallas | L |
 | Mapa | M |
 | Pausa y guardado | Esc |
 | Sonido | Botón musical de la esquina superior |
@@ -50,7 +51,7 @@ El juego se adapta al tamaño de pantalla; en teléfonos conviene usar orientaci
 
 ## Ranking de amigos
 
-Desde el menú principal o la pausa, **Ranking de amigos** muestra nivel, enemigos derrotados y jefes vencidos de cada partida, con pestañas para ordenar por cada uno. La pestaña **Récord Zak** muestra a quienes vencieron a Zak, del más rápido al más lento: cuenta el tiempo de la pelea, desde que termina su presentación hasta vaciarle la última vida, y guarda el mejor de cada partida. El nombre se elige al seleccionar el personaje.
+Desde el menú principal o la pausa, **Ranking de amigos** muestra nivel, enemigos derrotados y jefes vencidos de cada partida, con pestañas para ordenar por cada uno. La pestaña **Récord Zak** muestra a quienes vencieron a Zak, del más rápido al más lento: cuenta el tiempo de la pelea, desde que termina su presentación hasta vaciarle la última vida, y guarda el mejor de cada partida. **Revancha Zak** hace lo mismo con la revancha contra Zak furioso, y **Medallas** ordena por la cantidad de medallas. El nombre se elige al seleccionar el personaje.
 
 Sin configuración, el ranking muestra las partidas de cada dispositivo. Para compartirlo entre todos los dispositivos, seguí [docs/RANKING.md](docs/RANKING.md): se conecta un proyecto gratuito de Supabase pegando dos valores en `src/config.js`.
 
@@ -107,6 +108,10 @@ En la **dimensión de Zak** siempre es de noche y la luna roja no llega: sus ene
 - **Rodar (Ctrl o clic derecho):** una voltereta rápida hacia donde te movés (quieto, hacia donde mirás) que gasta 20% de energía. Mientras dura (0,3 s) ningún golpe ni proyectil te hace daño; el veneno que ya tenés sigue actuando. Rodar también te saca de encima una rata prendida. No se puede rodar agotado.
 - **Combos:** cada golpe que conecta suma al combo si no dejás pasar mucho tiempo. El **cuarto golpe seguido es crítico** e inflige ×1,75. El HUD muestra el combo y avisa con ✦ cuando el próximo golpe es crítico.
 - Los golpes producen chispas, la cámara se sacude con críticos y daño fuerte, y la pantalla destella al recibir daño.
+
+### Lluvia
+
+Cada tanto llueve en la superficie (la aldea, Los Yuyos y el cementerio): se oscurece el cielo, caen gotas y el reloj dice **🌧 LLUVIA**. Mientras llueve, los peces pican **más rápido**. Después quedan **charcos** por todos lados, que salpican cuando los pisás, y el pasto brilla mojado hasta que se seca, unos 3 minutos. En las cuevas y en la dimensión de Zak no llueve.
 
 ## Guita, hierbas y El Almacén
 
@@ -213,6 +218,33 @@ Algunos vecinos tienen un pedido: después de hablar con ellos (E) se abre su me
 
 Atiende su puesto en la Feria de las Almas (E en el puesto o hablándole). Vende **⚗ Elixir del vacío** (◉ 150), **✨ Polvo de estrellas** (+1 punto de mejora: ◉ 500, y cada uno sale ◉ 250 más), el **◈ Segundo engarce** para amuletos (◉ 4000) y arma el **Anillo del Capo** y el **Ojo de Cerbero** con ofrendas y cristal arcano. En la Feria también viven la Bruja Pocha, Merlín de Quilmes, Tía Eulalia la vidente, Ramiro el gnomo, Ernesto (un alma en pena) y Truco y Retruco, dos almas que juegan al truco desde hace trescientos años.
 
+### Truco en la Feria
+
+Las dos almas de la mesa de la Feria de las Almas, **Truco** y **Retruco**, juegan **a 15** (sin flor) con envido, real envido, falta envido, truco, retruco, vale cuatro y al mazo. Hablales y elegí cuánto apostar (◉ 50, 100, 250, 500 o 1000): la apuesta queda sobre la mesa y, si ganás, te llevás **el doble**. Si te levantás a la mitad del partido, la perdés.
+
+Si el alma pierde, hay un **30%** de que te pida la **revancha**: si gana ella, te saca **el doble** de lo apostado; si ganás vos, te da **un objeto al azar** del juego (un consumible, un pescado o un amuleto que no tengas). Para aceptarla tenés que poder cubrir el doble.
+
+## Compañeros
+
+Hay cuatro bichos para domesticar. Te acompaña uno por vez: te sigue a todos lados (también a las cuevas y a la dimensión de Zak), ataca a los enemigos cercanos y los enemigos no lo ven ni le pueden pegar. Al domesticarlo le ponés un nombre, que después podés cambiar desde la bolsa o la guardería. El que llega último sale con vos y el que llevabas se queda en **La guardería**.
+
+Su daño es una parte del de tu golpe con el arma que tenés en la mano. De menor a mayor: murciélago, perro, serpiente y Golemsín.
+
+| Compañero | Cómo se consigue | Qué hace |
+| --- | --- | --- |
+| 🐕 **Perro** | En la puerta de La guardería hay un perro sentado con el plato vacío. Comprá **comida para perro** en El Almacén (◉ 15) y dásela con E **5 veces**, esperando **2 minutos** entre plato y plato. Con el quinto se acerca corriendo y te llena la cara de lengüetazos. | Muerde, y cada **13 s** inmoviliza al enemigo **3 s** (a los jefes, 1,5 s; a Zak, nada). |
+| 🦇 **Murciélago** | En la Cueva Profunda, en la esquina de arriba a la derecha (arriba del Chupasangre), cuelga un murcielaguito. Con la vida llena, dale de tu sangre **3 veces**: cada vez te deja con **1 de vida**. Si no tenés la vida llena, solo te dice «Un murciélago chiquito... el pobre parece tener hambre». | Muerde rápido y cada **15 s** deja al enemigo **desangrándose 5 s** (ignora la armadura). |
+| 🐍 **Serpiente** | Al caer la Yarará Madre, hay un **5%** de que uno de sus huevos se rompa (con escena del cascarón). Agarrá la viborita con E y **llevala en brazos** a la aldea: mientras tanto no podés atacar, y si te noquean vuelve sola al nido. **Doña Herminia**, la señora de vestido verde de La guardería, te la cría en **10 minutos** por **◉ 2000**; si no te alcanza, se los pagás cuando la vas a buscar, y hasta entonces no te la devuelve. Vuelve grande, de tu tamaño. | Pega fuerte cuerpo a cuerpo. Cada **15 s** envenena al enemigo **5 s**, y en cada golpe hay un **15%** de que se coma de un bocado a un enemigo que no sea jefe: tarda **3 s** en tragarlo. |
+| 🪨 **Golemsín** | Al caer el Gólem Minero en Las Entrañas (no el que invoca Zak), hay un **5%** de que entre los escombros aparezca uno chiquito. Te tira una piedra cada **2 s** que saca **5 de vida** sin importar la armadura. Acercate y dale, de a poco o todo junto: **2 de piedra, 2 de hierro, 2 de oro, 2 de diamante y 2 Piedras Elementales**. | Tira piedras de lejos que sacan bastante vida. Cada **20 s**, en plena pelea, te protege **3 s de todo daño** (también de los jefes). Mientras te acompaña, juntás **+1 de cada material** al talar o picar, y **+1 Piedra Elemental** cada vez que levantás una. |
+
+**La guardería** queda al noreste de la plaza, sobre la calle que sube al norte. Ahí esperan los compañeros que no llevás: acercate a uno y apretá E para salir con él (el que llevabas se queda), cambiarle el nombre o dejar al tuyo y seguir solo.
+
+## Medallas
+
+Cada logro tiene su **medalla**, con un dibujo que lo cuenta: una noche roja para la luna roja, un gólem roto para el Gólem Minero, una corona partida para la revancha contra Zak, un perro que te lame, y así. Hay 25. Se ven con **L** o desde el diario (J), y las que te faltan dicen cómo se consiguen. Cuando ganás una, sube sobre tu cabeza.
+
+Las partidas de antes reciben solas, al cargarlas, las medallas que ya les correspondían (los jefes vencidos, el nivel, la Espada Elemental…). La cantidad de medallas tiene su propia pestaña en el ranking.
+
 ## Materiales, herramientas y El Taller
 
 Al sur de la aldea, junto a **El Taller**, atiende **El Herrero**: E en su mesa de trabajo abre su taller. Él te recibe con un «Acá todo con verdes, pa.». Fabrica herramientas y mejora armas a cambio de materiales y guita.
@@ -296,6 +328,8 @@ Cualquier golpe de Zak se lleva el **52%** de tu vida máxima, sin importar la a
 **Escenas.** Durante las escenas no te podés mover ni atacar, los enemigos se quedan quietos y la cámara mira a Zak (o al altar). **E**, **Espacio**, **Enter** o tocar la pantalla completa el texto o pasa al siguiente diálogo.
 
 Al vencerlo, Zak no muere: vuelve al trono, dice «Dejémoslo acá y volvé a tu dimensión, mortal.», golpea dos veces el piso y abre un portal a la aldea. **Tenés 40 segundos para cruzarlo.** Si no, dice «¿Sabés lo que le pasa al que no sigue mis órdenes? Muere...» y, en una escena, cierra el portal, se levanta del trono y te ejecuta: perdés toda la guita, los materiales y las ofrendas; las armas y herramientas se quedan. El mensaje de la derrota es «Eso por querer hacerle el poronga...».
+
+**Revancha: Zak furioso.** Una vez que lo venciste, cada vez que abrís la puerta del trono elegís entre la pelea de siempre y la **revancha**: Zak viene furioso, con **50% más de vida**, hace todo **un 30% más rápido** y suelta más guita. El tiempo de la revancha no pisa tu Récord Zak: va a su propio ranking, **Revancha Zak**.
 
 ## Personajes
 
@@ -456,10 +490,15 @@ Implementado con **HTML, CSS y JavaScript**, sin paquetes externos. El mundo se 
 - `src/items.js`: consumibles, amuletos, pedidos de los vecinos, pesca y las tiendas del Gaucho, Don Chiche y el Mercader del Vacío.
 - `src/realm.js`: Patio de las Gárgolas, Biblioteca del Rey Mago y Feria de las Almas; sus enemigos, las runas, las carpas y las fogatas.
 - `src/bosses.js`: el Chupasangre, el Gólem Minero, Cerbero y Zak; altar de ofrendas, portales e invocaciones.
+- `src/weather.js`: la lluvia, los charcos y el pasto mojado.
+- `src/companions.js` y `src/companions-art.js`: los compañeros, La guardería y Doña Herminia, y cómo se dibujan.
+- `src/truco.js`: el truco a 15 con las almas de la Feria, las apuestas y las cartas españolas.
+- `src/medals.js`: las medallas, sus dibujos y cuándo se ganan.
 - `src/ui.js`: menús, HUD, tienda, ranking, guardados y controles táctiles.
+- `src/ui-extras.js`: la mesa de truco, el medallero, la guardería y la puerta del trono.
 - `src/ranking.js` y `src/config.js`: ranking local u online (Supabase).
 - `src/cloud.js`: cuentas y partidas en la nube (Supabase).
-- `tests/rules.test.js`: 41 pruebas de reglas y casos límite.
+- `tests/rules.test.js`: 46 pruebas de reglas y casos límite.
 
 Si ya tenés Node instalado:
 
@@ -467,9 +506,9 @@ Si ya tenés Node instalado:
 node tests/rules.test.js
 ```
 
-Abrí `tests/index.html` para ejecutar las 41 pruebas de reglas y las 143 pruebas de integración del motor en el navegador. El resultado detalla cada caso aprobado o fallido.
+Abrí `tests/index.html` para ejecutar las 46 pruebas de reglas y las 158 pruebas de integración del motor en el navegador. El resultado detalla cada caso aprobado o fallido.
 
-También se incluyen 47 pruebas de interfaz y de pixel art, 18 del ranking (con un servidor simulado) 36 de controles táctiles y 42 de la nube (también con un servidor simulado) con Chrome y Python 3, sin librerías adicionales. El verificador abre un perfil temporal aislado; nunca usa tus guardados personales:
+También se incluyen 56 pruebas de interfaz y de pixel art, 22 del ranking (con un servidor simulado), 36 de controles táctiles y 42 de la nube (también con un servidor simulado) con Chrome y Python 3, sin librerías adicionales. El verificador abre un perfil temporal aislado; nunca usa tus guardados personales:
 
 ```sh
 python tests/browser_check.py tests/index.html --script tests/engine.test.js

@@ -101,9 +101,14 @@ const SCENES = {
   if(s.arrived)return;const k=Math.min(1,t/PORTAL_SCENE.travel),ease=k*k*(3-2*k);p.x=s.from.x+(s.to.x-s.from.x)*ease;p.y=s.from.y+(s.to.y-s.from.y)*ease;
  }}
 };
+// Otros módulos suman escenas acá (el perro que te lame, el cascarón que se rompe).
+Z.SCENES=SCENES;
+// Revancha: Zak furioso tiene 50% más de vida y hace todo un 30% más rápido. Cuenta en su propio ranking.
+const FURY=Z.ZAK_FURY={health:1.5,tempo:1.3,coins:400};
 Object.assign(Z.Game.prototype, {
  enemyStatsFor(type,life=0,biome=null){
   const s=Z.enemyStats(type,this.player.level);
+  if(type==='zak'&&this.zakFury){s.health*=FURY.health;s.maxHealth=s.health;}
   if(type==='golem'){const l=GOLEM_LIVES[clamp(life,0,3)];s.health*=l.hp;s.maxHealth=s.health;s.strength*=l.str;}
   if(biome&&this.bloodMoonOver(biome))Z.applyBloodMoon(s);
   return s;
@@ -173,7 +178,7 @@ Object.assign(Z.Game.prototype, {
   if(e.type==='vampire')this.vampireAI(e,dt,len);
   else if(e.type==='golem')this.golemAI(e,dt,len);
   else if(e.type==='cerbero')this.cerberoAI(e,dt,len);
-  else if(e.type==='zak')this.zakAI(e,dt,len);
+  else if(e.type==='zak')this.zakAI(e,this.zakFury?dt*FURY.tempo:dt,len);
   else if(e.type==='archmage')this.archmageAI(e,dt,len);
  },
  // El Chupasangre: manotazo doble, embestida que agarra y chupa sangre, e invocación de murciélagos.
@@ -359,6 +364,13 @@ Object.assign(Z.Game.prototype, {
   const levels=Z.grantXp(p,e.stats.xp,this.context());this.effect(e.x,e.y-60,'heal',1.4,{text:'+'+this.number(e.stats.xp*this.stats().xpMultiplier)+' EXP'});
   const[min,max]=def.coins;this.dropCoins(e.x,e.y,min+Math.floor(Math.random()*(max-min+1)));
   this.sound.play('boss');this.shake(8,.6);this.emit('progress');
+  // Revancha: el tiempo va a su propio récord y Zak furioso deja más guita.
+  if(this.zakFury){const firstFury=!(p.furyWins>0);p.furyWins=(p.furyWins||0)+1;this.dropCoins(e.x+20,e.y,FURY.coins);
+   let text='';if(this.zakFightStart!=null){const time=this.time-this.zakFightStart,best=!(p.zakFuryBest>0)||time<p.zakFuryBest;if(best)p.zakFuryBest=time;
+    text=' Tiempo: '+Z.formatTime(time)+(best?' · ¡nuevo récord de revancha!':' (récord '+Z.formatTime(p.zakFuryBest)+')');this.effect(e.x,e.y-100,'level',2.5,{text:'⏱ '+Z.formatTime(time)+(best?' · ¡RÉCORD!':'')});}
+   this.zakFightStart=null;if(firstFury)p.points+=1;
+   this.emit('toast',{message:'¡Ganaste la revancha contra Zak furioso!'+(firstFury?' Trofeo: +1 punto de mejora.':'')+text});
+   if(levels)this.onLevel(levels);return;}
   // Récord: tiempo desde que termina la presentación hasta vaciarle la última vida.
   let record='';if(this.zakFightStart!=null){const time=this.time-this.zakFightStart,best=!(p.zakBest>0)||time<p.zakBest;if(best)p.zakBest=time;
    record=' Tiempo: '+Z.formatTime(time)+(best?' · ¡nuevo récord!':' (récord '+Z.formatTime(p.zakBest)+')');this.effect(e.x,e.y-100,'level',2.5,{text:'⏱ '+Z.formatTime(time)+(best?' · ¡RÉCORD!':'')});}
@@ -447,7 +459,8 @@ Object.assign(Z.Game.prototype, {
  // El portal del altar lleva al Santuario de la dimensión de Zak: de ahí no se vuelve hasta ganarle o perder.
  enterDimension(){this.resetZak();this.sound.play('portal');this.travel(Z.DIMENSION_SPOTS.arrive,'sanctum');
   this.emit('toast',{message:'Llegaste a la dimensión de Zak. No hay vuelta atrás: el Santuario es seguro y al norte está el Pueblo Mágico.'});},
- enterThrone(){this.resetZak();this.sound.play('portal');this.travel(Z.THRONE_SPOTS.arrive,'throne');this.startCutscene('zakIntro');},
- leaveThrone(){const p=this.player;this.resetZak();p.poison=null;p.bleed=null;p.slow=0;p.heavySlow=0;this.sound.play('portal');this.travel(this.world.spawn,'village');}
+ // Con `fury`, Zak viene furioso: la revancha, para quien ya lo venció.
+ enterThrone(fury=false){this.zakFury=!!fury;this.resetZak();this.sound.play('portal');this.travel(Z.THRONE_SPOTS.arrive,'throne');this.startCutscene('zakIntro');},
+ leaveThrone(){const p=this.player;this.zakFury=false;this.resetZak();p.poison=null;p.bleed=null;p.slow=0;p.heavySlow=0;this.sound.play('portal');this.travel(this.world.spawn,'village');}
 });
 })();

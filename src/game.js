@@ -109,7 +109,7 @@ class Game {
    if(this.cutscene){if([' ','e','Enter'].includes(key))this.advanceCutscene();return;}
    if(key==='e')this.interact();if(key==='q')this.ability();if(key==='Control')this.roll();if(key==='r')this.useHerb();
    if(key==='f')this.useSelected();if(key==='g')this.cycleItem();if(key==='b')this.emit('bag');
-   if(key==='c')this.emit('stats');if(key==='m')this.emit('map');if(key==='j')this.emit('journal');
+   if(key==='c')this.emit('stats');if(key==='m')this.emit('map');if(key==='j')this.emit('journal');if(key==='l')this.emit('medals');
    if(['1','2','3','4','5'].includes(key))this.equip(WEAPON_ORDER[+key-1]);
   });
   window.addEventListener('keyup',e=>this.keys.delete(e.key.length===1?e.key.toLowerCase():e.key));
@@ -125,7 +125,7 @@ class Game {
  setAim(e){const r=this.canvas.getBoundingClientRect();this.aim={x:(e.clientX-r.left)/r.width*this.canvas.width+this.camera.x,y:(e.clientY-r.top)/r.height*this.canvas.height+this.camera.y};}
  newGame(id){
   this.world=Z.createWorld();this.player=Z.createPlayer(id);Object.assign(this.player,{...this.world.spawn,dir:'down',moving:false,walk:0,attackAnim:0,runId:(window.crypto&&crypto.randomUUID)?crypto.randomUUID():Date.now().toString(36)+Math.random().toString(36).slice(2,12)});
-  this.biome='village';this.time=0;this.lastStrike=null;this.bombs=[];this.effects=[];this.projectiles=[];this.drops=[];this.queuedWaves=[];this.spirits=[];this.questFlags={};this.currentSlot=null;this.bolts=[];this.darkness=0;this.exitPortal=null;this.cutscene=null;this.cutsceneFade=0;
+  this.biome='village';this.time=0;this.zakFury=false;this.lastStrike=null;this.bombs=[];this.effects=[];this.projectiles=[];this.drops=[];this.queuedWaves=[];this.spirits=[];this.questFlags={};this.currentSlot=null;this.bolts=[];this.darkness=0;this.exitPortal=null;this.cutscene=null;this.cutsceneFade=0;
   this.enemies=this.world.enemySpawns.map(s=>this.makeEnemy(s));this.clearInput();this.aim=null;this.state='playing';this.renderer.resize(true);this.emit('start');
  }
  makeEnemy(s){const biome=Z.biomeAt(s.x,s.y),stats=this.enemyStatsFor(s.type,0,biome);return{...s,homeX:s.x,homeY:s.y,biome,stats,hp:stats.health,maxHp:stats.health,level:stats.level,dir:'down',walk:0,moving:false,dead:false,respawn:0,cooldown:.6,stun:0,charm:0,latched:0,latchRest:0,alert:false,provoked:false,hitFlash:0,special:2.5,telegraph:0,dash:0,aimX:0,aimY:1,life:0,act:null,cd:{},rain:null,rainCd:KNIFE_FIRST,shield:0,seated:false,yielding:null,pose:null,air:false,lift:0,lowFortified:false,backoff:0};}
@@ -168,7 +168,9 @@ class Game {
   if(this.attackQueue){this.attackQueue.time-=dt;if(this.attackQueue.time<=0||this.attack(this.attackQueue))this.attackQueue=null;}
   this.updatePortals(dt);if(this.state!=='playing')return;
   if(this.queuedWaves&&this.queuedWaves.length)this.queuedWaves=this.queuedWaves.filter(w=>{w.delay-=dt;if(w.delay>0)return true;this.wave();return false;});
-  this.updateNpcs(dt);this.updateEnemies(dt);if(this.state!=='playing')return;this.updateSpirits(dt);this.updateBolts(dt);if(this.state!=='playing')return;this.updateProjectiles(dt);if(this.state!=='playing')return;this.updateDrops(dt);
+  this.updateNpcs(dt);this.updateEnemies(dt);if(this.state!=='playing')return;this.updateSpirits(dt);
+  // Compañeros, clima, medallas y lo que sumen otros módulos.
+  for(const extra of Z.UPDATERS||[]){extra.call(this,dt);if(this.state!=='playing')return;}this.updateBolts(dt);if(this.state!=='playing')return;this.updateProjectiles(dt);if(this.state!=='playing')return;this.updateDrops(dt);
   for(const item of this.world.pickups)if(item.type==='herb'&&item.collected&&item.regrow>0){item.regrow-=dt;if(item.regrow<=0)item.collected=false;}
   this.updateNodes(dt);
   this.effects.forEach(e=>e.life-=dt);this.effects=this.effects.filter(e=>e.life>0);this.sound.update(dt,this.biome);this.checkQuests();
@@ -300,7 +302,7 @@ class Game {
   const damage=exact?raw:Z.damageAfterArmor(raw,e.stats.armor);e.hp-=damage;e.hitFlash=.16;e.provoked=true;e.alert=true;this.bossHitReact(e);
   this.effect(e.x,e.y-23,'hit',.8,{text:(crit?'¡':'')+this.number(damage)+(crit?'!':''),crit});this.effect(e.x,e.y-10,'spark',.35,{seed:Math.random()*99,crit});
   this.sound.play(crit?'crit':'hit');if(crit)this.shake(3,.2);
-  if(definition.knockback&&!exact&&source!=='spirit'){const dx=e.x-this.player.x,dy=e.y-this.player.y,len=Math.hypot(dx,dy)||1;this.move(e,dx/len*18,dy/len*18,7,e.biome);}
+  if(definition.knockback&&!exact&&source!=='spirit'&&source!=='pet'){const dx=e.x-this.player.x,dy=e.y-this.player.y,len=Math.hypot(dx,dy)||1;this.move(e,dx/len*18,dy/len*18,7,e.biome);}
   // Gólem y Zak tienen varias vidas: al vaciar una, se levantan con la siguiente.
   if(e.hp<=0&&this.bossNextLife(e))return;
   if(e.hp<=0){const first=!this.questFlags['defeat_'+e.type];e.hp=0;e.dead=true;e.respawn=definition.respawn||35;e.alert=false;e.telegraph=0;e.dash=0;this.player.kills++;this.questFlags['defeat_'+e.type]=true;
@@ -324,7 +326,7 @@ class Game {
    if(d.delay>0){d.x+=d.vx*dt;d.y+=d.vy*dt;d.vx*=.9;d.vy*=.9;return true;}
    const len=Math.hypot(p.x-d.x,p.y-6-d.y);
    if(len<14&&d.item==='key'){p.throneKeys=(p.throneKeys||0)+1;this.sound.play('pickup');this.effect(p.x,p.y-30,'coin',1.2,{text:'🗝 Llave del trono'});this.emit('toast',{message:'¡Conseguiste la Llave del trono! Abre la puerta al norte del Pueblo Mágico.'});return false;}
-   if(len<14&&d.item){const o=Z.OFFERINGS[d.item];p.offerings[d.item]=(p.offerings[d.item]||0)+1;this.sound.play('pickup');this.effect(p.x,p.y-30,'coin',1.2,{text:o.icon+' '+o.name});this.emit('toast',{message:'¡Conseguiste '+o.name+'! Es una ofrenda para el altar; en El Almacén te la compran por ◉ '+o.price+'.'});return false;}
+   if(len<14&&d.item){const o=Z.OFFERINGS[d.item];p.offerings[d.item]=(p.offerings[d.item]||0)+1+(d.item==='elemental'&&this.gatherBonus?this.gatherBonus():0);this.sound.play('pickup');this.effect(p.x,p.y-30,'coin',1.2,{text:o.icon+' '+o.name});this.emit('toast',{message:'¡Conseguiste '+o.name+'! Es una ofrenda para el altar; en El Almacén te la compran por ◉ '+o.price+'.'});return false;}
    if(len<14){p.coins=(p.coins||0)+d.value;this.sound.play('coin');this.effect(p.x,p.y-30,'coin',.7,{text:'+'+d.value+' ◉'});return false;}
    if(len<75){const pull=Math.min(len,(260-len*1.6)*dt);d.x+=(p.x-d.x)/len*pull;d.y+=(p.y-6-d.y)/len*pull;}
    return d.life>0;});
@@ -447,7 +449,7 @@ class Game {
  knockout(source){
   const p=this.player;p.deaths++;
   const quotes={thief:'Uhh... este gil me sacó guita',dog:'¿Por qué Firulais? :c',snake:'La próxima miro dónde piso...',rat:'Me ganaron las ratas. No se lo cuenten a nadie.',capo:'El Capo me dejó en patas y sin un mango.',bat:'Un murciélago me dejó viendo estrellas.',spider:'Odio las arañas. Las odio.',worm:'Me comió un gusano. Literal.',yarara:'La Yarará Madre me mandó a dormir la siesta.',
-   skeleton:'Me ganó uno que ni carne tiene.',archer:'Un flechazo... y no de amor.',vampire:'El Chupasangre me dejó seco.',golem:'Me aplastó una montaña con patas.',cerbero:'Tres cabezas y ninguna con piedad.',mage:'Me hicieron un asado con magia.',armor:'Una armadura vacía me dio vuelta.',book:'Me liquidó la biblioteca. Literal.',imp:'Le pegué a la copia equivocada.',gargoyle:'Esa estatua no era una estatua.',shadow:'Me ganó mi propia sombra... bueno, la de Zak.',mimic:'Abrí la carpa equivocada.',rune:'Pisé la runa que no era.',archmage:'El Rey Mago me desapareció de un chasquido.',fire:'Me quemé por pasar de largo.',zak:'Zak ni se despeinó.',execute:'Eso por querer hacerle el poronga...'};
+   skeleton:'Me ganó uno que ni carne tiene.',archer:'Un flechazo... y no de amor.',vampire:'El Chupasangre me dejó seco.',golem:'Me aplastó una montaña con patas.',cerbero:'Tres cabezas y ninguna con piedad.',mage:'Me hicieron un asado con magia.',armor:'Una armadura vacía me dio vuelta.',book:'Me liquidó la biblioteca. Literal.',imp:'Le pegué a la copia equivocada.',gargoyle:'Esa estatua no era una estatua.',shadow:'Me ganó mi propia sombra... bueno, la de Zak.',mimic:'Abrí la carpa equivocada.',rune:'Pisé la runa que no era.',archmage:'El Rey Mago me desapareció de un chasquido.',fire:'Me quemé por pasar de largo.',golemsin:'Me ganó un gólem de bolsillo.',zak:'Zak ni se despeinó.',execute:'Eso por querer hacerle el poronga...'};
   const quote=quotes[source]||quotes.rat;
   // Los chorros se llevan la guita de verdad; el resto se pierde en el apuro. Si Zak te ejecuta, te deja sin nada.
   const execute=source==='execute',lost=execute?(p.coins||0):Math.floor((p.coins||0)*(source==='thief'||source==='capo'?.3:.1));p.coins=Math.max(0,(p.coins||0)-lost);
@@ -455,7 +457,7 @@ class Game {
   Object.assign(p,this.world.spawn,{hp:1,poison:null,slow:0,stamina:1,exhausted:0,restTime:0,attackCooldown:0,moving:false,roll:0,combo:0,comboTime:0,gather:null,bleed:null,burn:null,stunned:0,frozen:0,grabbed:0,heavySlow:0});p.buffs=Z.emptyBuffs();p.invuln=0;p.fishing=null;this.biome='village';p.hp=this.stats().maxHealth;
   this.enemies=this.enemies.filter(e=>!e.summoned);
   this.enemies.forEach(e=>{if(!e.dead){if(isBoss(e))Object.assign(e,this.makeEnemy({id:e.id,type:e.type,x:e.homeX,y:e.homeY}));e.x=e.homeX;e.y=e.homeY;}e.latched=0;e.alert=false;e.telegraph=0;e.dash=0;});
-  this.queuedWaves=[];this.spirits=[];this.bombs=[];this.projectiles=[];this.bolts=[];this.darkness=0;this.exitPortal=null;this.cutscene=null;this.cutsceneFade=0;this.state='paused';this.clearInput();this.emit('knockout',{source,quote,lost,execute});
+  this.queuedWaves=[];this.spirits=[];this.bombs=[];this.projectiles=[];this.bolts=[];this.darkness=0;this.exitPortal=null;this.cutscene=null;this.cutsceneFade=0;this.zakFury=false;this.state='paused';this.clearInput();this.emit('knockout',{source,quote,lost,execute});
  }
  heal(amount){const before=this.player.hp;this.player.hp=Math.min(this.stats().maxHealth,before+amount);if(this.player.hp>before)this.effect(this.player.x,this.player.y-30,'heal',.9,{text:'+'+this.number(this.player.hp-before)});}
  updateProjectiles(dt){
@@ -463,7 +465,7 @@ class Game {
   this.projectiles=this.projectiles.filter(s=>{if(this.state!=='playing')return false;if(s.type==='boomerang')return this.updateBoomerang(s,dt);
    const speed=s.type==='bow'||s.type==='arrow'?330:s.type==='venom'?185:s.type==='boulder'?215:s.type==='fireball'?200:s.type==='knife'?250:235,travel=speed*dt;s.x+=s.dx*travel;s.y+=s.dy*travel;s.traveled+=travel;
    if(s.zone?Z.biomeAt(s.x,s.y)!==s.zone:s.traveled>s.range||Z.collides(this.world,s.x,s.y,2))return false;
-   if(s.hostile){if(Math.hypot(p.x-s.x,p.y-8-s.y)<(s.type==='boulder'?16:s.type==='fireball'?13:11)){const hit=this.hurtPlayer(s.damage,s.source);
+   if(s.hostile){if(Math.hypot(p.x-s.x,p.y-8-s.y)<(s.type==='boulder'?16:s.type==='fireball'?13:11)){const hit=this.hurtPlayer(s.damage,s.source,false,s.pierce?{pierce:true}:{});
      if(hit&&this.state==='playing'&&s.tally&&++s.tally.hits>=KNIFE_KO){this.emit('toast',{message:'¡Cinco cuchillazos! El Capo te noqueó.',error:true});this.knockout(s.source);return false;}
      if(hit&&this.state==='playing'&&s.burn)this.burnPlayer(s.burn);
      if(hit&&this.state==='playing'&&s.type==='venom'&&Math.random()<(p.characterId==='fede'?.15:.5))this.poisonPlayer(s.poison);
@@ -588,9 +590,9 @@ class Game {
   g.time+=dt;g.tick-=dt;if(g.tick<=0){g.tick=.45;p.attackAnim=.2;this.sound.play(g.tool==='axe'?'chop':'mine');this.effect(g.x,node.y+node.h/2,g.tool==='axe'?'leaf':'spark',.35,{seed:Math.random()*99});}
   if(g.time<g.total)return;
   const def=this.nodeDef(node);node.harvested=true;node.regrow=def.regrow;if(node.type==='ore')node.solid=false;p.gather=null;
-  p.materials[def.material]=(p.materials[def.material]||0)+def.yield;this.questFlags.gathered=true;
+  const bonus=this.gatherBonus?this.gatherBonus():0;p.materials[def.material]=(p.materials[def.material]||0)+def.yield+bonus;this.questFlags.gathered=true;
   this.sound.play('crumble');this.shake(2,.15);this.effect(g.x,node.y+node.h/2,'poof',.6,{seed:Math.random()*99});
-  this.effect(p.x,p.y-30,'coin',.9,{text:'+'+def.yield+' '+Z.MATERIALS[def.material].name});
+  this.effect(p.x,p.y-30,'coin',.9,{text:'+'+(def.yield+bonus)+' '+Z.MATERIALS[def.material].name});
  }
  updateNodes(dt){
   const p=this.player;for(const o of this.world.objects){if(!o.harvested)continue;o.regrow-=dt;if(o.regrow>0)continue;
@@ -742,7 +744,7 @@ class Game {
   p.healClock=clamp(Number(source.healClock)||0,0,1);
   if(source.poison&&Number.isFinite(source.poison.damage))p.poison={time:clamp(Number(source.poison.time)||0,0,5),tick:clamp(Number(source.poison.tick)||1,.01,1),damage:clamp(source.poison.damage,0,100)};
   this.player=p;this.world=Z.createWorld();this.biome=Z.biomeAt(p.x,p.y);if(Z.collides(this.world,p.x,p.y,8)){Object.assign(p,this.world.spawn);this.biome='village';}
-  if(Z.isSafe(this.biome)){p.poison=null;p.slow=0;}this.zakFightStart=null;this.time=Number.isFinite(data.time)?clamp(data.time,0,1e9):0;this.questFlags={};
+  if(Z.isSafe(this.biome)){p.poison=null;p.slow=0;}this.zakFightStart=null;this.zakFury=false;this.time=Number.isFinite(data.time)?clamp(data.time,0,1e9):0;this.questFlags={};
   if(data.questFlags&&typeof data.questFlags==='object')for(const k of Object.keys(data.questFlags))if(/^((quest|claimed)_(bow|cave|stone|weeds|sword|shop|bestiary|level5|capo|yarara|smith|deep|deepest|vampire|golem|elemental|cerbero|altar|archmage|zak)|defeat_(thief|dog|snake|rat|bat|spider|worm|skeleton|archer|mage|armor|book|imp|gargoyle|shadow|mimic|capo|yarara|vampire|golem|cerbero|archmage|zak)|bought|crafted|gathered|elemental|altar|complete)$/.test(k))this.questFlags[k]=data.questFlags[k]===true;
   if(!this.quests().every(q=>q.done))delete this.questFlags.complete;
   // Antes el portal se apagaba al cruzarlo: si ya lo abriste, queda prendido y te devuelve lo que dejaste de nuevo en el altar.

@@ -92,7 +92,7 @@
   g.state='playing';g.addItem('water',2);g.addItem('dorado',1);g.player.selectedItem='water';await new Promise(resolve=>setTimeout(resolve,120));g.emit('tick');
   assert('El HUD muestra el objeto elegido',document.getElementById('hud-item').textContent.includes('💧'));
   document.getElementById('bag-button').click();
-  assert('La bolsa muestra los objetos y todos los amuletos',document.querySelectorAll('#modal-content .shop-item').length===2+Object.keys(Zak.AMULETS).length);
+  assert('La bolsa muestra los objetos, todos los amuletos y los cuatro compañeros',document.querySelectorAll('#modal-content .shop-item').length===2+Object.keys(Zak.AMULETS).length+Zak.PET_ORDER.length);
   clickText('Usar');assert('Usar desde la bolsa gasta uno y la bolsa sigue abierta',g.itemCount('water')===1&&!document.getElementById('modal-overlay').classList.contains('hidden'));close();
   const tito=g.world.npcs.find(n=>n.name==='Tito');g.emit('npc',{npc:tito});
   assert('Tito cuenta su pedido',(document.querySelector('.request-box')||{}).textContent?.includes('Leña para el horno'));
@@ -100,5 +100,24 @@
   const merchant=g.world.npcs.find(n=>n.shop==='merchant');g.player.coins=5000;g.emit('npc',{npc:merchant});
   document.querySelector('#modal-content [aria-label="Conseguir Segundo engarce"]').click();
   assert('El Mercader del Vacío vende el segundo engarce',g.player.amuletSlots===2&&g.player.coins===1000);close();
+
+  // v2.21: medallero, truco con las almas, nombre de los compañeros y la puerta del trono.
+  if(!document.getElementById('modal-overlay').classList.contains('hidden'))close();
+  g.state='playing';g.awardMedal('capo',true);document.getElementById('world').dispatchEvent(new KeyboardEvent('keydown',{key:'l',bubbles:true}));window.dispatchEvent(new KeyboardEvent('keyup',{key:'l'}));
+  assert('L abre el medallero con todas las medallas',document.querySelectorAll('#modal-content .medal-card').length===Zak.MEDALS.length&&document.querySelectorAll('#modal-content .medal-card.locked').length===Zak.MEDALS.length-g.player.medals.length);close();
+  g.state='playing';document.getElementById('journal-button').click();
+  assert('El diario lleva al medallero',[...document.querySelectorAll('#modal-content button')].some(b=>b.textContent.includes('Medallero')));close();
+  const soul=g.world.npcs.find(n=>n.id==='truco');g.player.coins=600;g.emit('npc',{npc:soul});
+  assert('Las almas ofrecen jugar al truco con apuestas',document.querySelectorAll('#modal-content .truco-bets button').length===Zak.TRUCO.bets.length&&document.querySelector('[aria-label="Apostar 1000 de guita"]').disabled);
+  document.querySelector('[aria-label="Apostar 100 de guita"]').click();
+  assert('La mesa de truco muestra tus cartas y el tanteador',g.truco&&g.player.coins===500&&document.querySelector('.truco-score')&&document.querySelectorAll('.truco-card').length+g.truco.match.hand.played.player.length===3);
+  close();assert('Levantarse a la mitad pide confirmación',document.getElementById('modal-title').textContent.includes('levantás'));
+  clickText('Levantarme');assert('Al levantarte perdés lo apostado',!g.truco&&g.player.coins===500);
+  g.state='playing';g.player.pets.bat={name:'Draco'};g.emit('namePet',{pet:'bat'});
+  const petInput=document.getElementById('pet-name');assert('Al domesticar se le pone nombre',petInput&&petInput.value==='Draco');
+  petInput.value='Batito';clickText('Ponerle el nombre');assert('El nombre queda guardado',g.petName('bat')==='Batito');
+  g.state='playing';g.player.throneKeys=1;g.questFlags.defeat_zak=true;g.openThroneDoor();
+  assert('Quien venció a Zak elige entre la pelea de siempre y la revancha',[...document.querySelectorAll('#modal-content button')].some(b=>b.textContent.includes('Zak furioso'))&&g.player.throneKeys===1);
+  clickText('Todavía no');
   return {passed:results.filter(r=>r.pass).length,failed:results.filter(r=>!r.pass).length,results};
 })()

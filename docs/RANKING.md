@@ -62,6 +62,17 @@ alter table public.scores add column if not exists zak_time int check (zak_time 
 
 Mientras no la agregues, el resto del ranking sigue andando (el juego reintenta sin esa columna), pero la pestaña Récord Zak muestra un aviso y solo las partidas de este dispositivo.
 
+### Revancha Zak y Medallas (v2.21)
+
+Las pestañas **Revancha Zak** y **Medallas** usan dos columnas nuevas. Corré esto una vez en **SQL Editor**:
+
+```sql
+alter table public.scores add column if not exists zak_fury_time int check (zak_fury_time between 1 and 10000000);
+alter table public.scores add column if not exists medals int check (medals between 0 and 1000);
+```
+
+Mientras no las agregues, el resto del ranking sigue andando (el juego reintenta sin esas columnas), pero esas dos pestañas muestran un aviso y solo las partidas de este dispositivo.
+
 ### Mer (v2.18)
 
 La tabla solo acepta los personajes de la lista. Para que las partidas de Mer entren al ranking, corré esto una vez en **SQL Editor**:

@@ -145,10 +145,12 @@ Object.assign(Z.Game.prototype, {
   return false;
  },
  // La puerta del trono se abre con la llave del Rey Mago; del otro lado espera Zak.
- openThroneDoor(){
+ // Quien ya venció a Zak elige: la pelea de siempre o la revancha contra Zak furioso.
+ openThroneDoor(mode){
   const p=this.player;
   if(!(p.throneKeys>0)){this.emit('toast',{message:'La puerta no se mueve. La llave la tiene el Rey Mago.',error:true});return false;}
-  p.throneKeys--;this.shake(5,.4);this.enterThrone();return true;
+  if(mode===undefined&&this.questFlags.defeat_zak){this.emit('throneChoice');return false;}
+  p.throneKeys--;this.shake(5,.4);this.enterThrone(mode==='fury');return true;
  }
 });
 })();
