@@ -119,5 +119,17 @@
   g.state='playing';g.player.throneKeys=1;g.questFlags.defeat_zak=true;g.openThroneDoor();
   assert('Quien venció a Zak elige entre la pelea de siempre y la revancha',[...document.querySelectorAll('#modal-content button')].some(b=>b.textContent.includes('Zak furioso'))&&g.player.throneKeys===1);
   clickText('Todavía no');
+
+  // v2.22: el apodo del ranking es de cada partida.
+  if(!document.getElementById('modal-overlay').classList.contains('hidden'))close();
+  g.state='playing';g.player.rankName='Primera';const firstRun=JSON.parse(JSON.stringify(g.snapshot()));
+  Zak.Ranking.setName('Prueba-mer');g.newGame('mer');g.player.rankName='Prueba-mer';g.restore(firstRun,1);
+  assert('Empezar otra partida con otro apodo no le cambia el nombre a la anterior',g.player.rankName==='Primera'&&Zak.Ranking.entryFor(g).name==='Primera');
+  delete firstRun.player.rankName;Zak.Ranking.saveLocal({...Zak.Ranking.entryFor(g),name:'Original'});localStorage.setItem('zak.throne.save.3',JSON.stringify(firstRun));
+  g.state='menu';document.getElementById('load-game').click();document.querySelectorAll('.save-slot')[2].click();
+  assert('Una partida vieja conserva el apodo con el que figuraba en el ranking',g.player.rankName==='Original');
+  document.getElementById('pause-button').click();[...document.querySelectorAll('#modal-content button')].find(b=>b.textContent.startsWith('Nombre en el ranking')).click();
+  document.getElementById('rank-name').value='Dante';clickText('Guardar el nombre');
+  assert('El apodo de la partida se cambia desde la pausa',g.player.rankName==='Dante'&&Zak.Ranking.profile().name==='Prueba-mer');close();
   return {passed:results.filter(r=>r.pass).length,failed:results.filter(r=>!r.pass).length,results};
 })()

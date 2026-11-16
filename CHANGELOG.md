@@ -6,6 +6,13 @@ Cada versión lista sus cambios agrupados por tipo:
 - **Change:** algo que ya existía y ahora funciona distinto.
 - **Fix:** un error corregido.
     
+## v2.22 — 2026-11-16
+* Fix
+    - Empezar una partida nueva con otro apodo ya no le cambia el nombre en el ranking a tus otras partidas: cada partida guarda el suyo.
+    - Las partidas de antes conservan el apodo con el que figuraban en el ranking de este dispositivo.
+* Feature
+    - **Nombre en el ranking**, en la pausa: cambia el apodo de la partida que estás jugando.
+
 ## v2.21 — 2026-11-16
 * Feature
     - **Truco a 15 en la Feria de las Almas:** Truco y Retruco, las almas de la mesa, juegan con envido, real envido, falta envido, truco, retruco, vale cuatro y al mazo (sin flor). Se apuesta guita (◉ 50 a 1000) y, si ganás, te llevás el doble.

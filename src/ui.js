@@ -187,7 +187,7 @@
   $('begin-adventure').addEventListener('click', () => {
     const name = Zak.Ranking.setName($('player-name').value); $('player-name').value = name;
     if (!name) { $('player-name').classList.add('invalid'); $('player-name').focus(); toast('Escribí tu apodo para el ranking antes de empezar.',true); return; }
-    updateSound(); autoFullscreen(); game.newGame(selected); submitScore(); });
+    updateSound(); autoFullscreen(); game.newGame(selected); game.player.rankName = name; submitScore(); });
   function saveLabel(data) {
     const p = data.player || {};
     return character(p.characterId).name + ' · Nivel ' + Math.max(1,number(p.level));
@@ -223,7 +223,7 @@
     const slot = readSlot(index);
     if (mode === 'load') {
       if (slot.state !== 'valid') return;
-      try { autoFullscreen(); game.restore(slot.data,index); hideModal(false); showPlaying(); toast('Partida de la ranura ' + index + ' cargada.'); }
+      try { autoFullscreen(); game.restore(slot.data,index); keepRankName(); hideModal(false); showPlaying(); toast('Partida de la ranura ' + index + ' cargada.'); }
       catch (error) { toast('No se pudo cargar: ' + error.message,true); }
     } else if (mode === 'export') {
       if (slot.state === 'valid') download(slot.data);
@@ -251,6 +251,25 @@
       try { const result = await Zak.Ranking.remove(runId); toast('Ranura ' + index + ' borrada' + (result.online ? ' y quitada del ranking.' : '.')); }
       catch (error) { toast('Ranura ' + index + ' borrada. No se pudo quitar del ranking online (' + error.message + '); se reintentará más tarde.',true); }
     }, () => showSlots(mode), 'Borrar partida');
+  }
+  // Partidas de antes de la v2.22: el apodo sale del ranking de este dispositivo, que todavía tiene el nombre con el que se publicó.
+  function keepRankName() {
+    const p = game.player; if (!p || p.rankName) return;
+    const known = Zak.Ranking.local().find(entry => entry.run_id === p.runId);
+    p.rankName = known ? known.name : Zak.Ranking.profile().name;
+  }
+  function showRankName() {
+    openModal('Tu nombre en el ranking', 'ESTA PARTIDA', parent => {
+      paragraph(parent,'Cada partida tiene su propio apodo. Cambiarlo acá no les cambia el nombre a tus otras partidas.');
+      const label = el('label','cloud-field'), input = el('input'); label.append(el('span','','Apodo (hasta 16 letras)')); input.maxLength = 16; input.value = game.player.rankName || Zak.Ranking.profile().name; input.id = 'rank-name'; input.spellcheck = false; label.append(input); parent.append(label);
+      const save = () => {
+        const name = String(input.value).replace(/[\u0000-\u001f<>]/g,'').replace(/\s+/g,' ').trim().slice(0,16);
+        if (!name) { toast('Escribí un apodo.',true); return; }
+        game.player.rankName = name; submitScore(); toast('Esta partida ahora figura como ' + name + '. Guardala para que no se pierda.'); showPause();
+      };
+      input.addEventListener('keydown',event => { if (event.key === 'Enter') { event.preventDefault(); save(); } });
+      const actions = el('div','modal-actions'); actions.append(button('Guardar el nombre',save,'button primary')); parent.append(actions);
+    }, showPause);
   }
   function showSlots(mode = 'load', imported = null) {
     const titles = {load:'Cargar juego',save:'Guardar partida',import:'Importar partida',export:'Exportar un guardado'};
@@ -405,7 +424,7 @@
     openModal('Un respiro en el camino', 'PARTIDA EN PAUSA', parent => {
       if (game.player) paragraph(parent,saveLabel({player:game.player}) + ' · ' + (game.currentSlot ? 'Ranura ' + game.currentSlot : 'Todavía sin guardar'));
       const actions = el('div','modal-actions');
-      actions.append(button('Continuar la aventura', () => hideModal(), 'button primary'), button('Guardar partida', () => showSlots('save')), button('Ranking de amigos', () => showRanking('level', showPause)), ...(Zak.Cloud.available() ? [button('Cuenta y nube',showCloud)] : []), button('Opciones y controles',showSettings), button('Volver al inicio',requestMenu));
+      actions.append(button('Continuar la aventura', () => hideModal(), 'button primary'), button('Guardar partida', () => showSlots('save')), button('Ranking de amigos', () => showRanking('level', showPause)), button('Nombre en el ranking: ' + (game.player && game.player.rankName || Zak.Ranking.profile().name || '—'), showRankName), ...(Zak.Cloud.available() ? [button('Cuenta y nube',showCloud)] : []), button('Opciones y controles',showSettings), button('Volver al inicio',requestMenu));
       parent.append(actions); paragraph(parent,'La partida se guarda manualmente. Cerrá la pausa para seguir explorando.','hint');
     });
   }

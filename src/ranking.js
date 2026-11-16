@@ -58,7 +58,7 @@ Z.Ranking = {
   entryFor(game) {
     const p = game.player; if (!ID_PATTERN.test(String(p.runId || ''))) p.runId = uid();
     const profile = this.profile();
-    return normalize({ run_id: p.runId, player_id: profile.id, name: profile.name, character: p.characterId, level: p.level, kills: p.kills, bosses: p.bossKills, play_time: p.playTime, zak_time: p.zakBest > 0 ? Math.round(p.zakBest) : null, zak_fury_time: p.zakFuryBest > 0 ? Math.round(p.zakFuryBest) : null, medals: Array.isArray(p.medals) ? p.medals.length : 0, updated_at: new Date().toISOString() });
+    return normalize({ run_id: p.runId, player_id: profile.id, name: cleanName(p.rankName) || profile.name, character: p.characterId, level: p.level, kills: p.kills, bosses: p.bossKills, play_time: p.playTime, zak_time: p.zakBest > 0 ? Math.round(p.zakBest) : null, zak_fury_time: p.zakFuryBest > 0 ? Math.round(p.zakFuryBest) : null, medals: Array.isArray(p.medals) ? p.medals.length : 0, updated_at: new Date().toISOString() });
   },
   local() { const list = readJson(LOCAL_KEY, []); return Array.isArray(list) ? list.map(normalize).filter(Boolean) : []; },
   saveLocal(entry) { const list = this.local().filter(e => e.run_id !== entry.run_id); list.push(entry); writeJson(LOCAL_KEY, list.slice(-200)); },

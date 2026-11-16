@@ -50,6 +50,10 @@
     await Z.Ranking.submit(g); const posts = sent.filter(r => r.options.method === 'POST');
     assert('Sin la columna en Supabase reintenta sin zak_time', posts.length === 2 && !posts[1].options.body.includes('zak_time'));
     window.fetch = okFetch; g.player.zakBest = 0;
+    // v2.22: cada partida publica con su propio apodo.
+    const mine = g.player.rankName; g.player.rankName = 'Otro apodo'; sent.length = 0; await Z.Ranking.submit(g);
+    assert('Cada partida publica con su propio apodo', JSON.parse(sent.find(r => r.options.method === 'POST').options.body).name === 'Otro apodo');
+    g.player.rankName = mine;
     // v2.21: revancha contra Zak furioso y medallas, con su propia columna.
     g.player.zakFuryBest = 130.2; g.player.medals = ['capo', 'golem']; sent.length = 0; await Z.Ranking.submit(g);
     const v221 = JSON.parse(sent.find(r => r.options.method === 'POST').options.body);

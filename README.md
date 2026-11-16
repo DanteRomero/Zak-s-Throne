@@ -2,7 +2,7 @@
 
 Una aventura de acción y exploración en pixel art, vista desde arriba. Elegí a uno de siete amigos, preparate en la aldea y salí a explorar la cueva y los Yuyos.
 
-Versión actual: **v2.21**. Los cambios de cada versión están en [CHANGELOG.md](CHANGELOG.md).
+Versión actual: **v2.22**. Los cambios de cada versión están en [CHANGELOG.md](CHANGELOG.md).
 
 ## Jugar
 
@@ -51,7 +51,7 @@ El juego se adapta al tamaño de pantalla; en teléfonos conviene usar orientaci
 
 ## Ranking de amigos
 
-Desde el menú principal o la pausa, **Ranking de amigos** muestra nivel, enemigos derrotados y jefes vencidos de cada partida, con pestañas para ordenar por cada uno. La pestaña **Récord Zak** muestra a quienes vencieron a Zak, del más rápido al más lento: cuenta el tiempo de la pelea, desde que termina su presentación hasta vaciarle la última vida, y guarda el mejor de cada partida. **Revancha Zak** hace lo mismo con la revancha contra Zak furioso, y **Medallas** ordena por la cantidad de medallas. El nombre se elige al seleccionar el personaje.
+Desde el menú principal o la pausa, **Ranking de amigos** muestra nivel, enemigos derrotados y jefes vencidos de cada partida, con pestañas para ordenar por cada uno. La pestaña **Récord Zak** muestra a quienes vencieron a Zak, del más rápido al más lento: cuenta el tiempo de la pelea, desde que termina su presentación hasta vaciarle la última vida, y guarda el mejor de cada partida. **Revancha Zak** hace lo mismo con la revancha contra Zak furioso, y **Medallas** ordena por la cantidad de medallas. El apodo se elige al seleccionar el personaje y es de esa partida: empezar otra con otro apodo no le cambia el nombre a las demás. Se cambia desde la pausa, en **Nombre en el ranking**.
 
 Sin configuración, el ranking muestra las partidas de cada dispositivo. Para compartirlo entre todos los dispositivos, seguí [docs/RANKING.md](docs/RANKING.md): se conecta un proyecto gratuito de Supabase pegando dos valores en `src/config.js`.
 
@@ -508,7 +508,7 @@ node tests/rules.test.js
 
 Abrí `tests/index.html` para ejecutar las 46 pruebas de reglas y las 158 pruebas de integración del motor en el navegador. El resultado detalla cada caso aprobado o fallido.
 
-También se incluyen 56 pruebas de interfaz y de pixel art, 22 del ranking (con un servidor simulado), 36 de controles táctiles y 42 de la nube (también con un servidor simulado) con Chrome y Python 3, sin librerías adicionales. El verificador abre un perfil temporal aislado; nunca usa tus guardados personales:
+También se incluyen 59 pruebas de interfaz y de pixel art, 23 del ranking (con un servidor simulado), 36 de controles táctiles y 42 de la nube (también con un servidor simulado) con Chrome y Python 3, sin librerías adicionales. El verificador abre un perfil temporal aislado; nunca usa tus guardados personales:
 
 ```sh
 python tests/browser_check.py tests/index.html --script tests/engine.test.js

@@ -737,6 +737,8 @@ class Game {
   if(source.altar)for(const k of Z.ALTAR_OFFERINGS)p.altar[k]=source.altar[k]===true;p.portal=source.portal===true;
   for(const k of ['axe','pickaxe'])p[k]=Math.floor(clamp(Number(source[k])||0,0,5));p.armorTier=Math.floor(clamp(Number(source.armorTier)||0,0,Z.MAX_ARMOR));p.torch=source.torch===true;
   if(source.weaponLevels)for(const w of Object.keys(p.weaponLevels))p.weaponLevels[w]=Math.floor(clamp(Number(source.weaponLevels[w])||1,1,Z.MAX_WEAPON_LEVEL));if(typeof source.runId==='string'&&/^[\w-]{6,64}$/.test(source.runId))p.runId=source.runId;
+  // Cada partida tiene su apodo en el ranking: empezar otra con otro nombre no le cambia el nombre a esta.
+  if(typeof source.rankName==='string')p.rankName=source.rankName.replace(/[\u0000-\u001f<>]/g,'').replace(/\s+/g,' ').trim().slice(0,16);
   p.weapon=source.weapon;p.weapons=[...new Set(source.weapons)];p.stoneAmmo=source.stoneAmmo===0?0:1;
   p.discovered=Array.isArray(source.discovered)?source.discovered.filter(z=>Object.hasOwn(names,z)):['village'];p.dir=Object.hasOwn(dirs,source.dir)?source.dir:'down';p.walk=0;p.moving=false;p.attackAnim=0;
   if(source.buffs)for(const [key,limit] of Object.entries(Z.BUFF_LIMITS))p.buffs[key]=clamp(Number(source.buffs[key])||0,0,limit);
