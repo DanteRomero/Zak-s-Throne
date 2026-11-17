@@ -268,7 +268,10 @@ Z.drawWeather = function (c, game, ox, oy, W, H, time) {
  // Susto: la pantalla se cierra en negro, late y se tiñe de rojo un instante.
  if (game.scare > 0) {
   const k = Math.min(1, game.scare / 1.4), beat = .5 + Math.abs(Math.sin(time * 18)) * .5, px = game.player.x - ox, py = game.player.y - oy - 14;
-  Px.shade(c, px, py, W, H, [[40 + (1 - k) * 80, 0], [120 + (1 - k) * 140, .92 * k * beat], [Math.max(W, H) * 1.5, .92 * k * beat]], '#050208');
+  // La forma se cierra en 8 pasos y la intensidad va por `alpha`: así cada forma se calcula una sola vez (v2.34).
+  // Antes cambiaba en cada cuadro y armaba un círculo gigante nuevo 60 veces por segundo: el juego se trababa.
+  const q = Math.round(k * 8) / 8, r0 = Math.round(40 + (1 - q) * 80), r1 = Math.round(120 + (1 - q) * 140);
+  Px.shade(c, px, py, W, H, [[r0, 0], [r1, .92], [r1 + 24, .92]], '#050208', k * beat);
   c.fillStyle = 'rgba(120,10,20,' + (.18 * k * beat) + ')'; c.fillRect(0, 0, W, H);
  }
  c.restore();
@@ -276,7 +279,8 @@ Z.drawWeather = function (c, game, ox, oy, W, H, time) {
 function drawFog(c, game, ox, oy, W, H, time, fog) {
  const {hash} = D(), p = game.player, px = p.x - ox, py = p.y - oy - 12, grave = game.biome === 'altar';
  // Cerca tuyo se ve; más allá, todo blanco grisáceo.
- Px.shade(c, px, py, W, H, [[FOG.clear, 0], [FOG.edge, .82 * fog], [FOG.edge * 1.8, .94 * fog], [Math.max(W, H) * 1.5, .94 * fog]], grave ? '#8d8a9e' : '#a9b2b6');
+ // Forma fija y la intensidad por `alpha`: mientras la niebla aparece o se va no se recalcula nada (v2.34).
+ Px.shade(c, px, py, W, H, [[FOG.clear, 0], [FOG.edge, .82], [Math.round(FOG.edge * 1.8), .94]], grave ? '#8d8a9e' : '#a9b2b6', fog);
  // Bancos de niebla anclados al mundo: se mecen despacio en su lugar.
  D().ambientCells(ox, oy, W, H, (bx, by, cx, cy) => {
   if (hash(cx, cy, 95) > .7) return; const S = D().AMBIENT_CELL, h = hash(cx, cy, 96), fx = bx + hash(cx, cy, 97) * S + Math.sin(time * .06 + h * 9) * 60 - ox, fy = by + hash(cx, cy, 98) * S - oy;

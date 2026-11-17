@@ -6,6 +6,11 @@ Cada versión lista sus cambios agrupados por tipo:
 - **Change:** algo que ya existía y ahora funciona distinto.
 - **Fix:** un error corregido.
 
+## v2.34 — 2026-11-17
+* Fix
+    - **El juego se trababa cuando salía un esqueleto entre la niebla:** el oscurecimiento del susto armaba en cada cuadro un círculo gigante nuevo y no lo tiraba. Ahora cada forma se calcula una sola vez. Pasaba lo mismo, más leve, mientras la niebla aparecía o se iba.
+    - **Las sombras de pantalla tienen un límite de memoria:** el juego guarda como mucho 24. Si alguna vez hiciera falta una nueva en cada cuadro, se tiran las más viejas en vez de llenar la memoria.
+
 ## v2.33 — 2026-11-17
 * Fix
     - **Carteles de los corrales de La guardería:** el nombre se veía borroso y corrido hacia abajo. Ahora el cartel se hace a la medida del nombre, con la letra normal, centrada y sin sombra. Si el nombre es muy largo, usa la letra chiquita y se recorta para no salirse.

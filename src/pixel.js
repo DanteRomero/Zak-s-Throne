@@ -168,10 +168,15 @@
     const previous = c.globalAlpha; c.globalAlpha = previous * alpha; c.drawImage(sprite, Math.round(x) - r, Math.round(y) - r); c.globalAlpha = previous;
   };
   // Oscuridad o tinte alrededor de un punto. stops: [[radio,alfa],...] con radios crecientes.
+  // Las sombras se guardan para no recalcularlas; como son grandes, se guardan como mucho SHADE_KEEP
+  // (si alguien pidiera una forma nueva en cada cuadro, se van tirando las más viejas en vez de llenar la memoria).
+  const SHADE_KEEP = 24, shades = [];
   Px.shade = (c, x, y, W, H, stops, color, alpha = 1) => {
-    const R = stops[stops.length - 1][0], key = "s" + color + stops.join("/");
+    if (alpha <= 0) return;
+    const R = Math.max(1, Math.round(stops[stops.length - 1][0])), key = "s" + color + stops.join("/");
     let sprite = cache.get(key);
     if (!sprite) {
+      shades.push(key); while (shades.length > SHADE_KEEP) cache.delete(shades.shift());
       sprite = layer(R * 2, R * 2); const g = sprite.getContext("2d"), image = g.createImageData(R * 2, R * 2), [cr, cg, cb] = rgbOf(color), levels = 12;
       for (let py = 0; py < R * 2; py++) for (let px = 0; px < R * 2; px++) {
         const d = Math.hypot(px + .5 - R, py + .5 - R); let a = stops[stops.length - 1][1];

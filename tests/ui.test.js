@@ -204,5 +204,11 @@
   if(!document.getElementById('modal-overlay').classList.contains('hidden'))close();
   g.state='playing';Zak.UI.showPause();
   assert('La pausa muestra al personaje y botones con íconos',!!document.querySelector('.pause-card canvas')&&document.querySelectorAll('#modal-content .button[data-icon]').length>=5&&[...document.querySelectorAll('#modal-content button')].some(b=>b.textContent==='Guardar partida'));close();
+  {// v2.34: el susto del esqueleto en la niebla no traba el juego: dibujar 40 cuadros con el susto y la niebla cambiando es rápido.
+   if(!document.getElementById('modal-overlay').classList.contains('hidden'))close();
+   const p=g.player,saved={x:p.x,y:p.y,biome:g.biome,fog:g.fog,scare:g.scare};Object.assign(p,{x:-300,y:760});g.biome='altar';g.state='playing';g.renderer.initialized=false;
+   const start=performance.now();for(let k=0;k<40;k++){g.scare=1.4-k*.035;g.fog=k/40;g.renderer.draw(g,g.time+k/60);}const took=performance.now()-start;
+   Object.assign(p,{x:saved.x,y:saved.y});Object.assign(g,{biome:saved.biome,fog:saved.fog,scare:saved.scare});g.renderer.initialized=false;
+   assert('El susto en la niebla no traba el juego ('+Math.round(took)+' ms para 40 cuadros)',took<2500);}
   return {passed:results.filter(r=>r.pass).length,failed:results.filter(r=>!r.pass).length,results};
 })()
