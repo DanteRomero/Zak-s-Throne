@@ -6,6 +6,16 @@ Cada versión lista sus cambios agrupados por tipo:
 - **Change:** algo que ya existía y ahora funciona distinto.
 - **Fix:** un error corregido.
     
+## v2.25 — 2026-11-17
+* Feature
+    - **Niveles de los compañeros:** suben hasta el nivel 10 con los enemigos que vencés mientras te acompañan. El daño casi no crece (+13,5% al 10): lo que mejora son sus efectos, que duran más y salen más seguido.
+    - **Habilidades del nivel 5**, que no hacen daño (o casi): el perro **aúlla** y asusta a los enemigos comunes 3 s; el murciélago te **cura con lo que desangra**; la serpiente da un **abrazo** que inmoviliza; el Golemsín tira una **avalancha** que aturde a los de alrededor.
+    - **Doña Herminia entrena** a los compañeros que esperan en la guardería: medio nivel por ◉ 150 por su nivel.
+    - Al nivel 10 brillan con destellos dorados y dan la medalla **«Uña y carne»**.
+* Change
+    - La bolsa y la guardería muestran el nivel, la experiencia y la habilidad de cada compañero.
+    - Las partidas guardadas cargan igual: los compañeros que ya tenías arrancan en el nivel 1.
+
 ## v2.24 — 2026-11-17
 * Feature
     - **Tormenta eléctrica:** caen rayos en toda la superficie. Antes de cada uno titila una marca en el piso; si te pega, te saca un tercio de la vida y te paraliza 2,5 s. En Los Yuyos, donde cae un rayo se prende fuego el pasto y, si lo pisás, te quemás.

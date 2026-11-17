@@ -2,7 +2,7 @@
 
 Una aventura de acción y exploración en pixel art, vista desde arriba. Elegí a uno de siete amigos, preparate en la aldea y salí a explorar la cueva y los Yuyos.
 
-Versión actual: **v2.24**. Los cambios de cada versión están en [CHANGELOG.md](CHANGELOG.md).
+Versión actual: **v2.25**. Los cambios de cada versión están en [CHANGELOG.md](CHANGELOG.md).
 
 ## Jugar
 
@@ -252,9 +252,24 @@ Su daño es una parte del de tu golpe con el arma que tenés en la mano. De meno
 
 **La guardería** queda al noreste de la plaza, sobre la calle que sube al norte. Ahí esperan los compañeros que no llevás: acercate a uno y apretá E para salir con él (el que llevabas se queda), cambiarle el nombre o dejar al tuyo y seguir solo.
 
+### Niveles de los compañeros
+
+Los compañeros **suben de nivel** (hasta el **10**) con los enemigos que vencés mientras te acompañan: si le pegaron, se llevan toda la experiencia de ese enemigo; si no, una parte. Están para ayudar un poco, no para pelear por vos: **el daño casi no crece** (+1,5% por nivel, +13,5% al 10). Lo que mejora son sus **efectos**: cada nivel duran un 4% más y salen un 3% más seguido.
+
+Al **nivel 5** aprenden una habilidad, que no hace daño (o casi):
+
+| Compañero | Habilidad | Qué hace |
+| --- | --- | --- |
+| 🐕 Perro | **Aullido** | Los enemigos comunes de alrededor se asustan: huyen y no atacan durante 3 s. A los jefes no les hace nada. |
+| 🦇 Murciélago | **Sangre compartida** | Lo que desangra te cura: cada segundo del desangrado te devuelve un 30% de ese daño. |
+| 🐍 Serpiente | **Abrazo** | Se enrosca a un enemigo y lo deja quieto 2,5 s (a los jefes, 1 s; a Zak, nada). |
+| 🪨 Golemsín | **Avalancha** | Caen piedras alrededor de un enemigo: los de ahí quedan aturdidos 1,5 s (los jefes, 0,6 s; Zak, nada). Pegan poquito. |
+
+Al **nivel 10** brillan con unos destellos dorados y dan una medalla. En la guardería, **Doña Herminia entrena** a los que esperan ahí: cada entrenamiento les da medio nivel y cuesta ◉ 150 por su nivel. Al que llevás con vos lo entrenás peleando. El nivel se ve en la bolsa y en la guardería.
+
 ## Medallas
 
-Cada logro tiene su **medalla**, con un dibujo que lo cuenta: una noche roja para la luna roja, un gólem roto para el Gólem Minero, una corona partida para la revancha contra Zak, un perro que te lame, y así. Hay 32. Se ven con **L** o desde el diario (J). Las que te faltan muestran **solo el nombre**: cómo se consiguen es un secreto, así que hay que probar cosas. Cuando ganás una, sube sobre tu cabeza.
+Cada logro tiene su **medalla**, con un dibujo que lo cuenta: una noche roja para la luna roja, un gólem roto para el Gólem Minero, una corona partida para la revancha contra Zak, un perro que te lame, y así. Hay 33. Se ven con **L** o desde el diario (J). Las que te faltan muestran **solo el nombre**: cómo se consiguen es un secreto, así que hay que probar cosas. Cuando ganás una, sube sobre tu cabeza.
 
 Las partidas de antes reciben solas, al cargarlas, las medallas que ya les correspondían (los jefes vencidos, el nivel, la Espada Elemental…). La cantidad de medallas tiene su propia pestaña en el ranking.
 
@@ -517,6 +532,7 @@ Implementado con **HTML, CSS y JavaScript**, sin paquetes externos. El mundo se 
 - `src/bosses.js`: el Chupasangre, el Gólem Minero, Cerbero y Zak; altar de ofrendas, portales e invocaciones.
 - `src/weather.js`: el clima (lluvia, tormenta eléctrica y niebla), los rayos, el pasto en llamas y los esqueletos de la niebla.
 - `src/companions.js` y `src/companions-art.js`: los compañeros, La guardería y Doña Herminia, y cómo se dibujan.
+- `src/companion-levels.js`: los niveles de los compañeros, sus habilidades del nivel 5 y el entrenamiento.
 - `src/truco.js`: el truco a 15 con las almas de la Feria, las apuestas y las cartas españolas.
 - `src/medals.js`: las medallas, sus dibujos y cuándo se ganan.
 - `src/wanderer.js`: el vendedor ambulante, cuándo y dónde aparece y qué vende.
@@ -535,7 +551,7 @@ Si ya tenés Node instalado:
 node tests/rules.test.js
 ```
 
-Abrí `tests/index.html` para ejecutar las 46 pruebas de reglas y las 167 pruebas de integración del motor en el navegador. El resultado detalla cada caso aprobado o fallido.
+Abrí `tests/index.html` para ejecutar las 46 pruebas de reglas y las 171 pruebas de integración del motor en el navegador. El resultado detalla cada caso aprobado o fallido.
 
 También se incluyen 73 pruebas de interfaz y de pixel art, 31 del ranking (con un servidor simulado), 36 de controles táctiles y 42 de la nube (también con un servidor simulado) con Chrome y Python 3, sin librerías adicionales. El verificador abre un perfil temporal aislado; nunca usa tus guardados personales:
 

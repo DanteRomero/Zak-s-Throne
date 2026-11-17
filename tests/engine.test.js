@@ -1295,6 +1295,45 @@
       const p = fixture('gero'); const save = JSON.parse(JSON.stringify(game.snapshot())); for (const k of ['weekly', 'bestiary', 'moonKills']) delete save.player[k]; save.player.medals = ['struck', 'nope'];
       game.restore(save, 1); equal(JSON.stringify(game.player.medals), '["struck"]'); equal(JSON.stringify(game.player.bestiary), '{}');
     });
+    // v2.25: niveles de los compañeros.
+    test('v2.25: companions level up with the enemies you beat, up to 10; old saves start at level 1', () => {
+      const p = fixture('gero'); const pet = keepPet('dog'); Object.assign(pet, {x: p.x + 20, y: p.y});
+      equal(game.petLevel('dog'), 1); const rat = enemy('rat', p.x + 30); game.hitEnemy(rat, 1e7, true);
+      equal(game.petXp('dog'), Math.round(rat.stats.xp * Z.PET_LEVELS.assist), 'a part if it did not bite');
+      const thief = enemy('thief', p.x + 30); game.hitEnemy(thief, 1, true, false, 'pet'); game.hitEnemy(thief, 1e7, true);
+      equal(game.petXp('dog'), Math.round(rat.stats.xp * Z.PET_LEVELS.assist) + thief.stats.xp, 'all of it if it did');
+      game.petGainXp('dog', 400); equal(game.petLevel('dog'), 2, '400 for level 2');
+      game.petGainXp('dog', 1e7); equal(game.petLevel('dog'), 10); equal(game.petXp('dog'), 0); ok(game.hasMedal('bestfriend'));
+      const save = JSON.parse(JSON.stringify(game.snapshot())); save.player.pets.dog = {name: 'Toby'}; save.player.pets.bat = {name: 'Dra', level: 99, xp: -5}; save.player.pet = 'dog';
+      game.restore(save, 1); equal(game.petLevel('dog'), 1, 'old save: level 1'); equal(game.petXp('dog'), 0); equal(game.petLevel('bat'), 10, 'clamped'); equal(game.petXp('bat'), 0);
+    });
+    test('v2.25: leveling barely raises damage; effects last longer and come sooner', () => {
+      const p = fixture('gero'); keepPet('dog'); const low = game.petDamage('dog'); p.pets.dog.level = 10; const high = game.petDamage('dog');
+      near(high / low, 1 + 9 * Z.PET_LEVELS.damage, 'only +13,5% at level 10'); ok(high / low < 1.2);
+      const pet = game.ensurePet(); const thief = enemy('thief', p.x + 30); pet.special = 0; game.petStrike(pet, thief);
+      near(thief.stun, Z.PET_DOG.stun * (1 + 9 * Z.PET_LEVELS.effect), 'longer stun'); near(pet.special, Z.PETS.dog.special * (1 - 9 * Z.PET_LEVELS.cooldown), 'sooner');
+      keepPet('snake'); p.pets.snake.level = 10; const snake = game.ensurePet(); snake.special = 0; Math.random = () => .99; const t2 = enemy('thief', p.x + 30); game.petStrike(snake, t2); near(t2.venom.time, Z.PET_SNAKE.venom * (1 + 9 * Z.PET_LEVELS.effect));
+    });
+    test('v2.25: level 5 skills help without hitting hard: howl, shared blood, hug and avalanche', () => {
+      const p = fixture('gero'); keepPet('dog'); p.pets.dog.level = 5; let pet = game.ensurePet(); Object.assign(pet, {x: p.x + 10, y: p.y});
+      const a = enemy('thief', p.x + 40), b = enemy('skeleton', p.x - 40), boss = enemy('capo', p.x + 60, p.y + 30); [a, b, boss].forEach(e => { e.alert = true; });
+      const hp = a.hp; ok(game.petSkill(pet), 'howls'); ok(a.feared > 2.5 && a.charm > 2.5 && b.feared > 2.5, 'the common ones get scared'); ok(!(boss.feared > 0), 'bosses do not'); equal(a.hp, hp, 'no damage');
+      p.pets.dog.level = 4; a.feared = 0; ok(!game.petSkill(pet), 'not before level 5');
+      game.enemies = []; keepPet('snake'); p.pets.snake.level = 5; pet = game.ensurePet(); Object.assign(pet, {x: p.x + 10, y: p.y});
+      const c = enemy('thief', p.x + 30); c.alert = true; const chp = c.hp; ok(game.petSkill(pet)); near(c.stun, Z.PET_LEVELS.coil.time * (1 + 4 * Z.PET_LEVELS.effect)); equal(c.hp, chp, 'a hug does not hurt');
+      game.enemies = []; const cap = enemy('capo', p.x + 30); cap.alert = true; game.petSkill(pet); near(cap.stun, Z.PET_LEVELS.coil.bossTime * (1 + 4 * Z.PET_LEVELS.effect), 'bosses 1 s');
+      game.enemies = []; const zak = enemy('zak', p.x + 30); zak.alert = true; ok(!game.petSkill(pet) && !(zak.stun > 0), 'Zak, nothing');
+      game.enemies = []; keepPet('golem'); p.pets.golem.level = 5; pet = game.ensurePet(); const d = enemy('thief', p.x + 60), e2 = enemy('thief', p.x + 80); d.alert = true; const dhp = d.hp;
+      ok(game.petSkill(pet)); ok(d.stun > 1.4 && e2.stun > 1.4, 'avalanche stuns the group'); ok(dhp - d.hp <= game.petDamage('golem') * .31, 'and hits only a little');
+      game.enemies = []; keepPet('bat'); p.pets.bat.level = 5; pet = game.ensurePet(); pet.special = 0; const v = enemy('thief', p.x + 20); game.petStrike(pet, v); ok(v.bleeding && v.bleeding.leech, 'shared blood');
+      p.hp = 10; const tick = v.bleeding.damage; v.bleeding.tick = .01; game.updateEnemyAilments(.02); near(p.hp, 10 + tick * Z.PET_LEVELS.leech, 'the bleed heals you');
+    });
+    test('v2.25: Doña Herminia trains the companions waiting in the kennel for guita', () => {
+      const p = fixture('gero'); keepPet('dog'); p.pets.bat = {name: 'Dra', level: 3, xp: 0}; p.coins = 10000;
+      equal(game.trainPet('dog').ok, false, 'not the one you take'); const price = Z.PET_LEVELS.train.price(3);
+      ok(game.trainPet('bat').ok); equal(p.coins, 10000 - price); equal(game.petXp('bat'), Z.PET_LEVELS.xp(3) / 2, 'half a level'); ok(game.trainPet('bat').ok); equal(game.petLevel('bat'), 4);
+      p.coins = 0; equal(game.trainPet('bat').ok, false, 'needs guita');
+    });
     test('v2.21: medals arrive for what you already did, for events and stay in the save', () => {
       const p = fixture('gero', true), toasts = []; game.onEvent = (t, d) => { if (t === 'toast') toasts.push(d.message); };
       game.questFlags.defeat_golem = true; game.questFlags.defeat_capo = true; const save = JSON.parse(JSON.stringify(game.snapshot())); delete save.player.medals;

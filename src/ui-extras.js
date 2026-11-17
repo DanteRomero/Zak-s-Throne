@@ -155,9 +155,17 @@ function showMedals(back = null) {
 }
 
 /* ---------- Compañeros ---------- */
+// Nivel, experiencia y la habilidad del nivel 5.
+function petLevelInfo(body, id) {
+ const L = Zak.PET_LEVELS; if (!L || !game.ownsPet(id)) return;
+ const lv = game.petLevel(id), skill = Zak.PET_SKILLS[id], bar = el('div', 'pet-xp'), fill = el('i');
+ fill.style.width = (lv >= L.max ? 100 : Math.round(100 * game.petXp(id) / L.xp(lv))) + '%'; bar.append(fill);
+ body.append(el('small', 'pet-level', 'Nivel ' + lv + (lv >= L.max ? ' (máximo)' : ' · ' + Math.floor(game.petXp(id)) + '/' + L.xp(lv) + ' EXP')), bar);
+ body.append(el('small', 'pet-skill' + (lv >= L.skillAt ? '' : ' locked'), (lv >= L.skillAt ? '✦ ' : '🔒 Nivel ' + L.skillAt + ': ') + skill.name + '. ' + skill.detail));
+}
 function petCard(parent, id) {
  const card = el('div', 'pet-card'), c = canvasOf(90, 102, 'pet-portrait'); Zak.drawPetPortrait(c, id);
- const body = el('div'); body.append(el('strong', '', game.petName(id) + ' · ' + Zak.PETS[id].species), el('small', '', Zak.PETS[id].detail));
+ const body = el('div'); body.append(el('strong', '', game.petName(id) + ' · ' + Zak.PETS[id].species), el('small', '', Zak.PETS[id].detail)); petLevelInfo(body, id);
  card.append(c, body); parent.append(card);
 }
 function showNamePet(id, back = null) {
@@ -180,6 +188,7 @@ function showKennel(id) {
   paragraph(parent, p.pet ? 'Ahora te acompaña ' + game.petName(p.pet) + '. Si salís con ' + game.petName(id) + ', ' + game.petName(p.pet) + ' se queda acá.' : 'Ahora no te acompaña nadie.', 'hint');
   const go = button('Salir con ' + game.petName(id), () => { const r = game.equipPet(id); toast(r.message); hideModal(); updateHud(true); }, 'button primary');
   const rename = button('Cambiarle el nombre', () => showNamePet(id, () => showKennel(id)));
+  if (p.pet !== id && game.petLevel(id) < Zak.PET_LEVELS.max) { const price = Zak.PET_LEVELS.train.price(game.petLevel(id)), train = button('Que Doña Herminia lo entrene · ◉ ' + price, () => { const r = game.trainPet(id); updateHud(true); toast(r.message, !r.ok); showKennel(id); }); train.disabled = p.coins < price; parent.append(train); paragraph(parent, 'Cada entrenamiento le da medio nivel. Al que llevás con vos lo entrenás peleando.', 'hint'); }
   const extra = p.pet ? [button('Dejar a ' + game.petName(p.pet) + ' acá y salir sin compañero', () => { const r = game.equipPet(null); toast(r.message); hideModal(); updateHud(true); })] : [];
   actions(parent, go, rename, ...extra, button('Listo', () => hideModal()));
  });
@@ -225,7 +234,7 @@ function bagSection(parent) {
  parent.append(el('h3', 'smith-heading', 'Compañeros'));
  Zak.PET_ORDER.forEach(id => {
   const has = game.ownsPet(id), row = el('div', 'shop-item' + (has ? '' : ' sold-out')), body = el('div');
-  body.append(el('strong', '', Zak.PETS[id].icon + ' ' + (has ? game.petName(id) + ' · ' : '') + Zak.PETS[id].species + (p.pet === id ? ' · te acompaña' : has ? ' · en La guardería' : '')), el('small', '', has ? Zak.PETS[id].detail : HOW[id]));
+  body.append(el('strong', '', Zak.PETS[id].icon + ' ' + (has ? game.petName(id) + ' · ' : '') + Zak.PETS[id].species + (p.pet === id ? ' · te acompaña' : has ? ' · en La guardería' : '')), el('small', '', has ? Zak.PETS[id].detail : HOW[id])); if (has) petLevelInfo(body, id);
   row.append(body);
   if (has) row.append(button('Nombre', () => showNamePet(id, () => UI.showBag()), 'shop-buy'));
   parent.append(row);

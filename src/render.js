@@ -1807,7 +1807,7 @@
       const by=y-top+3,share=Math.max(0,e.hp/e.maxHp);
       rect(c,x-11,by-1,22,5,"#1b2321");rect(c,x-10,by,20,3,"#3a2a28");rect(c,x-10,by,Math.max(1,20*share),3,share>.5?"#a8c46a":share>.25?"#e0b04e":"#dd6b58");rect(c,x-10,by,Math.max(1,20*share),1,"#ffffff44");
     }
-    if(e.charm>0) heart(c,x,y-28-Math.round(Math.abs(Math.sin(time*4))*2), "#efb0aa");
+    if(e.charm>0&&!(e.feared>0)) heart(c,x,y-28-Math.round(Math.abs(Math.sin(time*4))*2), "#efb0aa");
     if(e.stun>0){
       pixelText(c,"♪",x+Math.sin(time*4)*5,y-28,"#e2c578",10);
       pixelText(c,"♫",x-6,y-23,"#d5b8df",9);
