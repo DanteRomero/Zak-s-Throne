@@ -6,6 +6,16 @@ Cada versión lista sus cambios agrupados por tipo:
 - **Change:** algo que ya existía y ahora funciona distinto.
 - **Fix:** un error corregido.
     
+## v2.26 — 2026-11-17
+* Feature
+    - **Ficha en dos páginas:** «Tu personaje» y «Tu compañero». La del personaje tiene su retrato en un recuadro; la del compañero, su retrato, su nivel, sus números (daño, cada cuánto pega y saca su especial, cuánto le duran los efectos), su habilidad y un campo para cambiarle el nombre. Los que todavía no tenés se ven como silueta, con la pista de cómo se consiguen.
+    - **Misiones en el diario:** un bloque nuevo, al lado del medallero y el bestiario, con los pedidos de los vecinos en curso y cumplidos. Avisa cuando hay alguno listo para entregar.
+* Change
+    - **Ficha más linda y solo con lo del personaje:** estadísticas con barras y botón para mejorar, cómo peleás ahora, y la habilidad, ventaja y desventaja. Ya no muestra la guita, los objetos, los materiales ni las reliquias.
+    - **Bolsa más linda:** objetos y amuletos en tarjetas, y casillas para armas, equipo y herramientas, materiales y reliquias (llaves del trono y ofrendas). No muestra la guita, ni los pedidos (están en el diario) ni los compañeros (están en la ficha).
+    - **Diario más lindo:** arriba, tus enemigos y jefes vencidos y tu récord contra Zak; después, los bloques de medallero, bestiario y misiones; abajo, el desafío semanal y los objetivos. La lista de enemigos se fue: está completa en el bestiario.
+    - **Sin mapa:** se sacaron el botón y la tecla M.
+
 ## v2.25 — 2026-11-17
 * Feature
     - **Niveles de los compañeros:** suben hasta el nivel 10 con los enemigos que vencés mientras te acompañan. El daño casi no crece (+13,5% al 10): lo que mejora son sus efectos, que duran más y salen más seguido.

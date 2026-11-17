@@ -94,6 +94,7 @@
       try { game.pause(); } finally { suppressPause = false; }
     }
     modalBack = back;
+    $('modal').classList.remove('modal-sheet');
     $('modal-overlay').classList.remove('hidden');
     const content = $('modal-content');
     content.replaceChildren(el('div', 'modal-eyebrow', eyebrow), el('h2', '', title));
@@ -443,92 +444,145 @@
       },'toggle');
       sizeToggle.setAttribute('aria-label','Tamaño de los controles táctiles'); sizeRow.append(sizeToggle); parent.append(sizeRow);
       const help = el('div','help-grid');
-      [['Moverte','WASD / flechas'],['Talar o picar','E, quieto'],['Correr','Shift'],['Atacar','Espacio / clic'],['Rodar','Ctrl / clic derecho (hacia donde vas)'],['Habilidad','Q'],['Interactuar','E'],['Usar hierba','R'],['Usar objeto','F'],['Cambiar objeto','G'],['Bolsa y amuletos','B'],['Pescar','E en una laguna'],['Armas','1 — 5'],['Personaje','C'],['Diario','J'],['Medallas','L'],['Bestiario','K'],['Mapa','M'],['Pausa','Esc']].forEach(([action,key]) => { const row = el('div'); row.append(el('span','',action),el('kbd','',key)); help.append(row); });
+      [['Moverte','WASD / flechas'],['Talar o picar','E, quieto'],['Correr','Shift'],['Atacar','Espacio / clic'],['Rodar','Ctrl / clic derecho (hacia donde vas)'],['Habilidad','Q'],['Interactuar','E'],['Usar hierba','R'],['Usar objeto','F'],['Cambiar objeto','G'],['Bolsa y amuletos','B'],['Pescar','E en una laguna'],['Armas','1 — 5'],['Personaje','C'],['Diario','J'],['Medallas','L'],['Bestiario','K'],['Pausa','Esc']].forEach(([action,key]) => { const row = el('div'); row.append(el('span','',action),el('kbd','',key)); help.append(row); });
       parent.append(help);
       paragraph(parent,'Los controles táctiles aparecen en pantallas compatibles. En un teléfono, giralo horizontalmente para ver mejor. El sonido se activa después de tu primera interacción.','hint');
     },returnToPause ? showPause : null);
   }
   $('settings-button').addEventListener('click',showSettings);
 
-  function showStats() {
-    if (!game.player) return;
-    const p = game.player, c = character(p.characterId), s = game.stats();
-    openModal(c.name + ' · Nivel ' + p.level, 'FICHA DEL PERSONAJE', parent => {
-      paragraph(parent,p.points ? p.points + ' punto' + (p.points === 1 ? '' : 's') + ' para mejorar. Vida suma 5; las otras estadísticas suman 1.' : 'Al subir de nivel recibís 2 de vida y un punto para mejorar.');
-      Object.keys(Zak.STAT_LABELS).forEach(key => {
-        const row = el('div','stats-upgrade');
-        row.append(el('span','',Zak.STAT_LABELS[key]),el('b','',fmt(p.stats[key])));
-        const upgrade = button('+',() => { if (Zak.upgradeStat(p,key)) { showStats(); updateHud(true); } },'upgrade-button');
-        upgrade.setAttribute('aria-label','Mejorar ' + Zak.STAT_LABELS[key]); upgrade.disabled = p.points < 1; row.append(upgrade); parent.append(row);
-      });
-      const summary = el('div','stats-summary');
-      ['Vida efectiva: ' + fmt(s.maxHealth), 'Fuerza efectiva: ' + fmt(s.strength) + ' · Poder de golpe: ' + fmt(s.power) + ' · Armadura: ' + fmt(s.armor) + ' (' + (p.armorTier ? Zak.ARMORS[p.armorTier].name.toLowerCase() : 'sin armadura') + ')',
-       'Movimiento: ' + fmt(s.moveSpeed) + ' px/s · Golpe cada ' + fmt(s.attackCooldown) + ' s',
-       'Carrera: ' + fmt(s.runDuration) + ' s · Experiencia: ×' + fmt(s.xpMultiplier),
-       'Daño de armas: ×' + fmt(s.damageMultiplier) + (s.veteran > 1 ? ' (veteranía ×' + fmt(s.veteran) + ')' : '') + ' · Cuarto golpe seguido: crítico ×1,75',
-       'Velocidad: ' + s.speedLabel.toLowerCase() + ' · Movimiento ' + fmt(s.moveSpeed) + ' px/s',
-       'Monedas: ' + fmt(p.coins) + ' · Hierbas: ' + p.herbs + ' / ' + Zak.HERB_BAG + ' · Derrotas: ' + p.kills,
-       'Amuletos puestos: ' + ((p.equipped || []).length ? p.equipped.map(a => Zak.AMULETS[a].icon + ' ' + Zak.AMULETS[a].name).join(' · ') : 'ninguno') + ' · Engarces: ' + (p.amuletSlots || 1),
-       'Bolsa: ' + (game.ownedItems().length ? game.ownedItems().map(id => Zak.ITEMS[id].icon + ' ' + game.itemCount(id)).join(' · ') : 'vacía') + ' · Caña: ' + (p.rod ? 'sí' : 'no'),
-       'Próximo nivel: ' + fmt(p.xp) + ' / ' + Zak.xpNeeded(p.level) + ' XP',
-       'Materiales: ' + Object.entries(Zak.MATERIALS).map(([k,m]) => m.name + ' ' + (p.materials[k] || 0)).join(' · '),
-       'Llaves del trono: ' + (p.throneKeys || 0) + ' · Récord contra Zak: ' + (p.zakBest > 0 ? Zak.formatTime(p.zakBest) : '—'),
-       'Ofrendas: ' + Object.entries(Zak.OFFERINGS).map(([k,o]) => o.icon + ' ' + o.name + ' ' + (p.offerings[k] || 0)).join(' · '),
-       'Pico: ' + (p.pickaxe ? Zak.TIER_NAMES[p.pickaxe] : 'no') + ' · Hacha: ' + (p.axe ? Zak.TIER_NAMES[p.axe] : 'no') + ' · Antorcha: ' + (p.torch ? 'sí' : 'no'),
-       'Armas: ' + p.weapons.map(w => Zak.WEAPON_TYPES[w].name + (w === 'elemental' ? '' : ' nvl ' + (p.weaponLevels[w] || 1))).join(' · ')].forEach(line => summary.append(el('div','',line)));
-      parent.append(summary); const benefits = el('div','traits'); benefits.style.marginTop = '20px'; traits(benefits,c); parent.append(benefits);
+  // Ficha del personaje: dos páginas, la tuya y la de tu compañero (ui-extras.js dibuja la segunda).
+  // Solo lo que hace al personaje: estadísticas, puntos para mejorar, habilidad, ventaja y desventaja.
+  // La guita, los objetos y las reliquias van en la bolsa.
+  const STAT_MAX = { health: 200, strength: 50, speed: 50, endurance: 50, intelligence: 50 };
+  function sheetTabs(parent, page, pet) {
+    const tabs = el('div','sheet-tabs'), p = game.player, petId = p.pet && game.ownsPet && game.ownsPet(p.pet) ? p.pet : null;
+    [['me','♙ Tu personaje'],['pet',(petId ? Zak.PETS[petId].icon : '🐾') + ' Tu compañero']].forEach(([id,label]) => {
+      const tab = button(label,() => showStats(id,pet),'sheet-tab' + (page === id ? ' selected' : '')); tab.setAttribute('aria-pressed',String(page === id)); tabs.append(tab);
     });
+    parent.append(tabs);
+  }
+  function showStats(page = 'me', pet = null) {
+    if (!game.player) return;
+    const p = game.player, c = character(p.characterId), s = game.stats(), petPage = page === 'pet' && Zak.UI.petSheet;
+    openModal(petPage ? 'Tu compañero' : c.name + ' · Nivel ' + p.level, 'FICHA DEL PERSONAJE', parent => {
+      $('modal').classList.add('modal-sheet');
+      sheetTabs(parent,petPage ? 'pet' : 'me',pet);
+      if (petPage) { Zak.UI.petSheet(parent,pet,id => showStats('pet',id)); return; }
+      const hero = el('div','sheet-hero'), frame = el('div','sheet-frame'), portrait = el('canvas','sheet-portrait');
+      portrait.width = 120; portrait.height = 150; portrait.setAttribute('aria-label','Retrato de ' + c.name); Zak.drawPortrait(portrait,c.id);
+      frame.append(portrait,el('span','sheet-frame-level','NVL ' + p.level)); hero.append(frame);
+      const info = el('div','sheet-info'), need = Zak.xpNeeded(p.level), bar = el('div','sheet-xp'), fill = el('i');
+      fill.style.width = Math.min(100,Math.round(100 * p.xp / need)) + '%'; bar.append(fill);
+      info.append(el('span','sheet-kicker',c.abilityPassive ? 'HABILIDAD PASIVA' : 'HABILIDAD ACTIVA'),el('strong','sheet-name',c.name),el('small','sheet-xp-text','Experiencia · ' + fmt(p.xp) + ' / ' + need),bar);
+      info.append(el('div','sheet-points' + (p.points ? ' ready' : ''),p.points ? '✦ ' + p.points + ' punto' + (p.points === 1 ? '' : 's') + ' para mejorar' : 'Al subir de nivel ganás un punto para mejorar'));
+      hero.append(info); parent.append(hero);
+      parent.append(el('h3','sheet-heading','Estadísticas'));
+      const list = el('div','sheet-stats');
+      Object.keys(Zak.STAT_LABELS).forEach(key => {
+        const row = el('div','stats-upgrade'), track = el('div','sheet-track'), bit = el('i');
+        bit.style.width = Math.min(100,p.stats[key] / STAT_MAX[key] * 100) + '%'; track.append(bit);
+        row.append(el('span','',Zak.STAT_LABELS[key]),track,el('b','',fmt(p.stats[key])));
+        const upgrade = button('+',() => { if (Zak.upgradeStat(p,key)) { showStats(); updateHud(true); } },'upgrade-button');
+        upgrade.setAttribute('aria-label','Mejorar ' + Zak.STAT_LABELS[key]); upgrade.disabled = p.points < 1; row.append(upgrade); list.append(row);
+      });
+      parent.append(list);
+      paragraph(parent,'Cada punto suma 5 de vida o 1 a las otras estadísticas.','hint sheet-hint');
+      parent.append(el('h3','sheet-heading','Así peleás ahora'));
+      const now = el('div','sheet-now');
+      [['❤','Vida',fmt(s.maxHealth)],['✊','Poder de golpe',fmt(s.power)],['🛡','Armadura',fmt(s.armor)],['⚡','Golpe cada',fmt(s.attackCooldown) + ' s'],['👟','Movimiento',fmt(s.moveSpeed)],['»','Carrera',fmt(s.runDuration) + ' s'],['⚔','Daño de armas','×' + fmt(s.damageMultiplier)],['✧','Experiencia','×' + fmt(s.xpMultiplier)]]
+        .forEach(([icon,label,value]) => { const tile = el('div','sheet-tile'); tile.append(el('span','sheet-tile-icon',icon),el('small','',label),el('b','',value)); now.append(tile); });
+      parent.append(now);
+      parent.append(el('h3','sheet-heading','Lo que lo hace único'));
+      const benefits = el('div','traits sheet-traits'); traits(benefits,c); parent.append(benefits);
+    });
+  }
+  // Un bloque del diario: ícono, nombre, cuánto llevás y una barrita.
+  function journalBlock(parent, icon, title, count, share, onClick, cls = '', flag = '') {
+    const block = button('',onClick,'journal-block ' + cls), bar = el('span','journal-block-bar'), fill = el('i');
+    fill.style.width = Math.round(100 * Math.max(0,Math.min(1,share))) + '%'; bar.append(fill);
+    block.append(el('span','journal-block-icon',icon),el('strong','',title),el('small','',count),bar);
+    if (flag) block.append(el('b','journal-block-flag',flag));
+    block.setAttribute('aria-label',title + ' · ' + count); parent.append(block); return block;
+  }
+  function missionCounts() {
+    const ids = Object.keys(Zak.REQUESTS), state = id => game.requestState(id);
+    return { ids, active: ids.filter(id => state(id) === 'active'), done: ids.filter(id => state(id) === 'done'), unknown: ids.filter(id => state(id) === 'new') };
   }
   function showJournal(completed = false, message = '') {
     if (!game.player) return;
+    const p = game.player, back = () => showJournal(completed);
     openModal(completed ? 'Los Aromos ya te conoce' : 'Cada paso deja una historia', 'DIARIO DE VIAJE', parent => {
-      paragraph(parent,completed ? 'Completaste los objetivos del diario. Podés seguir explorando, mejorar tu personaje y guardar tu aventura.' : 'Explorá a tu ritmo. Cada objetivo cumplido da guita: reclamala acá.');
+      $('modal').classList.add('modal-sheet');
+      const cover = el('div','journal-cover');
+      cover.append(el('p','journal-quote',completed ? '«Completaste los objetivos del diario. Todavía quedan caminos por andar.»' : '«Explorá a tu ritmo. Cada objetivo cumplido da guita: reclamala acá.»'));
+      const facts = el('div','journal-facts');
+      [['Enemigos vencidos',fmt(p.kills || 0)],['Jefes vencidos',fmt(p.bossKills || 0)],['Récord contra Zak',p.zakBest > 0 ? Zak.formatTime(p.zakBest) : '—']]
+        .forEach(([label,value]) => { const fact = el('span',''); fact.append(el('b','',value),el('small','',label)); facts.append(fact); });
+      cover.append(facts); parent.append(cover);
       if (message) paragraph(parent,message,'hint shop-message');
-      if (Zak.MEDALS && Zak.UI.showMedals) parent.append(button('🏅 Medallero · ' + (game.player.medals || []).length + ' de ' + Zak.MEDALS.length + ' (L)',() => Zak.UI.showMedals(() => showJournal(completed)),'button secondary journal-medals'));
-      // Bestiario y desafío semanal (ui-codex.js).
-      (Zak.UI.journalSections || []).forEach(section => section(parent, () => showJournal(completed)));
+      const blocks = el('div','journal-blocks');
+      if (Zak.MEDALS && Zak.UI.showMedals) journalBlock(blocks,'🏅','Medallero',(p.medals || []).length + ' de ' + Zak.MEDALS.length + ' · L',(p.medals || []).length / Zak.MEDALS.length,() => Zak.UI.showMedals(back),'journal-medals');
+      const m = missionCounts(), ready = m.active.filter(id => game.requestProgress(id).ready).length;
+      journalBlock(blocks,'📜','Misiones',m.active.length + ' en curso · ' + m.done.length + ' cumplidas',m.done.length / m.ids.length,() => showMissions(back),'journal-missions',ready ? '✓ ' + ready : '');
+      parent.append(blocks);
+      // Bestiario (como bloque) y desafío semanal (ui-codex.js).
+      (Zak.UI.journalSections || []).forEach(section => section(parent, back, blocks));
+      parent.append(el('h3','sheet-heading','Objetivos del diario'));
       const pending = game.unclaimedRewards();
       if (pending.length > 1) {
         const all = button('Reclamar todo · ◉ ' + pending.reduce((sum,q) => sum + q.reward,0),() => { pending.forEach(q => game.claimQuest(q.id)); showJournal(completed,'Cobraste todas las recompensas pendientes.'); updateHud(true); },'button primary journal-claim-all');
         parent.append(all);
       }
+      const list = el('div','journal-list');
       game.questsWithRewards().forEach(quest => {
         const row = el('div','journal-task' + (quest.done ? ' done' : '')), body = el('div');
-        body.append(el('strong','',quest.title),el('small','',quest.detail)); row.append(el('b','',quest.done ? '✓' : '◇'),body);
+        body.append(el('strong','',quest.title),el('small','',quest.detail)); row.append(el('b','journal-check',quest.done ? '✓' : '◇'),body);
         if (quest.done && !quest.claimed) {
           const claim = button('Reclamar ◉ ' + quest.reward,() => { const result = game.claimQuest(quest.id); showJournal(completed,result.message); updateHud(true); },'shop-buy quest-claim');
           claim.setAttribute('aria-label','Reclamar ' + quest.reward + ' de guita por ' + quest.title); row.append(claim);
         } else row.append(el('span','quest-reward' + (quest.claimed ? ' claimed' : ''),(quest.claimed ? 'Cobrado ◉ ' : '◉ ') + quest.reward));
-        parent.append(row);
+        list.append(row);
       });
-      const heading = el('h3','','Bichos y malas juntas'); heading.style.fontWeight = 'normal'; heading.style.color = 'var(--gold)'; parent.append(heading);
-      Object.entries(Zak.ENEMY_TYPES).forEach(([type,enemy]) => {
-        const s = Zak.enemyStats(type,game.player.level), row = el('div','journal-task' + (enemy.boss ? ' boss' : '')), body = el('div');
-        if (enemy.boss) row.append(el('b','',game.questFlags['defeat_' + type] ? '✓' : '☠'));
-        body.append(el('strong','',enemy.name + (enemy.boss ? ' · JEFE' : '') + ' · Nivel ' + s.level),el('small','',enemy.description),el('small','',fmt(s.health) + ' vida · ' + fmt(s.strength) + ' fuerza · ' + fmt(s.armor) + ' armadura')); row.append(body); parent.append(row);
-      });
+      parent.append(list);
     });
   }
-  function showMap() {
+  // Misiones: los pedidos de los vecinos, en curso y cumplidos. Los que no descubriste no se cuentan.
+  function showMissions(back = null) {
     if (!game.player) return;
-    openModal('Los caminos de los Aromos', 'MAPA DE LA REGIÓN', parent => {
-      const canvas = el('canvas','map-canvas'); canvas.width = 500; canvas.height = 300; canvas.setAttribute('aria-label','Mapa: aldea segura, cueva y Yuyos. Un punto marca tu posición.');
-      parent.append(canvas); Zak.drawMinimap(canvas,game);
-      const legend = el('div','map-legend'); ['● Vos','$ Almacén','⚒ Herrero','▼ Bajada','☠ Jefe','✝ Altar','Aldea · segura'].forEach(label => legend.append(el('span','',label))); parent.append(legend);
-      paragraph(parent,'Los enemigos no pueden entrar en la aldea. El pozo te espera cuando necesites recuperar vida.','hint');
-    });
+    const m = missionCounts();
+    openModal('Misiones','DIARIO DE VIAJE · PEDIDOS DE LOS VECINOS',parent => {
+      paragraph(parent,'Los vecinos con algo para pedirte te lo cuentan cuando hablás con ellos. Cuando cumplís, volvé a verlos para entregar y cobrar.','hint');
+      const section = (title,ids,kind) => {
+        parent.append(el('h3','sheet-heading',title));
+        const list = el('div','journal-list');
+        ids.forEach(id => {
+          const q = Zak.REQUESTS[id], ready = kind === 'active' && game.requestProgress(id).ready, row = el('div','journal-task mission ' + kind + (ready ? ' ready' : '')), body = el('div');
+          body.append(el('strong','',q.title),el('small','mission-npc','Para ' + q.npc),el('small','',kind === 'done' ? '«' + q.thanks + '»' : game.requestText(id)));
+          if (kind === 'active') body.append(el('small','mission-reward','Recompensa: ' + game.rewardText(id)));
+          row.append(el('b','journal-check',kind === 'done' ? '✓' : ready ? '!' : '◇'),body);
+          if (ready) row.append(el('span','quest-reward','Listo para entregar'));
+          list.append(row);
+        });
+        parent.append(list);
+      };
+      if (m.active.length) section('En curso',m.active,'active');
+      else paragraph(parent,'No tenés ningún pedido en curso.','journal-empty');
+      if (m.done.length) section('Cumplidas',m.done,'done');
+      paragraph(parent,m.unknown.length ? '◇ Todavía hay ' + m.unknown.length + ' vecino' + (m.unknown.length > 1 ? 's' : '') + ' con algo para pedirte. Salí a charlar.' : '✓ Cumpliste todos los pedidos de los vecinos.','hint mission-left');
+    },back);
   }
   function showTutorial() {
     openModal('Primero, los pies en la tierra', 'BIENVENIDO A LOS AROMOS', parent => {
       if (isTouch()) {
         paragraph(parent,'La aldea es tu refugio. Apoyá el pulgar izquierdo en cualquier parte de la mitad izquierda y arrastralo para moverte. Buscá el arco y tocá E cerca de su brillo.');
         paragraph(parent,'⚔ es un segundo analógico: arrastralo para apuntar, mirá el indicador y soltalo para atacar. Si solo lo tocás, apunta solo al enemigo más cercano. Cada cuarto golpe seguido es crítico. ⟲ te hace rodar y esquivar cualquier golpe. ✦ es tu habilidad, » activa o desactiva la carrera, ❦ usa una hierba y el botón de arma cambia entre las que tengas.');
-        paragraph(parent,'Los enemigos sueltan monedas: gastalas en el puesto de El Almacén, al oeste de la plaza. Arriba tenés la ficha, el diario, el mapa, la pausa para guardar y ⛶ para pantalla completa. Se juega mejor con el celular en horizontal.');
+        paragraph(parent,'Los enemigos sueltan monedas: gastalas en el puesto de El Almacén, al oeste de la plaza. Arriba tenés la ficha (con tu compañero), la bolsa, el diario, la pausa para guardar y ⛶ para pantalla completa. Se juega mejor con el celular en horizontal.');
       } else {
         paragraph(parent,'La aldea es tu refugio. Movete con WASD o flechas y buscá el arco: acercate a su brillo y presioná E.');
         paragraph(parent,'Atacá con Espacio o clic: cada cuarto golpe seguido es crítico. Ctrl o clic derecho te hace rodar hacia donde vas y esquivar cualquier golpe. Q activa tu habilidad; Fede y Pepe tienen habilidades pasivas. Shift te permite correr: cuidá la energía.');
         paragraph(parent,'Los enemigos sueltan monedas. Gastalas en el puesto de El Almacén, al oeste de la plaza. Las hierbas van a tu bolsa y se usan con R.');
-        paragraph(parent,'C abre tus estadísticas; J, el diario; M, el mapa. Guardá manualmente en una de las tres ranuras desde Esc antes de irte.');
+        paragraph(parent,'C abre tu ficha; B, la bolsa; J, el diario. Guardá manualmente en una de las tres ranuras desde Esc antes de irte.');
       }
       const actions = el('div','modal-actions'); actions.append(button('Ahora sí, a explorar',() => hideModal(),'button primary'),button('No mostrar este consejo otra vez',() => { game.settings.tutorial = false; persistSettings(); hideModal(); })); parent.append(actions);
     });
@@ -637,39 +691,60 @@
       const actions = el('div','modal-actions'); actions.append(button('Listo, gracias',() => hideModal(),'button secondary')); parent.append(actions);
     });
   }
-  // Bolsa: consumibles, amuletos y pedidos en curso.
+  // Bolsa: todo lo que llevás encima menos la guita. Los pedidos están en el diario y los compañeros, en la ficha.
+  const WEAPON_ICONS = { fists: '✊', sword: '🗡', bow: '🏹', stone: '🪨', elemental: '✨' };
+  function bagTiles(parent, title, tiles, empty) {
+    parent.append(el('h3','sheet-heading',title));
+    if (!tiles.length) { paragraph(parent,empty,'bag-empty'); return; }
+    const grid = el('div','bag-tiles');
+    tiles.forEach(([icon,name,value,off]) => { const tile = el('div','bag-tile' + (off ? ' off' : '')); tile.append(el('span','bag-tile-icon',icon),el('small','',name),el('b','',value)); grid.append(tile); });
+    parent.append(grid);
+  }
   function showBag(message) {
     if (!game.player) return;
     const p = game.player;
-    openModal('Tu bolsa','BOLSA Y AMULETOS',parent => {
+    openModal('Tu bolsa','BOLSA, AMULETOS Y RELIQUIAS',parent => {
+      $('modal').classList.add('modal-sheet');
       if (message) paragraph(parent,message,'hint shop-message');
+      parent.append(el('h3','sheet-heading','Objetos'));
       paragraph(parent,isTouch() ? 'El botón 🎒 de la derecha usa el objeto elegido.' : 'F usa el objeto elegido y G cambia cuál. También podés usarlos desde acá.','hint');
-      const owned = game.ownedItems(), chosen = game.selected();
-      if (!owned.length) paragraph(parent,'Todavía no tenés nada. El Almacén vende agua bendita, vendas, choripanes, vino y pergaminos; con la caña de Don Chiche podés pescar, y en las carpas del Pueblo Mágico siempre aparece algo.');
+      const owned = game.ownedItems(), chosen = game.selected(), items = el('div','bag-grid');
+      if (!owned.length) paragraph(parent,'Todavía no tenés nada. El Almacén vende agua bendita, vendas, choripanes, vino y pergaminos; con la caña de Don Chiche podés pescar, y en las carpas del Pueblo Mágico siempre aparece algo.','bag-empty');
       owned.forEach(id => {
-        const item = Zak.ITEMS[id], row = el('div','shop-item'), body = el('div'), title = el('strong','',item.icon + ' ' + item.name + ' ×' + game.itemCount(id));
-        if (id === chosen) title.append(el('span','bag-tag','ELEGIDO'));
-        body.append(title,el('small','',item.detail));
+        const item = Zak.ITEMS[id], card = el('div','bag-item' + (id === chosen ? ' chosen' : '')), head = el('div','bag-item-head');
+        head.append(el('span','bag-item-icon',item.icon),el('strong','',item.name),el('b','bag-count','×' + game.itemCount(id)));
+        if (id === chosen) head.append(el('span','bag-tag','ELEGIDO'));
+        card.append(head,el('small','',item.detail));
         const acts = el('div','bag-actions');
         const use = button('Usar',() => { const r = game.useItem(id); updateHud(true); if (r.ok && (id === 'scroll' || id === 'firecracker')) { hideModal(); return; } showBag(r.message); },'shop-buy');
         use.setAttribute('aria-label','Usar ' + item.name);
         const pick = button(id === chosen ? 'Elegido' : 'Elegir',() => { p.selectedItem = id; showBag(); updateHud(true); },'shop-buy'); pick.disabled = id === chosen;
-        acts.append(use,pick); row.append(body,acts); parent.append(row);
+        acts.append(use,pick); card.append(acts); items.append(card);
       });
-      parent.append(el('h3','smith-heading','Amuletos · ' + (p.equipped || []).length + ' de ' + (p.amuletSlots || 1) + ' puesto' + ((p.amuletSlots || 1) > 1 ? 's' : '')));
+      if (owned.length) parent.append(items);
+      parent.append(el('h3','sheet-heading','Amuletos · ' + (p.equipped || []).length + ' de ' + (p.amuletSlots || 1) + ' puesto' + ((p.amuletSlots || 1) > 1 ? 's' : '')));
+      const amulets = el('div','bag-grid');
       Object.entries(Zak.AMULETS).forEach(([id,a]) => {
-        const has = (p.amulets || []).includes(id), on = (p.equipped || []).includes(id), row = el('div','shop-item' + (has ? '' : ' sold-out')), body = el('div');
-        body.append(el('strong','',a.icon + ' ' + a.name + (on ? ' · puesto' : '')),el('small','',a.detail),el('small','shop-note',has ? 'Lo tenés.' : 'Cómo se consigue: ' + a.how));
+        const has = (p.amulets || []).includes(id), on = (p.equipped || []).includes(id), card = el('div','bag-item amulet' + (has ? '' : ' locked') + (on ? ' chosen' : '')), head = el('div','bag-item-head');
+        head.append(el('span','bag-item-icon',a.icon),el('strong','',a.name)); if (on) head.append(el('span','bag-tag','PUESTO'));
+        card.append(head,el('small','',a.detail),el('small','shop-note',has ? 'Lo tenés.' : 'Cómo se consigue: ' + a.how));
         const go = button(!has ? 'No lo tenés' : on ? 'Sacármelo' : 'Ponérmelo',() => { const r = on ? game.unequipAmulet(id) : game.equipAmulet(id); showBag(r.message); updateHud(true); },'shop-buy');
-        go.disabled = !has; row.append(body,go); parent.append(row);
+        go.disabled = !has; const acts = el('div','bag-actions'); acts.append(go); card.append(acts); amulets.append(card);
       });
-      const active = Object.keys(Zak.REQUESTS).filter(id => game.requestState(id) === 'active');
-      if (active.length) {
-        parent.append(el('h3','smith-heading','Pedidos en curso'));
-        active.forEach(id => { const row = el('div','journal-task'), body = el('div'); body.append(el('strong','',Zak.REQUESTS[id].title + ' · ' + Zak.REQUESTS[id].npc),el('small','',game.requestText(id))); row.append(el('b','',game.requestProgress(id).ready ? '✓' : '◇'),body); parent.append(row); });
-      }
+      parent.append(amulets);
+      bagTiles(parent,'Armas',p.weapons.map(w => [WEAPON_ICONS[w] || '⚔',Zak.WEAPON_TYPES[w].name,w === 'elemental' ? 'forjada' : 'nivel ' + (p.weaponLevels[w] || 1)]),'');
+      const armor = p.armorTier ? Zak.ARMORS[p.armorTier] : null;
+      bagTiles(parent,'Equipo y herramientas',[
+        [armor ? armor.icon : '🛡',armor ? armor.name : 'Armadura',armor ? '+' + armor.armor + ' armadura' : 'sin armadura',!armor],
+        ['⛏','Pico',p.pickaxe ? 'de ' + Zak.TIER_NAMES[p.pickaxe] : 'no tenés',!p.pickaxe],
+        ['🪓','Hacha',p.axe ? 'de ' + Zak.TIER_NAMES[p.axe] : 'no tenés',!p.axe],
+        ['🔥','Antorcha',p.torch ? 'la tenés' : 'no tenés',!p.torch],
+        ['🎣','Caña de pescar',p.rod ? 'la tenés' : 'no tenés',!p.rod],
+        ['❦','Hierbas',(p.herbs || 0) + ' / ' + Zak.HERB_BAG,!p.herbs]],'');
+      bagTiles(parent,'Materiales',Object.entries(Zak.MATERIALS).map(([k,m]) => [m.icon,m.name,String(p.materials[k] || 0),!(p.materials[k] > 0)]),'');
+      bagTiles(parent,'Reliquias',[['🗝','Llave del trono',String(p.throneKeys || 0),!(p.throneKeys > 0)],...Object.entries(Zak.OFFERINGS).map(([k,o]) => [o.icon,o.name,String(p.offerings[k] || 0),!(p.offerings[k] > 0)])],'');
       (Zak.UI.bagSections || []).forEach(section => section(parent));
-      paragraph(parent,(p.rod ? '🎣 Tenés la caña: E al lado de una laguna para pescar. ' : '🎣 Don Chiche, en la Laguna de las Libélulas, vende una caña de pescar. ') + 'Los vecinos con pedidos te lo cuentan cuando hablás con ellos.','hint');
+      paragraph(parent,p.rod ? '🎣 Con la caña: E al lado de una laguna para pescar.' : '🎣 Don Chiche, en la Laguna de las Libélulas, vende una caña de pescar.','hint');
     });
   }
   // Publica el progreso como mucho cada 8 s; los pedidos que llegan antes se agrupan.
@@ -849,7 +924,7 @@
     };
     return hints[a.id] || '';
   }
-  $('stats-button').addEventListener('click',showStats); $('journal-button').addEventListener('click',() => showJournal()); $('map-button').addEventListener('click',showMap); $('pause-button').addEventListener('click',showPause);
+  $('stats-button').addEventListener('click',() => showStats()); $('journal-button').addEventListener('click',() => showJournal()); $('pause-button').addEventListener('click',showPause);
   $('ability-button').addEventListener('click',() => game.ability());
   $('herb-button').addEventListener('click',() => { game.useHerb(); $('world').focus(); });
   $('item-button').addEventListener('click',() => { game.useSelected(); $('world').focus(); });
@@ -956,7 +1031,7 @@
   $('exit-game').addEventListener('click',exitGame);
   document.querySelector('.brand').addEventListener('click',event => { event.preventDefault(); if (game.state === 'characters') showMenu(); });
   // Lo que usan las ventanas nuevas (ui-extras.js).
-  Zak.UI = Object.assign(Zak.UI || {}, { el, button, paragraph, openModal, hideModal, closeModal, toast, updateHud, showNpc, showBag, isTouch, showPause, showJournal, confirmAction });
+  Zak.UI = Object.assign(Zak.UI || {}, { journalBlock, showMissions, el, button, paragraph, openModal, hideModal, closeModal, toast, updateHud, showNpc, showBag, isTouch, showPause, showJournal, confirmAction });
   game.onEvent = (type, detail = {}) => {
     if (type === 'tick') { document.body.classList.toggle('cutscene', !!game.cutscene && game.state === 'playing'); updateHud(); if (game.player && game.state === 'playing' && game.player.kills - lastKills >= 5) submitScore(); }
     else if (type === 'toast') { if (game.settings.notices || detail.error) toast(detail.message,detail.error); }
@@ -967,7 +1042,6 @@
     } else if (type === 'escape') { if (visibleModal()) closeModal(); else if (game.player && game.state !== 'menu' && game.state !== 'characters') showPause(); }
     else if (type === 'pause' && !suppressPause) showPause();
     else if (type === 'stats') showStats();
-    else if (type === 'map') showMap();
     else if (type === 'journal') showJournal();
     else if (type === 'shop') showShop();
     else if (type === 'smith') showSmith();

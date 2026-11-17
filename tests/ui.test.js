@@ -36,9 +36,19 @@
   document.getElementById('load-game').click();document.querySelectorAll('.save-slot')[0].click();
   assert('Cargar recupera personaje e inventario',g.state==='playing'&&g.player.characterId==='gero'&&g.player.weapons.includes('bow')&&g.currentSlot===1);
   g.player.points=1;document.getElementById('stats-button').click();const strength=g.player.stats.strength;document.querySelector('[aria-label="Mejorar Fuerza"]').click();
-  assert('Mejorar atributo consume un punto',g.player.stats.strength===strength+1&&g.player.points===0);close();
-  document.getElementById('map-button').click();assert('Mapa renderizado',!!document.querySelector('.map-canvas'));close();
-  document.getElementById('journal-button').click();assert('Diario y bestiario visibles',document.querySelectorAll('.journal-task').length===g.quests().length+Object.keys(Zak.ENEMY_TYPES).length);close();
+  assert('Mejorar atributo consume un punto',g.player.stats.strength===strength+1&&g.player.points===0);
+  // v2.26: la ficha muestra solo al personaje: retrato, estadísticas, habilidad, ventaja y desventaja.
+  {const sheet=document.getElementById('modal-content'),text=sheet.textContent,c=character=>Zak.CHARACTERS.find(x=>x.id===character);
+   assert('La ficha tiene el retrato del personaje en un recuadro',!!sheet.querySelector('.sheet-frame canvas.sheet-portrait'));
+   assert('La ficha muestra habilidad, ventaja y desventaja',text.includes(c(g.player.characterId).ability)&&text.includes(c(g.player.characterId).advantage)&&text.includes(c(g.player.characterId).disadvantage));
+   assert('La ficha ya no muestra guita, objetos ni reliquias',!/◉|Monedas|Materiales|Ofrendas|Bolsa:|Llaves del trono|Amuletos/.test(text));
+   assert('La ficha tiene dos páginas: tu personaje y tu compañero',document.querySelectorAll('.sheet-tab').length===2);}
+  close();
+  assert('Ya no hay mapa',!document.getElementById('map-button'));
+  g.state='playing';document.getElementById('world').dispatchEvent(new KeyboardEvent('keydown',{key:'m',bubbles:true}));window.dispatchEvent(new KeyboardEvent('keyup',{key:'m'}));
+  assert('La M no abre nada',document.getElementById('modal-overlay').classList.contains('hidden'));
+  document.getElementById('journal-button').click();assert('El diario muestra los objetivos (los enemigos están en el bestiario)',document.querySelectorAll('.journal-task').length===g.quests().length);
+  assert('El diario tiene los bloques de medallero, bestiario y misiones',['journal-medals','journal-bestiary','journal-missions'].every(c=>document.querySelector('.journal-blocks .'+c)));close();
   const coins=g.player.coins;assert('Hay recompensas para reclamar',!document.getElementById('journal-badge').classList.contains('hidden')||g.unclaimedRewards().length>0);
   document.getElementById('journal-button').click();const claim=document.querySelector('.quest-claim');claim.click();
   assert('Reclamar en el diario suma guita',g.player.coins>coins&&document.querySelector('.shop-message').textContent.includes('guita'));close();
@@ -92,11 +102,17 @@
   g.state='playing';g.addItem('water',2);g.addItem('dorado',1);g.player.selectedItem='water';await new Promise(resolve=>setTimeout(resolve,120));g.emit('tick');
   assert('El HUD muestra el objeto elegido',document.getElementById('hud-item').textContent.includes('💧'));
   document.getElementById('bag-button').click();
-  assert('La bolsa muestra los objetos, todos los amuletos y los cuatro compañeros',document.querySelectorAll('#modal-content .shop-item').length===2+Object.keys(Zak.AMULETS).length+Zak.PET_ORDER.length);
+  assert('La bolsa muestra los objetos y todos los amuletos',document.querySelectorAll('#modal-content .bag-item').length===2+Object.keys(Zak.AMULETS).length);
+  {const text=document.getElementById('modal-content').textContent;
+   assert('La bolsa muestra armas, equipo, materiales y reliquias',['Armas','Equipo y herramientas','Materiales','Reliquias','Llave del trono'].every(t=>text.includes(t))&&document.querySelectorAll('.bag-tile').length>=Object.keys(Zak.MATERIALS).length+Object.keys(Zak.OFFERINGS).length);
+   assert('La bolsa no muestra la guita, los pedidos ni los compañeros',!new RegExp('◉ '+g.player.coins+'(?!\\d)').test(text)&&!/Tu guita|Pedidos en curso|Compañeros|Firulais/.test(text)&&!document.querySelector('#modal-content .bag-coins'));}
   clickText('Usar');assert('Usar desde la bolsa gasta uno y la bolsa sigue abierta',g.itemCount('water')===1&&!document.getElementById('modal-overlay').classList.contains('hidden'));close();
   const tito=g.world.npcs.find(n=>n.name==='Tito');g.emit('npc',{npc:tito});
   assert('Tito cuenta su pedido',(document.querySelector('.request-box')||{}).textContent?.includes('Leña para el horno'));
   clickText('Aceptar el pedido');assert('Aceptar el pedido lo deja en curso',g.requestState('tito')==='active');close();
+  g.state='playing';document.getElementById('journal-button').click();document.querySelector('.journal-missions').click();
+  assert('El bloque de misiones del diario muestra los pedidos en curso',document.getElementById('modal-title').textContent==='Misiones'&&document.getElementById('modal-content').textContent.includes('Leña para el horno')&&document.getElementById('modal-content').textContent.includes('Para Tito'));
+  close();assert('Cerrar las misiones vuelve al diario',/DIARIO DE VIAJE/.test(document.querySelector('.modal-eyebrow').textContent)&&!!document.querySelector('.journal-blocks'));close();
   const merchant=g.world.npcs.find(n=>n.shop==='merchant');g.player.coins=5000;g.emit('npc',{npc:merchant});
   document.querySelector('#modal-content [aria-label="Conseguir Segundo engarce"]').click();
   assert('El Mercader del Vacío vende el segundo engarce',g.player.amuletSlots===2&&g.player.coins===1000);close();
@@ -121,6 +137,15 @@
   g.state='playing';g.player.pets.bat={name:'Draco'};g.emit('namePet',{pet:'bat'});
   const petInput=document.getElementById('pet-name');assert('Al domesticar se le pone nombre',petInput&&petInput.value==='Draco');
   petInput.value='Batito';clickText('Ponerle el nombre');assert('El nombre queda guardado',g.petName('bat')==='Batito');
+  // v2.26: segunda página de la ficha: el compañero, sus números y su nombre.
+  g.state='playing';g.player.pet='bat';document.getElementById('stats-button').click();[...document.querySelectorAll('.sheet-tab')][1].click();
+  {const text=document.getElementById('modal-content').textContent;
+   assert('La página del compañero tiene su retrato, nivel y estadísticas',!!document.querySelector('.sheet-frame.pet canvas')&&text.includes('Batito')&&text.includes('Daño por golpe')&&text.includes('Especial cada')&&text.includes(Zak.PET_SKILLS.bat.name));
+   const input=document.getElementById('pet-sheet-name');input.value='Nocturno';clickText('Cambiar nombre');
+   assert('Desde la ficha se le cambia el nombre',g.petName('bat')==='Nocturno'&&document.getElementById('pet-sheet-name').value==='Nocturno');
+   const locked=[...document.querySelectorAll('.pet-chip.locked')];locked[0].click();
+   assert('Los compañeros que no tenés se ven como silueta, con la pista',/TODAVÍA NO LO TENÉS/.test(document.getElementById('modal-content').textContent)&&!document.getElementById('pet-sheet-name'));}
+  close();
   g.state='playing';g.player.throneKeys=1;g.questFlags.defeat_zak=true;g.openThroneDoor();
   assert('Quien venció a Zak elige entre la pelea de siempre y la revancha',[...document.querySelectorAll('#modal-content button')].some(b=>b.textContent.includes('Zak furioso'))&&g.player.throneKeys===1);
   clickText('Todavía no');

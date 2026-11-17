@@ -2813,56 +2813,7 @@
     c.save();c.translate(Math.round(canvas.width/2),bust?s*(id==="mer"?32:29):canvas.height-5);Px.scale=s;
     drawCharacter(c,{x:0,y:0,characterId:id,dir:"down"},0,true);Px.scale=1;c.restore();
   }
-  function drawMinimap(canvas,game) {
-    if(!game.world)return;
-    const c=canvas.getContext("2d"),w=canvas.width,h=canvas.height,world=game.world;
-    const area=viewArea(world,game.biome),deep=!!area.id,enclosed=id=>!!(Z.ENCLOSED_ZONES&&Z.ENCLOSED_ZONES[id]);
-    const inArea=(x,y)=>x>=area.x&&y>=area.y&&x<area.x+area.w&&y<area.y+area.h;
-    const sx=(w-8)/area.w,sy=(h-8)/area.h;
-    c.imageSmoothingEnabled=false;c.clearRect(0,0,w,h);
-    rect(c,0,0,w,h,"#293b32");rect(c,3,3,w-6,h-6,deep?"#1c1e22":"#82916a");
-    c.save();c.translate(-area.x*sx,-area.y*sy);
-    for(const z of world.zones||[]){
-      if(z.id==="realm"||enclosed(z.id)!==deep||deep&&!(inArea(z.x,z.y)&&inArea(z.x+z.w-1,z.y+z.h-1)))continue;
-      const col=z.id==="bazaar"?"#3a2f4a":z.id==="library"?"#3a2a2a":z.id==="gargoyles"?"#2a2838":z.id==="sanctum"?"#2e2740":z.id==="magic"?"#241d33":z.id==="dimension"?"#15131b":z.id==="cave"?"#59616b":z.id==="weeds"?"#a0a26a":z.id==="cave2"?"#3e424b":z.id==="cave3"?"#4a3c37":z.id==="altar"?"#4b5242":z.id==="throne"?"#1d1a24":"#789469";
-      rect(c,4+z.x*sx,4+z.y*sy,z.w*sx,z.h*sy,col);
-    }
-    // Explicit ordering preserves the cave where it overlaps the village.
-    const cave=world.zones?.find(z=>z.id==="cave");
-    if(cave&&!deep)rect(c,4+cave.x*sx,4+cave.y*sy,cave.w*sx,cave.h*sy,"#59616b");
-    for(const path of world.paths||[])if((path.y>=(Z.SURFACE_HEIGHT||1800))===deep&&(!deep||inArea(path.x+path.w/2,path.y+path.h/2)))rect(c,4+path.x*sx,4+path.y*sy,Math.max(1,path.w*sx),Math.max(1,path.h*sy),"#c5b180");
-    for(const o of world.objects||[]){
-      if(o.type==="house")rect(c,4+o.x*sx,4+o.y*sy,Math.max(2,o.w*sx),Math.max(2,o.h*sy),"#ad785c");
-      if(o.type==="pond")rect(c,4+o.x*sx,4+o.y*sy,o.w*sx,o.h*sy,"#6294a0");
-    }
-    for(const p of world.pickups||[])if(!p.collected&&p.type!=="herb")rect(c,3+p.x*sx,3+p.y*sy,2,2,"#f4d385");
-    for(const o of world.objects||[])if(o.type==="ore"&&!o.harvested&&(o.y>=(Z.SURFACE_HEIGHT||1800))===deep)rect(c,3+o.x*sx,3+o.y*sy,3,3,(ORE_COLORS[o.ore]||ORE_COLORS.stone).light);
-    if(w>300){
-      for(const o of world.objects||[])if(o.type==="voidstall"&&deep&&inArea(o.x,o.y))pixelText(c,"$",4+(o.x+o.w/2)*sx,4+o.y*sy-4,"#d8bfff",12);
-      for(const o of world.objects||[])if(o.type==="stall")pixelText(c,"$",4+(o.x+o.w/2)*sx,4+o.y*sy-4,"#f4d36b",12);
-      for(const o of world.objects||[])if(o.type==="forge")pixelText(c,"⚒",4+(o.x+o.w/2)*sx,4+o.y*sy-4,"#f4d36b",12);
-      for(const o of world.objects||[])if(o.type==="stairs")pixelText(c,o.dir==="down"?"▼":"▲",4+(o.x+o.w/2)*sx,4+(o.y+o.h/2)*sy,"#f2c35a",12);
-      for(const o of world.objects||[])if(o.type==="door"&&deep&&inArea(o.x,o.y))pixelText(c,"🗝",4+(o.x+o.w/2)*sx,4+o.y*sy,"#f2c94c",12);
-      for(const o of world.objects||[])if(o.type==="well"&&o.dark&&deep&&inArea(o.x,o.y))pixelText(c,"≈",4+(o.x+o.w/2)*sx,4+o.y*sy,"#c9a6ff",14);
-      for(const o of world.objects||[])if(o.type==="altar"&&!deep)pixelText(c,"✝",4+(o.x+o.w/2)*sx,4+o.y*sy-2,"#d8c2ff",12);
-      for(const e of game.enemies||[])if(Z.ENEMY_TYPES[e.type]&&Z.ENEMY_TYPES[e.type].boss&&!e.summoned&&(deep?inArea(e.homeX,e.homeY):!enclosed(Z.biomeAt(e.homeX,e.homeY))))pixelText(c,e.dead?"✓":"☠",4+e.homeX*sx,4+e.homeY*sy,e.dead?"#bfe0a8":"#ff9b84",13);
-    }
-    if(game.player){const x=4+game.player.x*sx,y=4+game.player.y*sy;rect(c,x-2,y-2,5,5,"#344c3b");rect(c,x-1,y-1,3,3,"#fff0bd");}
-    c.restore();
-    if(w>300&&deep)pixelText(c,(area.name||"").toUpperCase(),w/2,22,"#e4ddd0",12);
-    if(w>300&&area.id==="realm")for(const [id,label] of [["magic","PUEBLO MÁGICO"],["sanctum","SANTUARIO"],["gargoyles","GÁRGOLAS"],["library","BIBLIOTECA"],["bazaar","FERIA"]]){const z=world.zones.find(q=>q.id===id);if(z)pixelText(c,label,4+(z.x-area.x+z.w/2)*sx,4+(z.y-area.y+z.h/2)*sy,"#cfc4e6",10);}
-    if(w>300&&!deep){
-      const ax=v=>4+(v-area.x)*sx;
-      pixelText(c,"PALIHUE CITY",ax(850),4+1260*sy,"#f3e9c1",11);
-      pixelText(c,"CUEVA DEL ECO",ax(450),4+280*sy,"#e4ddd0",11);
-      pixelText(c,"LOS YUYOS",ax(1950),4+900*sy,"#f1e5b6",11);
-      pixelText(c,"ALTAR",ax(-390),4+1300*sy,"#d8c2ff",11);
-      pixelText(c,"N",w-19,18,"#eadbb0",10);rect(c,w-20,27,2,15,"#ddc99a");
-      poly(c,[[w-19,23],[w-24,30],[w-14,30]],"#ddc99a");
-    }
-    rect(c,0,0,w,1,"#b7ab7d");rect(c,0,h-1,w,1,"#b7ab7d");rect(c,0,0,1,h,"#b7ab7d");rect(c,w-1,0,1,h,"#b7ab7d");
-  }
-  Z.Renderer=Renderer;Z.drawPortrait=drawPortrait;Z.drawCharacter=drawCharacter;Z.drawEnemy=drawEnemy;Z.drawMinimap=drawMinimap;Z.drawSmithPortrait=drawSmithPortrait;Z.drawNpc=drawNpc;Z.dialogLines=dialogLines;
+  Z.Renderer=Renderer;Z.drawPortrait=drawPortrait;Z.drawCharacter=drawCharacter;Z.drawEnemy=drawEnemy;Z.drawSmithPortrait=drawSmithPortrait;Z.drawNpc=drawNpc;Z.dialogLines=dialogLines;
   Renderer.drawPortrait=drawPortrait;
   // Pinceles compartidos con los módulos que dibujan cosas nuevas (compañeros, clima, medallas y cartas).
   Z.Draw={P,hash,rect,poly,sprite,shadow,heart,pixelText,blob,eye,tone,box,dogBody,tuft,flower,zoneAt,isCaveZone,enemyBody,drawEnemy};

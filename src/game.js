@@ -109,7 +109,7 @@ class Game {
    if(this.cutscene){if([' ','e','Enter'].includes(key))this.advanceCutscene();return;}
    if(key==='e')this.interact();if(key==='q')this.ability();if(key==='Control')this.roll();if(key==='r')this.useHerb();
    if(key==='f')this.useSelected();if(key==='g')this.cycleItem();if(key==='b')this.emit('bag');
-   if(key==='c')this.emit('stats');if(key==='m')this.emit('map');if(key==='j')this.emit('journal');if(key==='l')this.emit('medals');if(key==='k')this.emit('bestiary');
+   if(key==='c')this.emit('stats');if(key==='j')this.emit('journal');if(key==='l')this.emit('medals');if(key==='k')this.emit('bestiary');
    if(['1','2','3','4','5'].includes(key))this.equip(WEAPON_ORDER[+key-1]);
   });
   window.addEventListener('keyup',e=>this.keys.delete(e.key.length===1?e.key.toLowerCase():e.key));

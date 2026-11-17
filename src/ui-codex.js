@@ -59,9 +59,10 @@ function weeklyBox(parent) {
  box.append(el('small', '', w.paid ? (w.first ? '🥇 ¡Fuiste el primero! Cobraste x1,5.' : '✓ Cumplido y cobrado.') : w.done ? 'Cumplido. Cobrando el premio...' : 'Premio: ' + prize + '.'));
  parent.append(box);
 }
-function journalSection(parent, back) {
- const known = Zak.BESTIARY_ORDER.filter(t => game.bestiaryKnown(t)).length;
- parent.append(button('📖 Bestiario · ' + known + ' de ' + Zak.BESTIARY_ORDER.length + ' (K)', () => showBestiary(0, false, back), 'button secondary journal-bestiary'));
+function journalSection(parent, back, blocks) {
+ const known = Zak.BESTIARY_ORDER.filter(t => game.bestiaryKnown(t)).length, n = Zak.BESTIARY_ORDER.length;
+ if (blocks && UI.journalBlock) { const block = UI.journalBlock(blocks, '📖', 'Bestiario', known + ' de ' + n + ' · K', known / n, () => showBestiary(0, false, back), 'journal-bestiary'); blocks.insertBefore(block, blocks.children[1] || null); }
+ else parent.append(button('📖 Bestiario · ' + known + ' de ' + n + ' (K)', () => showBestiary(0, false, back), 'button secondary journal-bestiary'));
  weeklyBox(parent);
 }
 

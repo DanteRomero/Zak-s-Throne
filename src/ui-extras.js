@@ -227,18 +227,55 @@ function showThroneChoice() {
   actions(parent, button('Revancha: Zak furioso', () => { hideModal(); game.openThroneDoor('fury'); }, 'button primary'), button('La pelea de siempre', () => { hideModal(); game.openThroneDoor('normal'); }), button('Todavía no', () => hideModal()));
  });
 }
-// Compañeros en la bolsa: quién te acompaña y cómo se consiguen los demás.
+// Segunda página de la ficha: tu compañero, sus números, su habilidad y su nombre.
+// Los que todavía no tenés se ven como silueta, con la pista de cómo se consiguen.
 const HOW = {dog: 'Un perro con el plato vacío espera en la puerta de La guardería. Comprá comida para perro en El Almacén.', bat: 'En la Cueva Profunda, arriba a la derecha, cuelga un murcielaguito con hambre.', snake: 'A veces, al caer la Yarará Madre, uno de sus huevos se rompe.', golem: 'A veces, al caer el Gólem Minero, entre los escombros queda uno chiquito.'};
-function bagSection(parent) {
- const p = game.player;
- parent.append(el('h3', 'smith-heading', 'Compañeros'));
- Zak.PET_ORDER.forEach(id => {
-  const has = game.ownsPet(id), row = el('div', 'shop-item' + (has ? '' : ' sold-out')), body = el('div');
-  body.append(el('strong', '', Zak.PETS[id].icon + ' ' + (has ? game.petName(id) + ' · ' : '') + Zak.PETS[id].species + (p.pet === id ? ' · te acompaña' : has ? ' · en La guardería' : '')), el('small', '', has ? Zak.PETS[id].detail : HOW[id])); if (has) petLevelInfo(body, id);
-  row.append(body);
-  if (has) row.append(button('Nombre', () => showNamePet(id, () => UI.showBag()), 'shop-buy'));
-  parent.append(row);
+const num = n => (Math.round(n * 10) / 10).toLocaleString('es-AR');
+function petSilhouette(c, id) {
+ Zak.drawPetPortrait(c, id); const x = c.getContext('2d'); x.save(); x.globalCompositeOperation = 'source-in'; x.fillStyle = '#0b1d17'; x.fillRect(0, 0, c.width, c.height); x.restore();
+}
+function petSheet(parent, wanted, show) {
+ const p = game.player, owned = Zak.PET_ORDER.filter(id => game.ownsPet(id));
+ const id = Zak.PET_ORDER.includes(wanted) ? wanted : p.pet && game.ownsPet(p.pet) ? p.pet : owned[0] || Zak.PET_ORDER[0], has = game.ownsPet(id), def = Zak.PETS[id], L = Zak.PET_LEVELS;
+ const chips = el('div', 'pet-chips');
+ Zak.PET_ORDER.forEach(k => {
+  const mine = game.ownsPet(k), chip = button((mine ? Zak.PETS[k].icon + ' ' + game.petName(k) : '❔ ???') + (p.pet === k ? ' ★' : ''), () => show(k), 'pet-chip' + (k === id ? ' selected' : '') + (mine ? '' : ' locked'));
+  chip.setAttribute('aria-label', mine ? game.petName(k) + ', ' + Zak.PETS[k].species + (p.pet === k ? ', te acompaña' : '') : 'Compañero que todavía no tenés'); chip.setAttribute('aria-pressed', String(k === id)); chips.append(chip);
  });
+ parent.append(chips);
+ const hero = el('div', 'sheet-hero'), frame = el('div', 'sheet-frame pet'), c = canvasOf(120, 136, 'sheet-portrait');
+ if (has) Zak.drawPetPortrait(c, id); else petSilhouette(c, id);
+ c.setAttribute('aria-label', has ? 'Retrato de ' + game.petName(id) : 'Silueta de un compañero que todavía no tenés'); frame.append(c);
+ if (has) frame.append(el('span', 'sheet-frame-level', 'NVL ' + game.petLevel(id)));
+ hero.append(frame);
+ const info = el('div', 'sheet-info');
+ if (!has) {
+  info.append(el('span', 'sheet-kicker', 'TODAVÍA NO LO TENÉS'), el('strong', 'sheet-name', '???'), el('p', 'pet-how', HOW[id]));
+  hero.append(info); parent.append(hero);
+  if (!owned.length) paragraph(parent, 'Los compañeros te ayudan un poco en las peleas, sobre todo con sus efectos. Hay cuatro para encontrar.', 'hint');
+  return;
+ }
+ const lv = game.petLevel(id), max = lv >= L.max, bar = el('div', 'sheet-xp'), fill = el('i');
+ fill.style.width = (max ? 100 : Math.round(100 * game.petXp(id) / L.xp(lv))) + '%'; bar.append(fill);
+ info.append(el('span', 'sheet-kicker', def.species.toUpperCase() + ' · ' + (p.pet === id ? 'TE ACOMPAÑA' : 'EN LA GUARDERÍA')), el('strong', 'sheet-name', game.petName(id)),
+  el('small', 'sheet-xp-text', max ? 'Nivel máximo: son uña y carne' : 'Experiencia · ' + Math.floor(game.petXp(id)) + ' / ' + L.xp(lv)), bar);
+ const rename = el('form', 'pet-rename'), input = el('input'), save = button('Cambiar nombre', () => {}, 'shop-buy');
+ input.maxLength = 14; input.value = game.petName(id); input.spellcheck = false; input.id = 'pet-sheet-name'; input.setAttribute('aria-label', 'Nombre del compañero (hasta 14 letras)'); save.type = 'submit';
+ rename.append(input, save); rename.addEventListener('submit', event => { event.preventDefault(); const r = game.namePet(id, input.value); toast(r.message, r.ok === false); updateHud(true); show(id); });
+ info.append(rename); hero.append(info); parent.append(hero);
+ parent.append(el('h3', 'sheet-heading', 'Estadísticas'));
+ const tiles = el('div', 'sheet-now three'), special = def.special * game.petFactor(id, 'cooldown');
+ [['⚔', 'Daño por golpe', num(game.petDamage(id))], ['⏱', 'Golpe cada', num(def.every) + ' s'], ['✦', 'Especial cada', num(special) + ' s'], ['⌛', 'Efectos', '+' + Math.round((game.petFactor(id, 'effect') - 1) * 100) + '%'], [def.range ? '🎯' : '✋', 'Alcance', def.range ? 'de lejos' : 'cuerpo a cuerpo'], ['▲', 'Daño por nivel', '+' + num(L.damage * 100) + '%']]
+  .forEach(([icon, label, value]) => { const tile = el('div', 'sheet-tile'); tile.append(el('span', 'sheet-tile-icon', icon), el('small', '', label), el('b', '', value)); tiles.append(tile); });
+ parent.append(tiles);
+ paragraph(parent, 'El daño sale de tu golpe con el arma que tenés en la mano. Al subir de nivel casi no pega más: lo que mejora son sus efectos.', 'hint sheet-hint');
+ parent.append(el('h3', 'sheet-heading', 'Lo que sabe hacer'));
+ const skills = el('div', 'traits sheet-traits pet'), skill = Zak.PET_SKILLS[id], learned = lv >= L.skillAt;
+ const trait = (title, text, cls) => { const t = el('div', 'trait ' + cls); t.append(el('h3', '', title)); paragraph(t, text); skills.append(t); };
+ trait('✦ Especial', def.detail, '');
+ trait((learned ? '★ ' : '🔒 ') + skill.name + (learned ? '' : ' · nivel ' + L.skillAt), skill.detail, learned ? 'skill' : 'locked');
+ parent.append(skills);
+ if (p.pet !== id) paragraph(parent, 'Está en La guardería: para salir con él, hablá con Doña Herminia.', 'hint');
  if (p.carrying === 'snake') paragraph(parent, '🐍 Llevás a la viborita en brazos: llevala con Doña Herminia, en La guardería.', 'hint shop-message');
 }
 function statusTags(list) {
@@ -249,9 +286,8 @@ function statusTags(list) {
  if (game.zakFury && game.biome === 'throne') list.push('☠ Zak furioso');
 }
 UI.npcSections = [...(UI.npcSections || []), trucoSection, herminiaSection];
-UI.bagSections = [...(UI.bagSections || []), bagSection];
 UI.statusTags = [...(UI.statusTags || []), statusTags];
-UI.showMedals = showMedals; UI.showTruco = showTruco; UI.showNamePet = showNamePet; UI.showKennel = showKennel;
+UI.petSheet = petSheet; UI.showMedals = showMedals; UI.showTruco = showTruco; UI.showNamePet = showNamePet; UI.showKennel = showKennel;
 
 const baseEvent = game.onEvent;
 game.onEvent = (type, detail = {}) => {

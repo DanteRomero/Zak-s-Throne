@@ -2,7 +2,7 @@
 
 Una aventura de acción y exploración en pixel art, vista desde arriba. Elegí a uno de siete amigos, preparate en la aldea y salí a explorar la cueva y los Yuyos.
 
-Versión actual: **v2.25**. Los cambios de cada versión están en [CHANGELOG.md](CHANGELOG.md).
+Versión actual: **v2.26**. Los cambios de cada versión están en [CHANGELOG.md](CHANGELOG.md).
 
 ## Jugar
 
@@ -34,7 +34,6 @@ El juego funciona directamente desde sus archivos: no requiere servidor, instala
 | Diario de viaje | J |
 | Medallas | L |
 | Bestiario | K |
-| Mapa | M |
 | Pausa y guardado | Esc |
 | Sonido | Botón musical de la esquina superior |
 
@@ -45,8 +44,8 @@ La dirección de movimiento orienta al personaje; el ratón permite dirigir ataq
 - **Joystick analógico:** apoyá el pulgar en cualquier parte de la mitad izquierda y arrastrá. Inclinarlo poco camina más despacio.
 - **Analógico de ataque:** mantené ⚔ y arrastralo para apuntar; al soltarlo se hace el ataque. Mientras apuntás se ve el indicador: con arco y piedra, una línea con el recorrido del tiro hasta donde va a pegar; con puños, el área recta del golpe; con espadas, su abanico. Podés caminar para un lado y atacar para el otro. Sin arrastrar, apunta solo al enemigo más cercano. Volver al centro antes de soltar cancela el golpe.
 - **Botones para el pulgar derecho:** ⟲ rueda, ✦ usa la habilidad, E se ilumina cuando hay algo para usar cerca, ❦ usa una hierba, 🎒 usa el objeto elegido de la bolsa, » activa o desactiva la carrera y el botón de arma rota entre las conseguidas.
-- **Arriba:** ficha, bolsa y amuletos (🎒), diario, mapa, pausa y ⛶ para pantalla completa, que también intenta fijar la orientación horizontal.
-- El teléfono vibra al recibir daño (se desactiva junto con la sacudida de pantalla). Se juega en horizontal o en vertical, aunque en horizontal se ve más mundo. Los botones de la interfaz también permiten acceder a habilidades, armas, ficha, mapa y pausa.
+- **Arriba:** ficha, bolsa y amuletos (🎒), diario, pausa y ⛶ para pantalla completa, que también intenta fijar la orientación horizontal.
+- El teléfono vibra al recibir daño (se desactiva junto con la sacudida de pantalla). Se juega en horizontal o en vertical, aunque en horizontal se ve más mundo. Los botones de la interfaz también permiten acceder a habilidades, armas, ficha, bolsa, diario y pausa.
 
 El juego se adapta al tamaño de pantalla; en teléfonos conviene usar orientación horizontal. Los indicadores combinan texto, iconos y color. Las opciones permiten ajustar sonido, efectos visuales y la sacudida de pantalla.
 
@@ -79,7 +78,7 @@ Los guardados se conservan en el almacenamiento local del navegador usado para j
   - **Runas en el piso** (Pueblo Mágico, Biblioteca y Patio): se prenden 2 s de cada 6. Pisar una **prendida** explota y te saca el 15% de la vida (rodando la esquivás). Pisar una **apagada** te da **+15% de daño durante 8 s**. Después de pisarla, cada runa descansa 12 s.
 - **Trono de Zak:** sala gótica de ladrillo negro, siempre de noche pero bien visible. Se llega solo por la puerta del Pueblo Mágico. No hay enemigos: solo **Zak** y su trono.
 
-Las bajadas custodiadas no se abren mientras su jefe esté vivo; si reaparece mientras estás abajo, subir siempre se puede. El mapa marca el almacén ($), el herrero (⚒), las bajadas (▼ ▲), el altar (✝) y las guaridas de los jefes (☠). Dentro de una cueva profunda o del trono, el mapa muestra esa zona. Los enemigos vuelven a aparecer después de **35 segundos**; el Capo y la Yarará, después de **3 minutos**; el Chupasangre, de 4; el Gólem, de 5; y Cerbero, de 10.
+Las bajadas custodiadas no se abren mientras su jefe esté vivo; si reaparece mientras estás abajo, subir siempre se puede. Los enemigos vuelven a aparecer después de **35 segundos**; el Capo y la Yarará, después de **3 minutos**; el Chupasangre, de 4; el Gólem, de 5; y Cerbero, de 10.
 
 Al quedar noqueado volvés a la aldea. Si te vence un chorro aparece «Uhh... este gil me sacó guita»… y es literal: un chorro o el Capo se llevan el **30%** de tus monedas. Cualquier otra derrota cuesta el **10%**. Si Zak te ejecuta, perdés toda la guita, los materiales y las ofrendas (ver [El Trono de Zak](#el-trono-de-zak)).
 
@@ -166,6 +165,12 @@ El Almacén también **compra las ofrendas** de los jefes, una por vez:
 
 La Esfera mágica no va al altar: es un trofeo que solo sirve para vender. El Rey Mago también suelta siempre una **🗝 Llave del trono**.
 
+## Ficha, bolsa y diario
+
+- **Ficha (C):** tiene dos páginas. En **Tu personaje** está su retrato en un recuadro, el nivel y la experiencia, las estadísticas con los puntos para mejorar, cómo peleás ahora (vida, poder de golpe, armadura, velocidad…) y su habilidad, ventaja y desventaja. En **Tu compañero** está el retrato del que elijas, su nivel, sus números (daño por golpe, cada cuánto pega y saca su especial, cuánto le duran los efectos), su especial, su habilidad del nivel 5 y un campo para **cambiarle el nombre**. Los que todavía no tenés se ven como silueta, con la pista de cómo se consiguen.
+- **Bolsa (B):** todo lo que llevás encima menos la guita: objetos para usar, amuletos, armas con su nivel, armadura y herramientas, hierbas, materiales y **reliquias** (llaves del trono y ofrendas de los jefes).
+- **Diario (J):** arriba, tus enemigos y jefes vencidos y tu récord contra Zak. Después, tres bloques: **Medallero**, **Bestiario** y **Misiones** (los pedidos de los vecinos, en curso y cumplidos; el bloque avisa cuando hay alguno listo para entregar). Abajo, el desafío semanal y los objetivos del diario, con su guita para reclamar.
+
 ## Bolsa, consumibles y amuletos
 
 Los consumibles van a la **bolsa** (B, o 🎒): hasta **10 de cada uno**. **F** usa el objeto elegido y **G** cambia cuál; en el celular, el botón 🎒 de la derecha usa el elegido. Desde la bolsa también podés usarlos o elegirlos.
@@ -204,7 +209,7 @@ Los consumibles van a la **bolsa** (B, o 🎒): hasta **10 de cada uno**. **F** 
 
 ### Pedidos de los vecinos
 
-Algunos vecinos tienen un pedido: después de hablar con ellos (E) se abre su menú para aceptarlo. Los enemigos cuentan **desde que lo aceptás**; las entregas se llevan lo que piden. La bolsa muestra los pedidos en curso.
+Algunos vecinos tienen un pedido: después de hablar con ellos (E) se abre su menú para aceptarlo. Los enemigos cuentan **desde que lo aceptás**; las entregas se llevan lo que piden. El bloque **Misiones** del diario muestra los pedidos en curso y los cumplidos.
 
 | Vecino | Pedido | Recompensa |
 | --- | --- | --- |
@@ -239,7 +244,7 @@ Si el alma pierde, hay un **30%** de que te pida la **revancha**: si gana ella, 
 
 ## Compañeros
 
-Hay cuatro bichos para domesticar. Te acompaña uno por vez: te sigue a todos lados (también a las cuevas y a la dimensión de Zak), ataca a los enemigos cercanos y los enemigos no lo ven ni le pueden pegar. Al domesticarlo le ponés un nombre, que después podés cambiar desde la bolsa o la guardería. El que llega último sale con vos y el que llevabas se queda en **La guardería**.
+Hay cuatro bichos para domesticar. Te acompaña uno por vez: te sigue a todos lados (también a las cuevas y a la dimensión de Zak), ataca a los enemigos cercanos y los enemigos no lo ven ni le pueden pegar. Al domesticarlo le ponés un nombre, que después podés cambiar desde la ficha (C, página «Tu compañero») o la guardería. El que llega último sale con vos y el que llevabas se queda en **La guardería**.
 
 Su daño es una parte del de tu golpe con el arma que tenés en la mano. De menor a mayor: murciélago, perro, serpiente y Golemsín.
 
@@ -265,7 +270,7 @@ Al **nivel 5** aprenden una habilidad, que no hace daño (o casi):
 | 🐍 Serpiente | **Abrazo** | Se enrosca a un enemigo y lo deja quieto 2,5 s (a los jefes, 1 s; a Zak, nada). |
 | 🪨 Golemsín | **Avalancha** | Caen piedras alrededor de un enemigo: los de ahí quedan aturdidos 1,5 s (los jefes, 0,6 s; Zak, nada). Pegan poquito. |
 
-Al **nivel 10** brillan con unos destellos dorados y dan una medalla. En la guardería, **Doña Herminia entrena** a los que esperan ahí: cada entrenamiento les da medio nivel y cuesta ◉ 150 por su nivel. Al que llevás con vos lo entrenás peleando. El nivel se ve en la bolsa y en la guardería.
+Al **nivel 10** brillan con unos destellos dorados y dan una medalla. En la guardería, **Doña Herminia entrena** a los que esperan ahí: cada entrenamiento les da medio nivel y cuesta ◉ 150 por su nivel. Al que llevás con vos lo entrenás peleando. El nivel se ve en la ficha (C, página «Tu compañero») y en la guardería.
 
 ## Medallas
 
@@ -327,7 +332,7 @@ La **antorcha** cuesta 1 de madera y 3 de carbón. Se fabrica una sola vez y hab
 
 **Espada Elemental.** Se forja con **5 Piedras Elementales, 10 de diamante, 15 de oro, 20 de hierro, 25 de piedra y 10 de madera**. Multiplica la fuerza por **4,5**, contra ×3 de la espada al nivel 6, y no se mejora. Se equipa con la tecla 5.
 
-Los materiales, las herramientas, las mejoras, las ofrendas y las vetas recién picadas se guardan con la partida. La ficha del personaje (C) muestra tu bolsa de materiales.
+Los materiales, las herramientas, las mejoras, las ofrendas y las vetas recién picadas se guardan con la partida. La bolsa (B) muestra tus materiales, herramientas y ofrendas.
 
 ## Jefes
 
@@ -538,8 +543,8 @@ Implementado con **HTML, CSS y JavaScript**, sin paquetes externos. El mundo se 
 - `src/wanderer.js`: el vendedor ambulante, cuándo y dónde aparece y qué vende.
 - `src/weekly.js`: el desafío semanal y su premio.
 - `src/bestiary.js`: las historias del bestiario y qué enemigos venciste.
-- `src/ui.js`: menús, HUD, tienda, ranking, guardados y controles táctiles.
-- `src/ui-extras.js`: la mesa de truco, el medallero, la guardería y la puerta del trono.
+- `src/ui.js`: menús, HUD, ficha, bolsa, diario y misiones, tienda, ranking, guardados y controles táctiles.
+- `src/ui-extras.js`: la mesa de truco, el medallero, la página del compañero en la ficha, la guardería y la puerta del trono.
 - `src/ui-codex.js`: el bestiario, el desafío semanal del diario y el vendedor ambulante.
 - `src/ranking.js` y `src/config.js`: ranking local u online (Supabase).
 - `src/cloud.js`: cuentas y partidas en la nube (Supabase).
@@ -553,7 +558,7 @@ node tests/rules.test.js
 
 Abrí `tests/index.html` para ejecutar las 46 pruebas de reglas y las 171 pruebas de integración del motor en el navegador. El resultado detalla cada caso aprobado o fallido.
 
-También se incluyen 73 pruebas de interfaz y de pixel art, 31 del ranking (con un servidor simulado), 36 de controles táctiles y 42 de la nube (también con un servidor simulado) con Chrome y Python 3, sin librerías adicionales. El verificador abre un perfil temporal aislado; nunca usa tus guardados personales:
+También se incluyen 86 pruebas de interfaz y de pixel art, 31 del ranking (con un servidor simulado), 36 de controles táctiles y 42 de la nube (también con un servidor simulado) con Chrome y Python 3, sin librerías adicionales. El verificador abre un perfil temporal aislado; nunca usa tus guardados personales:
 
 ```sh
 python tests/browser_check.py tests/index.html --script tests/engine.test.js
