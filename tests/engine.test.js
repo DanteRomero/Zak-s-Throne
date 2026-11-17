@@ -870,6 +870,7 @@
       for (let i = 0; i < 900; i++) { game.time += 1 / 15; game.updateNpcs(1 / 15); }
       const moved = w.npcs.filter(n => !n.static && n.kind !== 'smith' && (n.x !== n.homeX || n.y !== n.homeY)); ok(moved.length > 20, 'most of them walked: ' + moved.length);
       for (const n of w.npcs) { if (n.kind === 'smith') continue; const r = n.radius || 9, [rx, ry] = n.roam || [65, 55]; equal(Z.biomeAt(n.x, n.y), n.zone || 'village', n.name); ok(!Z.collides(w, n.x, n.y, r, n.id), n.name + ' got stuck');
+        if (n.route) continue; // Doña Herminia recorre toda La guardería (v2.32)
         if (!n.static) ok(Math.abs(n.x - n.homeX) <= rx + 4 && Math.abs(n.y - n.homeY) <= ry + 4, n.name + ' wandered off'); else ok(n.x === n.homeX && n.y === n.homeY, n.name + ' must stay'); }
     });
     test('No animal or neighbor can trap the player, not even a horse', () => {
@@ -1118,7 +1119,8 @@
       const world = Z.createWorld(), dog = world.npcs.find(n => n.id === 'pet-wild-dog'), lady = world.npcs.find(n => n.name === 'Doña Herminia'), bat = world.npcs.find(n => n.id === 'pet-wild-bat');
       ok(world.objects.some(o => o.type === 'house' && o.label === 'La guardería')); equal(Z.biomeAt(dog.x, dog.y), 'village'); equal(Z.biomeAt(bat.x, bat.y), 'cave2');
       for (const n of [dog, lady, bat]) equal(Z.collides(world, n.x, n.y, 7, n.id), false, n.name + ' is not inside a wall');
-      for (const [x, y] of Z.KENNEL.spots) equal(Z.collides({...world, npcs: []}, x, y, 7), false, 'kennel spot ' + x + ',' + y);
+      for (const [id, {x, y}] of Object.entries(Z.KENNEL.pens)) { equal(Z.collides({...world, npcs: []}, x, y, 7), false, id + ' pen'); equal(Z.biomeAt(x, y), 'kennel'); }
+      equal(Z.biomeAt(lady.x, lady.y), 'kennel', 'Herminia works inside since v2.32');
       const kennel = world.objects.find(o => o.label === 'La guardería'); ok(world.objects.indexOf(kennel) > world.objects.findIndex(o => o.type === 'ore' && o.ore === 'arcane'), 'added after everything else');
     });
     test('v2.21: the hungry dog eats five plates two minutes apart, licks you and follows you', () => {
@@ -1407,6 +1409,48 @@
       equal(vampire.act, null, 'the drain is cancelled'); equal(p.grabbed, 0, 'and it lets you go');
       game.enemies = []; const thief = enemy('thief', p.x + 20); thief.telegraph = .5; thief.dash = .3; pet.special = 0; game.petStrike(pet, thief);
       ok(!thief.telegraph && !thief.dash, 'common enemies lose their attack too');
+    });
+    test('v2.32: you walk into the kennel through its door and out again', () => {
+      const p = fixture('gero', true), w = game.world, outer = w.objects.find(o => o.type === 'stairs' && o.door && !o.inner), inner = w.objects.find(o => o.type === 'stairs' && o.inner);
+      Object.assign(p, Z.KENNEL.outside); equal(Z.nearbyInteractable(w, p.x, p.y, 46, p), outer, 'the door is right there'); equal(game.nearbyAction().label, 'Entrar a La guardería');
+      game.state = 'playing'; game.interact(); advance(.1); equal(game.biome, 'kennel'); ok(Z.isSafe('kennel') && !Z.isOutdoors('kennel'), 'safe and under a roof');
+      equal(Z.nearbyInteractable(w, p.x, p.y, 46, p), inner); game.interact(); advance(.1); equal(game.biome, 'village'); near(p.x, Z.KENNEL.outside.x);
+      for (const s of [Z.KENNEL.outside, Z.KENNEL.inside]) equal(Z.collides(w, s.x, s.y, 8), false, 'free ground at ' + s.x + ',' + s.y);
+      // Nadie se escapa de la habitación: ni por la puerta hacia la dimensión, ni por las paredes.
+      Object.assign(p, Z.KENNEL.inside); for (let k = 0; k < 120; k++) game.move(p, 3, 0, 8, 'kennel'); ok(p.x < Z.KENNEL_ZONE.x + Z.KENNEL_ZONE.w, 'the door is closed behind you'); equal(Z.biomeAt(p.x, p.y), 'kennel');
+    });
+    test('v2.32: the companions you leave wait in their own pen, and you can visit them', () => {
+      const p = fixture('gero', true); for (const id of Z.PET_ORDER) p.pets[id] = {name: Z.PETS[id].name}; p.pet = 'bat'; game.syncPetNpcs();
+      const kept = game.world.npcs.filter(n => n.kennel); equal(kept.length, 3, 'all but the bat'); ok(!kept.some(n => n.pet === 'bat'));
+      for (let i = 0; i < 900; i++) game.updateNpcs(1 / 15);
+      for (const n of kept) { const pen = Z.KENNEL.pens[n.pet]; equal(Z.biomeAt(n.x, n.y), 'kennel'); ok(Math.abs(n.x - pen.x) <= 50 && Math.abs(n.y - pen.y) <= 36, n.name + ' stays in its pen'); ok(!Z.collides(game.world, n.x, n.y, 7, n.id), n.name + ' is not stuck'); }
+      const dog = kept.find(n => n.pet === 'dog'); Object.assign(p, {x: dog.x, y: dog.y + 18}); game.biome = 'kennel'; equal(game.petTarget(), dog, 'you can walk in and pet it');
+    });
+    test('v2.32: Doña Herminia walks from pen to pen and comes back when you ring the bell', () => {
+      const p = fixture('gero', true), w = game.world, lady = w.npcs.find(n => n.id === 'herminia'); Object.assign(p, w.spawn);
+      const seen = new Set(); for (let i = 0; i < 6000; i++) { game.updateNpcs(1 / 15); seen.add(lady.leg); equal(Z.biomeAt(lady.x, lady.y), 'kennel'); }
+      ok(seen.size >= Z.KENNEL.route.length - 1, 'she does her whole round: ' + seen.size + '/' + Z.KENNEL.route.length); ok(!Z.collides(w, lady.x, lady.y, 9, lady.id), 'and never gets stuck in a fence');
+      Object.assign(lady, {x: Z.KENNEL.pens.snake.x, y: 2930, wait: 0}); game.ringBell(); ok(lady.queue && lady.queue.length, 'the bell calls her');
+      for (let i = 0; i < 900 && lady.queue; i++) game.updateNpcs(1 / 15); ok(!lady.queue, 'she made it back'); ok(Math.hypot(lady.x - Z.KENNEL.route[0].x, lady.y - Z.KENNEL.route[0].y) < 4, 'behind the counter');
+      Object.assign(p, {x: lady.x, y: 2735}); game.biome = 'kennel'; equal(Z.nearbyInteractable(w, p.x, p.y, 46, p), lady, 'you can talk to her across the counter');
+    });
+    test('v2.32: the green portal of the Sanctum takes you out of Zak dimension', () => {
+      const p = fixture('gero', true); p.portal = true; game.enterDimension(); equal(game.biome, 'sanctum');
+      const o = game.world.objects.find(m => m.type === 'portal' && m.kind === 'home'); ok(o); equal(Z.biomeAt(o.x + o.w / 2, o.y + o.h / 2), 'sanctum'); equal(Z.collides(game.world, o.x + o.w / 2, o.y + o.h / 2, 8), false, 'free ground');
+      Object.assign(p, {x: o.x + o.w / 2, y: o.y + o.h / 2}); game.state = 'playing'; advance(.1); equal(game.biome, 'village', 'back home'); ok(p.portal, 'the altar portal stays open');
+    });
+    test('v2.32: Don Anselmo changes his rare things three times a visit, never repeating the last ones', () => {
+      equal(Z.wandererRound(Z.WANDERER.stay), 0); equal(Z.wandererRound(Z.WANDERER.stay - Z.WANDERER.rotate - 1), 1); equal(Z.wandererRound(1), 2);
+      for (let v = 1; v < 40; v++) for (let r = 1; r < 3; r++) { const a = Z.wandererStock(v, 'x', r - 1).map(o => o.id), b = Z.wandererStock(v, 'x', r).map(o => o.id); equal(b.length, 3); ok(!b.some(id => a.includes(id)), 'visit ' + v + ' round ' + r + ' repeats'); }
+      const p = fixture('gero'); let t = 0; while (!Z.wandererAt(t, p.runId)) t += 30; const at = Z.wandererAt(t, p.runId);
+      p.playTime = t - (Z.WANDERER.stay - at.left); const first = game.wandererOffers().map(o => o.id); p.playTime += Z.WANDERER.rotate + 1; const later = game.wandererOffers().map(o => o.id);
+      for (const id of ['heal', 'cure', 'amulet:dice']) ok(first.includes(id) && later.includes(id), id + ' is always there');
+      ok(later.some(id => !first.includes(id)), 'the rest changed'); ok(/Cambia lo raro|Se va/.test(game.wandererNext()));
+    });
+    test('v2.32: old saves load as before, and a save made inside the kennel loads inside', () => {
+      const p = fixture('gero', true); Object.assign(p, Z.KENNEL.inside); const save = JSON.parse(JSON.stringify(game.snapshot()));
+      game.newGame('gero'); game.restore(save, 1); equal(Z.biomeAt(game.player.x, game.player.y), 'kennel'); near(game.player.x, Z.KENNEL.inside.x);
+      const world = Z.createWorld(), house = world.objects.findIndex(o => o.label === 'La guardería'); ok(world.objects.findIndex(o => o.type === 'kwall') > house, 'the inside is added after everything else');
     });
     test('v2.29: companions help a little: every pet hits for a small part of your blow', () => {
       for (const id of Z.PET_ORDER) ok(Z.PETS[id].hit / (Z.PETS[id].every || 1) <= .14, id + ' hits softly');

@@ -2,7 +2,7 @@
 
 Una aventura de acción y exploración en pixel art, vista desde arriba. Elegí a uno de siete amigos, preparate en la aldea y salí a explorar la cueva y los Yuyos.
 
-Versión actual: **v2.31**. Los cambios de cada versión están en [CHANGELOG.md](CHANGELOG.md).
+Versión actual: **v2.32**. Los cambios de cada versión están en [CHANGELOG.md](CHANGELOG.md).
 
 ## Jugar
 
@@ -69,8 +69,8 @@ Los guardados se conservan en el almacenamiento local del navegador usado para j
 - **Cueva Profunda (Nvl 2):** se baja por la escalera del fondo noroeste de la Cueva del Eco; **hace falta una antorcha y haber vencido al Capo**. Está a oscuras: ves lo que alumbra la antorcha. Hay murciélagos, arañas, hierro y oro, y **no crecen hierbas medicinales**. En su extremo sureste baja otra escalera, custodiada por **El Chupasangre**.
 - **Las Entrañas (Nvl 3):** pocos gusanos de tierra, enterrados hasta que te acercás, las únicas vetas de diamante y **El Gólem Minero**.
 - **Altar del gobernante:** un cementerio al oeste de la aldea; se entra por el portón al final de la calle principal. Lo pueblan esqueletos con escudo y esqueletos arqueros. **Cerbero** custodia el altar de ofrendas.
-- **Dimensión de Zak:** el portal del altar lleva acá, y **no se sale** hasta vencer o perder contra Zak. Las ofrendas se gastan una sola vez: **el portal queda prendido para siempre** y lo podés volver a cruzar, salvo mientras **Cerbero** esté vivo (se ve rojo y no deja pasar). Tiene cinco partes, con el mismo estilo oscuro y violeta del trono:
-  - **Santuario** (zona segura): una fuente que, como el pozo de la aldea, devuelve la vida y la energía y apaga las quemaduras, y además te llena botellas de **agua bendita** hasta tener 2. Ahí vaga **Ánima**, un alma que tiene un pedido.
+- **Dimensión de Zak:** el portal del altar lleva acá. Para volver, el **portal verde** del Santuario (dice «A CASA») te deja en la plaza de Palihue City; también se sale venciendo o perdiendo contra Zak. Las ofrendas se gastan una sola vez: **el portal queda prendido para siempre** y lo podés volver a cruzar, salvo mientras **Cerbero** esté vivo (se ve rojo y no deja pasar). Tiene cinco partes, con el mismo estilo oscuro y violeta del trono:
+  - **Santuario** (zona segura): el portal verde de salida y una fuente que, como el pozo de la aldea, devuelve la vida y la energía y apaga las quemaduras, y además te llena botellas de **agua bendita** hasta tener 2. Ahí vaga **Ánima**, un alma que tiene un pedido.
   - **Pueblo Mágico** (al norte): carpas, fogatas, magos y armaduras vivientes. **Pisar una fogata quema**: 2 de vida por segundo durante 5 s, ignorando la armadura (rodar no te salva). Con **agua bendita** (E cerca) la apagás durante 45 s; si un mago anda cerca, la vuelve a prender cuatro veces más rápido. Las **carpas** se revisan con E (cada una, cada 5 minutos): guita, agua bendita, vendas, petardos, cristal arcano, un elixir… o un **mimic** (15%). Al fondo, el **Rey Mago** custodia la **puerta del trono**, que se abre con su **Llave del trono** (se gasta al usarla).
   - **Feria de las Almas** (zona segura, al este del Santuario): vecinos de la dimensión, una mesa de truco eterna y el **Mercader del Vacío**.
   - **Biblioteca del Rey Mago** (al norte de la Feria): estantes sueltos, atriles, **libros voladores** y **duendes ilusionistas**.
@@ -97,7 +97,7 @@ El día completo dura **24 minutos reales** (cada hora del juego es un minuto) y
 
 - **Día:** de 07:00 a 14:00.
 - **Tarde:** de 14:00 a 19:00, con una luz dorada que crece hasta el atardecer.
-- **Noche:** de 19:00 a 07:00.
+- **Noche:** de 19:00 a 07:00. Es oscura de verdad: se ve bien alrededor tuyo, y más allá alumbran los faroles y las ventanas de las casas. Adentro de La guardería no se nota.
 
 **Luna roja:** cada noche hay un **5%** de que salga, y dura hasta que amanece. Durante esa noche, todos los enemigos, jefes incluidos (también los de la dimensión de Zak), tienen los **ojos rojos brillantes**, **50%** más de vida y de fuerza, **2** más de armadura y se mueven un **25%** más rápido (los comunes también atacan más seguido). A cambio dan **el doble de experiencia y de monedas**.
 
@@ -235,7 +235,7 @@ Atiende su puesto en la Feria de las Almas (E en el puesto o hablándole). Vende
 
 **Don Anselmo** anda de acá para allá. Cada tanto aparece en alguna **zona peligrosa** (Los Yuyos, el cementerio o alguna cueva; nunca en las aldeas), se queda unos minutos y se va. Cuando llega, corre la voz: un aviso dice en qué zona anda. Si llega a la zona donde estás, o entrás a la zona donde está él, se escuchan sus **campanitas** 🔔.
 
-Siempre tiene **curas** (curación completa y sacarte los males) y el **🎲 Dado cargado**, y trae **tres cosas raras** distintas en cada visita: ofrendas de jefe, Piedras Elementales, diamantes, un Dorado, amuletos… Todo **carísimo**. Comprarle cualquier cosa da una medalla.
+Siempre tiene tres cosas fijas: **curación completa**, **sacarte los males** y el **🎲 Dado cargado**. Además muestra **tres cosas raras** que **cambia cada 70 segundos** mientras está (tres tandas por visita, y ninguna repite lo de la anterior); su menú dice cuánto falta para la próxima tanda, y si estás en su zona te avisa cuando saca cosas nuevas. Lo raro sale de un surtido grande: ofrendas de jefe, Piedras Elementales, diamantes, un Dorado, amuletos… Todo **carísimo**. Comprarle cualquier cosa da una medalla.
 
 ### Truco en la Feria
 
@@ -260,7 +260,15 @@ Su daño es una parte chica del de tu golpe con el arma que tenés en la mano: a
 
 Mientras un enemigo no recibe golpes (el **Refuerzo** del Gólem, el salto de Cerbero, cuando se levanta con otra vida, la Tormenta de Zak…), tampoco le hace nada ningún efecto: ni inmovilizar, ni desangrar, ni envenenar, ni asustar. El compañero se guarda el especial para cuando se pueda. Lo mismo pasa con la danza de Tena.
 
-**La guardería** queda al noreste de la plaza, sobre la calle que sube al norte. Ahí esperan los compañeros que no llevás: acercate a uno y apretá E para salir con él (el que llevabas se queda), cambiarle el nombre o dejar al tuyo y seguir solo.
+**La guardería** queda al noreste de la plaza, sobre la calle que sube al norte. Se entra por la puerta con E. Adentro hay **seis corrales** separados por vallas, cada uno con su cartel y la tranquera abierta, y un pasillo con alfombra:
+
+- 🦇 **Murciélago:** un rincón oscuro con toldo y estalactitas de tela, la percha, frutas y agua.
+- 🐕 **Perro:** cucha, camita, plato de comida, agua, hueso y pelota.
+- 🐍 **Serpiente:** arena, piedra, tronco, lámpara de calor, cactus y la piel que cambió.
+- 🪨 **Golemsín:** piedritas, una montaña de mineral, la zorra de mina, cristales y un yunque.
+- Dos corrales **libres**, con fardos de pasto.
+
+Los compañeros que no llevás esperan cada uno en su corral: entrá, acercate y apretá E para salir con él (el que llevabas se queda), cambiarle el nombre o dejar al tuyo y seguir solo. **Doña Herminia** atiende detrás del mostrador, en el rincón, y cada tanto sale a recorrer los corrales. Si tocás la **campanita** del mostrador, vuelve a atenderte. Adentro es zona segura, no llueve y la luz es siempre tibia; por las ventanas se ve si es de día o de noche.
 
 ### Niveles de los compañeros
 
@@ -545,6 +553,7 @@ Implementado con **HTML, CSS y JavaScript**, sin paquetes externos. El mundo se 
 - `src/weather.js`: el clima (lluvia, tormenta eléctrica y niebla), los rayos, el pasto en llamas y los esqueletos de la niebla.
 - `src/companions.js` y `src/companions-art.js`: los compañeros, La guardería y Doña Herminia, y cómo se dibujan.
 - `src/companion-levels.js`: los niveles de los compañeros, sus habilidades del nivel 5 y el entrenamiento.
+- `src/kennel.js`: adentro de La guardería (corrales, mostrador y recorrido de Doña Herminia), el portal de salida del Santuario y el nido de la Yarará.
 - `src/truco.js`: el truco a 15 con las almas de la Feria, las apuestas y las cartas españolas.
 - `src/medals.js`: las medallas, sus dibujos y cuándo se ganan.
 - `src/wanderer.js`: el vendedor ambulante, cuándo y dónde aparece y qué vende.
@@ -563,9 +572,9 @@ Si ya tenés Node instalado:
 node tests/rules.test.js
 ```
 
-Abrí `tests/index.html` para ejecutar las 46 pruebas de reglas y las 180 pruebas de integración del motor en el navegador. El resultado detalla cada caso aprobado o fallido.
+Abrí `tests/index.html` para ejecutar las 46 pruebas de reglas y las 186 pruebas de integración del motor en el navegador. El resultado detalla cada caso aprobado o fallido.
 
-También se incluyen 92 pruebas de interfaz y de pixel art, 31 del ranking (con un servidor simulado), 36 de controles táctiles y 42 de la nube (también con un servidor simulado) con Chrome y Python 3, sin librerías adicionales. El verificador abre un perfil temporal aislado; nunca usa tus guardados personales:
+También se incluyen 95 pruebas de interfaz y de pixel art, 31 del ranking (con un servidor simulado), 36 de controles táctiles y 42 de la nube (también con un servidor simulado) con Chrome y Python 3, sin librerías adicionales. El verificador abre un perfil temporal aislado; nunca usa tus guardados personales:
 
 ```sh
 python tests/browser_check.py tests/index.html --script tests/engine.test.js

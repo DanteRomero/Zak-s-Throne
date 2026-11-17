@@ -251,12 +251,13 @@ Z.drawWeather = function (c, game, ox, oy, W, H, time) {
    c.fillStyle = 'rgba(38,52,78,' + (rain * .2) + ')'; c.fillRect(0, 0, W, H);
    const drops = Math.round((storm > .02 ? 230 : 150) * rain), slant = storm > .02 ? .45 : .25;
    for (let k = 0; k < drops; k++) {
-    const speed = 320 + hash(k, 3) * 160, x = ((hash(k, 1) * (W + 80) - time * speed * slant + ox * .2) % (W + 80) + W + 80) % (W + 80) - 40, y = ((hash(k, 2) * H + time * speed) % (H + 20)) - 10;
+    // Gotas ancladas al mundo: caen en su lugar y no corren con la cámara.
+    const speed = 320 + hash(k, 3) * 160, wrap = (v, n) => ((v % n) + n) % n, x = wrap(hash(k, 1) * (W + 80) - time * speed * slant - ox, W + 80) - 40, y = wrap(hash(k, 2) * (H + 20) + time * speed - oy, H + 20) - 10;
     c.globalAlpha = .28 + hash(k, 4) * .3; rect(c, x, y, 1, 4, '#c8dcea'); rect(c, x - 1, y + 4, 1, 3, '#c8dcea');
    }
    const beat = Math.floor(time * 8);
    for (let k = 0; k < Math.round(26 * rain); k++) {
-    const x = hash(k, beat, 7) * W, y = 20 + hash(k, beat, 8) * (H - 20); c.globalAlpha = .55;
+    const x = ((hash(k, beat, 7) * W - ox) % W + W) % W, y = 20 + ((hash(k, beat, 8) * (H - 20) - oy) % (H - 20) + H - 20) % (H - 20); c.globalAlpha = .55;
     rect(c, x - 2, y - 1, 1, 1, '#dbeaf2'); rect(c, x + 2, y - 1, 1, 1, '#dbeaf2'); rect(c, x - 1, y, 3, 1, '#a9c4d6');
    }
   }
@@ -276,10 +277,11 @@ function drawFog(c, game, ox, oy, W, H, time, fog) {
  const {hash} = D(), p = game.player, px = p.x - ox, py = p.y - oy - 12, grave = game.biome === 'altar';
  // Cerca tuyo se ve; más allá, todo blanco grisáceo.
  Px.shade(c, px, py, W, H, [[FOG.clear, 0], [FOG.edge, .82 * fog], [FOG.edge * 1.8, .94 * fog], [Math.max(W, H) * 1.5, .94 * fog]], grave ? '#8d8a9e' : '#a9b2b6');
- for (let k = 0; k < 9; k++) {
-  const fx = ((hash(k, 4) * W * 1.5 + time * (5 + k * 1.5) - ox * .3) % (W + 240) + W + 240) % (W + 240) - 120, fy = hash(k, 6) * H;
+ // Bancos de niebla anclados al mundo: se mecen despacio en su lugar.
+ D().ambientCells(ox, oy, W, H, (bx, by, cx, cy) => {
+  if (hash(cx, cy, 95) > .7) return; const S = D().AMBIENT_CELL, h = hash(cx, cy, 96), fx = bx + hash(cx, cy, 97) * S + Math.sin(time * .06 + h * 9) * 60 - ox, fy = by + hash(cx, cy, 98) * S - oy;
   c.globalAlpha = .08 * fog; Px.oval(c, fx, fy, 110, 18, '#e6eaee'); c.globalAlpha = .06 * fog; Px.oval(c, fx + 14, fy + 3, 70, 10, '#f4f6f8');
- }
+ });
  c.globalAlpha = 1;
 }
 // Efectos: salpicadura, el rayo que baja del cielo y el esqueleto que sale de la tierra.

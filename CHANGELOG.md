@@ -5,7 +5,19 @@ Cada versión lista sus cambios agrupados por tipo:
 - **Feature:** algo nuevo.
 - **Change:** algo que ya existía y ahora funciona distinto.
 - **Fix:** un error corregido.
-    
+
+## v2.32 — 2026-11-17
+* Feature
+    - **Se puede entrar a La guardería:** adentro hay seis corrales separados por vallas, con cartel y tranquera. Los compañeros que no llevás esperan cada uno en el suyo, con su decoración: el murciélago tiene un rincón oscuro, una percha y frutas; el perro, cucha, camita, platos, hueso y pelota; la serpiente, arena, piedra, tronco, lámpara de calor y cactus; el Golemsín, piedritas, mineral, una zorra de mina y un yunque. Dos corrales quedan libres.
+    - **Doña Herminia atiende adentro:** está detrás de su mostrador, en el rincón, y sale a recorrer los corrales. La campanita del mostrador la hace volver. Hay estantes con frascos, ventanas que muestran si es de día o de noche, alfombras, plantas y un banco.
+    - **Salida de la dimensión de Zak:** en el Santuario hay un portal verde («A CASA») que te lleva a la plaza de Palihue City. El portal del altar sigue abierto para volver.
+* Change
+    - **El vendedor ambulante cambia lo que vende:** las curas y el Dado cargado son fijos, y las tres cosas raras cambian cada 70 segundos mientras está (tres tandas por visita, sin repetir la anterior). El surtido es más grande: comida, vendas, petardos, bagre, hierro, carbón, cristal arcano y más amuletos. Su menú dice cuándo cambia y te avisa cuando saca cosas nuevas.
+    - **La noche es más oscura:** un azul profundo, y se ve bien solo alrededor tuyo. Los faroles y las ventanas alumbran más.
+    - **El nido de la Yarará, rediseñado:** es un nido de ramas tejidas, con su hueco de pasto seco y huevos moteados de violeta. Cuando nace la viborita, queda un cascarón roto.
+* Fix
+    - **Las partículas seguían a la pantalla:** el polvo, las hojas, las mariposas, las luciérnagas, la bruma del cementerio, las chispas de la dimensión, la niebla y la lluvia ahora quedan en su lugar del mundo.
+
 ## v2.31 — 2026-11-17
 * Change
     - **Subir de nivel a los compañeros depende de tu nivel:** la experiencia que necesitan crece un 6% por cada nivel de tu personaje, lo mismo que crece la experiencia que dan los enemigos comunes. A cualquier altura hacen falta más o menos los mismos enemigos: con un personaje de nivel 90 ya no alcanzan cuatro o cinco para llegar al nivel 10. Con el nivel 1 no cambia nada. Los que ya subieron no pierden niveles, y lo que Doña Herminia entrena también va según tu nivel.

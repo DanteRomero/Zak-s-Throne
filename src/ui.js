@@ -703,6 +703,7 @@
         parent.append(el('h3','smith-heading',shop === 'chiche' ? 'La caña y lo que pesques' : shop === 'merchant' ? 'Cosas del otro lado' : shop === 'wanderer' ? 'Cosas raras · precios de estafa' : 'Lo que tiene para vos'));
         offers.forEach(o => offerRow(parent,o,() => { const r = game.npcTrade(n,o.id); showNpc(n,r.message); updateHud(true); }));
       }
+      if (shop === 'wanderer' && game.wandererNext) { const next = game.wandererNext(); if (next) paragraph(parent,next,'hint'); }
       if (shop === 'chiche') paragraph(parent,'Hay tres lagunas en la aldea. Mojarras, pejerreyes, bagres… y uno de cada veinte, un dorado.','hint');
       // Secciones de otros módulos: el truco de las almas y la viborita de Doña Herminia (ui-extras.js).
       (Zak.UI.npcSections || []).forEach(section => section(n, parent));

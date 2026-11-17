@@ -20,8 +20,17 @@ const BAT = Z.PET_BAT = {feeds: 3, bleed: 5, tick: 1};
 const GOLEM = Z.PET_GOLEM = {chance: .05, gift: {stone: 2, iron: 2, gold: 2, diamond: 2, elemental: 2}, throwEvery: 2, damage: 5, range: 220, shield: 3};
 const SNAKE = Z.PET_SNAKE = {chance: .05, time: 600, price: 2000, eat: .04, eatTime: 3, venom: 5};
 const LADY = 'Doña Herminia';
-// La guardería queda al noreste de la plaza, sobre la calle que va al norte.
-const KENNEL = Z.KENNEL = {house: {x: 1182, y: 700, w: 98, h: 52}, dog: {x: 1258, y: 772}, lady: {x: 1312, y: 770}, spots: [[1170, 776], [1198, 792], [1226, 780], [1340, 790]]};
+// La guardería queda al noreste de la plaza, sobre la calle que va al norte. Desde la v2.32 se entra:
+// adentro (Z.KENNEL_ZONE) cada compañero tiene su corral y Doña Herminia atiende detrás del mostrador.
+// `pens`: el centro de cada corral; `roam`: cuánto se mueve el bicho adentro sin salirse.
+const KENNEL = Z.KENNEL = {house: {x: 1182, y: 700, w: 98, h: 52}, dog: {x: 1258, y: 772}, lady: {x: -170, y: 2704},
+ door: {x: 1219, y: 750, w: 24, h: 6}, outside: {x: 1222, y: 778}, inside: {x: -104, y: 2834},
+ pens: {bat: {x: -499, y: 2708}, dog: {x: -349, y: 2716}, snake: {x: -499, y: 2966}, golem: {x: -349, y: 2966}}, roam: [44, 30]};
+// Recorrido de Doña Herminia: del mostrador a cada corral (entra por la tranquera) y de vuelta. `rest`: segundos que se queda.
+KENNEL.route = (() => {
+ const P = KENNEL.pens, gate = x => ({x, y: 2834}), visit = (pen, y) => [gate(pen.x), {x: pen.x, y, rest: [3, 6]}, gate(pen.x)];
+ return [{x: -170, y: 2704, rest: [6, 12]}, {x: -90, y: 2704}, {x: -90, y: 2760}, ...visit(P.dog, 2742), ...visit(P.bat, 2742), ...visit(P.snake, 2930), ...visit(P.golem, 2930), {x: -90, y: 2760}, {x: -90, y: 2704}];
+})();
 const BAT_SPOT = {x: 1040, y: 1996}, NEST_SPOT = {x: 2165, y: 283}, GOLEM_SPOT = {x: 1905, y: 2300};
 const STRAY = {coat: '#b07a45', shade: '#8a5c32', light: '#cf9a62', muzzle: '#e8d2b0'};
 Z.PET_COATS = {dog: {...STRAY, collar: '#b5383f'}};
@@ -41,7 +50,7 @@ Z.buildExtras = function (world, object, path) {
  const h = KENNEL.house;
  object('house', h.x, h.y, h.w, h.h, true, {variant: 4, label: 'La guardería'});
  path(h.x + h.w / 2 - 13, h.y + h.h, 26, 16); path(1146, h.y + h.h + 8, h.x + h.w / 2 - 1146, 20);
- world.npcs.push({id: 'herminia', name: LADY, label: 'Hablar con ' + LADY + ', la de las víboras', x: KENNEL.lady.x, y: KENNEL.lady.y, homeX: KENNEL.lady.x, homeY: KENNEL.lady.y, targetX: KENNEL.lady.x, targetY: KENNEL.lady.y, dir: 'down', walk: 0, moving: false, wait: 2, roam: [14, 5], rest: [4, 10], speed: 12,
+ world.npcs.push({id: 'herminia', name: LADY, label: 'Hablar con ' + LADY + ', la de las víboras', x: KENNEL.lady.x, y: KENNEL.lady.y, homeX: KENNEL.lady.x, homeY: KENNEL.lady.y, targetX: KENNEL.lady.x, targetY: KENNEL.lady.y, dir: 'down', walk: 0, moving: false, wait: 4, zone: 'kennel', route: KENNEL.route, leg: 0, speed: 18,
   look: {skin: '#d9a476', skinShade: '#b47c55', top: '#4f8a4a', topShade: '#386638', topLight: '#6aa860', legs: '#4f8a4a', legsShade: '#386638', skirt: true, shoe: '#3a2c26', hair: '#bdb7aa', hairStyle: 'bun', earrings: '#9dd16a', snake: '#7a5ca0'},
   lines: ['Yo cuido a los bichos que la gente no quiere. Perros, murciélagos, piedras con patas… y víboras, mis preferidas.',
    'Esta es Norma. Es mansita, ¿ves? Bueno, no la toques igual.',
@@ -66,8 +75,8 @@ Object.assign(P, {
   if (prog.dog.fed >= DOG.feeds && !this.ownsPet('dog') && !(this.cutscene && this.cutscene.id === 'lick')) this.tamePet('dog');
   if (prog.golem.found && !this.ownsPet('golem')) want.set('pet-wild-golem', {kind: 'pet', pet: 'golem', wild: true, name: 'Golemsín', x: prog.golem.x, y: prog.golem.y, static: true, radius: 9, tag: 28, zone: 'cave3'});
   if (prog.snake.state === 'hatched') want.set('pet-wild-snake', {kind: 'pet', pet: 'snake', wild: true, baby: true, name: 'Viborita', x: NEST_SPOT.x, y: NEST_SPOT.y, static: true, radius: 5, tag: 18, zone: 'weeds'});
-  let spot = 0;
-  for (const id of Z.PET_ORDER) if (this.ownsPet(id) && p.pet !== id) { const [x, y] = KENNEL.spots[spot++ % KENNEL.spots.length]; want.set('kennel-' + id, {kind: 'pet', pet: id, kennel: true, name: this.petName(id), x, y, radius: 7, tag: id === 'snake' ? 24 : 26, roam: [12, 5], rest: [2, 6], speed: id === 'golem' ? 10 : 16, zone: 'village'}); }
+  // Los que no llevás esperan adentro de La guardería, cada uno en su corral.
+  for (const id of Z.PET_ORDER) if (this.ownsPet(id) && p.pet !== id) { const {x, y} = KENNEL.pens[id]; want.set('kennel-' + id, {kind: 'pet', pet: id, kennel: true, name: this.petName(id), x, y, radius: 7, tag: id === 'snake' ? 24 : 26, roam: KENNEL.roam, rest: [2, 6], speed: id === 'golem' ? 10 : 16, zone: 'kennel'}); }
   const gone = id => (id === 'pet-wild-dog' && this.ownsPet('dog')) || (id === 'pet-wild-bat' && this.ownsPet('bat'));
   for (let i = npcs.length - 1; i >= 0; i--) { const n = npcs[i]; if (gone(n.id) || ((/^kennel-|^pet-wild-(golem|snake)$/).test(n.id) && !want.has(n.id))) npcs.splice(i, 1); }
   for (const [id, n] of want) {

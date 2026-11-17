@@ -11,18 +11,20 @@ Z.WORLD_LEFT=-780;
 Z.WORLD_HEIGHT=3700;Z.DIMENSION_TOP=2540;Z.SANCTUM_TOP=3320;
 // Al este del Pueblo Mágico: el Patio de las Gárgolas, la Biblioteca del Rey Mago y la Feria de las Almas (segura).
 Z.REALM_LEFT=1200;Z.LIBRARY_TOP=2960;
-Z.biomeAt=function(x,y){if(y>=Z.DIMENSION_TOP){if(x>=Z.REALM_LEFT)return y>=Z.SANCTUM_TOP?'bazaar':y>=Z.LIBRARY_TOP?'library':'gargoyles';return y>=Z.SANCTUM_TOP?'sanctum':'magic';}if(y>=Z.SURFACE_HEIGHT)return x<0?'throne':x<1200?'cave2':'cave3';if(x<0)return'altar';return x<1000&&y<520?'cave':x>=1550?'weeds':'village';};
+// Adentro de La guardería (v2.32): una habitación aislada al oeste de la dimensión, que no se ve desde ningún otro lado.
+Z.KENNEL_ZONE={x:-736,y:2600,w:672,h:440};
+Z.biomeAt=function(x,y){if(y>=Z.DIMENSION_TOP&&x<0)return'kennel';if(y>=Z.DIMENSION_TOP){if(x>=Z.REALM_LEFT)return y>=Z.SANCTUM_TOP?'bazaar':y>=Z.LIBRARY_TOP?'library':'gargoyles';return y>=Z.SANCTUM_TOP?'sanctum':'magic';}if(y>=Z.SURFACE_HEIGHT)return x<0?'throne':x<1200?'cave2':'cave3';if(x<0)return'altar';return x<1000&&y<520?'cave':x>=1550?'weeds':'village';};
 Z.DEEP_ZONES={cave2:{x:0,y:1880,w:1180,h:620},cave3:{x:1220,y:1880,w:1180,h:620}};
 Z.ALTAR_ZONE={x:-780,y:520,w:780,h:1280};Z.THRONE_ZONE={x:-780,y:1880,w:760,h:620};
 // Zonas cerradas: la cámara no muestra nada fuera de ellas.
 Z.DIMENSION_ZONE={x:0,y:2580,w:1200,h:1100};Z.MAGIC_ZONE={x:0,y:2580,w:1200,h:740};Z.SANCTUM_ZONE={x:0,y:3320,w:1200,h:360};
 Z.GARGOYLE_ZONE={x:1200,y:2580,w:1200,h:380};Z.LIBRARY_ZONE={x:1200,y:2960,w:1200,h:360};Z.BAZAAR_ZONE={x:1200,y:3320,w:1200,h:360};
 Z.REALM_VIEW={x:0,y:2580,w:2400,h:1100};
-Z.ENCLOSED_ZONES={...Z.DEEP_ZONES,throne:Z.THRONE_ZONE,dimension:Z.DIMENSION_ZONE,magic:Z.MAGIC_ZONE,sanctum:Z.SANCTUM_ZONE,realm:Z.REALM_VIEW,gargoyles:Z.GARGOYLE_ZONE,library:Z.LIBRARY_ZONE,bazaar:Z.BAZAAR_ZONE};
+Z.ENCLOSED_ZONES={...Z.DEEP_ZONES,throne:Z.THRONE_ZONE,dimension:Z.DIMENSION_ZONE,magic:Z.MAGIC_ZONE,sanctum:Z.SANCTUM_ZONE,realm:Z.REALM_VIEW,gargoyles:Z.GARGOYLE_ZONE,library:Z.LIBRARY_ZONE,bazaar:Z.BAZAAR_ZONE,kennel:Z.KENNEL_ZONE};
 // Toda la dimensión se recorre como un solo lugar: la cámara la usa entera.
 Z.VIEW_ZONES={magic:'realm',sanctum:'realm',gargoyles:'realm',library:'realm',bazaar:'realm'};
 // Zonas seguras: no hay daño y se curan los estados.
-Z.SAFE_ZONES={village:true,sanctum:true,bazaar:true};Z.isSafe=biome=>!!Z.SAFE_ZONES[biome];
+Z.SAFE_ZONES={village:true,sanctum:true,bazaar:true,kennel:true};Z.isSafe=biome=>!!Z.SAFE_ZONES[biome];
 // La dimensión de Zak: siempre es de noche y la luna roja no llega.
 Z.ZAK_DIMENSION={sanctum:true,magic:true,throne:true,gargoyles:true,library:true,bazaar:true};Z.isZakDimension=biome=>!!Z.ZAK_DIMENSION[biome];
 Z.DIMENSION_SPOTS={arrive:{x:600,y:3610}};
@@ -42,7 +44,8 @@ Z.createWorld=function(){
   {id:'realm',...Z.REALM_VIEW,name:'Dimensión de Zak'},
   {id:'gargoyles',...Z.GARGOYLE_ZONE,name:'Patio de las Gárgolas'},
   {id:'library',...Z.LIBRARY_ZONE,name:'Biblioteca del Rey Mago'},
-  {id:'bazaar',...Z.BAZAAR_ZONE,name:'Feria de las Almas'}
+  {id:'bazaar',...Z.BAZAAR_ZONE,name:'Feria de las Almas'},
+  {id:'kennel',...Z.KENNEL_ZONE,name:'La guardería'}
  ],objects:[],npcs:[],pickups:[],enemySpawns:[],paths:[]};
  let serial=0,seed=1873;
  const random=()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296;};
@@ -191,6 +194,8 @@ Z.createWorld=function(){
  Z.buildRealm(world,object,path,(type,x,y)=>world.enemySpawns.push({id:'realm-'+type+'-'+world.enemySpawns.length,type,x,y}));
  // La guardería, sus vecinos y los compañeros por domesticar (companions.js). Al final, por lo mismo.
  if(Z.buildExtras)Z.buildExtras(world,object,path);
+ // Adentro de La guardería y el portal de salida del Santuario (kennel.js). También al final.
+ if(Z.buildKennel)Z.buildKennel(world,object,path);
  return world;
 };
 // Valla de Los Yuyos, Altar del gobernante y Trono de Zak. Se agregan al final para no cambiar
@@ -266,7 +271,7 @@ Z.collides=function(world,x,y,radius=8,ignoreNpc=null){
  for(const n of world.npcs){if(n.id===ignoreId)continue;if((x-n.x)**2+(y-n.y)**2<(radius+(n.radius||9))**2)return true;}
  return false;
 };
-const PLACES=['well','sign','stall','forge','stairs','altar','door','pond','tent','campfire','voidstall'];
+const PLACES=['well','sign','stall','forge','stairs','altar','door','pond','tent','campfire','voidstall','kbell'];
 // Lugares que solo cuentan en ciertos casos: pescar con caña, revisar carpas del Pueblo Mágico y apagar fogatas con agua bendita.
 const usable=(o,player)=>o.type==='pond'?!!(player&&player.rod):o.type==='tent'?!o.decor&&!(o.searched>0):o.type==='campfire'?!(o.out>0)&&!!(player&&player.items&&player.items.water>0):true;
 // Hasta dónde se puede hablar con alguien, medido desde el borde de su cuerpo.

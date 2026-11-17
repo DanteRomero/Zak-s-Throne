@@ -44,7 +44,7 @@
   }
   function zoneAt(world, x, y) {
     if (world.zones) {
-      for (const id of ["bazaar", "library", "gargoyles", "sanctum", "magic", "throne", "cave3", "cave2", "altar", "cave", "weeds", "village"]) {
+      for (const id of ["kennel", "bazaar", "library", "gargoyles", "sanctum", "magic", "throne", "cave3", "cave2", "altar", "cave", "weeds", "village"]) {
         const z = world.zones.find(a => a.id === id);
         if (z && x >= z.x && y >= z.y && x < z.x + z.w && y < z.y + z.h) return id;
       }
@@ -1607,6 +1607,8 @@
     }
     if(o.type==="portal"){
       const g=currentGame,open=o.kind==="altar"?g&&g.player&&g.player.portal:false;
+      // El portal verde del Santuario: siempre abierto, te devuelve a Palihue City.
+      if(o.kind==="home"){const cx=Math.round(x+w/2),cy=Math.round(y+h/2);c.save();c.translate(cx,cy);drawPortal(c,0,0,time,"#5fd69a","#dcffe9","#0f3a2a");c.restore();pixelText(c,"A CASA",cx,y-40,"#bff5d6",6);return true;}
       if(!open)return true;
       // En la escena del altar el portal aparece recién después de la explosión y crece con rebote.
       const s=g.cutscene&&g.cutscene.id==="altar"?g.cutscene:null,start=(Z.ALTAR_SCENE||{}).open||0;
@@ -1849,30 +1851,49 @@
     }
   }
   // Vida de fondo: polen y mariposas de día, luciérnagas de noche, polvo en las cuevas y hojas que vuelan.
+  // Partículas de ambiente ancladas al mundo (v2.32): cada celda de 128 px tiene las suyas, en un lugar fijo,
+  // así no se mueven con la cámara. Las que viajan (polvo y hojas) nacen y se apagan de a poco, sin saltos.
+  const AMBIENT_CELL=128;
+  function ambientCells(ox,oy,W,H,fn){
+    const S=AMBIENT_CELL,x0=Math.floor((ox-60)/S),x1=Math.floor((ox+W+60)/S),y0=Math.floor((oy-60)/S),y1=Math.floor((oy+H+60)/S);
+    for(let cy=y0;cy<=y1;cy++)for(let cx=x0;cx<=x1;cx++)fn(cx*S,cy*S,cx,cy);
+  }
   function drawAmbient(c,game,ox,oy,W,H,time,night) {
-    const zoneOf=(x,y)=>zoneAt(game.world,x,y),span=W+80,tall=H+60,wrap=(v,size)=>((v%size)+size)%size;
-    for(let k=0;k<20;k++){
-      const wx=ox-40+wrap(hash(k,1)*span*2+time*(2+k%3),span),wy=oy-30+wrap(hash(k,2)*tall*2+time*(k%2?.9:-.8),tall),zone=zoneOf(wx,wy);
-      if(isCaveZone(zone)||zone==="altar"){c.globalAlpha=.16+Math.sin(time+k)*.08;rect(c,wx,wy,1,1,"#e4dcc8");}
-      else if(zone==="village"||zone==="weeds"){c.globalAlpha=(.25+Math.sin(time+k)*.12)*(1-night);rect(c,wx,wy,k%3?1:2,1,"#f9e9b1");}
-    }
-    c.globalAlpha=1;
-    for(let k=0;k<6;k++){
-      const wx=ox-40+wrap(hash(k,21)*span*3+time*(13+k*2),span),wy=oy-30+wrap(hash(k,22)*tall*3+time*(9+k),tall)+Math.sin(time*1.6+k)*5;
-      if(zoneOf(wx,wy)==="weeds"||zoneOf(wx,wy)==="village"){const turn=Math.floor(time*4+k)%2;rect(c,wx,wy,turn?3:2,turn?1:2,k%2?"#4f7a43":"#9a8a42");}
-    }
-    if(night<.45)for(let k=0;k<4;k++){
-      const wx=ox-40+wrap(hash(k,31)*span*3+Math.sin(time*.23+k*2)*90+time*(k%2?5:-5),span),wy=oy-30+wrap(hash(k,32)*tall*3+Math.cos(time*.31+k)*50,tall)+Math.sin(time*2.3+k)*6;
-      if(zoneOf(wx,wy)!=="village"&&zoneOf(wx,wy)!=="weeds")continue;
-      const open=Math.floor(time*9+k*3)%2,color=["#f4dc91","#eabca1","#c49abc","#d7d5ac"][k];
-      rect(c,wx,wy,1,3,"#3a3028");
-      if(open){rect(c,wx-2,wy,2,2,color);rect(c,wx+1,wy,2,2,color);}else{rect(c,wx-1,wy-1,1,3,color);rect(c,wx+1,wy-1,1,3,color);}
-    }
-    if(night>.25)for(let k=0;k<14;k++){
-      const wx=ox-40+wrap(hash(k,41)*span*3+Math.sin(time*.4+k*1.3)*40,span),wy=oy-30+wrap(hash(k,42)*tall*3+Math.cos(time*.33+k)*30,tall),beat=Math.sin(time*2.2+k*1.9);
-      if(beat<.05||(zoneOf(wx,wy)!=="village"&&zoneOf(wx,wy)!=="weeds"))continue;
-      c.globalAlpha=Math.min(1,beat*1.6)*Math.min(1,night*2);Px.glow(c,wx,wy,5,"#e8f07a",.7);rect(c,wx,wy,1,1,"#fbffc0");
-    }
+    const zoneOf=(x,y)=>zoneAt(game.world,x,y),S=AMBIENT_CELL;
+    // Vida de una partícula que viaja: `phase` de 0 a 1 y un brillo que sube y baja.
+    const life=(h,period)=>{const t=time/period+h,phase=t-Math.floor(t);return{phase,fade:Math.sin(phase*Math.PI)};};
+    ambientCells(ox,oy,W,H,(bx,by,cx,cy)=>{
+      // Polvo y lucecitas en el aire.
+      for(let k=0;k<2;k++){
+        const h=hash(cx,cy,10+k),period=7+hash(cx,cy,20+k)*5,{phase,fade}=life(h,period);
+        const wx=bx+hash(cx,cy,30+k)*S+phase*period*(2+k),wy=by+hash(cx,cy,40+k)*S+phase*period*(k%2?.9:-.8),zone=zoneOf(wx,wy);
+        if(isCaveZone(zone)||zone==="altar"){c.globalAlpha=(.16+Math.sin(time+k+h*9)*.08)*fade;rect(c,wx,wy,1,1,"#e4dcc8");}
+        else if(zone==="village"||zone==="weeds"){c.globalAlpha=(.25+Math.sin(time+k+h*9)*.12)*(1-night)*fade;rect(c,wx,wy,(k+cx)%3?1:2,1,"#f9e9b1");}
+      }
+      c.globalAlpha=1;
+      // Hojitas que se lleva el viento.
+      if(hash(cx,cy,50)<.45){
+        const h=hash(cx,cy,51),period=9,{phase,fade}=life(h,period),k=cx+cy;
+        const wx=bx+hash(cx,cy,52)*S+phase*period*(13+(k%3)*2),wy=by+hash(cx,cy,53)*S+phase*period*(9+k%3)+Math.sin(time*1.6+h*9)*5,zone=zoneOf(wx,wy);
+        if(zone==="weeds"||zone==="village"){const turn=Math.floor(time*4+h*9)%2;c.globalAlpha=fade;rect(c,wx,wy,turn?3:2,turn?1:2,k%2?"#4f7a43":"#9a8a42");c.globalAlpha=1;}
+      }
+      // Mariposas: dan vueltas alrededor de su lugar, de día.
+      if(night<.45&&hash(cx,cy,60)<.3){
+        const h=hash(cx,cy,61),k=Math.floor(h*4),wx=bx+hash(cx,cy,62)*S+Math.sin(time*.23+h*12)*40,wy=by+hash(cx,cy,63)*S+Math.cos(time*.31+h*7)*24+Math.sin(time*2.3+h*5)*6;
+        const zone=zoneOf(wx,wy);
+        if(zone==="village"||zone==="weeds"){
+          const open=Math.floor(time*9+h*7)%2,color=["#f4dc91","#eabca1","#c49abc","#d7d5ac"][k];
+          rect(c,wx,wy,1,3,"#3a3028");
+          if(open){rect(c,wx-2,wy,2,2,color);rect(c,wx+1,wy,2,2,color);}else{rect(c,wx-1,wy-1,1,3,color);rect(c,wx+1,wy-1,1,3,color);}
+        }
+      }
+      // Luciérnagas: de noche, quietas en su lugar, prenden y apagan.
+      if(night>.25)for(let k=0;k<2;k++){
+        const h=hash(cx,cy,70+k),wx=bx+hash(cx,cy,72+k)*S+Math.sin(time*.4+h*9)*20,wy=by+hash(cx,cy,74+k)*S+Math.cos(time*.33+h*7)*14,beat=Math.sin(time*2.2+h*12);
+        if(beat<.05||(zoneOf(wx,wy)!=="village"&&zoneOf(wx,wy)!=="weeds"))continue;
+        c.globalAlpha=Math.min(1,beat*1.6)*Math.min(1,night*2);Px.glow(c,wx,wy,5,"#e8f07a",.7);rect(c,wx,wy,1,1,"#fbffc0");
+      }
+    });
     c.globalAlpha=1;
   }
   function heart(c,x,y,color) {
@@ -2116,6 +2137,8 @@
   }
   function drawObject(c,o,time) {
     const x=o.x,y=o.y,w=o.w||16,h=o.h||12,v=o.variant||0;
+    // Objetos de otros módulos (la guardería y el nido, en kennel.js).
+    if(Z.drawExtraObject&&Z.drawExtraObject(c,o,time))return;
     if(o.type==="ore")return ore(c,o,time);
     if(o.type==="stairs")return stairs(c,o,time);
     if(o.type==="forge")return forge(c,o,time);
@@ -2293,7 +2316,7 @@
     // Terreno natural con ruido y tramado, sin grilla; caminos de borde irregular.
     paintGround(c,world) {
       const left=world.left||0,W=world.width-left,H=world.height,surface=Z.SURFACE_HEIGHT||H;
-      const ids=["void","throne","sanctum","magic","altar","cave","cave2","cave3","weeds","village","bazaar","library","gargoyles"],soft={altar:1,cave:1,weeds:1,village:1};
+      const ids=["void","throne","sanctum","magic","altar","cave","cave2","cave3","weeds","village","bazaar","library","gargoyles","kennel"],soft={altar:1,cave:1,weeds:1,village:1};
       const hexes={
         village:["#658549","#6e8d4e","#739353","#7c9a56","#869f5a"],weeds:["#54723e","#5d7b43","#668348","#6f8b4c","#7a9250"],
         cave:["#3d4146","#44484d","#4a4d52","#505257","#585a5e"],cave2:["#2a2d34","#2f323a","#33363f","#383b44","#3f424c"],cave3:["#2e2523","#352b29","#3b302d","#40342f","#4b3d37"],
@@ -2322,7 +2345,7 @@
           const row=y>>4,by=(y>>1);
           for(let px=0;px<W;px+=2){
             const cell=row*cols+(px>>4),x=px+left;let zone=zones[cell],color=0;
-            if(zone===1||zone===2)continue;
+            if(zone===1||zone===2||zone===13)continue;
             if(y>=surface&&zone===0)color=deep;
             else{
               if(seam[cell]&&soft[ids[zone]]){
@@ -2357,6 +2380,16 @@
           const row=Math.floor(y/8);rect(c,x,y,16,16,n>.7?"#1a1720":"#15131b");
           for(let r=0;r<2;r++){rect(c,x,y+r*8,16,1,"#0a090d");const off=((row+r)%2)*8;rect(c,x+off,y+r*8,1,8,"#0a090d");rect(c,x+off+1,y+r*8+1,7,1,"#201c29");}
           if(n>.93)rect(c,x+3,y+5,5,1,"#2a2236");continue;
+        }
+        if(zone==="kennel"){
+          // Piso de tablones largos de la guardería: cada tabla tiene su tono, vetas finitas y la junta cada tanto.
+          for(let r=0;r<2;r++){
+            const row=Math.floor(y/8)+r,yy=y+r*8,len=64,shift=Math.floor(hash(row,3,22)*len),board=Math.floor((x+shift)/len),tone=hash(board,row,23);
+            rect(c,x,yy,16,8,tone>.75?"#a8764a":tone>.35?"#b4844f":"#bd8e58");rect(c,x,yy,16,1,"#c99c66");rect(c,x,yy+7,16,1,"#6e4a2c");
+            if(((x+shift)%len+len)%len<16)rect(c,x+(((len-shift%len)%16)+16)%16,yy,1,7,"#6e4a2c");
+            if(hash(x>>4,row,24)>.7)rect(c,x+2+Math.floor(hash(x,row,25)*8),yy+3+Math.floor(hash(x,row,26)*2),5,1,"#9a6b42");
+          }
+          continue;
         }
         if(zone==="sanctum"){
           rect(c,x,y,16,16,(Math.floor(x/16)+Math.floor(y/16))&1?"#1e1a2a":"#241f33");rect(c,x,y,16,1,"#110e18");rect(c,x,y,1,16,"#110e18");rect(c,x+1,y+1,15,1,"#2d2740");
@@ -2482,7 +2515,7 @@
       c.save();c.translate(-ox,-oy);
       const visible=(x,y,pad=90)=>x>ox-pad&&x<ox+W+pad&&y>oy-pad&&y<oy+H+pad;
       const objects=world.objects||[];
-      const FLOOR=["pond","flower","grass","rune","pedestal"];
+      const FLOOR=["pond","flower","grass","rune","pedestal","krug","kstraw","ksand","kgravel"];
       for(const o of objects)if(FLOOR.includes(o.type)&&visible(o.x+o.w/2,o.y+o.h/2,Math.max(o.w||0,o.h||0)+80))drawObject(c,o,time);
       // Charcos y pasto mojado (weather.js).
       if(!menu&&Z.drawFloorExtras)Z.drawFloorExtras(c,game,visible,time);
@@ -2610,7 +2643,9 @@
         if(p.bloodMoon===true){c.fillStyle="rgba(120,8,24,.16)";c.fillRect(0,0,W,H);Px.shade(c,W/2,H/2,W,H,[[160,0],[420,.3]],"#3a0410");}
         for(const o of objects)if(o.type==="brazier"&&visible(o.x,o.y,80))Px.glow(c,o.x-ox+o.w/2,o.y-oy-12,56,"#a77bff",.22+Math.sin(time*8+o.x)*.03);
         if(game.biome==="magic")for(const o of objects)if(o.type==="campfire"&&!(o.out>0)&&visible(o.x,o.y,80))Px.glow(c,o.x-ox+o.w/2,o.y-oy,70,"#ff8c3c",.3+Math.sin(time*9+o.x)*.03);
-        for(let k=0;k<16;k++){const ex=(hash(k,3)*W+time*(8+k%5)*(k%2?1:-1))%W,ey=H-((time*(14+k%7)+hash(k,9)*H)%H);c.globalAlpha=.35+Math.sin(time*3+k)*.2;rect(c,(ex+W)%W,ey,k%4?1:2,k%4?1:2,k%3?"#a77bff":"#e6d6ff");}
+        // Chispas violetas que suben, ancladas al mundo: no siguen a la cámara.
+        ambientCells(ox,oy,W,H,(bx,by,cx,cy)=>{for(let k=0;k<2;k++){const h=hash(cx,cy,80+k),period=8+h*6,t=time/period+h,ph=t-Math.floor(t),ex=bx+hash(cx,cy,82+k)*AMBIENT_CELL+Math.sin(time*.8+h*9)*6-ox,ey=by+hash(cx,cy,84+k)*AMBIENT_CELL-ph*period*(14+k*3)-oy;
+          c.globalAlpha=(.35+Math.sin(time*3+h*9)*.2)*Math.sin(ph*Math.PI);rect(c,ex,ey,(cx+k)%4?1:2,(cx+k)%4?1:2,(cy+k)%3?"#a77bff":"#e6d6ff");}});
         c.globalAlpha=1;
         if(game.darkness>0)Px.shade(c,p.x-ox,p.y-oy-10,W,H,[[30,0],[63,.75],[105,.985]],"#040208");
         const zak=(game.enemies||[]).find(e=>e.type==="zak"&&e.act&&e.act.id==="purple");
@@ -2622,7 +2657,8 @@
       } else if(game.biome==="altar"&&!menu){
         c.fillStyle="rgba(40,34,58,.30)";c.fillRect(0,0,W,H);
         // Bruma en bandas: elipses de bordes duros, en pixel art.
-        for(let k=0;k<7;k++){const fx=((hash(k,4)*W*1.5+time*(6+k))%(W+200))-100,fy=hash(k,6)*H;c.globalAlpha=.05;Px.oval(c,fx,fy,90,14,"#cfc8e0");c.globalAlpha=.04;Px.oval(c,fx+12,fy+2,60,8,"#cfc8e0");}
+        // Bruma anclada al cementerio: va y viene despacio en su lugar, no sigue a la cámara.
+        ambientCells(ox,oy,W,H,(bx,by,cx,cy)=>{if(hash(cx,cy,90)>.6)return;const h=hash(cx,cy,91),fx=bx+hash(cx,cy,92)*AMBIENT_CELL+Math.sin(time*.07+h*9)*50-ox,fy=by+hash(cx,cy,93)*AMBIENT_CELL-oy;c.globalAlpha=.05;Px.oval(c,fx,fy,90,14,"#cfc8e0");c.globalAlpha=.04;Px.oval(c,fx+12,fy+2,60,8,"#cfc8e0");});
         c.globalAlpha=1;
         Px.shade(c,p.x-ox,p.y-oy-10,W,H,[[120,0],[340,.55]],"#0a0810");
         redSky();
@@ -2636,6 +2672,9 @@
         for(const o of objects)if(o.type==="ore"&&!o.harvested&&(o.ore==="gold"||o.ore==="diamond")&&visible(o.x,o.y,20)&&Math.sin(time*2.5+o.x)>.6){
           const sx=o.x-ox+o.w*.5,sy=o.y-oy-4;c.globalAlpha=.8;rect(c,sx,sy-2,1,5,o.ore==="gold"?"#ffe9a0":"#c8faff");rect(c,sx-2,sy,5,1,o.ore==="gold"?"#ffe9a0":"#c8faff");c.globalAlpha=1;
         }
+      } else if(Z.isIndoors&&Z.isIndoors(game.biome)&&!menu){
+        // Adentro de una casa (la guardería): ni noche ni sol, luz tibia de lámparas (kennel.js).
+        if(Z.drawIndoorLight)Z.drawIndoorLight(c,game,ox,oy,W,H,time);
       } else if(game.biome==="cave"&&!menu){
         Px.shade(c,p.x-ox,p.y-oy-10,W,H,[[50,0],[162,.18],[270,.6]],"#0d121a");
         for(const o of objects)if(o.type==="lantern"&&visible(o.x,o.y,60))Px.glow(c,o.x-ox+o.w/2,o.y-oy-20,40,"#f3bc59",.3+Math.sin(time*7+o.x)*.03);
@@ -2643,15 +2682,16 @@
         Px.shade(c,W/2,H*.445,W,H,[[135,0],[380,.16]],"#1d2d1e");
         // Tarde: la luz se vuelve dorada desde las 14:00, llega al máximo a las 18:00 y se apaga a las 20:00.
         const sunset=hour<14||hour>=20?0:hour<18?(hour-14)/4:(20-hour)/2;
-        if(night>.01){c.fillStyle="rgba(24,34,67,"+(night*.34)+")";c.fillRect(0,0,W,H);}
+        // Noche cerrada (v2.32): un azul profundo y, alrededor tuyo, la poca luz que da la luna.
+        if(night>.01){c.fillStyle="rgba(10,14,38,"+(night*.64)+")";c.fillRect(0,0,W,H);Px.shade(c,p.x-ox,p.y-oy-10,W,H,[[60,0],[170,.4],[320,.62]],"#03050f",night);}
         if(sunset>.01){c.fillStyle="rgba(217,122,69,"+(sunset*.18)+")";c.fillRect(0,0,W,H);}
         redSky();
         if(night>.05)for(const o of objects){
           if(!visible(o.x,o.y,(H*.445)))continue;
-          if(o.type==="lantern")Px.glow(c,o.x-ox+o.w/2,o.y-oy-20,46,"#ffd272",night*.42);
+          if(o.type==="lantern")Px.glow(c,o.x-ox+o.w/2,o.y-oy-20,58,"#ffd272",night*.6);
           else if(o.type==="house"){
             const wy=o.y+Math.max(9,o.h*.3)-oy;
-            c.globalAlpha=night*.53;
+            c.globalAlpha=night*.8;Px.glow(c,o.x-ox+o.w/2,wy+8,o.w*.7,"#f2c27a",night*.16);c.globalAlpha=night*.8;
             for(const wx of [o.x+15,o.x+o.w-29]){rect(c,wx-ox,wy+2,6,7,"#edc97e");rect(c,wx-ox+8,wy+2,6,7,"#edc97e");rect(c,wx-ox,wy+11,6,5,"#dbab68");rect(c,wx-ox+8,wy+11,6,5,"#dbab68");}
             c.globalAlpha=1;
           }
@@ -2855,7 +2895,7 @@
   Z.Renderer=Renderer;Z.drawPortrait=drawPortrait;Z.drawCharacter=drawCharacter;Z.drawEnemy=drawEnemy;Z.drawSmithPortrait=drawSmithPortrait;Z.drawNpc=drawNpc;Z.dialogLines=dialogLines;
   Renderer.drawPortrait=drawPortrait;
   // Pinceles compartidos con los módulos que dibujan cosas nuevas (compañeros, clima, medallas y cartas).
-  Z.Draw={P,hash,rect,poly,sprite,shadow,heart,pixelText,blob,eye,tone,box,dogBody,tuft,flower,zoneAt,isCaveZone,enemyBody,drawEnemy};
+  Z.Draw={ambientCells,AMBIENT_CELL,P,hash,rect,poly,sprite,shadow,heart,pixelText,blob,eye,tone,box,dogBody,tuft,flower,zoneAt,isCaveZone,enemyBody,drawEnemy};
   // Retrato de un enemigo para el bestiario: normal, con la luna roja (ojos rojos) o en silueta (todavía no lo venciste).
   const PORTRAIT_SCALE={rat:4.4,snake:4,spider:4,bat:3.6,dog:3.6,book:3.6,worm:3,thief:3,skeleton:3,archer:3,mage:2.8,imp:3,shadow:2.8,mimic:3.2,armor:2.2,gargoyle:2.4,capo:2.3,yarara:2,vampire:1.6,cerbero:1.3,golem:1.3,archmage:1.6,zak:1.1};
   const PORTRAIT_FLOOR={bat:.66,book:.66,gargoyle:.86};

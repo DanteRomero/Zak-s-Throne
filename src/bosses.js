@@ -474,7 +474,7 @@ Object.assign(Z.Game.prototype, {
  },
  // El portal del altar lleva al Santuario de la dimensión de Zak: de ahí no se vuelve hasta ganarle o perder.
  enterDimension(){this.resetZak();this.sound.play('portal');this.travel(Z.DIMENSION_SPOTS.arrive,'sanctum');
-  this.emit('toast',{message:'Llegaste a la dimensión de Zak. No hay vuelta atrás: el Santuario es seguro y al norte está el Pueblo Mágico.'});},
+  this.emit('toast',{message:'Llegaste a la dimensión de Zak. El Santuario es seguro, al norte está el Pueblo Mágico y el portal verde te lleva de vuelta a casa.'});},
  // Con `fury`, Zak viene furioso: la revancha, para quien ya lo venció.
  enterThrone(fury=false){this.zakFury=!!fury;this.resetZak();this.sound.play('portal');this.travel(Z.THRONE_SPOTS.arrive,'throne');this.startCutscene('zakIntro');},
  leaveThrone(){const p=this.player;this.zakFury=false;this.resetZak();p.poison=null;p.bleed=null;p.slow=0;p.heavySlow=0;this.sound.play('portal');this.travel(this.world.spawn,'village');}

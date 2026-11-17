@@ -97,6 +97,13 @@
    assert('Picando se guarda la espada',!gold.has('#8faeaf')&&!gold.has('#d9e5cc'));
    assert('El pico de oro es dorado y el de piedra, gris',gold.has('#e5b636')&&!gold.has('#8a8f96')&&stone.has('#8a8f96')&&!stone.has('#e5b636'));
    assert('El hacha de diamante es celeste',axe.has('#6fdcec'));}
+  {// v2.32: las partículas de ambiente viven en celdas fijas del mundo: mover la cámara no las mueve.
+   const cells=ox=>{const list=[];Zak.Draw.ambientCells(ox,0,640,360,(bx,by)=>list.push(bx+','+by));return list;},a=cells(0),b=cells(64);
+   assert('Mover la cámara no corre las celdas de las partículas',a.filter(k=>b.includes(k)).length>=a.length-6&&a.every(k=>Number(k.split(',')[0])%Zak.Draw.AMBIENT_CELL===0));
+   // El nido tiene huevos (blancos con manchitas violetas) y las piezas de la guardería se dibujan.
+   pen.clearRect(0,0,120,120);Zak.drawExtraObject(pen,{type:'nest',x:30,y:50,w:46,h:18},0);const d=pen.getImageData(0,0,120,120).data,set=new Set();for(let i=0;i<d.length;i+=4)if(d[i+3])set.add('#'+[d[i],d[i+1],d[i+2]].map(v=>v.toString(16).padStart(2,'0')).join(''));
+   assert('El nido de la Yarará muestra sus huevos moteados',set.has('#ece3c6')&&set.has('#8a6bb0')&&set.has('#4a3622'));
+   assert('Las piezas de la guardería tienen su dibujo',['kwall','kfence','kcounter','kbell','kdoghouse','kbed','kperch','kfruit','kores','kcart','klamp','khay','krug','kstraw','ksand','kgravel'].every(type=>Zak.drawExtraObject(pen,{type,x:10,y:60,w:30,h:12},0)));}
   const missing=[];
   for(const text of ['abcdefghijklmnñopqrstuvwxyzáéíóúü¿?¡!.,:;-+/()%0123456789','ABCDEFGHIJKLMNÑOPQRSTUVWXYZÁÉÍÓÚÜ«»…$',...g.world.objects.map(o=>o.label||''),...g.world.npcs.map(n=>n.name||''),...Zak.CHARACTERS.map(c=>c.name),...Object.values(Zak.OFFERINGS).map(o=>o.icon),'♪♫☠✦▸▼▲⚒✝≈✓🗝'])
     for(const ch of Array.from(text))if(!Px.hasGlyph(ch))missing.push(ch);

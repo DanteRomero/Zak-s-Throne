@@ -7,7 +7,7 @@ const dirs = {down:[0,1],up:[0,-1],left:[-1,0],right:[1,0]};
 const ATTACK_QUEUE_TIME = .35;
 // Lluvia de cuchillos del Capo: aviso, duración y ritmo en segundos reales.
 const KNIFE_WINDUP = .9, KNIFE_TIME = 5, KNIFE_RATE = 3, KNIFE_KO = 5, KNIFE_COOLDOWN = 18, KNIFE_FIRST = 7;
-const names = Z.BIOME_NAMES = {village:'Palihue City',cave:'Cueva del Eco',weeds:'Los Yuyos',cave2:'Cueva Profunda',cave3:'Las Entrañas',altar:'Altar del gobernante',throne:'Trono de Zak',sanctum:'Santuario',magic:'Pueblo Mágico',bazaar:'Feria de las Almas',library:'Biblioteca del Rey Mago',gargoyles:'Patio de las Gárgolas'};
+const names = Z.BIOME_NAMES = {village:'Palihue City',cave:'Cueva del Eco',weeds:'Los Yuyos',cave2:'Cueva Profunda',cave3:'Las Entrañas',altar:'Altar del gobernante',throne:'Trono de Zak',sanctum:'Santuario',magic:'Pueblo Mágico',bazaar:'Feria de las Almas',library:'Biblioteca del Rey Mago',gargoyles:'Patio de las Gárgolas',kennel:'La guardería'};
 const isCave = biome => /^cave/.test(biome||'');
 const ROLL_TIME=.3,ROLL_COOLDOWN=.55,ROLL_COST=.2,COMBO_CRIT=4,CRIT_MULTIPLIER=1.75,HERB_REGROW=90,TAIL_RADIUS=62;
 // Guita por cada objetivo del diario: más difícil, más guita, sin romper la economía.
@@ -76,6 +76,8 @@ class Sound {
   if(kind==='splash')[0,.06].forEach(d=>this.tone(320+Math.random()*80,.09,'triangle',.04,d,140));
   if(kind==='boom'){this.tone(80,.4,'sawtooth',.08,0,30);this.tone(400,.12,'square',.03,0,80);}
   if(kind==='rune')[880,1175,1568].forEach((n,i)=>this.tone(n,.2,'sine',.035,i*.05));
+  if(kind==='ding')[1568,2093].forEach((n,i)=>{this.tone(n,.6,'sine',.04,i*.12);this.tone(n*2.76,.2,'sine',.01,i*.12);});
+  if(kind==='door'){this.tone(180,.08,'square',.03);this.tone(140,.12,'triangle',.04,.07,110);[988,1319].forEach((n,i)=>this.tone(n,.25,'sine',.02,.05+i*.08));}
   if(kind==='legend')[392,494,587,784,988,1175].forEach((n,i)=>this.tone(n,.35,'triangle',.05,i*.09));
   // Las campanitas de Don Anselmo, el vendedor ambulante: dos tiras de campanitas con su armónico de campana.
   if(kind==='bells')[1319,1760,1568,2093,1760,2349].forEach((n,i)=>{const d=i*.09+(i>2?.14:0);this.tone(n,.55,'sine',.035,d);this.tone(n*2.76,.22,'sine',.008,d);});
@@ -234,6 +236,8 @@ class Game {
  }
  updateNpcs(dt){
   this.world.npcs.forEach(n=>{if(n.static){n.moving=false;return;}n.wait=(n.wait||0)-dt;
+   // Los que tienen recorrido fijo (Doña Herminia) caminan solos (kennel.js).
+   if(n.route&&this.walkRoute){this.walkRoute(n,dt);return;}
    const[roamX,roamY]=n.roam||[65,55],[restMin,restMax]=n.rest||[2,7],radius=n.radius||9,speed=n.speed||22;
    if(n.wait<=0&&Math.hypot(n.targetX-n.x,n.targetY-n.y)<7){n.wait=restMin+Math.random()*(restMax-restMin);n.targetX=n.homeX+(Math.random()*2-1)*roamX;n.targetY=n.homeY+(Math.random()*2-1)*roamY;}
    if(n.wait>0){n.moving=false;return;}const dx=n.targetX-n.x,dy=n.targetY-n.y,len=Math.hypot(dx,dy),before={x:n.x,y:n.y};
@@ -610,7 +614,7 @@ class Game {
   if(stairs.dir==='down'&&!this.seesInDark()){this.emit('toast',{message:'Abajo no se ve nada. Necesitás una antorcha: el herrero la hace con 1 de madera y 3 de carbón.',error:true});return false;}
   Object.assign(p,{x:stairs.arrive.x,y:stairs.arrive.y,gather:null,roll:0,moving:false});
   this.projectiles=[];this.enemies.forEach(e=>{if(e.latched>0){e.x=e.homeX;e.y=e.homeY;}e.latched=0;e.alert=false;e.telegraph=0;e.dash=0;});
-  this.renderer.initialized=false;this.clearInput();this.sound.play('stairs');return true;
+  this.renderer.initialized=false;this.clearInput();this.sound.play(stairs.door?'door':'stairs');return true;
  }
  // Las bajadas custodiadas no se abren mientras su jefe siga vivo. Subir siempre se puede.
  stairsGuard(stairs){return stairs.guard&&stairs.dir==='down'?this.enemies.find(e=>e.type===stairs.guard&&!e.dead&&!e.summoned)||null:null;}
