@@ -2,7 +2,7 @@
 
 Una aventura de acción y exploración en pixel art, vista desde arriba. Elegí a uno de siete amigos, preparate en la aldea y salí a explorar la cueva y los Yuyos.
 
-Versión actual: **v2.22**. Los cambios de cada versión están en [CHANGELOG.md](CHANGELOG.md).
+Versión actual: **v2.23**. Los cambios de cada versión están en [CHANGELOG.md](CHANGELOG.md).
 
 ## Jugar
 
@@ -111,7 +111,7 @@ En la **dimensión de Zak** siempre es de noche y la luna roja no llega: sus ene
 
 ### Lluvia
 
-Cada tanto llueve en la superficie (la aldea, Los Yuyos y el cementerio): se oscurece el cielo, caen gotas y el reloj dice **🌧 LLUVIA**. Mientras llueve, los peces pican **más rápido**. Después quedan **charcos** por todos lados, que salpican cuando los pisás, y el pasto brilla mojado hasta que se seca, unos 3 minutos. En las cuevas y en la dimensión de Zak no llueve.
+Cada tanto llueve en la superficie (la aldea, Los Yuyos y el cementerio): se oscurece el cielo, caen gotas y el reloj dice **🌧 LLUVIA**. Mientras llueve, los peces pican **más rápido**. Mientras dura la lluvia se forman **charcos**, que salpican cuando los pisás, y el pasto brilla mojado. Cuando para, todo se seca en unos segundos. En las cuevas y en la dimensión de Zak no llueve.
 
 ## Guita, hierbas y El Almacén
 
@@ -221,6 +221,8 @@ Atiende su puesto en la Feria de las Almas (E en el puesto o hablándole). Vende
 ### Truco en la Feria
 
 Las dos almas de la mesa de la Feria de las Almas, **Truco** y **Retruco**, juegan **a 15** (sin flor) con envido, real envido, falta envido, truco, retruco, vale cuatro y al mazo. Hablales y elegí cuánto apostar (◉ 50, 100, 250, 500 o 1000): la apuesta queda sobre la mesa y, si ganás, te llevás **el doble**. Si te levantás a la mitad del partido, la perdés.
+
+La mesa es de paño verde, los tantos se anotan con fósforos de a cinco y el alma se toma un segundo para pensar cada jugada: cuando canta, te lo dice en un globito.
 
 Si el alma pierde, hay un **30%** de que te pida la **revancha**: si gana ella, te saca **el doble** de lo apostado; si ganás vos, te da **un objeto al azar** del juego (un consumible, un pescado o un amuleto que no tengas). Para aceptarla tenés que poder cubrir el doble.
 
@@ -506,9 +508,9 @@ Si ya tenés Node instalado:
 node tests/rules.test.js
 ```
 
-Abrí `tests/index.html` para ejecutar las 46 pruebas de reglas y las 158 pruebas de integración del motor en el navegador. El resultado detalla cada caso aprobado o fallido.
+Abrí `tests/index.html` para ejecutar las 46 pruebas de reglas y las 160 pruebas de integración del motor en el navegador. El resultado detalla cada caso aprobado o fallido.
 
-También se incluyen 59 pruebas de interfaz y de pixel art, 23 del ranking (con un servidor simulado), 36 de controles táctiles y 42 de la nube (también con un servidor simulado) con Chrome y Python 3, sin librerías adicionales. El verificador abre un perfil temporal aislado; nunca usa tus guardados personales:
+También se incluyen 62 pruebas de interfaz y de pixel art, 23 del ranking (con un servidor simulado), 36 de controles táctiles y 42 de la nube (también con un servidor simulado) con Chrome y Python 3, sin librerías adicionales. El verificador abre un perfil temporal aislado; nunca usa tus guardados personales:
 
 ```sh
 python tests/browser_check.py tests/index.html --script tests/engine.test.js

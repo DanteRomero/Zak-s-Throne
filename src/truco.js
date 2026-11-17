@@ -162,29 +162,44 @@ const baseCreate = Z.createPlayer;
 Z.createPlayer = function (id) { return Object.assign(baseCreate(id), {trucoWins: 0, trucoLosses: 0, trucoRematchWins: 0}); };
 Object.assign(P, {
  // Empezar un partido apostando guita. La apuesta se pone sobre la mesa: si ganás, te la llevás doble.
- trucoStart(bet, opponent = 'Truco', rematch = false) {
+ trucoStart(bet, opponent = 'Truco', rematch = false, paced = false) {
   const p = this.player; bet = Math.floor(Number(bet) || 0);
   if (!rematch) { if (bet < 1) return {ok: false, message: 'Elegí cuánto apostar.'}; if (p.coins < bet) return {ok: false, message: 'No te alcanza para apostar ◉ ' + bet + '.'}; p.coins -= bet; }
   else if (p.coins < bet * 2) return {ok: false, message: 'Para la revancha tenés que poder cubrir ◉ ' + bet * 2 + '.'};
-  this.truco = {match: Z.Truco.createMatch({target: T.target, mano: Math.random() < .5 ? 'player' : 'ghost'}), bet, opponent, rematch, settled: false, offer: false, prize: null};
-  this.sound.play('pickup'); this.trucoGhost(); return {ok: true};
+  this.truco = {match: Z.Truco.createMatch({target: T.target, mano: Math.random() < .5 ? 'player' : 'ghost'}), bet, opponent, rematch, settled: false, offer: false, prize: null, paced: !!paced};
+  // En la mesa (paced) el alma juega de a una jugada, con pausas que pone la ventana.
+  this.sound.play('pickup'); if (!paced) this.trucoGhost(); return {ok: true};
  },
  // El alma juega hasta que te toque a vos (o termine la mano).
  trucoGhost() {
   const t = this.truco; if (!t) return;
-  for (let guard = 0; guard < 12; guard++) {
-   const m = t.match, choice = Z.Truco.ghostChoice(m); if (!choice) break;
-   if (!Z.Truco.act(m, 'ghost', choice[0], choice[1])) { const o = Z.Truco.options(m, 'ghost'); if (o.answer) Z.Truco.act(m, 'ghost', 'quiero'); else if (o.play) Z.Truco.act(m, 'ghost', 'play', m.hand.cards.ghost[0].id); else break; }
-   if (choice[0] === 'play') this.sound.play('blip');
-  }
+  for (let guard = 0; guard < 12; guard++) if (!this.trucoGhostStep()) break;
   if (t.match.over) this.trucoSettle();
+ },
+ // ¿Le toca jugar o contestar al alma?
+ trucoGhostTurn() {
+  const t = this.truco; if (!t || t.settled) return false; const m = t.match;
+  if (m.over || m.hand.finished) return false; const o = Z.Truco.options(m, 'ghost'); return !!(o.answer || o.play);
+ },
+ // Una sola jugada del alma. Devuelve lo que hizo, o null si no le tocaba.
+ trucoGhostStep() {
+  const t = this.truco; if (!t || t.settled) return null;
+  const m = t.match, choice = Z.Truco.ghostChoice(m); if (!choice) { if (m.over) this.trucoSettle(); return null; }
+  let done = choice;
+  if (!Z.Truco.act(m, 'ghost', choice[0], choice[1])) {
+   const o = Z.Truco.options(m, 'ghost');
+   if (o.answer) { Z.Truco.act(m, 'ghost', 'quiero'); done = ['quiero']; } else if (o.play) { done = ['play', m.hand.cards.ghost[0].id]; Z.Truco.act(m, 'ghost', 'play', done[1]); } else return null;
+  }
+  this.sound.play(done[0] === 'play' ? 'blip' : 'pickup');
+  if (m.over) this.trucoSettle();
+  return done;
  },
  trucoAct(action, arg) {
   const t = this.truco; if (!t || t.settled) return false;
-  if (action === 'next') { if (!Z.Truco.nextHand(t.match)) return false; this.trucoGhost(); return true; }
+  if (action === 'next') { if (!Z.Truco.nextHand(t.match)) return false; if (!t.paced) this.trucoGhost(); return true; }
   if (!Z.Truco.act(t.match, 'player', action, arg)) return false;
   this.sound.play(action === 'play' ? 'blip' : 'pickup');
-  if (t.match.over) this.trucoSettle(); else if (!t.match.hand.finished) this.trucoGhost();
+  if (t.match.over) this.trucoSettle(); else if (!t.match.hand.finished && !t.paced) this.trucoGhost();
   return true;
  },
  // Fin del partido: se paga la apuesta. Si el alma pierde, un 30% de las veces te pide la revancha.
@@ -204,7 +219,7 @@ Object.assign(P, {
   if (t.settled) return; this.player.trucoLosses = (this.player.trucoLosses || 0) + 1;
   if (t.rematch) this.player.coins = Math.max(0, this.player.coins - t.bet * 2);
  },
- trucoRematch() { const t = this.truco; if (!t || !t.offer) return {ok: false, message: 'No hay revancha.'}; return this.trucoStart(t.bet, t.opponent, true); },
+ trucoRematch() { const t = this.truco; if (!t || !t.offer) return {ok: false, message: 'No hay revancha.'}; return this.trucoStart(t.bet, t.opponent, true, t.paced); },
  // Premio de la revancha: un objeto al azar del juego (un consumible, un pescado o un amuleto que no tengas).
  trucoPrize() {
   const pool = Z.ITEM_ORDER.filter(id => !Z.ITEMS[id].pet && this.itemCount(id) < Z.ITEM_STACK).map(id => ['item', id]).concat(Object.keys(Z.AMULETS).filter(id => !this.hasAmuletOwned(id)).map(id => ['amulet', id]));

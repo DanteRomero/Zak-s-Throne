@@ -3,8 +3,9 @@
 (function () {
 'use strict';
 const Z = window.Zak;
-// Cada bloque de 4 minutos reales tiene un 22% de lluvia. Entra y sale en 20 s; los charcos se llenan en 1 minuto y se secan en 3.
-const RAIN = Z.RAIN = {block: 240, chance: .22, fade: 20, fill: 60, dry: 180, bite: .6, wet: .3};
+// Cada bloque de 4 minutos reales tiene un 22% de lluvia. Entra y sale en 20 s. Los charcos y el pasto mojado son solo de la lluvia:
+// se llenan en 20 s y, cuando para, se secan en 10.
+const RAIN = Z.RAIN = {block: 240, chance: .22, fade: 20, fill: 20, dry: 10, bite: .6, wet: .3};
 const OUTDOORS = {village: true, weeds: true, altar: true};
 Z.isOutdoors = biome => !!OUTDOORS[biome];
 const seedOf = id => { let h = 2166136261; for (const ch of String(id || 'zak')) h = Math.imul(h ^ ch.charCodeAt(0), 16777619); return h >>> 0; };
@@ -47,7 +48,7 @@ Object.assign(Z.Game.prototype, {
   const on = rain > .5;
   if (on !== !!this.rainNotified) {
    this.rainNotified = on;
-   if (outside && this.settings.notices) this.emit('toast', {message: on ? 'Se largó a llover. Los peces pican más rápido y quedan charcos por todos lados.' : 'Paró de llover. Quedaron charcos.'});
+   if (outside && this.settings.notices) this.emit('toast', {message: on ? 'Se largó a llover. Los peces pican más rápido y se forman charcos.' : 'Paró de llover.'});
   }
   // Gotas: un tic suave y aleatorio mientras llueve afuera.
   if (outside && rain > .2 && this.sound.enabled) { this.rainTick = (this.rainTick || 0) - dt; if (this.rainTick <= 0) { this.rainTick = .06 + Math.random() * .12; this.sound.tone(2200 + Math.random() * 2600, .02, 'triangle', .006 * rain); } }

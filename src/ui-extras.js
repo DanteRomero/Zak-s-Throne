@@ -8,61 +8,121 @@ const canvasOf = (w, h, cls) => { const c = el('canvas', cls); c.width = w; c.he
 const actions = (parent, ...buttons) => { const box = el('div', 'modal-actions'); box.append(...buttons); parent.append(box); return box; };
 
 /* ---------- Truco ---------- */
-// Lo que dice el alma: su última frase, para que se lea qué cantó.
-const LAST = 6;
+// En la mesa el alma juega de a una jugada y se toma su tiempo, para que se vea qué hace.
+const PACE = {play: 1000, answer: 1400, start: 1200};
+let ghostTimer = 0, shout = null, seen = new Set();
+const trucoOpen = () => !!document.querySelector('#modal-content .truco-board');
+function scheduleGhost(first) {
+ clearTimeout(ghostTimer); ghostTimer = 0; if (!game.trucoGhostTurn()) return;
+ const answering = T.options(game.truco.match, 'ghost').answer;
+ ghostTimer = setTimeout(() => {
+  ghostTimer = 0; const t = game.truco; if (!t || !trucoOpen()) return; // con la confirmación abierta, el alma espera
+  const before = t.match.log.length, step = game.trucoGhostStep();
+  const said = t.match.log.slice(before).find(line => line.side === 'ghost');
+  shout = step && step[0] !== 'play' && said ? said.text : null;
+  updateHud(true); showTruco();
+ }, answering ? PACE.answer : first ? PACE.start : PACE.play);
+}
+// Los tantos con fósforos, de a cinco: un cuadrado y la diagonal, como en la mesa del boliche.
+function drawTally(canvas, points, target) {
+ const c = canvas.getContext('2d'), groups = Math.ceil(target / 5); c.imageSmoothingEnabled = false; c.clearRect(0, 0, canvas.width, canvas.height);
+ const stick = (x1, y1, x2, y2, lit) => {
+  const steps = Math.max(Math.abs(x2 - x1), Math.abs(y2 - y1));
+  for (let k = 0; k <= steps; k++) { const x = Math.round(x1 + (x2 - x1) * k / steps), y = Math.round(y1 + (y2 - y1) * k / steps); c.fillStyle = lit ? '#e8d2a0' : 'rgba(232,210,160,.13)'; c.fillRect(x, y, 2, 2); }
+  if (lit) { c.fillStyle = '#c43a2a'; c.fillRect(Math.round(x2) - 1, Math.round(y2) - 1, 3, 3); }
+ };
+ for (let g = 0; g < groups; g++) {
+  const x = 3 + g * 22, y = 3, n = Math.max(0, Math.min(5, points - g * 5)), s = 15;
+  stick(x, y + s, x, y, n > 0); stick(x, y, x + s, y, n > 1); stick(x + s, y, x + s, y + s, n > 2); stick(x + s, y + s, x, y + s, n > 3); stick(x, y + s, x + s, y, n > 4);
+ }
+}
+function tally(points, target, who, cls) {
+ const box = el('div', 'truco-tally ' + cls), c = canvasOf(Math.ceil(target / 5) * 22 + 2, 22); drawTally(c, points, target);
+ box.setAttribute('aria-label', who + ': ' + points + ' de ' + target); box.append(el('span', 'truco-tally-name', who), c, el('b', '', String(points))); return box;
+}
 function trucoLog(parent, match) {
  const box = el('div', 'truco-log');
- match.log.slice(-LAST).forEach(line => box.append(el('div', 'truco-line ' + (line.side || 'table'), (line.side === 'player' ? 'Vos: ' : line.side === 'ghost' ? 'El alma: ' : '') + line.text)));
+ match.log.slice(-4).forEach(line => box.append(el('div', 'truco-line ' + (line.side || 'table'), (!/^(¡|Quiero|No quiero|Me voy)/.test(line.text) ? '' : line.side === 'player' ? 'Vos: ' : 'El alma: ') + line.text)));
  parent.append(box);
 }
-function cardButton(card, enabled, onClick) {
+function cardButton(card, enabled, onClick, i, n) {
  const b = button('', onClick, 'truco-card'); b.disabled = !enabled; b.setAttribute('aria-label', 'Jugar el ' + Zak.cardName(card));
+ b.style.setProperty('--tilt', ((i - (n - 1) / 2) * 6) + 'deg');
  const c = canvasOf(40, 60); Zak.drawCard(c, card); b.append(c); return b;
 }
-function tableRow(cards, label) {
- const row = el('div', 'truco-row'); row.append(el('span', 'truco-who', label));
- for (let i = 0; i < 3; i++) { const slot = el('span', 'truco-slot'); if (cards[i]) { const c = canvasOf(40, 60); Zak.drawCard(c, cards[i]); c.setAttribute('aria-label', Zak.cardName(cards[i])); slot.append(c); } row.append(slot); }
+function tableRow(cards, label, side, bazas, now) {
+ const row = el('div', 'truco-row ' + side); row.append(el('span', 'truco-who', label));
+ for (let i = 0; i < 3; i++) {
+  const slot = el('span', 'truco-slot'), card = cards[i];
+  if (card) {
+   const c = canvasOf(40, 60), key = side + card.id; Zak.drawCard(c, card); c.setAttribute('aria-label', Zak.cardName(card));
+   if (!seen.has(key)) c.classList.add('fresh', side); now.add(key);
+   if (bazas[i]) slot.classList.add(bazas[i] === side ? 'won' : bazas[i] === 'parda' ? 'parda' : 'lost');
+   slot.append(c);
+  }
+  row.append(slot);
+ }
  return row;
 }
 function showTruco() {
  const t = game.truco; if (!t) return;
- const m = t.match, h = m.hand, o = T.options(m, 'player'), p = game.player;
+ const m = t.match, h = m.hand, o = T.options(m, 'player'), p = game.player, thinking = game.trucoGhostTurn();
+ // Cada jugada redibuja la mesa: en el celu, que no se vaya arriba de todo.
+ const box = document.getElementById('modal'), wasOpen = trucoOpen(), scroll = box ? box.scrollTop : 0;
  openModal('Truco a ' + m.target, 'FERIA DE LAS ALMAS · CONTRA ' + t.opponent.toUpperCase(), parent => {
+  const board = el('div', 'truco-board'); parent.append(board);
   const score = el('div', 'truco-score');
-  score.append(el('span', '', 'Vos ' + m.score.player), el('b', '', t.rematch ? 'REVANCHA · si perdés, ◉ ' + t.bet * 2 : 'En juego: ◉ ' + t.bet), el('span', '', m.score.ghost + ' ' + t.opponent));
-  parent.append(score);
-  const ghostHand = el('div', 'truco-hand ghost'); for (let i = 0; i < h.cards.ghost.length; i++) { const c = canvasOf(40, 60); Zak.drawCard(c, null, true); ghostHand.append(c); } parent.append(ghostHand);
-  const table = el('div', 'truco-table'); table.append(tableRow(h.played.ghost, t.opponent), tableRow(h.played.player, 'Vos')); parent.append(table);
-  trucoLog(parent, m);
+  score.append(tally(m.score.player, m.target, 'Vos', 'mine'), el('b', 'truco-stake', t.rematch ? 'REVANCHA\nsi perdés, ◉ ' + t.bet * 2 : 'En juego\n◉ ' + t.bet), tally(m.score.ghost, m.target, t.opponent, 'ghost'));
+  board.append(score);
+  const felt = el('div', 'truco-felt'); board.append(felt);
+  const ghostSide = el('div', 'truco-ghost-side'), ghostHand = el('div', 'truco-hand ghost');
+  for (let i = 0; i < h.cards.ghost.length; i++) { const c = canvasOf(40, 60); Zak.drawCard(c, null, true); c.style.setProperty('--tilt', ((i - (h.cards.ghost.length - 1) / 2) * -7) + 'deg'); ghostHand.append(c); }
+  ghostSide.append(ghostHand);
+  if (shout) ghostSide.append(el('div', 'truco-shout', shout));
+  else if (thinking) { const dots = el('div', 'truco-thinking', 'El alma está pensando'); dots.append(el('span', 'truco-dots', '...')); ghostSide.append(dots); }
+  felt.append(ghostSide);
+  const now = new Set(), table = el('div', 'truco-table');
+  table.append(tableRow(h.played.ghost, t.opponent, 'ghost', h.bazas, now), tableRow(h.played.player, 'Vos', 'player', h.bazas, now));
+  felt.append(table); seen = now;
+  trucoLog(board, m);
   if (m.over) {
+   clearTimeout(ghostTimer); shout = null;
    const won = m.winner === 'player';
-   paragraph(parent, won ? (t.rematch ? '¡Le ganaste la revancha!' : '¡Ganaste el partido! Te llevás ◉ ' + t.bet * 2 + '.') : (t.rematch ? 'Perdiste la revancha: el alma se lleva ◉ ' + t.bet * 2 + '.' : 'Perdiste el partido y los ◉ ' + t.bet + ' de la apuesta.'), 'truco-result ' + (won ? 'won' : 'lost'));
-   if (t.prize) paragraph(parent, 'Premio de la revancha: ' + t.prize.icon + ' ' + t.prize.name + '.', 'hint shop-message');
+   paragraph(board, won ? (t.rematch ? '¡Le ganaste la revancha!' : '¡Ganaste el partido! Te llevás ◉ ' + t.bet * 2 + '.') : (t.rematch ? 'Perdiste la revancha: el alma se lleva ◉ ' + t.bet * 2 + '.' : 'Perdiste el partido y los ◉ ' + t.bet + ' de la apuesta.'), 'truco-result ' + (won ? 'won' : 'lost'));
+   if (t.prize) paragraph(board, 'Premio de la revancha: ' + t.prize.icon + ' ' + t.prize.name + '.', 'hint shop-message');
    if (t.offer) {
-    paragraph(parent, '«¿Ah, sí? Revancha. Si gano yo, me das el doble: ◉ ' + t.bet * 2 + '. Si ganás vos, te doy algo del otro lado.»', 'truco-offer');
-    const yes = button('Aceptar la revancha', () => { const r = game.trucoRematch(); if (!r.ok) { toast(r.message, true); return; } updateHud(true); showTruco(); }, 'button primary'); yes.disabled = p.coins < t.bet * 2;
-    actions(parent, yes, button('No, gracias', leaveTable));
-    if (yes.disabled) paragraph(parent, 'Para aceptarla tenés que poder cubrir ◉ ' + t.bet * 2 + '.', 'hint');
-   } else actions(parent, button('Levantarme de la mesa', leaveTable, 'button primary'));
+    paragraph(board, '«¿Ah, sí? Revancha. Si gano yo, me das el doble: ◉ ' + t.bet * 2 + '. Si ganás vos, te doy algo del otro lado.»', 'truco-offer');
+    const yes = button('Aceptar la revancha', () => { seen = new Set(); const r = game.trucoRematch(); if (!r.ok) { toast(r.message, true); return; } updateHud(true); showTruco(); }, 'button primary'); yes.disabled = p.coins < t.bet * 2;
+    actions(board, yes, button('No, gracias', leaveTable)).classList.add('truco-later');
+    if (yes.disabled) paragraph(board, 'Para aceptarla tenés que poder cubrir ◉ ' + t.bet * 2 + '.', 'hint');
+   } else actions(board, button('Levantarme de la mesa', leaveTable, 'button primary')).classList.add('truco-later');
    return;
   }
-  if (h.finished) { paragraph(parent, h.winner === 'player' ? 'Te llevaste la mano.' : 'La mano fue para el alma.', 'hint shop-message'); actions(parent, button('Siguiente mano', () => { game.trucoAct('next'); showTruco(); }, 'button primary')); return; }
+  if (h.finished) {
+   shout = null;
+   paragraph(board, h.winner === 'player' ? 'Te llevaste la mano.' : 'La mano fue para el alma.', 'truco-hand-result ' + (h.winner === 'player' ? 'won' : 'lost'));
+   actions(board, button('Siguiente mano', () => { seen = new Set(); game.trucoAct('next'); showTruco(); }, 'button primary')).classList.add('truco-later');
+   return;
+  }
   const mine = el('div', 'truco-hand mine');
-  h.cards.player.forEach(card => mine.append(cardButton(card, o.play, () => { game.trucoAct('play', card.id); showTruco(); })));
-  parent.append(mine);
+  const play = card => { shout = null; game.trucoAct('play', card.id); showTruco(); };
+  h.cards.player.forEach((card, i) => mine.append(cardButton(card, o.play, () => play(card), i, h.cards.player.length)));
+  board.append(mine);
   const pend = h.pending;
-  if (pend && pend.to === 'player') paragraph(parent, 'El alma cantó: ' + (pend.type === 'truco' ? T.TRUCO_NAMES[pend.level] : T.ENVIDO_NAMES[h.envido.calls[h.envido.calls.length - 1]]) + '. ¿Querés?', 'truco-call');
-  else if (o.play) paragraph(parent, 'Te toca jugar.' + (o.envido.length ? ' Tenés ' + T.envidoPoints(h.start.player) + ' de envido.' : ''), 'hint');
-  const bar = el('div', 'truco-actions'), act = (label, action, arg, cls = 'shop-buy') => bar.append(button(label, () => { game.trucoAct(action, arg); updateHud(true); showTruco(); }, cls));
+  if (pend && pend.to === 'player') paragraph(board, 'El alma cantó ' + (pend.type === 'truco' ? T.TRUCO_NAMES[pend.level] : T.ENVIDO_NAMES[h.envido.calls[h.envido.calls.length - 1]]) + '. ¿Querés?', 'truco-call');
+  else if (o.play) paragraph(board, 'Te toca jugar.' + (o.envido.length ? ' Tenés ' + T.envidoPoints(h.start.player) + ' de envido.' : ''), 'hint truco-turn');
+  const bar = el('div', 'truco-actions'), act = (label, action, arg, cls = 'shop-buy') => bar.append(button(label, () => { shout = null; game.trucoAct(action, arg); updateHud(true); showTruco(); }, cls));
   if (o.answer) { act('Quiero', 'quiero', null, 'shop-buy truco-yes'); act('No quiero', 'noquiero'); }
   o.envido.forEach(kind => act(T.ENVIDO_NAMES[kind], 'envido', kind));
   if (o.truco) act(o.trucoName, 'truco');
   if (o.fold) act('Me voy al mazo', 'fold', null, 'shop-buy truco-fold');
-  parent.append(bar);
-  paragraph(parent, 'Se juega sin flor. Pardas: decide la mano siguiente; si son todas pardas, gana el que es mano. Esta mano sos ' + (m.mano === 'player' ? 'mano vos' : 'pie') + '.', 'hint');
+  board.append(bar);
+  paragraph(board, 'Sin flor. Pardas: decide la mano siguiente; si son todas pardas, gana el que es mano. Esta mano sos ' + (m.mano === 'player' ? 'mano' : 'pie') + '.', 'hint truco-rules');
  }, confirmLeave);
+ if (wasOpen && box) box.scrollTop = scroll;
+ scheduleGhost(!h.played.ghost.length && !h.played.player.length && !h.pending);
 }
-function leaveTable() { game.trucoLeave(); hideModal(); updateHud(true); }
+function leaveTable() { clearTimeout(ghostTimer); shout = null; seen = new Set(); game.trucoLeave(); hideModal(); updateHud(true); }
 function confirmLeave() {
  const t = game.truco; if (!t || t.settled) { leaveTable(); return; }
  UI.confirmAction('¿Te levantás de la mesa?', t.rematch ? 'Si dejás la revancha a la mitad, el alma se lleva ◉ ' + t.bet * 2 + '.' : 'Si te vas a la mitad, el alma se queda con los ◉ ' + t.bet + ' de la apuesta.', leaveTable, showTruco, 'Levantarme');
@@ -73,7 +133,7 @@ function trucoSection(n, parent) {
  parent.append(el('h3', 'smith-heading', 'Truco a 15 · apostá guita'));
  paragraph(parent, 'Si ganás, te llevás el doble de lo que apostaste. Si el alma pierde, a veces (3 de cada 10) te pide la revancha: si gana ella, te saca el doble; si ganás vos, te da un objeto al azar.', 'hint');
  const bets = el('div', 'truco-bets');
- Zak.TRUCO.bets.forEach(bet => { const b = button('◉ ' + bet, () => { const r = game.trucoStart(bet, n.name); if (!r.ok) { toast(r.message, true); return; } updateHud(true); showTruco(); }, 'shop-buy'); b.disabled = game.player.coins < bet; b.setAttribute('aria-label', 'Apostar ' + bet + ' de guita'); bets.append(b); });
+ Zak.TRUCO.bets.forEach(bet => { const b = button('◉ ' + bet, () => { seen = new Set(); shout = null; const r = game.trucoStart(bet, n.name, false, true); if (!r.ok) { toast(r.message, true); return; } updateHud(true); showTruco(); }, 'shop-buy'); b.disabled = game.player.coins < bet; b.setAttribute('aria-label', 'Apostar ' + bet + ' de guita'); bets.append(b); });
  parent.append(bets);
  const p = game.player; if ((p.trucoWins || 0) + (p.trucoLosses || 0)) paragraph(parent, 'Partidos: ' + (p.trucoWins || 0) + ' ganados · ' + (p.trucoLosses || 0) + ' perdidos · revanchas ganadas: ' + (p.trucoRematchWins || 0) + '.', 'hint');
 }

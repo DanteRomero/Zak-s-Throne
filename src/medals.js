@@ -7,7 +7,7 @@ const flag = key => g => !!g.questFlags[key], pet = id => g => g.ownsPet(id);
 // `tier`: bronce, plata u oro (el color del borde). Las que no tienen `check` se ganan en el momento (pescar, que Zak te ejecute…).
 Z.MEDALS = [
  {id: 'bloodmoon', name: 'Noche roja', detail: 'Te tocó una luna roja.', tier: 'silver', check: g => g.player.bloodMoon === true && !Z.isZakDimension(g.biome)},
- {id: 'puddles', name: 'Pato de charco', detail: 'Pisaste 25 charcos después de la lluvia.', tier: 'bronze', check: g => (g.player.puddles || 0) >= 25},
+ {id: 'puddles', name: 'Pato de charco', detail: 'Pisaste 25 charcos bajo la lluvia.', tier: 'bronze', check: g => (g.player.puddles || 0) >= 25},
  {id: 'rainfish', name: 'Pique con lluvia', detail: 'Sacaste un pescado mientras llovía.', tier: 'bronze'},
  {id: 'dorado', name: 'Tigre del río', detail: 'Sacaste un Dorado.', tier: 'gold'},
  {id: 'capo', name: 'Anteojos rotos', detail: 'Derrotaste al Capo del Eco.', tier: 'bronze', check: flag('defeat_capo')},

@@ -1203,6 +1203,25 @@
       Object.assign(p, {x: pond.x - 10, y: pond.y + pond.h / 2}); Math.random = () => .5; game.startFishing(pond); near(p.fishing.bite, (2.5 + .5 * 4.5) * Z.RAIN.bite);
       game.wetness = 1; p.fishing = null; const q = puddles.find(q => Z.biomeAt(q.x, q.y) === 'village'); Object.assign(p, {x: q.x, y: q.y, moving: true}); game.biome = 'village'; game.lastPuddle = null; game.updateWeather(0); equal(p.puddles, 1, 'splash'); game.updateWeather(0); equal(p.puddles, 1, 'once per puddle');
     });
+    test('v2.23: at the table the ghost plays one move at a time, and a whole match still ends', () => {
+      const p = fixture('gero'); p.coins = 1000; Math.random = () => .9; ok(game.trucoStart(100, 'Truco', false, true).ok);
+      const m = game.truco.match; equal(m.mano, 'ghost'); ok(game.trucoGhostTurn(), 'the ghost is mano'); equal(m.hand.played.ghost.length + (m.hand.pending ? 1 : 0), 0, 'it waits for the window');
+      ok(game.trucoGhostStep(), 'one move'); ok(m.hand.played.ghost.length === 1 || m.hand.pending, 'only one');
+      for (let k = 0; k < 400 && !m.over; k++) {
+       if (game.trucoGhostTurn()) { game.trucoGhostStep(); continue; }
+       if (m.hand.finished) { game.trucoAct('next'); continue; }
+       const o = Z.Truco.options(m, 'player'); if (o.answer) game.trucoAct('quiero'); else if (o.play) game.trucoAct('play', m.hand.cards.player[0].id);
+      }
+      ok(m.over && game.truco.settled, 'the match ends'); ok(game.trucoRematch().ok || !game.truco.offer); if (game.truco.rematch) equal(game.truco.paced, true, 'the rematch keeps the pace');
+    });
+    test('v2.23: puddles and wet grass only while it rains, and dry seconds after it stops', () => {
+      const p = fixture('gero', true); let t = 240; while (Z.rainAt(t + 60, p.runId) < 1 && t < 240 * 500) t += 240;
+      let dry = 240; while (Z.rainAt(dry + 60, p.runId) > 0 && dry < 240 * 500) dry += 240;
+      game.biome = 'village'; game.wetness = 0; p.playTime = dry + 60; game.updateWeather(30); equal(game.wetness, 0, 'no rain, no puddles');
+      const q = Z.puddlesOf(game.world)[0]; equal(game.puddleAt(q.x, q.y), null, 'nothing to step on');
+      p.playTime = t + 60; for (let k = 0; k < 25; k++) game.updateWeather(1); ok(game.wetness > .9 && game.puddleAt(q.x, q.y), 'puddles fill while it rains');
+      p.playTime = dry + 60; for (let k = 0; k < 11; k++) game.updateWeather(1); equal(game.wetness, 0, 'dry ten seconds after it stops'); equal(game.puddleAt(q.x, q.y), null);
+    });
     test('v2.21: medals arrive for what you already did, for events and stay in the save', () => {
       const p = fixture('gero', true), toasts = []; game.onEvent = (t, d) => { if (t === 'toast') toasts.push(d.message); };
       game.questFlags.defeat_golem = true; game.questFlags.defeat_capo = true; const save = JSON.parse(JSON.stringify(game.snapshot())); delete save.player.medals;

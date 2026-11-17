@@ -111,6 +111,11 @@
   assert('Las almas ofrecen jugar al truco con apuestas',document.querySelectorAll('#modal-content .truco-bets button').length===Zak.TRUCO.bets.length&&document.querySelector('[aria-label="Apostar 1000 de guita"]').disabled);
   document.querySelector('[aria-label="Apostar 100 de guita"]').click();
   assert('La mesa de truco muestra tus cartas y el tanteador',g.truco&&g.player.coins===500&&document.querySelector('.truco-score')&&document.querySelectorAll('.truco-card').length+g.truco.match.hand.played.player.length===3);
+  {const m=g.truco.match;if(!g.trucoGhostTurn()){document.querySelector('.truco-card:not(:disabled)')&&document.querySelector('.truco-card:not(:disabled)').click();}
+   const moves=()=>m.log.length+'/'+m.hand.played.ghost.length+'/'+JSON.stringify(m.hand.pending)+'/'+m.hand.finished;const before=moves();const turn=g.trucoGhostTurn();await new Promise(r=>setTimeout(r,300));
+   assert('El alma no juega al instante',!turn||moves()===before);
+   if(turn){await new Promise(r=>setTimeout(r,1300));assert('El alma juega después de pensarlo',moves()!==before&&document.querySelector('.truco-felt'));}
+   assert('Los tantos se anotan con fósforos',document.querySelectorAll('.truco-tally canvas').length===2);}
   close();assert('Levantarse a la mitad pide confirmación',document.getElementById('modal-title').textContent.includes('levantás'));
   clickText('Levantarme');assert('Al levantarte perdés lo apostado',!g.truco&&g.player.coins===500);
   g.state='playing';g.player.pets.bat={name:'Draco'};g.emit('namePet',{pet:'bat'});

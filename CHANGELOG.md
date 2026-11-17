@@ -6,6 +6,15 @@ Cada versión lista sus cambios agrupados por tipo:
 - **Change:** algo que ya existía y ahora funciona distinto.
 - **Fix:** un error corregido.
     
+## v2.23 — 2026-11-17
+* Change
+    - **Lluvia:** los charcos y el pasto brilloso aparecen solo mientras llueve. Cuando para, todo se seca en unos segundos (antes quedaban 3 minutos).
+    - **Truco:** el alma ya no juega todo de golpe. Piensa cada jugada un segundo (un poco más cuando tiene que contestar un canto) y lo que canta aparece en un globito.
+    - **Truco:** la mesa es nueva: paño verde con borde de madera, tantos anotados con fósforos de a cinco, las cartas entran deslizándose, la baza ganada brilla y la perdida se apaga, y tu mano se ve en abanico.
+    - El historial de la mesa ya no dice «Vos: Ganaste la primera»: el «Vos:» y el «El alma:» quedan solo para lo que se canta.
+* Fix
+    - En el celular, la mesa de truco ya no vuelve arriba de todo cada vez que juega el alma.
+
 ## v2.22 — 2026-11-16
 * Fix
     - Empezar una partida nueva con otro apodo ya no le cambia el nombre en el ranking a tus otras partidas: cada partida guarda el suyo.
