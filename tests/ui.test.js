@@ -90,6 +90,13 @@
   assert('Un sprite escalado no deja píxeles semitransparentes',onlySolid());
   pen.fillStyle='#fff';pen.strokeStyle='#fff';pen.lineWidth=3;pen.setLineDash([5,4]);pen.beginPath();pen.ellipse(70,70,30,18,.4,0,Math.PI*2);pen.stroke();pen.setLineDash([]);pen.beginPath();pen.moveTo(10,10);pen.arc(10,10,25,.2,1.2);pen.closePath();pen.fill();
   assert('Trazos y rellenos curvos salen sin antialiasing',onlySolid());
+  {// v2.31: al picar solo se ve el pico, con la cabeza del material de la herramienta, y no el arma.
+   const colors=player=>{pen.clearRect(0,0,120,120);Zak.drawCharacter(pen,{x:60,y:80,characterId:'dante',dir:'right',weapon:'sword',...player},0,false);const d=pen.getImageData(0,0,120,120).data,set=new Set();for(let i=0;i<d.length;i+=4)if(d[i+3])set.add('#'+[d[i],d[i+1],d[i+2]].map(v=>v.toString(16).padStart(2,'0')).join(''));return set;};
+   const armed=colors({}),gold=colors({gather:{tool:'pickaxe',tick:.2},pickaxe:4}),stone=colors({gather:{tool:'pickaxe',tick:.2},pickaxe:2}),axe=colors({gather:{tool:'axe',tick:.2},axe:5});
+   assert('Con la espada en la mano se ve la espada',armed.has('#8faeaf'));
+   assert('Picando se guarda la espada',!gold.has('#8faeaf')&&!gold.has('#d9e5cc'));
+   assert('El pico de oro es dorado y el de piedra, gris',gold.has('#e5b636')&&!gold.has('#8a8f96')&&stone.has('#8a8f96')&&!stone.has('#e5b636'));
+   assert('El hacha de diamante es celeste',axe.has('#6fdcec'));}
   const missing=[];
   for(const text of ['abcdefghijklmnñopqrstuvwxyzáéíóúü¿?¡!.,:;-+/()%0123456789','ABCDEFGHIJKLMNÑOPQRSTUVWXYZÁÉÍÓÚÜ«»…$',...g.world.objects.map(o=>o.label||''),...g.world.npcs.map(n=>n.name||''),...Zak.CHARACTERS.map(c=>c.name),...Object.values(Zak.OFFERINGS).map(o=>o.icon),'♪♫☠✦▸▼▲⚒✝≈✓🗝'])
     for(const ch of Array.from(text))if(!Px.hasGlyph(ch))missing.push(ch);

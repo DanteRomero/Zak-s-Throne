@@ -8,8 +8,10 @@ const finite = n => Number.isFinite(Number(n)) ? Number(n) : 0;
 const distance = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
 const isBoss = e => !!(Z.ENEMY_TYPES[e.type] && Z.ENEMY_TYPES[e.type].boss);
 // `damage`: +1,5% de daño por nivel (+13,5% al 10). `cooldown`: especiales 3% más seguido por nivel. `effect`: efectos 4% más largos por nivel.
-// `xp`: experiencia para pasar del nivel n al n+1. `assist`: parte de la experiencia si el compañero no le pegó a ese enemigo.
-const L = Z.PET_LEVELS = {max: 10, damage: .015, cooldown: .03, effect: .04, xp: n => 400 * n, assist: .4, skillAt: 5, skillEvery: 24,
+// `xp`: experiencia para pasar del nivel n al n+1 con un personaje de nivel 1. `scale` la agranda según tu nivel, al mismo ritmo
+// que crece la experiencia de los enemigos comunes (+6% por nivel): se necesitan más o menos los mismos enemigos a cualquier altura.
+// `assist`: parte de la experiencia si el compañero no le pegó a ese enemigo.
+const L = Z.PET_LEVELS = {max: 10, damage: .015, cooldown: .03, effect: .04, xp: n => 400 * n, scale: lv => 1 + .06 * (Math.max(1, Math.floor(finite(lv)) || 1) - 1), assist: .4, skillAt: 5, skillEvery: 24,
  howl: {radius: 100, time: 3}, coil: {time: 2.5, bossTime: 1}, rocks: {radius: 55, time: 1.5, bossTime: .6, hit: .3}, leech: .3, leechCap: .02,
  train: {price: n => 150 * n, part: .5}};
 Z.PET_SKILLS = {
@@ -23,12 +25,14 @@ const P = Z.Game.prototype;
 Object.assign(P, {
  petLevel(id) { const pet = this.player.pets && this.player.pets[id]; return pet ? Math.max(1, Math.min(L.max, Math.floor(finite(pet.level) || 1))) : 0; },
  petXp(id) { const pet = this.player.pets && this.player.pets[id]; return pet ? Math.max(0, finite(pet.xp)) : 0; },
+ // Experiencia que le falta al compañero para pasar de `lv` a `lv + 1`, según tu nivel.
+ petXpNeeded(lv, playerLevel = this.player.level) { return Math.round(L.xp(lv) * L.scale(playerLevel)); },
  petFactor(id, kind) { return 1 + L[kind] * (Math.max(1, this.petLevel(id)) - 1) * (kind === 'cooldown' ? -1 : 1); },
  // Suma experiencia al compañero; devuelve cuántos niveles subió.
  petGainXp(id, amount) {
   const pet = this.player.pets && this.player.pets[id]; if (!pet || amount <= 0) return 0;
   pet.level = this.petLevel(id); pet.xp = this.petXp(id) + amount; let ups = 0;
-  while (pet.level < L.max && pet.xp >= L.xp(pet.level)) { pet.xp -= L.xp(pet.level); pet.level++; ups++; }
+  while (pet.level < L.max && pet.xp >= this.petXpNeeded(pet.level)) { pet.xp -= this.petXpNeeded(pet.level); pet.level++; ups++; }
   if (pet.level >= L.max) pet.xp = 0;
   if (ups) {
    const name = this.petName(id), lv = pet.level;
@@ -46,7 +50,7 @@ Object.assign(P, {
   if (p.pet === id) return {ok: false, message: '«Al que llevás con vos lo entrenás vos, querido.»'};
   const lv = this.petLevel(id); if (lv >= L.max) return {ok: false, message: '«A ' + this.petName(id) + ' ya no le puedo enseñar nada más.»'};
   const price = L.train.price(lv); if (p.coins < price) return {ok: false, message: 'Te faltan ◉ ' + (price - p.coins) + '.'};
-  p.coins -= price; this.sound.play('buy'); this.petGainXp(id, Math.ceil(L.xp(lv) * L.train.part));
+  p.coins -= price; this.sound.play('buy'); this.petGainXp(id, Math.ceil(this.petXpNeeded(lv) * L.train.part));
   return {ok: true, message: '«Lo hice correr toda la tarde por el patio.» ' + this.petName(id) + ': nivel ' + this.petLevel(id) + '.'};
  },
  // Habilidad del nivel 5. Devuelve true si la usó.
@@ -143,7 +147,7 @@ P.restoreInventory = function (p, source) {
  const src = source.pets && typeof source.pets === 'object' ? source.pets : {};
  for (const id of Object.keys(p.pets || {})) {
   const s = src[id] || {}, level = Math.max(1, Math.min(L.max, Math.floor(finite(s.level) || 1)));
-  p.pets[id].level = level; p.pets[id].xp = level >= L.max ? 0 : Math.max(0, Math.min(L.xp(level) - 1, finite(s.xp)));
+  p.pets[id].level = level; p.pets[id].xp = level >= L.max ? 0 : Math.max(0, Math.min(this.petXpNeeded(level, p.level) - 1, finite(s.xp)));
  }
 };
 const baseTame = P.tamePet;

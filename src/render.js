@@ -275,14 +275,44 @@
     }
     c.restore();
   }
-  // Hacha o pico mientras se junta material.
-  function drawTool(c, p, time) {
-    const axe = p.gather.tool === "axe", right = p.dir === "right" || p.dir === "down", beat = Math.sin(time * 11), a = (right ? -.9 : Math.PI + .9) + (right ? 1 : -1) * Math.max(-.4, beat) * .9;
-    const cos = Math.cos(a), sin = Math.sin(a), ox = Math.round(p.x) + (right ? 5 : -5), oy = Math.round(p.y) - 12;
-    Px.line(c, ox, oy, ox + cos * 12, oy + sin * 12, "#80573b", 2);
-    if (axe) { rrect(c, ox + cos * 11, oy + sin * 11, a, -2, -1, 5, 5, "#6d7276"); rrect(c, ox + cos * 11, oy + sin * 11, a, 0, 1, 3, 2, "#c7cdd2"); }
-    else rrect(c, ox + cos * 12, oy + sin * 12, a, -1, -6, 3, 12, "#8d949a");
+  // Cabeza del hacha y del pico según el material de la herramienta que tenés: madera, piedra, hierro, oro o diamante.
+  const TOOL_TIERS = [null,
+    { base: "#a0703f", light: "#cf9f66", dark: "#6a4223" },
+    { base: "#8a8f96", light: "#c2c6ca", dark: "#555a60" },
+    { base: "#c3ccd6", light: "#f4f7fa", dark: "#7c8794" },
+    { base: "#e5b636", light: "#fff1a6", dark: "#a07316" },
+    { base: "#6fdcec", light: "#e2fcff", dark: "#2f98ad" }];
+  // Un golpe cada 0,45 s: `t` va de 0 (recién pegó) a 1 (justo antes del próximo); `lift`, de 0 (abajo) a 1 (arriba de todo).
+  function toolPose(g) {
+    const t = g.tick > 0 ? Math.min(1, 1 - g.tick / .45) : 1;
+    return { t, lift: t < .15 ? Math.sin(t / .15 * Math.PI) * .12 : t < .75 ? 1 - Math.pow(1 - (t - .15) / .6, 2) : 1 - Math.pow((t - .75) / .25, 2) };
   }
+  // Hacha o pico mientras se junta material, en vez del arma: sube despacio, baja de golpe y pega en cada sonido.
+  function drawTool(c, p, time) {
+    const g = p.gather, axe = g.tool === "axe", tier = TOOL_TIERS[Math.max(1, Math.min(5, Math.floor(p[g.tool] || 1)))];
+    const right = p.dir === "right" || p.dir === "down", bs = right ? 1 : -1, { t, lift } = toolPose(g);
+    const local = .6 + (-2.05 - .6) * lift, a = right ? local : Math.PI - local, cos = Math.cos(a), sin = Math.sin(a);
+    const ox = Math.round(p.x) + bs * 4, oy = Math.round(p.y) - 12, hx = ox + cos * 13, hy = oy + sin * 13;
+    const look = LOOKS[p.characterId] || LOOKS.pepe, hand = p.characterId === "fede" ? "#b4424b" : p.characterId === "pepe" ? "#ebd776" : look.skin;
+    // Del lado que corta (hacia donde baja): `side(y, h)` da vuelta la cabeza cuando mira a la izquierda.
+    const side = (y, h) => bs > 0 ? y : -y - h, head = (x, y, w, h, color) => rrect(c, hx, hy, a, x, side(y, h), w, h, color);
+    sprite(c, P.ink, false, () => {
+      Px.line(c, ox - cos * 2, oy - sin * 2, hx + cos * 2, hy + sin * 2, "#80573b", 2);
+      if (axe) {
+        head(-1, -4, 3, 4, tier.dark);
+        head(-3, 0, 6, 4, tier.base); head(-4, 3, 8, 3, tier.base); head(-4, 5, 8, 1, tier.light); head(-3, 0, 6, 1, tier.dark);
+      } else {
+        head(-1, -7, 3, 14, tier.base); head(1, -6, 1, 12, tier.light);
+        head(-3, -8, 2, 3, tier.dark); head(-3, 5, 2, 3, tier.dark);
+      }
+      rect(c, ox - cos * 1 - 1, oy - sin * 1 - 1, 3, 3, hand);
+    });
+    // Destellito en el momento del golpe.
+    if (t < .12) { const fx = hx - sin * 7 * bs, fy = hy + cos * 7 * bs; rect(c, fx, fy - 2, 1, 5, "#fff6d8"); rect(c, fx - 2, fy, 5, 1, "#fff6d8"); }
+  }
+  // Astillas o pedacitos de mineral que saltan en cada golpe, del color de lo que estás juntando.
+  const CHIP_COLORS = { wood: ["#c49a5a", "#8a5a32"], stone: ["#9fa2a4", "#6b6e72"], coal: ["#141518", "#5e6064"], iron: ["#cfd6de", "#b0703f"],
+    gold: ["#ffe27a", "#b8902c"], diamond: ["#7fe6f2", "#e8ffff"], arcane: ["#d8bfff", "#7b62c8"] };
   // Hombreras y cinturón con el color de la armadura puesta.
   function armorPlates(c, player, v) {
     const a = Z.ARMORS && Z.ARMORS[Math.floor(player.armorTier || 0)]; if (!a) return;
@@ -300,12 +330,17 @@
     // Cuatro cuadros de caminata; en los de paso el cuerpo sube un píxel.
     const cycle = (player.walk !== undefined && player.walk !== null ? player.walk : time * 8) * 1.4 / TAU, frame = moving ? ((Math.floor(cycle * 4) % 4) + 4) % 4 : 0;
     const seed = SEEDS[id] || 0, breathing = !moving && !portrait && !(player.frozen > 0) && Math.sin(time * 2.2 + seed + (player.x || 0) * .01) > .55;
-    const blink = !portrait && ((time + seed * 1.7) % 3.4) < .12, attacking = !portrait && player.attackAnim > 0;
+    // Mientras tala o pica guarda el arma: en la mano solo lleva la herramienta.
+    const gathering = !portrait && !!(player.gather && player.gather.tool);
+    const blink = !portrait && ((time + seed * 1.7) % 3.4) < .12, attacking = !portrait && !gathering && player.attackAnim > 0;
     const facing = FACING[dir] || FACING.down, ax = attacking && player.attackX !== undefined ? player.attackX : facing[0], ay = attacking && player.attackY !== undefined ? player.attackY : facing[1];
-    const v = { side, back, frame, moving, attacking, weapon: portrait ? null : weaponId(player), blink, up: moving && frame % 2 ? -1 : breathing ? 1 : 0 };
+    const v = { side, back, frame, moving, attacking, weapon: portrait || gathering ? null : weaponId(player), blink, up: moving && frame % 2 ? -1 : breathing ? 1 : 0 };
     const flash = !portrait && (player.hitFlash || player.hurt) > 0 && Math.floor(time * 14) % 2 === 0;
     const rolling = !portrait && player.roll > 0, blade = v.weapon === "sword" || v.weapon === "elemental", behind = attacking && blade && ay < -.45;
     if (behind) drawAttack(c, player, time);
+    // Arriba de todo, la herramienta pasa por detrás de la cabeza.
+    const toolBehind = gathering && toolPose(player.gather).lift > .6;
+    if (toolBehind) drawTool(c, player, time);
     c.save(); c.translate(Math.round(player.x || 0), Math.round(player.y || 0));
     if (!portrait) shadow(c, 0, 0, id === "dante" ? 19 : 16, 5);
     if (attacking) { const lunge = Math.sin(player.attackAnim / .24 * Math.PI) * 2; c.translate(Math.round(ax * lunge), Math.round(ay * lunge)); }
@@ -342,7 +377,7 @@
     if (!portrait && player.stunned > 0 && !(player.frozen > 0)) for (let k = 0; k < 3; k++) { const a = time * 5 + k * 2.1; pixelText(c, "✦", Math.cos(a) * 9, -31 + Math.sin(a) * 3, "#f2d16b", 7); }
     c.restore();
     if (attacking && !behind) drawAttack(c, player, time);
-    if (!portrait && player.gather && player.gather.tool) drawTool(c, player, time);
+    if (gathering && !toolBehind) drawTool(c, player, time);
   }
   // Espíritu del bosque de Madre tierra: una lucecita de hojas que flota, con brotes y ojitos.
   function drawSpirit(c, s, time) {
@@ -2753,6 +2788,10 @@
         for(let k=0;k<4;k++){const a=k*1.7,r=2+progress*9;c.globalAlpha=(1-progress)*.5;rect(c,x+Math.cos(a)*r-2,y-2+Math.sin(a)*r*.4-progress*4,3+progress*3,2+progress*2,"#d8c99c");}
       } else if(e.type==="poof"){
         for(let k=0;k<9;k++){const a=hash(k,Math.floor(e.seed||0),9)*Math.PI*2,r=3+progress*20;c.globalAlpha=(1-progress)*.85;rect(c,x+Math.cos(a)*r-2,y+Math.sin(a)*r*.6-progress*10,4+progress*4,4+progress*3,k%3?"#e9e2cc":"#b7b09a");}
+      } else if(e.type==="chips"){
+        const [a,b]=CHIP_COLORS[e.mat]||CHIP_COLORS.stone;
+        for(let k=0;k<7;k++){const dir=(hash(k,Math.floor(e.seed||0),5)-.5)*2.6-Math.PI/2,r=3+progress*(10+hash(k,3)*10),fall=progress*progress*14;
+          rect(c,x+Math.cos(dir)*r,y+Math.sin(dir)*r*.8+fall,k%3?2:3,2,k%2?a:b);}
       } else if(e.type==="leaf"){
         for(let k=0;k<6;k++){const a=k*1.05+(e.seed||0),r=6+progress*14;rect(c,x+Math.cos(a)*r,y-10+Math.sin(a)*r*.6-progress*12,3,2,k%2?"#9fd07c":"#6fae58");}
       } else if(e.type==="slash"){

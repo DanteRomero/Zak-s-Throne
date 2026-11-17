@@ -162,8 +162,8 @@ function showMedals(back = null) {
 function petLevelInfo(body, id) {
  const L = Zak.PET_LEVELS; if (!L || !game.ownsPet(id)) return;
  const lv = game.petLevel(id), skill = Zak.PET_SKILLS[id], bar = el('div', 'pet-xp'), fill = el('i');
- fill.style.width = (lv >= L.max ? 100 : Math.round(100 * game.petXp(id) / L.xp(lv))) + '%'; bar.append(fill);
- body.append(el('small', 'pet-level', 'Nivel ' + lv + (lv >= L.max ? ' (máximo)' : ' · ' + Math.floor(game.petXp(id)) + '/' + L.xp(lv) + ' EXP')), bar);
+ fill.style.width = (lv >= L.max ? 100 : Math.min(100, Math.round(100 * game.petXp(id) / game.petXpNeeded(lv)))) + '%'; bar.append(fill);
+ body.append(el('small', 'pet-level', 'Nivel ' + lv + (lv >= L.max ? ' (máximo)' : ' · ' + Math.floor(game.petXp(id)) + '/' + game.petXpNeeded(lv) + ' EXP')), bar);
  body.append(el('small', 'pet-skill' + (lv >= L.skillAt ? '' : ' locked'), (lv >= L.skillAt ? '✦ ' : '🔒 Nivel ' + L.skillAt + ': ') + skill.name + '. ' + skill.detail));
 }
 function petCard(parent, id) {
@@ -259,9 +259,9 @@ function petSheet(parent, wanted, show) {
   return;
  }
  const lv = game.petLevel(id), max = lv >= L.max, bar = el('div', 'sheet-xp'), fill = el('i');
- fill.style.width = (max ? 100 : Math.round(100 * game.petXp(id) / L.xp(lv))) + '%'; bar.append(fill);
+ fill.style.width = (max ? 100 : Math.min(100, Math.round(100 * game.petXp(id) / game.petXpNeeded(lv)))) + '%'; bar.append(fill);
  info.append(el('span', 'sheet-kicker', def.species.toUpperCase() + ' · ' + (p.pet === id ? 'TE ACOMPAÑA' : 'EN LA GUARDERÍA')), el('strong', 'sheet-name', game.petName(id)),
-  el('small', 'sheet-xp-text', max ? 'Nivel máximo: son uña y carne' : 'Experiencia · ' + Math.floor(game.petXp(id)) + ' / ' + L.xp(lv)), bar);
+  el('small', 'sheet-xp-text', max ? 'Nivel máximo: son uña y carne' : 'Experiencia · ' + Math.floor(game.petXp(id)) + ' / ' + game.petXpNeeded(lv)), bar);
  const rename = el('form', 'pet-rename'), input = el('input'), save = button('Cambiar nombre', () => {}, 'shop-buy');
  input.maxLength = 14; input.value = game.petName(id); input.spellcheck = false; input.id = 'pet-sheet-name'; input.setAttribute('aria-label', 'Nombre del compañero (hasta 14 letras)'); save.type = 'submit';
  rename.append(input, save); rename.addEventListener('submit', event => { event.preventDefault(); const r = game.namePet(id, input.value); toast(r.message, r.ok === false); updateHud(true); show(id); });

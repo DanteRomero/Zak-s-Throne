@@ -584,13 +584,13 @@ class Game {
   const have=p[def.tool]||0,tool=Z.TOOLS[def.tool];
   if(have<def.tier){this.emit('toast',{message:'Para '+(def.tool==='axe'?'talar':'picar '+def.name)+' necesitás '+tool.name.toLowerCase()+' de '+Z.TIER_NAMES[def.tier]+' o mejor. Pedíselo al herrero de El Taller.',error:true});return false;}
   if(p.gather&&p.gather.id===node.id)return true;
-  p.gather={id:node.id,x:node.x+node.w/2,y:node.y,time:0,total:def.time/Z.TOOL_SPEED[have],tick:0,tool:def.tool};
+  p.gather={id:node.id,x:node.x+node.w/2,y:node.y,time:0,total:def.time/Z.TOOL_SPEED[have],tick:0,tool:def.tool,mat:def.material};
   p.dir=Math.abs(p.gather.x-p.x)>Math.abs(node.y+node.h/2-p.y)?(p.gather.x>p.x?'right':'left'):(node.y+node.h/2>p.y?'down':'up');return true;
  }
  updateGather(dt){
   const p=this.player,g=p.gather;if(!g)return;const[x,y]=this.movementInput(),node=this.world.objects.find(o=>o.id===g.id);
   if(x||y||p.roll>0||!node||node.harvested){p.gather=null;return;}
-  g.time+=dt;g.tick-=dt;if(g.tick<=0){g.tick=.45;p.attackAnim=.2;this.sound.play(g.tool==='axe'?'chop':'mine');this.effect(g.x,node.y+node.h/2,g.tool==='axe'?'leaf':'spark',.35,{seed:Math.random()*99});}
+  g.time+=dt;g.tick-=dt;if(g.tick<=0){g.tick=.45;this.sound.play(g.tool==='axe'?'chop':'mine');const hy=node.y+node.h/2,seed=Math.random()*99;this.effect(g.x,hy,'chips',.45,{seed,mat:g.mat||this.nodeDef(node).material});if(g.tool==='axe')this.effect(g.x,hy,'leaf',.35,{seed});}
   if(g.time<g.total)return;
   const def=this.nodeDef(node);node.harvested=true;node.regrow=def.regrow;if(node.type==='ore')node.solid=false;p.gather=null;
   const bonus=this.gatherBonus?this.gatherBonus():0;p.materials[def.material]=(p.materials[def.material]||0)+def.yield+bonus;this.questFlags.gathered=true;

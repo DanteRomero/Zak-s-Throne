@@ -6,6 +6,14 @@ Cada versión lista sus cambios agrupados por tipo:
 - **Change:** algo que ya existía y ahora funciona distinto.
 - **Fix:** un error corregido.
     
+## v2.31 — 2026-11-17
+* Change
+    - **Subir de nivel a los compañeros depende de tu nivel:** la experiencia que necesitan crece un 6% por cada nivel de tu personaje, lo mismo que crece la experiencia que dan los enemigos comunes. A cualquier altura hacen falta más o menos los mismos enemigos: con un personaje de nivel 90 ya no alcanzan cuatro o cinco para llegar al nivel 10. Con el nivel 1 no cambia nada. Los que ya subieron no pierden niveles, y lo que Doña Herminia entrena también va según tu nivel.
+    - **Talar y picar, rediseñado:** guardás el arma y solo se ve la herramienta, con la cabeza del color de su material: madera, piedra, hierro, oro o diamante. Sube despacio, baja de golpe y pega justo con el sonido, con un destellito. Arriba de todo pasa por detrás de la cabeza.
+    - **Astillas y pedacitos de mineral:** en cada golpe saltan astillas de madera o pedacitos del color de lo que picás: piedra, carbón, hierro, oro, diamante o cristal arcano.
+* Fix
+    - **Al talar o picar parecía que pegabas con el arma:** se veía el golpe de la espada, el arco o los puños, y el pico era gris para todos.
+
 ## v2.30 — 2026-11-17
 * Feature
     - **Campanitas de Don Anselmo:** cuando el vendedor ambulante llega a la zona donde estás, o entrás a la zona donde está él, suenan unas campanitas y aparece un aviso.

@@ -2,7 +2,7 @@
 
 Una aventura de acción y exploración en pixel art, vista desde arriba. Elegí a uno de siete amigos, preparate en la aldea y salí a explorar la cueva y los Yuyos.
 
-Versión actual: **v2.30**. Los cambios de cada versión están en [CHANGELOG.md](CHANGELOG.md).
+Versión actual: **v2.31**. Los cambios de cada versión están en [CHANGELOG.md](CHANGELOG.md).
 
 ## Jugar
 
@@ -266,6 +266,8 @@ Mientras un enemigo no recibe golpes (el **Refuerzo** del Gólem, el salto de Ce
 
 Los compañeros **suben de nivel** (hasta el **10**) con los enemigos que vencés mientras te acompañan: si le pegaron, se llevan toda la experiencia de ese enemigo; si no, una parte. Están para ayudar un poco, no para pelear por vos: **el daño casi no crece** (+1,5% por nivel, +13,5% al 10). Lo que mejora son sus **efectos**: cada nivel duran un 4% más y salen un 3% más seguido.
 
+La experiencia que necesitan **depende de tu nivel**: con un personaje de nivel 1, pasar del nivel *n* al siguiente pide 400 × *n*; por cada nivel tuyo pide un **6% más** (a tu nivel 90, unas 6,3 veces más). Es lo mismo que crece la experiencia que dan los enemigos comunes, así que a cualquier altura hacen falta más o menos los mismos enemigos.
+
 Al **nivel 5** aprenden una habilidad, que no hace daño (o casi):
 
 | Compañero | Habilidad | Qué hace |
@@ -313,7 +315,7 @@ Al sur de la aldea, junto a **El Taller**, atiende **El Herrero**: E en su mesa 
 
 Hay 8 vetas de piedra, 6 de carbón, 9 de hierro, 5 de oro, 4 de diamante y 5 de cristal arcano. El herrero también hace **petardos** y talla el **Diente de la Yarará** (ver [Bolsa, consumibles y amuletos](#bolsa-consumibles-y-amuletos)). Cada nivel de herramienta trabaja más rápido que el anterior: madera ×1, piedra ×1,3, hierro ×1,6, oro ×1,95 y diamante ×2,4.
 
-**Herramientas.** Cada pico y cada hacha requiere el nivel anterior. Las hachas solo aceleran la tala.
+**Herramientas.** Cada pico y cada hacha requiere el nivel anterior. Las hachas solo aceleran la tala. Mientras talás o picás guardás el arma y se ve la herramienta, con la cabeza del color de su material (madera, piedra, hierro, oro o diamante); en cada golpe saltan astillas o pedacitos del mineral que estás picando.
 
 | Herramienta | Pico | Hacha |
 | --- | --- | --- |
@@ -561,9 +563,9 @@ Si ya tenés Node instalado:
 node tests/rules.test.js
 ```
 
-Abrí `tests/index.html` para ejecutar las 46 pruebas de reglas y las 178 pruebas de integración del motor en el navegador. El resultado detalla cada caso aprobado o fallido.
+Abrí `tests/index.html` para ejecutar las 46 pruebas de reglas y las 180 pruebas de integración del motor en el navegador. El resultado detalla cada caso aprobado o fallido.
 
-También se incluyen 88 pruebas de interfaz y de pixel art, 31 del ranking (con un servidor simulado), 36 de controles táctiles y 42 de la nube (también con un servidor simulado) con Chrome y Python 3, sin librerías adicionales. El verificador abre un perfil temporal aislado; nunca usa tus guardados personales:
+También se incluyen 92 pruebas de interfaz y de pixel art, 31 del ranking (con un servidor simulado), 36 de controles táctiles y 42 de la nube (también con un servidor simulado) con Chrome y Python 3, sin librerías adicionales. El verificador abre un perfil temporal aislado; nunca usa tus guardados personales:
 
 ```sh
 python tests/browser_check.py tests/index.html --script tests/engine.test.js

@@ -384,6 +384,12 @@
       advance(.6); equal(p.materials.wood, 2); ok(tree.harvested && tree.solid, 'Stump stays solid');
       advance(59); ok(tree.harvested); advance(1.2); ok(!tree.harvested, 'Tree regrows after 60 s');
     });
+    test('v2.31: gathering swings the tool, not the weapon, and chips fly in the color of what you gather', () => {
+      const p = fixture('gero', true), tree = node('tree'); standBy(tree); p.axe = 3; game.effects = [];
+      ok(game.startGather(tree)); equal(p.gather.mat, 'wood'); let anim = 0; for (let k = 0; k < 60; k++) { game.update(1 / 60); anim = Math.max(anim, p.attackAnim || 0); }
+      equal(anim, 0, 'no weapon swing while chopping'); ok(game.effects.some(e => e.type === 'chips' && e.mat === 'wood'), 'wood chips');
+      p.gather.mat = undefined; game.effects = []; advance(.5); ok(game.effects.some(e => e.type === 'chips' && e.mat === 'wood'), 'an old save without the material still knows it');
+    });
     test('Better axes chop faster and moving cancels the work', () => {
       const p = fixture('gero', true), tree = node('tree'); standBy(tree); p.axe = 5;
       game.startGather(tree); advance(1.3); equal(p.materials.wood, 2, 'Diamond axe: 3 s / 2.4');
@@ -1306,6 +1312,16 @@
       game.petGainXp('dog', 1e7); equal(game.petLevel('dog'), 10); equal(game.petXp('dog'), 0); ok(game.hasMedal('bestfriend'));
       const save = JSON.parse(JSON.stringify(game.snapshot())); save.player.pets.dog = {name: 'Toby'}; save.player.pets.bat = {name: 'Dra', level: 99, xp: -5}; save.player.pet = 'dog';
       game.restore(save, 1); equal(game.petLevel('dog'), 1, 'old save: level 1'); equal(game.petXp('dog'), 0); equal(game.petLevel('bat'), 10, 'clamped'); equal(game.petXp('bat'), 0);
+    });
+    test('v2.31: the experience a companion needs grows with your level, like the experience enemies give', () => {
+      const p = fixture('gero'); keepPet('dog'); equal(game.petXpNeeded(1), 400, 'level 1: as before');
+      p.level = 90; const need = game.petXpNeeded(1); near(need, Math.round(400 * (1 + .06 * 89)), 'level 90: 6,3 times more'); ok(game.petXpNeeded(9) > game.petXpNeeded(1));
+      const thief = enemy('thief'); ok(Math.abs(thief.stats.xp / Z.ENEMY_TYPES.thief.xp - Z.PET_LEVELS.scale(90)) < .5, 'about as many enemies at any level');
+      game.petGainXp('dog', 400); equal(game.petLevel('dog'), 1, '400 is not enough at level 90'); game.petGainXp('dog', need - 400); equal(game.petLevel('dog'), 2);
+      let total = 0; for (let n = 1; n < 10; n++) total += game.petXpNeeded(n); ok(total > 1e5, 'level 10 takes many more than five enemies: ' + total);
+      p.pets.dog.xp = game.petXpNeeded(2) * 3; game.restore(JSON.parse(JSON.stringify(game.snapshot())), 1);
+      ok(game.petXp('dog') < game.petXpNeeded(game.petLevel('dog')), 'saves keep the experience inside the bar');
+      const q = game.player; q.pets.bat = {name: 'Dra', level: 3, xp: 0}; q.coins = 1e4; ok(game.trainPet('bat').ok); equal(game.petXp('bat'), Math.ceil(game.petXpNeeded(3) / 2), 'Herminia trains half a level at your level');
     });
     test('v2.25: leveling barely raises damage; effects last longer and come sooner', () => {
       const p = fixture('gero'); keepPet('dog'); const low = game.petDamage('dog'); p.pets.dog.level = 10; const high = game.petDamage('dog');
