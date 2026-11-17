@@ -27,6 +27,8 @@ function normalize(entry) {
     level: Math.max(1, int(entry.level, 500)), kills: int(entry.kills, 1e5), bosses: int(entry.bosses, 1e4),
     play_time: int(entry.play_time, 1e7), zak_time: Number(entry.zak_time) > 0 ? Math.max(1, int(entry.zak_time, 1e7)) : null,
     zak_fury_time: Number(entry.zak_fury_time) > 0 ? Math.max(1, int(entry.zak_fury_time, 1e7)) : null, medals: int(entry.medals, 1000),
+    // Desafío semanal (v2.24): la semana que cumplió y cuándo (milisegundos).
+    weekly: /^\d{4}-W\d{2}$/.test(String(entry.weekly || '')) && Number(entry.weekly_at) > 0 ? String(entry.weekly) : null, weekly_at: /^\d{4}-W\d{2}$/.test(String(entry.weekly || '')) && Number(entry.weekly_at) > 0 ? int(entry.weekly_at, 1e14) : null,
     updated_at: String(entry.updated_at || '')
   };
 }
@@ -40,8 +42,12 @@ const SORTS = {
   zak: (a, b) => (a.zak_time || Infinity) - (b.zak_time || Infinity) || b.level - a.level,
   // Revancha contra Zak furioso (v2.21): igual que el récord, con su propio tiempo.
   fury: (a, b) => (a.zak_fury_time || Infinity) - (b.zak_fury_time || Infinity) || b.level - a.level,
-  medals: (a, b) => b.medals - a.medals || b.level - a.level || b.kills - a.kills
+  medals: (a, b) => b.medals - a.medals || b.level - a.level || b.kills - a.kills,
+  // Desafío semanal: el que lo cumplió primero, arriba.
+  weekly: (a, b) => (a.weekly_at || Infinity) - (b.weekly_at || Infinity) || b.level - a.level
 };
+// Columnas de la v2.24: el desafío semanal. Si faltan, se reintenta sin ellas.
+const WEEKLY_COLUMNS = ['weekly', 'weekly_at'];
 // Columnas de la v2.21 (ver docs/RANKING.md): si el servidor todavía no las tiene, se reintenta sin ellas.
 const NEW_COLUMNS = ['zak_fury_time', 'medals'];
 // Columnas de la tabla. `zak_time` se agregó en la v2.7 (ver docs/RANKING.md): si el servidor todavía no la tiene,
@@ -58,7 +64,7 @@ Z.Ranking = {
   entryFor(game) {
     const p = game.player; if (!ID_PATTERN.test(String(p.runId || ''))) p.runId = uid();
     const profile = this.profile();
-    return normalize({ run_id: p.runId, player_id: profile.id, name: cleanName(p.rankName) || profile.name, character: p.characterId, level: p.level, kills: p.kills, bosses: p.bossKills, play_time: p.playTime, zak_time: p.zakBest > 0 ? Math.round(p.zakBest) : null, zak_fury_time: p.zakFuryBest > 0 ? Math.round(p.zakFuryBest) : null, medals: Array.isArray(p.medals) ? p.medals.length : 0, updated_at: new Date().toISOString() });
+    return normalize({ run_id: p.runId, player_id: profile.id, name: cleanName(p.rankName) || profile.name, character: p.characterId, level: p.level, kills: p.kills, bosses: p.bossKills, play_time: p.playTime, zak_time: p.zakBest > 0 ? Math.round(p.zakBest) : null, zak_fury_time: p.zakFuryBest > 0 ? Math.round(p.zakFuryBest) : null, medals: Array.isArray(p.medals) ? p.medals.length : 0, weekly: p.weekly && p.weekly.done ? p.weekly.week : null, weekly_at: p.weekly && p.weekly.done ? p.weekly.at : null, updated_at: new Date().toISOString() });
   },
   local() { const list = readJson(LOCAL_KEY, []); return Array.isArray(list) ? list.map(normalize).filter(Boolean) : []; },
   saveLocal(entry) { const list = this.local().filter(e => e.run_id !== entry.run_id); list.push(entry); writeJson(LOCAL_KEY, list.slice(-200)); },
@@ -81,22 +87,36 @@ Z.Ranking = {
     const entry = this.entryFor(game); this.saveLocal(entry);
     if (!online()) return { online: false, entry };
     this.flushDeletes().catch(() => {});
-    const body = { ...entry }; if (body.zak_time === null) delete body.zak_time; if (body.zak_fury_time === null) delete body.zak_fury_time; if (!body.medals) delete body.medals;
+    const body = { ...entry }; if (body.zak_time === null) delete body.zak_time; if (body.zak_fury_time === null) delete body.zak_fury_time; if (!body.medals) delete body.medals; if (!body.weekly) { delete body.weekly; delete body.weekly_at; }
     const post = data => fetch(endpoint() + '?on_conflict=run_id', {
       method: 'POST', body: JSON.stringify(data),
       headers: { ...headers(), 'Content-Type': 'application/json', Prefer: 'resolution=merge-duplicates,return=minimal' }
     });
     let response = await post(body);
+    if (response.status === 400 && WEEKLY_COLUMNS.some(k => k in body)) { WEEKLY_COLUMNS.forEach(k => delete body[k]); response = await post(body); }
     if (response.status === 400 && NEW_COLUMNS.some(k => k in body)) { NEW_COLUMNS.forEach(k => delete body[k]); response = await post(body); }
     if (response.status === 400 && 'zak_time' in body) { delete body.zak_time; response = await post(body); }
     if (!response.ok) throw new Error('el servidor respondió ' + response.status);
     return { online: true, entry };
   },
+  // ¿Fue esta partida la primera en cumplir el desafío de la semana? null si no se puede saber.
+  async weeklyFirst(week, runId) {
+    if (!online() || !/^\d{4}-W\d{2}$/.test(String(week))) return null;
+    const response = await fetch(endpoint() + '?select=run_id,weekly,weekly_at&weekly=eq.' + encodeURIComponent(week) + '&weekly_at=not.is.null&order=weekly_at.asc&limit=1', { headers: headers() });
+    if (response.status === 400) return null;
+    if (!response.ok) throw new Error('el servidor respondió ' + response.status);
+    const data = await response.json(), top = Array.isArray(data) && data[0];
+    return !top || top.run_id === runId;
+  },
   async list(sort = 'level') {
-    const order = { level: 'level.desc,kills.desc', kills: 'kills.desc,level.desc', bosses: 'bosses.desc,level.desc', zak: 'zak_time.asc.nullslast,level.desc', fury: 'zak_fury_time.asc.nullslast,level.desc', medals: 'medals.desc.nullslast,level.desc' }[sort] || 'level.desc';
+    const order = { level: 'level.desc,kills.desc', kills: 'kills.desc,level.desc', bosses: 'bosses.desc,level.desc', zak: 'zak_time.asc.nullslast,level.desc', fury: 'zak_fury_time.asc.nullslast,level.desc', medals: 'medals.desc.nullslast,level.desc', weekly: 'weekly_at.asc.nullslast,level.desc' }[sort] || 'level.desc';
+    const week = Z.weekId ? Z.weekId() : '';
+    if (sort === 'weekly' && !online()) return { online: false, entries: this.local().filter(e => e.weekly === week).sort(SORTS.weekly) };
     if (!online()) return { online: false, entries: this.local().sort(SORTS[sort] || SORTS.level) };
-    const query = columns => endpoint() + '?select=' + columns + '&order=' + order + (sort === 'zak' ? '&zak_time=not.is.null' : sort === 'fury' ? '&zak_fury_time=not.is.null' : '') + '&limit=100';
-    let response = await fetch(query(COLUMNS + ',zak_time,' + NEW_COLUMNS.join(',')), { headers: headers() });
+    const query = columns => endpoint() + '?select=' + columns + '&order=' + order + (sort === 'zak' ? '&zak_time=not.is.null' : sort === 'fury' ? '&zak_fury_time=not.is.null' : sort === 'weekly' ? '&weekly=eq.' + encodeURIComponent(week) + '&weekly_at=not.is.null' : '') + '&limit=100';
+    let response = await fetch(query(COLUMNS + ',zak_time,' + NEW_COLUMNS.join(',') + ',' + WEEKLY_COLUMNS.join(',')), { headers: headers() });
+    if (response.status === 400 && sort === 'weekly') throw new Error('faltan las columnas del desafío semanal en Supabase (ver docs/RANKING.md)');
+    if (response.status === 400) response = await fetch(query(COLUMNS + ',zak_time,' + NEW_COLUMNS.join(',')), { headers: headers() });
     if (response.status === 400) {
       if (sort === 'fury' || sort === 'medals') throw new Error('falta la columna ' + (sort === 'fury' ? 'zak_fury_time' : 'medals') + ' en Supabase (ver docs/RANKING.md)');
       response = await fetch(query(COLUMNS + ',zak_time'), { headers: headers() });

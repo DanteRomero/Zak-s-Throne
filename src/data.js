@@ -443,7 +443,7 @@
     return { hour, phase, night: phase === 'night' ? Math.floor((total - 19) / 24) : -1 };
   };
 
-  // Luna roja: se tira una vez por noche y solo afecta a los enemigos de la dimensión normal.
+  // Luna roja: se tira una vez por noche y afecta a todos los enemigos, también a los de la dimensión de Zak.
   Zak.BLOOD_MOON = { chance: 0.05, health: 1.5, strength: 1.5, armor: 2, speed: 1.25, xp: 2, coins: 2 };
   Zak.applyBloodMoon = function (stats) {
     const moon = Zak.BLOOD_MOON;

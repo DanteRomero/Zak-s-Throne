@@ -6,9 +6,9 @@ const Z = window.Zak;
 const flag = key => g => !!g.questFlags[key], pet = id => g => g.ownsPet(id);
 // `tier`: bronce, plata u oro (el color del borde). Las que no tienen `check` se ganan en el momento (pescar, que Zak te ejecute…).
 Z.MEDALS = [
- {id: 'bloodmoon', name: 'Noche roja', detail: 'Te tocó una luna roja.', tier: 'silver', check: g => g.player.bloodMoon === true && !Z.isZakDimension(g.biome)},
+ {id: 'bloodmoon', name: 'Noche roja', detail: 'Te tocó una luna roja.', tier: 'silver', check: g => g.player.bloodMoon === true},
  {id: 'puddles', name: 'Pato de charco', detail: 'Pisaste 25 charcos bajo la lluvia.', tier: 'bronze', check: g => (g.player.puddles || 0) >= 25},
- {id: 'rainfish', name: 'Pique con lluvia', detail: 'Sacaste un pescado mientras llovía.', tier: 'bronze'},
+ {id: 'rainfish', name: 'Día de pique', detail: 'Sacaste un pescado mientras llovía.', tier: 'bronze'},
  {id: 'dorado', name: 'Tigre del río', detail: 'Sacaste un Dorado.', tier: 'gold'},
  {id: 'capo', name: 'Anteojos rotos', detail: 'Derrotaste al Capo del Eco.', tier: 'bronze', check: flag('defeat_capo')},
  {id: 'yarara', name: 'Colmillo partido', detail: 'Derrotaste a la Yarará Madre.', tier: 'bronze', check: flag('defeat_yarara')},
@@ -21,7 +21,7 @@ Z.MEDALS = [
  {id: 'executed', name: 'Ni se despeinó', detail: 'Zak te ejecutó por no cruzar su portal a tiempo.', tier: 'bronze'},
  {id: 'mimic', name: 'Cofre con dientes', detail: 'Derrotaste a un mimic.', tier: 'bronze', check: flag('defeat_mimic')},
  {id: 'elemental', name: 'Filo elemental', detail: 'Forjaste la Espada Elemental.', tier: 'gold', check: g => g.player.weapons.includes('elemental')},
- {id: 'kills', name: 'Cien bajas', detail: 'Derrotaste a 100 enemigos.', tier: 'silver', check: g => g.player.kills >= 100},
+ {id: 'kills', name: 'Mano dura', detail: 'Derrotaste a 100 enemigos.', tier: 'silver', check: g => g.player.kills >= 100},
  {id: 'level', name: 'Ya no sos el mismo', detail: 'Llegaste al nivel 10.', tier: 'silver', check: g => g.player.level >= 10},
  {id: 'truco', name: 'Truco y retruco', detail: 'Le ganaste un partido de truco a un alma de la Feria.', tier: 'bronze', check: g => (g.player.trucoWins || 0) > 0},
  {id: 'trucorev', name: 'Revancha del alma', detail: 'Le ganaste la revancha de truco a un alma.', tier: 'silver', check: g => (g.player.trucoRematchWins || 0) > 0},
@@ -30,7 +30,15 @@ Z.MEDALS = [
  {id: 'golemsin', name: 'Piedra sobre piedra', detail: 'Domesticaste a un Golemsín.', tier: 'gold', check: pet('golem')},
  {id: 'snake', name: 'Leal y letal', detail: 'Domesticaste a la viborita de la Yarará.', tier: 'gold', check: pet('snake')},
  {id: 'gulp', name: 'De un bocado', detail: 'Tu serpiente se comió entero a un enemigo.', tier: 'silver', check: g => (g.player.petEats || 0) > 0},
- {id: 'kennel', name: 'Guardería llena', detail: 'Tenés a los cuatro compañeros.', tier: 'gold', check: g => Z.PET_ORDER.every(id => g.ownsPet(id))}
+ {id: 'kennel', name: 'Familia numerosa', detail: 'Tenés a los cuatro compañeros.', tier: 'gold', check: g => Z.PET_ORDER.every(id => g.ownsPet(id))},
+ // v2.24: el clima, el vendedor ambulante y el desafío semanal.
+ {id: 'struck', name: 'Elegido del cielo', detail: 'Te cayó un rayo en una tormenta eléctrica.', tier: 'silver'},
+ {id: 'ambush', name: 'Se me heló la sangre', detail: 'Un esqueleto salió de la tierra pegado a vos en la niebla del cementerio.', tier: 'silver'},
+ {id: 'burned', name: 'Olor a asado', detail: 'Te quemaste con el pasto que prendió un rayo en Los Yuyos.', tier: 'bronze'},
+ {id: 'scam', name: 'Me siento estafado...', detail: 'Le compraste algo al vendedor ambulante.', tier: 'bronze'},
+ {id: 'weekly', name: 'Siete días', detail: 'Cumpliste un desafío semanal.', tier: 'silver'},
+ {id: 'weeklyfirst', name: 'Madrugador', detail: 'Fuiste el primero de todos en cumplir el desafío de la semana.', tier: 'gold'},
+ {id: 'bestiary', name: 'Conocé a tu enemigo', detail: 'Completaste diez páginas del bestiario.', tier: 'silver', check: g => Z.BESTIARY_ORDER && Z.BESTIARY_ORDER.filter(t => g.bestiaryKnown(t)).length >= 10}
 ];
 const BY_ID = Object.fromEntries(Z.MEDALS.map(m => [m.id, m]));
 const baseCreate = Z.createPlayer;
@@ -99,6 +107,13 @@ const ART = {
  golemsin(c) { disc(c, 0, 0, 10, '#2e2523'); R(c, -5, -3, 10, 8, '#8a8f96'); R(c, -4, -2, 8, 2, '#b8bcc2'); R(c, -4, -8, 8, 6, '#8a8f96'); R(c, -3, -6, 2, 2, '#ffb347'); R(c, 1, -6, 2, 2, '#ffb347'); R(c, -7, -2, 2, 5, '#6a6e74'); R(c, 5, -2, 2, 5, '#6a6e74'); R(c, -4, 5, 3, 3, '#6a6e74'); R(c, 1, 5, 3, 3, '#6a6e74'); disc(c, 7, 6, 2, '#e9ac9a'); },
  snake(c) { disc(c, 0, 0, 10, '#2a3a28'); for (let k = 0; k < 9; k++) { const a = k * .7, r = 7 - k * .6; disc(c, Math.cos(a) * r, Math.sin(a) * r * .8 + 1, 2.2, k % 2 ? '#7a5ca0' : '#9d80c6'); } POLY(c, [[-2, -3], [3, -4], [5, -2], [3, 0], [-2, -1]], '#8a6bb0'); R(c, 1, -3, 1, 1, '#f1d36b'); R(c, 5, -2, 2, 1, '#d65f6b'); R(c, -1, 6, 2, 2, '#f1d36b'); },
  gulp(c) { disc(c, 0, 0, 10, '#2a3a28'); POLY(c, [[-9, 2], [-4, -4], [4, -4], [9, 2], [4, 6], [-4, 6]], '#7a5ca0'); disc(c, 1, 1, 4, '#9d80c6'); R(c, -6, -1, 1, 1, '#f1d36b'); R(c, -9, 1, 3, 1, '#3d1830'); R(c, -1, 0, 2, 1, '#6a4e8f'); R(c, 2, 2, 2, 1, '#6a4e8f'); R(c, 6, -7, 3, 1, '#efe6cf'); R(c, 7, -9, 1, 1, '#efe6cf'); },
+ struck(c) { disc(c, 0, 0, 10, '#1c2034'); POLY(c, [[-9, -5], [-4, -8], [2, -7], [7, -9], [9, -4], [3, -3], [-5, -2]], '#3a405a'); POLY(c, [[1, -4], [-4, 2], [0, 2], [-3, 9], [5, 0], [1, 0], [4, -4]], '#ffe066'); R(c, 0, -3, 2, 1, '#fff6c8'); R(c, -2, 7, 1, 1, '#fff6c8'); },
+ ambush(c) { disc(c, 0, 0, 10, '#1d1a26'); R(c, -10, 5, 20, 5, '#3a2e22'); disc(c, 0, -1, 5, '#e6e0cc'); R(c, -3, 3, 6, 3, '#e6e0cc'); R(c, -3, -2, 2, 2, '#1d1a26'); R(c, 1, -2, 2, 2, '#1d1a26'); R(c, -2, -1, 1, 1, '#ff3a3a'); R(c, 2, -1, 1, 1, '#ff3a3a'); for (const x of [-2, 0, 2]) R(c, x, 4, 1, 2, '#1d1a26'); R(c, 5, 1, 2, 5, '#e6e0cc'); R(c, 4, 0, 1, 2, '#e6e0cc'); R(c, 7, 0, 1, 2, '#e6e0cc'); R(c, -8, -8, 3, 1, '#cfc8e0'); R(c, 4, -9, 4, 1, '#cfc8e0'); },
+ burned(c) { disc(c, 0, 0, 10, '#2a1a10'); R(c, -10, 5, 20, 5, '#4a6a2a'); for (const [x, h] of [[-6, 7], [-2, 11], [3, 9], [7, 6]]) { POLY(c, [[x - 3, 6], [x, 6 - h], [x + 3, 6]], '#e2502a'); POLY(c, [[x - 1.5, 6], [x, 6 - h * .6], [x + 1.5, 6]], '#ffb347'); } R(c, -1, -2, 1, 1, '#ffe08a'); },
+ scam(c) { disc(c, 0, 0, 10, '#2a2418'); POLY(c, [[-6, -2], [6, -2], [8, 7], [-8, 7]], '#8a5a2a'); R(c, -5, -4, 10, 2, '#6b4422'); R(c, -1, -6, 2, 2, '#c9a24c'); R(c, -3, 2, 4, 3, '#5a3a1a'); R(c, -2, 3, 2, 1, '#b5383f'); disc(c, 6, -6, 2.5, '#e2b23c'); R(c, 5, -7, 1, 1, '#fff0a6'); R(c, 2, -8, 1, 1, '#e2b23c'); R(c, 9, -9, 1, 1, '#e2b23c'); },
+ weekly(c) { disc(c, 0, 0, 10, '#2a2f3a'); R(c, -7, -6, 14, 13, '#efe6cf'); R(c, -7, -7, 14, 3, '#b5383f'); R(c, -5, -9, 1, 3, '#6a6a74'); R(c, 4, -9, 1, 3, '#6a6a74'); for (let k = 0; k < 7; k++) { const x = -6 + (k % 4) * 3.5, y = -2 + Math.floor(k / 4) * 4; R(c, x, y, 2, 2, k < 6 ? '#4a6a3a' : '#e2b23c'); } },
+ weeklyfirst(c) { disc(c, 0, 0, 10, '#2a2418'); POLY(c, [[-8, 6], [-9, -2], [-6, 2]], '#4a8a3a'); POLY(c, [[8, 6], [9, -2], [6, 2]], '#4a8a3a'); POLY(c, [[-7, 8], [-10, 3], [-5, 5]], '#4a8a3a'); POLY(c, [[7, 8], [10, 3], [5, 5]], '#4a8a3a'); R(c, -1, -7, 3, 13, '#e2b23c'); R(c, -3, -5, 2, 2, '#e2b23c'); R(c, -3, 5, 7, 2, '#e2b23c'); R(c, 0, -6, 1, 11, '#fff0a6'); },
+ bestiary(c) { disc(c, 0, 0, 10, '#2a1f2a'); R(c, -8, -6, 8, 12, '#efe6cf'); R(c, 0, -6, 8, 12, '#e2d6b8'); R(c, -1, -6, 2, 12, '#6b4422'); R(c, -6, -3, 4, 3, '#2a2228'); R(c, -6, 2, 4, 1, '#8a8070'); R(c, 2, -3, 4, 1, '#8a8070'); R(c, 2, -1, 4, 1, '#8a8070'); R(c, 2, 1, 3, 1, '#8a8070'); disc(c, 6, -6, 2.5, '#b3202a'); R(c, 5, -7, 1, 1, '#e0433f'); },
  kennel(c) { disc(c, 0, 0, 10, '#4a6a3a'); POLY(c, [[-8, -1], [0, -8], [8, -1]], '#93834f'); R(c, -6, -1, 12, 8, '#d6c298'); R(c, -2, 2, 4, 5, '#795b3e'); for (const [x, y, col] of [[-8, 7, '#b07a45'], [-4, 8, '#4a3e58'], [4, 8, '#8a8f96'], [8, 7, '#7a5ca0']]) disc(c, x, y, 1.6, col); R(c, -1, -5, 2, 2, '#e9ac9a'); }
 };
 // Dibuja una medalla de radio 14 centrada en (x,y). Bloqueada: gris, con un signo de pregunta.

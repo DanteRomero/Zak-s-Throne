@@ -1108,6 +1108,8 @@
     rect(c, -7, y - 9, 2, 1, "#ffc0b0"); rect(c, 5, y - 9, 2, 1, "#ffc0b0");
     for (const k of [-5, -2, 1, 4]) rect(c, k, y - 3, 1, 4, ZAK.deep);
     if (Px.mode !== "outline") { Px.glow(c, -6, y - 8, 7, "#ff3b30", .6); Px.glow(c, 6, y - 8, 7, "#ff3b30", .6); }
+    // Luna roja: los ojos de Zak arden todavía más.
+    if (moonEyes && !Px.mode) { rect(c, -8, y - 10, 5, 2, "#ff4a3c"); rect(c, 3, y - 10, 5, 2, "#ff4a3c"); rect(c, -7, y - 10, 2, 1, "#ffd8cc"); rect(c, 5, y - 10, 2, 1, "#ffd8cc"); Px.glow(c, -6, y - 9, 14, "#ff1e1e", .75); Px.glow(c, 6, y - 9, 14, "#ff1e1e", .75); }
   }
   // Zak: armadura de acero oscuro, cuernos curvos, bufanda y capa rojas. Tiene vistas de frente, costado y espalda.
   function drawZak(c, e, time, walk) {
@@ -1265,6 +1267,7 @@
     const curl = Math.round(sway * 1.5);
     poly(c, [[-7, -44], [7, -44], [4 + curl, -28], [curl, -22], [-4 + curl, -28]], "#e8e2d6"); poly(c, [[-3, -44], [3, -44], [1 + curl, -26], [-1 + curl, -26]], "#ffffff"); rect(c, -6, -46, 12, 2, "#e8e2d6"); rect(c, -2, -44, 4, 1, "#9a7a68");
     rect(c, -4, -48, 3, 1, "#3d2f50"); rect(c, 1, -48, 3, 1, "#3d2f50"); rect(c, -3, -48, 1, 1, casting || heal ? "#ffffff" : "#c9a6ff"); rect(c, 2, -48, 1, 1, casting || heal ? "#ffffff" : "#c9a6ff"); rect(c, -6, -50, 12, 1, "#e8e2d6");
+    if (moonEyes) { eye(c, -4, -48, 2, 1); eye(c, 2, -48, 2, 1); }
     // Corona
     rect(c, -7, -55, 14, 4, "#f2c94c"); rect(c, -7, -55, 14, 1, "#ffe9a0"); rect(c, -7, -52, 14, 1, "#a8842a");
     for (let p = 0; p < 4; p++) poly(c, [[-7 + p * 4, -55], [-5 + p * 4, -61], [-3 + p * 4, -55]], "#f2c94c");
@@ -1577,7 +1580,9 @@
       // Con Cerbero vivo se ve rojo y apagado: no deja pasar. Al cruzarlo se agranda y gira cada vez más rápido.
       const cross=g.cutscene&&g.cutscene.id==="portal"?Math.min(1,g.cutscene.t/Z.PORTAL_SCENE.travel):0,cx=Math.round(x+w/2),cy=Math.round(y+h/2);
       c.save();c.translate(cx,cy);if(cross){const size=1+cross*cross*.7;c.translate(0,-14);c.scale(size,size);c.translate(0,14);}Px.scale=grow;
-      if(g.cerberoGuards())drawPortal(c,0,0,time*.2,"#8a2a3a","#d0606a","#2a0a14");else drawPortal(c,0,0,time*(s?1+(1-k)*3:1+cross*5),"#a77bff");
+      if(g.cerberoGuards())drawPortal(c,0,0,time*.2,"#8a2a3a","#d0606a","#2a0a14");
+      else if(g.player.bloodMoon===true)drawMoonPortal(c,0,0,time*(s?1+(1-k)*3:1+cross*5),time);
+      else drawPortal(c,0,0,time*(s?1+(1-k)*3:1+cross*5),"#a77bff");
       Px.scale=1;c.restore();return true;
     }
     if(o.type==="pillar"){
@@ -1597,6 +1602,24 @@
       return true;
     }
     return false;
+  }
+  // Luna roja: el portal sigue violeta, pero con un contorno rojo oscuro y rayos rojos que salen de él: la dimensión está más fuerte.
+  function drawMoonPortal(c,x,y,spin,time) {
+    c.save();
+    Px.glow(c,x,y-14,52,"#ff1e1e",.4+Math.sin(time*6)*.12);
+    for(let k=0;k<11;k++){
+      const cycle=time*1.8+k*.29,life=cycle%1;if(life>.7)continue;const n=Math.floor(cycle);
+      const a=k*.57+n*2.3,len=30+hash(k,n,5)*34;
+      const pts=[[x+Math.cos(a)*16,y-14+Math.sin(a)*24]];
+      for(let s=1;s<=5;s++){const d=16+len*s/5,j=(hash(k,s,Math.floor(time*14))-.5)*10;pts.push([x+Math.cos(a)*d-Math.sin(a)*j,y-14+Math.sin(a)*d*1.25+Math.cos(a)*j]);}
+      const fade=1-life/.7;
+      for(const [w,col,al] of [[4,"#5a0a14",.55],[2,"#e0201e",.95],[1,"#ffb0a0",1]]){c.globalAlpha=fade*al;c.strokeStyle=col;c.lineWidth=w;c.beginPath();pts.forEach(([px,py],i)=>i?c.lineTo(px,py):c.moveTo(px,py));c.stroke();}
+      const [ex,ey]=pts[pts.length-1];c.globalAlpha=fade;rect(c,ex-1,ey-1,2,2,"#ff5a4a");
+    }
+    c.globalAlpha=1;c.strokeStyle="#3a0610";c.lineWidth=5;c.beginPath();c.ellipse(x,y-14,19,27,0,0,Math.PI*2);c.stroke();
+    c.strokeStyle="#7e1620";c.lineWidth=2;c.beginPath();c.ellipse(x,y-14,21.5,29.5,0,0,Math.PI*2);c.stroke();
+    c.restore();
+    drawPortal(c,x,y,spin,"#a77bff");
   }
   function drawPortal(c,x,y,time,color,light="#e6d6ff",core="#3a1a6a") {
     c.save();
@@ -2548,6 +2571,8 @@
       };
       if(Z.isZakDimension(game.biome)&&!menu){
         c.fillStyle="rgba(22,10,44,.30)";c.fillRect(0,0,W,H);
+        // Luna roja afuera: la dimensión entera se tiñe de rojo.
+        if(p.bloodMoon===true){c.fillStyle="rgba(120,8,24,.16)";c.fillRect(0,0,W,H);Px.shade(c,W/2,H/2,W,H,[[160,0],[420,.3]],"#3a0410");}
         for(const o of objects)if(o.type==="brazier"&&visible(o.x,o.y,80))Px.glow(c,o.x-ox+o.w/2,o.y-oy-12,56,"#a77bff",.22+Math.sin(time*8+o.x)*.03);
         if(game.biome==="magic")for(const o of objects)if(o.type==="campfire"&&!(o.out>0)&&visible(o.x,o.y,80))Px.glow(c,o.x-ox+o.w/2,o.y-oy,70,"#ff8c3c",.3+Math.sin(time*9+o.x)*.03);
         for(let k=0;k<16;k++){const ex=(hash(k,3)*W+time*(8+k%5)*(k%2?1:-1))%W,ey=H-((time*(14+k%7)+hash(k,9)*H)%H);c.globalAlpha=.35+Math.sin(time*3+k)*.2;rect(c,(ex+W)%W,ey,k%4?1:2,k%4?1:2,k%3?"#a77bff":"#e6d6ff");}
@@ -2841,5 +2866,19 @@
   Renderer.drawPortrait=drawPortrait;
   // Pinceles compartidos con los módulos que dibujan cosas nuevas (compañeros, clima, medallas y cartas).
   Z.Draw={P,hash,rect,poly,sprite,shadow,heart,pixelText,blob,eye,tone,box,dogBody,tuft,flower,zoneAt,isCaveZone,enemyBody,drawEnemy};
+  // Retrato de un enemigo para el bestiario: normal, con la luna roja (ojos rojos) o en silueta (todavía no lo venciste).
+  const PORTRAIT_SCALE={rat:4.4,snake:4,spider:4,bat:3.6,dog:3.6,book:3.6,worm:3,thief:3,skeleton:3,archer:3,mage:2.8,imp:3,shadow:2.8,mimic:3.2,armor:2.2,gargoyle:2.4,capo:2.3,yarara:2,vampire:1.6,cerbero:1.3,golem:1.3,archmage:1.6,zak:1.1};
+  const PORTRAIT_FLOOR={bat:.66,book:.66,gargoyle:.86};
+  Z.drawEnemyPortrait=function(canvas,type,{moon=false,silhouette=false,time=0}={}){
+    const c=canvas.getContext("2d"),W=canvas.width,H=canvas.height;c.imageSmoothingEnabled=false;c.clearRect(0,0,W,H);
+    const def=Z.ENEMY_TYPES[type];if(!def)return;
+    const layer=document.createElement("canvas");layer.width=W;layer.height=H;const l=layer.getContext("2d");l.imageSmoothingEnabled=false;
+    const e={id:"portrait-"+type,type,x:0,y:0,homeX:0,homeY:0,dir:"down",walk:0,moving:false,dead:false,hp:1,maxHp:1,level:1,stats:{bloodMoon:!!moon},alert:false,provoked:false,act:null,telegraph:0,dash:0,stun:0,charm:0,latched:0,hitFlash:0,aimX:0,aimY:1,life:0,cd:{},shield:0,seated:false,yielding:null,pose:null,air:false,lift:0,rain:null,special:0,cooldown:0,backoff:0};
+    const k=(PORTRAIT_SCALE[type]||2)*Math.min(W,H)/150,before=Px.scale,prev=currentGame;
+    l.save();l.translate(Math.round(W/2),Math.round(H*(PORTRAIT_FLOOR[type]||.9)));l.scale(k,k);
+    try{currentGame=null;drawEnemy(l,e,time);}catch(_){ }finally{currentGame=prev;Px.scale=before;Px.mode=null;l.restore();}
+    if(silhouette){l.globalCompositeOperation="source-in";l.fillStyle="#0b0d10";l.fillRect(0,0,W,H);l.globalCompositeOperation="source-over";}
+    c.drawImage(layer,0,0);
+  };
 })();
 

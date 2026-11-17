@@ -749,16 +749,16 @@
       const p = fixture(); nightfall(0); const golem = enemy('golem', p.x + 300); golem.cd = {quake: 99, rock: 99, fortify: 99, ready: 1};
       game.hitEnemy(golem, 1e7, true); advance(2.4); equal(golem.life, 1); equal(golem.stats.bloodMoon, true);
     });
-    test('Zak dimension: always night in the HUD rules, no red moon on its enemies', () => {
+    test('v2.24: the red moon also reaches Zak dimension: its enemies and bosses get stronger', () => {
       const p = fixture('gero', true); const toasts = []; game.onEvent = (type, detail) => { if (type === 'toast') toasts.push(detail.message); };
       const inside = game.enemies.filter(e => Z.isZakDimension(e.biome)), outside = game.enemies.filter(e => !Z.isZakDimension(e.biome) && !e.dead);
       ok(inside.length && outside.length); ok(['sanctum', 'magic', 'throne'].every(Z.isZakDimension)); ok(!['village', 'cave', 'weeds', 'cave2', 'cave3', 'altar'].some(Z.isZakDimension));
       game.biome = 'magic'; Object.assign(p, Z.DIMENSION_SPOTS.arrive); p.y = Z.MAGIC_ZONE.y + 300; nightfall(0);
-      equal(p.bloodMoon, true, 'The clock keeps running outside'); equal(toasts.length, 0, 'No warning inside the dimension');
-      ok(inside.every(e => !e.stats.bloodMoon), 'Dimension enemies do not change'); ok(outside.every(e => e.stats.bloodMoon), 'Normal world ones do');
-      const spawned = game.makeEnemy({id: 'mage-test', type: 'mage', x: 600, y: Z.MAGIC_ZONE.y + 200}); ok(!spawned.stats.bloodMoon, 'New ones either');
-      Object.assign(p, game.world.spawn); game.biome = 'village'; game.update(1 / 60); equal(toasts.length, 1, 'Warned when coming back'); ok(/Luna roja/.test(toasts[0]));
-      game.update(1 / 60); equal(toasts.length, 1, 'Only once');
+      equal(p.bloodMoon, true, 'The clock keeps running outside'); const moonToasts = () => toasts.filter(m => /Luna roja/i.test(m)).length; equal(moonToasts(), 1, 'Warned inside the dimension too'); ok(toasts.some(m => /Zak se vuelve/.test(m)));
+      ok(inside.every(e => e.stats.bloodMoon), 'Dimension enemies change too'); ok(outside.every(e => e.stats.bloodMoon), 'Normal world ones do');
+      ok(game.enemyStatsFor('archmage', 0, 'library').bloodMoon, 'The Rey Mago too'); ok(game.enemyStatsFor('zak', 0, 'throne').bloodMoon, 'And Zak');
+      const spawned = game.makeEnemy({id: 'mage-test', type: 'mage', x: 600, y: Z.MAGIC_ZONE.y + 200}); ok(spawned.stats.bloodMoon, 'New ones too');
+      Object.assign(p, game.world.spawn); game.biome = 'village'; game.update(1 / 60); equal(moonToasts(), 1, 'No second warning when coming back');
     });
     test('The red moon survives a save and old or stale saves stay valid', () => {
       const p = fixture('gero', true); nightfall(0); const target = game.enemies.find(e => e.biome === 'cave'); target.hp = target.maxHp * .5; const hp = target.hp, save = game.snapshot();
@@ -1221,6 +1221,79 @@
       const q = Z.puddlesOf(game.world)[0]; equal(game.puddleAt(q.x, q.y), null, 'nothing to step on');
       p.playTime = t + 60; for (let k = 0; k < 25; k++) game.updateWeather(1); ok(game.wetness > .9 && game.puddleAt(q.x, q.y), 'puddles fill while it rains');
       p.playTime = dry + 60; for (let k = 0; k < 11; k++) game.updateWeather(1); equal(game.wetness, 0, 'dry ten seconds after it stops'); equal(game.puddleAt(q.x, q.y), null);
+    });
+    // v2.24: tormenta, niebla, vendedor ambulante, desafío semanal, bestiario y luna roja en la dimensión de Zak.
+    const blockOf = (kind, runId) => { let t = 240; while (Z.weatherAt(t + 60, runId).kind !== kind && t < 240 * 2000) t += 240; return t + 60; };
+    test('v2.24: storms and fog are rarer than rain and cover the whole surface', () => {
+      const p = fixture('gero', true); ok(Z.STORM.chance < Z.RAIN.chance && Z.FOG.chance < Z.RAIN.chance, 'harsh weather is rarer');
+      const kinds = {}; for (let b = 1; b < 3000; b++) { const k = Z.weatherAt(b * 240 + 60, p.runId).kind; kinds[k] = (kinds[k] || 0) + 1; }
+      ok(kinds.rain > kinds.storm && kinds.rain > kinds.fog && kinds.storm > 100 && kinds.fog > 100, JSON.stringify(kinds));
+      p.playTime = blockOf('storm', p.runId); equal(Z.rainAt(p.playTime, p.runId), 1, 'a storm also rains');
+      for (const biome of ['village', 'weeds', 'altar']) { game.biome = biome; game.updateWeather(0); equal(game.weatherNow(), 'storm', biome); }
+      for (const biome of ['cave', 'cave2', 'magic']) { game.biome = biome; equal(game.weatherNow(), null, biome + ' is under a roof'); }
+      p.playTime = blockOf('fog', p.runId); game.biome = 'village'; game.updateWeather(0); ok(game.foggy() && !game.raining());
+    });
+    test('v2.24: lightning takes a lot of health and paralyzes; in Los Yuyos it sets the grass on fire', () => {
+      const p = fixture('gero', true); game.enemies = []; p.playTime = blockOf('storm', p.runId); Object.assign(p, {x: 2000, y: 900, invuln: 0, roll: 0}); game.biome = 'weeds'; game.updateWeather(0);
+      const max = game.stats().maxHealth; p.hp = max; game.boltClock = .01; Math.random = () => 0; advance(1.3);
+      near(p.hp, max * (1 - Z.STORM.damage), 'a third of the health, armor or not'); ok(p.stunned > 1.5, 'paralyzed'); ok(game.hasMedal('struck'));
+      equal(game.fires.length, 1, 'the grass catches fire'); p.stunned = 0; p.burn = null; game.updateGrassFire(.05); ok(p.burn, 'walking on it burns'); ok(game.hasMedal('burned'));
+      game.fires = []; p.burn = null; Object.assign(p, game.world.spawn); game.biome = 'village'; p.hp = max; game.strike({x: p.x, y: p.y, t: 1, warn: 1, biome: 'village', seed: 1});
+      equal(p.hp, max, 'the village is safe'); equal(game.fires.length, 0, 'and does not burn');
+      Object.assign(p, {x: -400, y: 900}); game.biome = 'altar'; game.strike({x: p.x, y: p.y, t: 1, warn: 1, biome: 'altar', seed: 1}); ok(p.hp < max, 'the graveyard is not'); equal(game.fires.length, 0, 'only the weeds burn');
+    });
+    test('v2.24: in the graveyard fog a skeleton rises right next to you, with a scare', () => {
+      const p = fixture('gero', true); p.playTime = blockOf('fog', p.runId); Object.assign(p, {x: -400, y: 1000}); game.biome = 'altar'; game.updateWeather(0); ok(game.foggy());
+      const e = game.fogAmbush(); ok(e && e.type === 'skeleton' && Math.hypot(e.x - p.x, e.y - p.y) < 55, 'very close'); ok(game.scare > 0, 'scare on screen'); ok(game.hasMedal('ambush'));
+      for (let k = 0; k < 8; k++) { game.ambushClock = .001; game.updateFogAmbush(.01); }
+      ok(game.enemies.filter(m => m.fogAmbush && !m.dead).length <= Z.FOG.max, 'no more than three');
+      ok(!game.snapshot().enemies.some(m => /^fog-/.test(m.id)), 'they are not saved');
+      Object.assign(p, game.world.spawn); game.biome = 'village'; const before = game.enemies.length; for (let k = 0; k < 4; k++) { game.ambushClock = .001; game.updateFogAmbush(.01); } equal(game.enemies.length, before, 'only in the graveyard');
+    });
+    test('v2.24: the wandering merchant shows up only in danger zones, sells rare things dear and leaves', () => {
+      const p = fixture('gero', true);
+      for (const s of Z.WANDERER.spots) { equal(Z.biomeAt(s.x, s.y), s.zone); ok(!Z.isSafe(s.zone) && !Z.isZakDimension(s.zone), s.zone + ' is a danger zone'); ok(!Z.collides(game.world, s.x, s.y, 9), 'free ground at ' + s.x + ',' + s.y); }
+      let t = 0; while (!Z.wandererAt(t, p.runId) && t < 1e6) t += 30; ok(Z.wandererAt(t, p.runId), 'he shows up sometimes');
+      p.playTime = t; game.syncWanderer(); const n = game.world.npcs.find(m => m.id === 'wanderer'); ok(n && game.npcShop(n) === 'wanderer' && game.npcHasMenu(n));
+      const offers = game.npcOffers(n); ok(offers.some(o => o.id === 'heal') && offers.some(o => o.id === 'cure')); equal(offers.length, 2 + Z.WANDERER.stock);
+      const elixir = Z.wandererStock(1, 'x').concat(Z.wandererStock(2, 'x')); ok(elixir.length === 6);
+      p.coins = 100000; equal(game.npcTrade(n, 'heal').ok, false, 'no cure when healthy'); p.hp = 1; ok(game.npcTrade(n, 'heal').ok); near(p.hp, game.stats().maxHealth); ok(p.coins < 100000); ok(game.hasMedal('scam'));
+      const rare = offers.find(o => o.id !== 'heal' && o.id !== 'cure' && !o.done); const coins = p.coins; ok(game.npcTrade(n, rare.id).ok); equal(p.coins, coins - rare.cost.coins);
+      const at = Z.wandererAt(t, p.runId); p.playTime = t + at.left + 1; game.syncWanderer(); ok(!game.world.npcs.some(m => m.id === 'wanderer'), 'and he leaves');
+    });
+    test('v2.24: the weekly challenge is the same for everyone, counts this week and pays x1,5 to the first', () => {
+      equal(Z.weekId(new Date(2026, 10, 16, 0, 1)), '2026-W47'); equal(Z.weekId(new Date(2026, 10, 22, 23, 59)), '2026-W47'); equal(Z.weekId(new Date(2026, 10, 23)), '2026-W48'); equal(Z.weekId(new Date(2026, 0, 1)), '2026-W01');
+      equal(Z.weeklyFor('2026-W47').id, Z.weeklyFor('2026-W47').id); ok(Z.weekLeft(new Date(2026, 10, 22, 23, 0)) === 36e5, 'one hour left on Sunday 23:00');
+      const p = fixture('gero'); p.coins = 0; const w = game.weekly(); equal(w.count, 0); equal(w.week, Z.weekId());
+      Object.assign(w, {id: 'hunter', count: Z.WEEKLY_LIST[0].goal - 1}); const xp = p.xp, level = p.level; let rat = enemy('rat'); game.hitEnemy(rat, 1e7, true);
+      ok(w.done && w.paid, 'done and paid'); equal(p.coins >= Z.WEEKLY.coins, true); ok(p.level > level || p.xp > xp); ok(game.hasMedal('weekly')); equal(w.first, false, 'offline: normal prize');
+      const coins = p.coins; game.player.weekly = {week: Z.weekId(), id: 'fisher', count: 60, done: true, at: Date.now(), paid: false, first: false}; game.payWeekly(true);
+      equal(p.coins - coins, Math.round(Z.WEEKLY.coins * Z.WEEKLY.first), 'the first one gets x1,5'); ok(game.hasMedal('weeklyfirst'));
+      Object.assign(game.player.weekly, {id: 'graves', done: false, paid: false, count: 0}); const skel = enemy('skeleton'); game.hitEnemy(rat = enemy('rat'), 1e7, true); equal(game.player.weekly.count, 0, 'rats do not count for graves'); game.hitEnemy(skel, 1e7, true); equal(game.player.weekly.count, 1);
+      const next = game.weekly(new Date(Date.now() + 7 * 864e5)); equal(next.count, 0, 'a new week starts from zero');
+      const save = JSON.parse(JSON.stringify(game.snapshot())); save.player.weekly = {week: 'nope', id: 'hunter', count: 9}; game.restore(save, 1); equal(game.player.weekly, null, 'bad data is dropped');
+      delete save.player.weekly; game.restore(save, 1); equal(game.player.weekly, null); ok(game.weekly().week, 'and it starts when needed');
+    });
+    test('v2.24: the bestiary knows what you beat (also in old saves) and its red moon page', () => {
+      for (const t of Object.keys(Z.ENEMY_TYPES)) { ok(Z.BESTIARY[t] && Z.BESTIARY[t].story.length > 60, t + ' has a story'); ok(Z.BESTIARY_ORDER.includes(t), t + ' has a page'); }
+      equal(Z.BESTIARY_ORDER.length, Object.keys(Z.ENEMY_TYPES).length); ok(/creador/.test(Z.BESTIARY.zak.story) && /dimensiones alternas/.test(Z.BESTIARY.zak.story) && /por encima de todos/.test(Z.BESTIARY.zak.story));
+      ok(/^Es parecido al esqueleto con escudo normal\./.test(Z.moonStory('skeleton')) && /salvaje y fuerte/.test(Z.moonStory('skeleton')));
+      const p = fixture('gero'); ok(!game.bestiaryKnown('rat')); game.hitEnemy(enemy('rat'), 1e7, true); ok(game.bestiaryKnown('rat')); equal(game.bestiaryKills('rat'), 1); ok(!game.bestiaryMoon('rat'));
+      p.bloodMoon = true; game.refreshEnemyStats(); const moonRat = enemy('rat'); ok(moonRat.stats.bloodMoon); game.hitEnemy(moonRat, 1e7, true); ok(game.bestiaryMoon('rat'), 'the red moon page');
+      const normal = game.bestiaryStats('skeleton'), moon = game.bestiaryStats('skeleton', true); ok(moon.base.health > normal.base.health && moon.now.strength > normal.now.strength && moon.base.speed > normal.base.speed);
+      ok(normal.now.health >= normal.base.health, 'current stats grow with your level');
+      const save = JSON.parse(JSON.stringify(game.snapshot())); delete save.player.bestiary; delete save.player.moonKills; save.questFlags.defeat_cerbero = true;
+      game.restore(save, 1); ok(game.bestiaryKnown('cerbero') && game.bestiaryKnown('rat'), 'old saves: what you defeated is known'); ok(!game.bestiaryMoon('rat')); equal(game.bestiaryKills('cerbero'), 0);
+      save.player.moonKills = {rat: 2, nope: 4, dog: -1}; game.restore(save, 1); equal(JSON.stringify(game.player.moonKills), '{"rat":2}', 'bad data is cleaned');
+      const c = document.createElement('canvas'); c.width = c.height = 60;
+      for (const t of Z.BESTIARY_ORDER) { Z.drawEnemyPortrait(c, t, {moon: true}); const px = c.getContext('2d').getImageData(0, 0, 60, 60).data; let on = 0; for (let i = 3; i < px.length; i += 4) on += px[i] > 0; ok(on > 20, t + ' portrait'); }
+      Z.drawEnemyPortrait(c, 'zak', {silhouette: true}); const px = c.getContext('2d').getImageData(0, 0, 60, 60).data; let light = 0; for (let i = 0; i < px.length; i += 4) if (px[i + 3] > 0 && px[i] + px[i + 1] + px[i + 2] > 120) light++; equal(light, 0, 'a silhouette shows nothing');
+    });
+    test('v2.24: new medals for lightning, the graveyard, the fire, the merchant and the week; old saves keep loading', () => {
+      for (const id of ['struck', 'ambush', 'burned', 'scam', 'weekly', 'weeklyfirst', 'bestiary']) ok(Z.MEDALS.some(m => m.id === id), id);
+      ok(Z.MEDALS.find(m => m.id === 'scam').name === 'Me siento estafado...');
+      const p = fixture('gero'); const save = JSON.parse(JSON.stringify(game.snapshot())); for (const k of ['weekly', 'bestiary', 'moonKills']) delete save.player[k]; save.player.medals = ['struck', 'nope'];
+      game.restore(save, 1); equal(JSON.stringify(game.player.medals), '["struck"]'); equal(JSON.stringify(game.player.bestiary), '{}');
     });
     test('v2.21: medals arrive for what you already did, for events and stay in the save', () => {
       const p = fixture('gero', true), toasts = []; game.onEvent = (t, d) => { if (t === 'toast') toasts.push(d.message); };

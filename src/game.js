@@ -109,7 +109,7 @@ class Game {
    if(this.cutscene){if([' ','e','Enter'].includes(key))this.advanceCutscene();return;}
    if(key==='e')this.interact();if(key==='q')this.ability();if(key==='Control')this.roll();if(key==='r')this.useHerb();
    if(key==='f')this.useSelected();if(key==='g')this.cycleItem();if(key==='b')this.emit('bag');
-   if(key==='c')this.emit('stats');if(key==='m')this.emit('map');if(key==='j')this.emit('journal');if(key==='l')this.emit('medals');
+   if(key==='c')this.emit('stats');if(key==='m')this.emit('map');if(key==='j')this.emit('journal');if(key==='l')this.emit('medals');if(key==='k')this.emit('bestiary');
    if(['1','2','3','4','5'].includes(key))this.equip(WEAPON_ORDER[+key-1]);
   });
   window.addEventListener('keyup',e=>this.keys.delete(e.key.length===1?e.key.toLowerCase():e.key));
@@ -125,7 +125,7 @@ class Game {
  setAim(e){const r=this.canvas.getBoundingClientRect();this.aim={x:(e.clientX-r.left)/r.width*this.canvas.width+this.camera.x,y:(e.clientY-r.top)/r.height*this.canvas.height+this.camera.y};}
  newGame(id){
   this.world=Z.createWorld();this.player=Z.createPlayer(id);Object.assign(this.player,{...this.world.spawn,dir:'down',moving:false,walk:0,attackAnim:0,runId:(window.crypto&&crypto.randomUUID)?crypto.randomUUID():Date.now().toString(36)+Math.random().toString(36).slice(2,12)});
-  this.biome='village';this.time=0;this.zakFury=false;this.lastStrike=null;this.bombs=[];this.effects=[];this.projectiles=[];this.drops=[];this.queuedWaves=[];this.spirits=[];this.questFlags={};this.currentSlot=null;this.bolts=[];this.darkness=0;this.exitPortal=null;this.cutscene=null;this.cutsceneFade=0;
+  this.biome='village';this.time=0;this.zakFury=false;this.moonNotified=false;this.lastStrike=null;this.bombs=[];this.effects=[];this.projectiles=[];this.drops=[];this.queuedWaves=[];this.spirits=[];this.questFlags={};this.currentSlot=null;this.bolts=[];this.darkness=0;this.exitPortal=null;this.cutscene=null;this.cutsceneFade=0;
   this.enemies=this.world.enemySpawns.map(s=>this.makeEnemy(s));this.clearInput();this.aim=null;this.state='playing';this.renderer.resize(true);this.emit('start');
  }
  makeEnemy(s){const biome=Z.biomeAt(s.x,s.y),stats=this.enemyStatsFor(s.type,0,biome);return{...s,homeX:s.x,homeY:s.y,biome,stats,hp:stats.health,maxHp:stats.health,level:stats.level,dir:'down',walk:0,moving:false,dead:false,respawn:0,cooldown:.6,stun:0,charm:0,latched:0,latchRest:0,alert:false,provoked:false,hitFlash:0,special:2.5,telegraph:0,dash:0,aimX:0,aimY:1,life:0,act:null,cd:{},rain:null,rainCd:KNIFE_FIRST,shield:0,seated:false,yielding:null,pose:null,air:false,lift:0,lowFortified:false,backoff:0};}
@@ -133,12 +133,13 @@ class Game {
  updateDayCycle(){
   const p=this.player,clock=Z.dayClock(p.playTime),moon=Z.BLOOD_MOON;
   if(clock.phase==='night'){if(p.moonNight!==clock.night){p.moonNight=clock.night;this.setBloodMoon(Math.random()<moon.chance);}}
-  else if(p.bloodMoon){this.setBloodMoon(false);if(!Z.isZakDimension(this.biome))this.emit('toast',{message:'Amanece: se fue la luna roja.'});}
-  const visible=p.bloodMoon===true&&!Z.isZakDimension(this.biome);
-  if(visible&&!this.moonNotified){this.sound.play('telegraph');this.emit('toast',{message:'¡Luna roja! Hasta que amanezca, los enemigos son más fuertes, rápidos y resistentes, pero dan el doble de experiencia y monedas.',error:true});}
+  else if(p.bloodMoon){this.setBloodMoon(false);this.emit('toast',{message:Z.isZakDimension(this.biome)?'Afuera amaneció: la dimensión de Zak se calma.':'Amanece: se fue la luna roja.'});}
+  // La luna roja llega también a la dimensión de Zak: allá no se ve, pero se nota.
+  const visible=p.bloodMoon===true;
+  if(visible&&!this.moonNotified){this.sound.play('telegraph');this.emit('toast',{message:Z.isZakDimension(this.biome)?'¡Luna roja afuera! La dimensión de Zak se vuelve más fuerte: sus enemigos y jefes también, pero dan el doble de experiencia y monedas.':'¡Luna roja! Hasta que amanezca, los enemigos son más fuertes, rápidos y resistentes, pero dan el doble de experiencia y monedas.',error:true});}
   this.moonNotified=visible;
  }
- setBloodMoon(on){if(this.player.bloodMoon===on)return;this.player.bloodMoon=on;this.refreshEnemyStats(this.enemies.filter(e=>!Z.isZakDimension(e.biome)));}
+ setBloodMoon(on){if(this.player.bloodMoon===on)return;this.player.bloodMoon=on;this.refreshEnemyStats();}
  // Recalcula las estadísticas conservando la proporción de vida de cada enemigo.
  refreshEnemyStats(list=this.enemies){list.forEach(e=>{const stats=this.enemyStatsFor(e.type,e.life||0,e.biome),ratio=e.hp/e.maxHp;e.stats=stats;e.level=stats.level;e.maxHp=stats.health;if(!e.dead)e.hp=Math.max(1,ratio*stats.health);});}
  pause(){if(this.state==='playing'){this.state='paused';this.clearInput();}}
@@ -449,7 +450,7 @@ class Game {
  knockout(source){
   const p=this.player;p.deaths++;
   const quotes={thief:'Uhh... este gil me sacó guita',dog:'¿Por qué Firulais? :c',snake:'La próxima miro dónde piso...',rat:'Me ganaron las ratas. No se lo cuenten a nadie.',capo:'El Capo me dejó en patas y sin un mango.',bat:'Un murciélago me dejó viendo estrellas.',spider:'Odio las arañas. Las odio.',worm:'Me comió un gusano. Literal.',yarara:'La Yarará Madre me mandó a dormir la siesta.',
-   skeleton:'Me ganó uno que ni carne tiene.',archer:'Un flechazo... y no de amor.',vampire:'El Chupasangre me dejó seco.',golem:'Me aplastó una montaña con patas.',cerbero:'Tres cabezas y ninguna con piedad.',mage:'Me hicieron un asado con magia.',armor:'Una armadura vacía me dio vuelta.',book:'Me liquidó la biblioteca. Literal.',imp:'Le pegué a la copia equivocada.',gargoyle:'Esa estatua no era una estatua.',shadow:'Me ganó mi propia sombra... bueno, la de Zak.',mimic:'Abrí la carpa equivocada.',rune:'Pisé la runa que no era.',archmage:'El Rey Mago me desapareció de un chasquido.',fire:'Me quemé por pasar de largo.',golemsin:'Me ganó un gólem de bolsillo.',zak:'Zak ni se despeinó.',execute:'Eso por querer hacerle el poronga...'};
+   skeleton:'Me ganó uno que ni carne tiene.',archer:'Un flechazo... y no de amor.',vampire:'El Chupasangre me dejó seco.',golem:'Me aplastó una montaña con patas.',cerbero:'Tres cabezas y ninguna con piedad.',mage:'Me hicieron un asado con magia.',armor:'Una armadura vacía me dio vuelta.',book:'Me liquidó la biblioteca. Literal.',imp:'Le pegué a la copia equivocada.',gargoyle:'Esa estatua no era una estatua.',shadow:'Me ganó mi propia sombra... bueno, la de Zak.',mimic:'Abrí la carpa equivocada.',rune:'Pisé la runa que no era.',archmage:'El Rey Mago me desapareció de un chasquido.',fire:'Me quemé por pasar de largo.',lightning:'Me cayó un rayo. ¿Habrá sido una señal?',golemsin:'Me ganó un gólem de bolsillo.',zak:'Zak ni se despeinó.',execute:'Eso por querer hacerle el poronga...'};
   const quote=quotes[source]||quotes.rat;
   // Los chorros se llevan la guita de verdad; el resto se pierde en el apuro. Si Zak te ejecuta, te deja sin nada.
   const execute=source==='execute',lost=execute?(p.coins||0):Math.floor((p.coins||0)*(source==='thief'||source==='capo'?.3:.1));p.coins=Math.max(0,(p.coins||0)-lost);

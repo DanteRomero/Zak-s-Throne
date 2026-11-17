@@ -113,7 +113,8 @@ Object.assign(Z.Game.prototype, {
   if(biome&&this.bloodMoonOver(biome))Z.applyBloodMoon(s);
   return s;
  },
- bloodMoonOver(biome){return this.player.bloodMoon===true&&!Z.isZakDimension(biome);},
+ // Desde la v2.24 la luna roja también llega a la dimensión de Zak (el portal se tiñe de rojo para avisar).
+ bloodMoonOver(biome){return this.player.bloodMoon===true&&!!biome;},
  aimAt(e){const p=this.player,len=distance(e,p)||1;e.aimX=(p.x-e.x)/len;e.aimY=(p.y-e.y)/len;e.dir=Math.abs(e.aimX)>Math.abs(e.aimY)?(e.aimX>0?'right':'left'):(e.aimY>0?'down':'up');},
  // ¿El jugador está delante del jefe, a menos de `range` y dentro del ángulo indicado?
  inFront(e,range,cosine){const p=this.player,dx=p.x-e.x,dy=p.y-e.y,len=Math.hypot(dx,dy);return len<=range&&(len<12||(dx*e.aimX+dy*e.aimY)/len>=cosine);},

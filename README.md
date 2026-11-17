@@ -2,7 +2,7 @@
 
 Una aventura de acción y exploración en pixel art, vista desde arriba. Elegí a uno de siete amigos, preparate en la aldea y salí a explorar la cueva y los Yuyos.
 
-Versión actual: **v2.23**. Los cambios de cada versión están en [CHANGELOG.md](CHANGELOG.md).
+Versión actual: **v2.24**. Los cambios de cada versión están en [CHANGELOG.md](CHANGELOG.md).
 
 ## Jugar
 
@@ -33,6 +33,7 @@ El juego funciona directamente desde sus archivos: no requiere servidor, instala
 | Ficha y mejoras | C |
 | Diario de viaje | J |
 | Medallas | L |
+| Bestiario | K |
 | Mapa | M |
 | Pausa y guardado | Esc |
 | Sonido | Botón musical de la esquina superior |
@@ -51,7 +52,7 @@ El juego se adapta al tamaño de pantalla; en teléfonos conviene usar orientaci
 
 ## Ranking de amigos
 
-Desde el menú principal o la pausa, **Ranking de amigos** muestra nivel, enemigos derrotados y jefes vencidos de cada partida, con pestañas para ordenar por cada uno. La pestaña **Récord Zak** muestra a quienes vencieron a Zak, del más rápido al más lento: cuenta el tiempo de la pelea, desde que termina su presentación hasta vaciarle la última vida, y guarda el mejor de cada partida. **Revancha Zak** hace lo mismo con la revancha contra Zak furioso, y **Medallas** ordena por la cantidad de medallas. El apodo se elige al seleccionar el personaje y es de esa partida: empezar otra con otro apodo no le cambia el nombre a las demás. Se cambia desde la pausa, en **Nombre en el ranking**.
+Desde el menú principal o la pausa, **Ranking de amigos** muestra nivel, enemigos derrotados y jefes vencidos de cada partida, con pestañas para ordenar por cada uno. La pestaña **Récord Zak** muestra a quienes vencieron a Zak, del más rápido al más lento: cuenta el tiempo de la pelea, desde que termina su presentación hasta vaciarle la última vida, y guarda el mejor de cada partida. **Revancha Zak** hace lo mismo con la revancha contra Zak furioso, **Medallas** ordena por la cantidad de medallas y **Desafío** muestra quién cumplió el desafío de la semana, del primero al último. El apodo se elige al seleccionar el personaje y es de esa partida: empezar otra con otro apodo no le cambia el nombre a las demás. Se cambia desde la pausa, en **Nombre en el ranking**.
 
 Sin configuración, el ranking muestra las partidas de cada dispositivo. Para compartirlo entre todos los dispositivos, seguí [docs/RANKING.md](docs/RANKING.md): se conecta un proyecto gratuito de Supabase pegando dos valores en `src/config.js`.
 
@@ -99,9 +100,9 @@ El día completo dura **24 minutos reales** (cada hora del juego es un minuto) y
 - **Tarde:** de 14:00 a 19:00, con una luz dorada que crece hasta el atardecer.
 - **Noche:** de 19:00 a 07:00.
 
-**Luna roja:** cada noche hay un **5%** de que salga, y dura hasta que amanece. Durante esa noche, todos los enemigos de la dimensión normal, jefes incluidos, tienen los **ojos rojos brillantes**, **50%** más de vida y de fuerza, **2** más de armadura y se mueven un **25%** más rápido (los comunes también atacan más seguido). A cambio dan **el doble de experiencia y de monedas**.
+**Luna roja:** cada noche hay un **5%** de que salga, y dura hasta que amanece. Durante esa noche, todos los enemigos, jefes incluidos (también los de la dimensión de Zak), tienen los **ojos rojos brillantes**, **50%** más de vida y de fuerza, **2** más de armadura y se mueven un **25%** más rápido (los comunes también atacan más seguido). A cambio dan **el doble de experiencia y de monedas**.
 
-En la **dimensión de Zak** siempre es de noche y la luna roja no llega: sus enemigos no cambian. El reloj sigue corriendo afuera, así que al volver puede ser otra hora.
+En la **dimensión de Zak** siempre es de noche. La luna roja no se ve allá, pero **llega igual**: con luna roja afuera, el portal del altar sigue violeta pero con un **contorno rojo oscuro y rayos rojos** que salen de él, la dimensión se tiñe de rojo y sus enemigos y jefes (el Rey Mago y Zak incluidos) se ponen más fuertes, con los ojos rojos. El reloj sigue corriendo afuera, así que al volver puede ser otra hora.
 
 ## Combate
 
@@ -109,9 +110,13 @@ En la **dimensión de Zak** siempre es de noche y la luna roja no llega: sus ene
 - **Combos:** cada golpe que conecta suma al combo si no dejás pasar mucho tiempo. El **cuarto golpe seguido es crítico** e inflige ×1,75. El HUD muestra el combo y avisa con ✦ cuando el próximo golpe es crítico.
 - Los golpes producen chispas, la cámara se sacude con críticos y daño fuerte, y la pantalla destella al recibir daño.
 
-### Lluvia
+### Clima: lluvia, tormenta y niebla
 
-Cada tanto llueve en la superficie (la aldea, Los Yuyos y el cementerio): se oscurece el cielo, caen gotas y el reloj dice **🌧 LLUVIA**. Mientras llueve, los peces pican **más rápido**. Mientras dura la lluvia se forman **charcos**, que salpican cuando los pisás, y el pasto brilla mojado. Cuando para, todo se seca en unos segundos. En las cuevas y en la dimensión de Zak no llueve.
+El clima cubre **toda la superficie a la vez**: la aldea, Los Yuyos y el cementerio. Las cuevas y la dimensión de Zak quedan bajo techo. Cada tanto cambia, y el reloj del HUD dice qué hay. La tormenta y la niebla, que complican, salen menos que la lluvia.
+
+- **🌧 Lluvia:** se oscurece el cielo y caen gotas. Los peces pican **más rápido**. Mientras dura se forman **charcos**, que salpican cuando los pisás, y el pasto brilla mojado. Cuando para, todo se seca en unos segundos.
+- **⛈ Tormenta eléctrica:** llueve más fuerte y caen **rayos**. Antes de cada uno aparece en el piso una **marca amarilla que titila**: salí de ahí o rodá. Si te pega, te saca **un tercio de la vida**, sin importar la armadura, y te deja **paralizado 2,5 s**. En la aldea (zona segura) los rayos caen lejos y no lastiman. **En Los Yuyos**, además, donde cae un rayo se **prende fuego el pasto** durante unos segundos: si lo pisás, te quemás.
+- **🌫 Niebla:** solo se ve cerca tuyo; más allá, todo es blanco grisáceo. **En el cementerio**, de vez en cuando un **esqueleto sale de la tierra pegado a vos**, con un susto en la pantalla. No hay más de tres a la vez.
 
 ## Guita, hierbas y El Almacén
 
@@ -218,6 +223,12 @@ Algunos vecinos tienen un pedido: después de hablar con ellos (E) se abre su me
 
 Atiende su puesto en la Feria de las Almas (E en el puesto o hablándole). Vende **⚗ Elixir del vacío** (◉ 150), **✨ Polvo de estrellas** (+1 punto de mejora: ◉ 500, y cada uno sale ◉ 250 más), el **◈ Segundo engarce** para amuletos (◉ 4000) y arma el **Anillo del Capo** y el **Ojo de Cerbero** con ofrendas y cristal arcano. En la Feria también viven la Bruja Pocha, Merlín de Quilmes, Tía Eulalia la vidente, Ramiro el gnomo, Ernesto (un alma en pena) y Truco y Retruco, dos almas que juegan al truco desde hace trescientos años.
 
+### El vendedor ambulante
+
+**Don Anselmo** anda de acá para allá. Cada tanto aparece en alguna **zona peligrosa** (Los Yuyos, el cementerio o alguna cueva; nunca en las aldeas), se queda unos minutos y se va. Cuando llega, corre la voz: un aviso dice en qué zona anda.
+
+Siempre tiene **curas** (curación completa y sacarte los males) y trae **tres cosas raras** distintas en cada visita: ofrendas de jefe, Piedras Elementales, diamantes, un Dorado, amuletos… Todo **carísimo**. Comprarle cualquier cosa da una medalla.
+
 ### Truco en la Feria
 
 Las dos almas de la mesa de la Feria de las Almas, **Truco** y **Retruco**, juegan **a 15** (sin flor) con envido, real envido, falta envido, truco, retruco, vale cuatro y al mazo. Hablales y elegí cuánto apostar (◉ 50, 100, 250, 500 o 1000): la apuesta queda sobre la mesa y, si ganás, te llevás **el doble**. Si te levantás a la mitad del partido, la perdés.
@@ -243,9 +254,21 @@ Su daño es una parte del de tu golpe con el arma que tenés en la mano. De meno
 
 ## Medallas
 
-Cada logro tiene su **medalla**, con un dibujo que lo cuenta: una noche roja para la luna roja, un gólem roto para el Gólem Minero, una corona partida para la revancha contra Zak, un perro que te lame, y así. Hay 25. Se ven con **L** o desde el diario (J), y las que te faltan dicen cómo se consiguen. Cuando ganás una, sube sobre tu cabeza.
+Cada logro tiene su **medalla**, con un dibujo que lo cuenta: una noche roja para la luna roja, un gólem roto para el Gólem Minero, una corona partida para la revancha contra Zak, un perro que te lame, y así. Hay 32. Se ven con **L** o desde el diario (J). Las que te faltan muestran **solo el nombre**: cómo se consiguen es un secreto, así que hay que probar cosas. Cuando ganás una, sube sobre tu cabeza.
 
 Las partidas de antes reciben solas, al cargarlas, las medallas que ya les correspondían (los jefes vencidos, el nivel, la Espada Elemental…). La cantidad de medallas tiene su propia pestaña en el ranking.
+
+## Desafío semanal
+
+Cada semana (de lunes a domingo) hay un **desafío**, el mismo para todos los amigos: derrotar 500 enemigos, 15 jefes, 150 esqueletos, pescar 60 peces, juntar 400 materiales, ganar 10 partidos de truco… Están pensados para llevar **más de un día**. Se ven en el diario (J), con el progreso y cuánto falta para que cambie.
+
+Al cumplirlo cobrás **◉ 2500 y 4000 de experiencia**. **El primero de todos** en cumplirlo, según el ranking online, cobra **x1,5**. La pestaña **Desafío** del ranking muestra quién lo cumplió esta semana y cuándo, del primero al último. Cada partida lleva su propio progreso, y el lunes arranca de cero.
+
+## Bestiario
+
+El **bestiario** (tecla **K** o desde el diario) tiene una página por cada enemigo y jefe: una **mini historia**, sus **estadísticas de base** (nivel 1) y las **de ahora**, que crecen con tu nivel. Mientras no lo venciste, la página muestra solo su **silueta**, con toda la información vacía. Las partidas de antes ya tienen completas las páginas de lo que vencieron.
+
+En el borde de cada página hay una **luna roja**: tocala para ver su **forma de la noche sangrienta**, con los ojos rojos, las estadísticas de la luna roja y la misma historia, que empieza diciendo a quién se parece y termina contando que es más salvaje y fuerte. Esa página se completa recién cuando lo vencés **durante una luna roja**.
 
 ## Materiales, herramientas y El Taller
 
@@ -492,12 +515,16 @@ Implementado con **HTML, CSS y JavaScript**, sin paquetes externos. El mundo se 
 - `src/items.js`: consumibles, amuletos, pedidos de los vecinos, pesca y las tiendas del Gaucho, Don Chiche y el Mercader del Vacío.
 - `src/realm.js`: Patio de las Gárgolas, Biblioteca del Rey Mago y Feria de las Almas; sus enemigos, las runas, las carpas y las fogatas.
 - `src/bosses.js`: el Chupasangre, el Gólem Minero, Cerbero y Zak; altar de ofrendas, portales e invocaciones.
-- `src/weather.js`: la lluvia, los charcos y el pasto mojado.
+- `src/weather.js`: el clima (lluvia, tormenta eléctrica y niebla), los rayos, el pasto en llamas y los esqueletos de la niebla.
 - `src/companions.js` y `src/companions-art.js`: los compañeros, La guardería y Doña Herminia, y cómo se dibujan.
 - `src/truco.js`: el truco a 15 con las almas de la Feria, las apuestas y las cartas españolas.
 - `src/medals.js`: las medallas, sus dibujos y cuándo se ganan.
+- `src/wanderer.js`: el vendedor ambulante, cuándo y dónde aparece y qué vende.
+- `src/weekly.js`: el desafío semanal y su premio.
+- `src/bestiary.js`: las historias del bestiario y qué enemigos venciste.
 - `src/ui.js`: menús, HUD, tienda, ranking, guardados y controles táctiles.
 - `src/ui-extras.js`: la mesa de truco, el medallero, la guardería y la puerta del trono.
+- `src/ui-codex.js`: el bestiario, el desafío semanal del diario y el vendedor ambulante.
 - `src/ranking.js` y `src/config.js`: ranking local u online (Supabase).
 - `src/cloud.js`: cuentas y partidas en la nube (Supabase).
 - `tests/rules.test.js`: 46 pruebas de reglas y casos límite.
@@ -508,9 +535,9 @@ Si ya tenés Node instalado:
 node tests/rules.test.js
 ```
 
-Abrí `tests/index.html` para ejecutar las 46 pruebas de reglas y las 160 pruebas de integración del motor en el navegador. El resultado detalla cada caso aprobado o fallido.
+Abrí `tests/index.html` para ejecutar las 46 pruebas de reglas y las 167 pruebas de integración del motor en el navegador. El resultado detalla cada caso aprobado o fallido.
 
-También se incluyen 62 pruebas de interfaz y de pixel art, 23 del ranking (con un servidor simulado), 36 de controles táctiles y 42 de la nube (también con un servidor simulado) con Chrome y Python 3, sin librerías adicionales. El verificador abre un perfil temporal aislado; nunca usa tus guardados personales:
+También se incluyen 73 pruebas de interfaz y de pixel art, 31 del ranking (con un servidor simulado), 36 de controles táctiles y 42 de la nube (también con un servidor simulado) con Chrome y Python 3, sin librerías adicionales. El verificador abre un perfil temporal aislado; nunca usa tus guardados personales:
 
 ```sh
 python tests/browser_check.py tests/index.html --script tests/engine.test.js

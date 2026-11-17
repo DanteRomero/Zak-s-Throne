@@ -443,7 +443,7 @@
       },'toggle');
       sizeToggle.setAttribute('aria-label','Tamaño de los controles táctiles'); sizeRow.append(sizeToggle); parent.append(sizeRow);
       const help = el('div','help-grid');
-      [['Moverte','WASD / flechas'],['Talar o picar','E, quieto'],['Correr','Shift'],['Atacar','Espacio / clic'],['Rodar','Ctrl / clic derecho (hacia donde vas)'],['Habilidad','Q'],['Interactuar','E'],['Usar hierba','R'],['Usar objeto','F'],['Cambiar objeto','G'],['Bolsa y amuletos','B'],['Pescar','E en una laguna'],['Armas','1 — 5'],['Personaje','C'],['Diario','J'],['Medallas','L'],['Mapa','M'],['Pausa','Esc']].forEach(([action,key]) => { const row = el('div'); row.append(el('span','',action),el('kbd','',key)); help.append(row); });
+      [['Moverte','WASD / flechas'],['Talar o picar','E, quieto'],['Correr','Shift'],['Atacar','Espacio / clic'],['Rodar','Ctrl / clic derecho (hacia donde vas)'],['Habilidad','Q'],['Interactuar','E'],['Usar hierba','R'],['Usar objeto','F'],['Cambiar objeto','G'],['Bolsa y amuletos','B'],['Pescar','E en una laguna'],['Armas','1 — 5'],['Personaje','C'],['Diario','J'],['Medallas','L'],['Bestiario','K'],['Mapa','M'],['Pausa','Esc']].forEach(([action,key]) => { const row = el('div'); row.append(el('span','',action),el('kbd','',key)); help.append(row); });
       parent.append(help);
       paragraph(parent,'Los controles táctiles aparecen en pantallas compatibles. En un teléfono, giralo horizontalmente para ver mejor. El sonido se activa después de tu primera interacción.','hint');
     },returnToPause ? showPause : null);
@@ -485,6 +485,8 @@
       paragraph(parent,completed ? 'Completaste los objetivos del diario. Podés seguir explorando, mejorar tu personaje y guardar tu aventura.' : 'Explorá a tu ritmo. Cada objetivo cumplido da guita: reclamala acá.');
       if (message) paragraph(parent,message,'hint shop-message');
       if (Zak.MEDALS && Zak.UI.showMedals) parent.append(button('🏅 Medallero · ' + (game.player.medals || []).length + ' de ' + Zak.MEDALS.length + ' (L)',() => Zak.UI.showMedals(() => showJournal(completed)),'button secondary journal-medals'));
+      // Bestiario y desafío semanal (ui-codex.js).
+      (Zak.UI.journalSections || []).forEach(section => section(parent, () => showJournal(completed)));
       const pending = game.unclaimedRewards();
       if (pending.length > 1) {
         const all = button('Reclamar todo · ◉ ' + pending.reduce((sum,q) => sum + q.reward,0),() => { pending.forEach(q => game.claimQuest(q.id)); showJournal(completed,'Cobraste todas las recompensas pendientes.'); updateHud(true); },'button primary journal-claim-all');
@@ -607,7 +609,7 @@
   function showNpc(n, message) {
     if (!game.player || !n) return;
     const reqId = game.npcRequest(n), shop = game.npcShop(n);
-    openModal(n.name, Zak.isZakDimension(Zak.biomeAt(n.x,n.y)) ? 'DIMENSIÓN DE ZAK' : 'VECINOS DE PALIHUE CITY', parent => {
+    openModal(n.name, shop === 'wanderer' ? 'VENDEDOR AMBULANTE · ' + (Zak.BIOME_NAMES[Zak.biomeAt(n.x,n.y)] || '').toUpperCase() : Zak.isZakDimension(Zak.biomeAt(n.x,n.y)) ? 'DIMENSIÓN DE ZAK' : 'VECINOS DE PALIHUE CITY', parent => {
       const purse = el('p','shop-purse'); purse.append(el('span','','Tu guita'),el('strong','','◉ ' + game.player.coins)); parent.append(purse);
       if (message) paragraph(parent,message,'hint shop-message');
       if (reqId) {
@@ -626,7 +628,7 @@
       }
       const offers = game.npcOffers(n);
       if (offers.length) {
-        parent.append(el('h3','smith-heading',shop === 'chiche' ? 'La caña y lo que pesques' : shop === 'merchant' ? 'Cosas del otro lado' : 'Lo que tiene para vos'));
+        parent.append(el('h3','smith-heading',shop === 'chiche' ? 'La caña y lo que pesques' : shop === 'merchant' ? 'Cosas del otro lado' : shop === 'wanderer' ? 'Cosas raras · precios de estafa' : 'Lo que tiene para vos'));
         offers.forEach(o => offerRow(parent,o,() => { const r = game.npcTrade(n,o.id); showNpc(n,r.message); updateHud(true); }));
       }
       if (shop === 'chiche') paragraph(parent,'Hay tres lagunas en la aldea. Mojarras, pejerreyes, bagres… y uno de cada veinte, un dorado.','hint');
@@ -680,7 +682,8 @@
       Zak.Ranking.submit(game).catch(error => { if (!submitWarned) { submitWarned = true; toast('No se pudo publicar en el ranking online: ' + error.message + '. Se guardó en este dispositivo.',true); } });
     }, Math.max(0,8000 - (Date.now() - lastSubmit)));
   }
-  const RANK_TABS = [['level','Nivel'],['kills','Enemigos'],['bosses','Jefes'],['zak','Récord Zak'],['fury','Revancha Zak'],['medals','Medallas']];
+  const RANK_TABS = [['level','Nivel'],['kills','Enemigos'],['bosses','Jefes'],['zak','Récord Zak'],['fury','Revancha Zak'],['medals','Medallas'],['weekly','Desafío']];
+  const whenDone = ms => { const d = new Date(ms); return ['dom','lun','mar','mié','jue','vie','sáb'][d.getDay()] + ' ' + String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0'); };
   function showRanking(sort = 'level', back = null) {
     const own = Zak.Ranking.profile().id, version = modalVersion + 1;
     if (game.player && game.state !== 'menu') Zak.Ranking.saveLocal(Zak.Ranking.entryFor(game));
@@ -688,6 +691,7 @@
       const tabs = el('div','rank-tabs');
       RANK_TABS.forEach(([id,label]) => { const tab = button(label,() => showRanking(id,back),'rank-tab' + (sort === id ? ' selected' : '')); tab.setAttribute('aria-pressed',String(sort === id)); tabs.append(tab); });
       parent.append(tabs);
+      if (sort === 'weekly' && Zak.weeklyFor) { const c = Zak.weeklyFor(Zak.weekId()); paragraph(parent,'Esta semana: «' + c.name + '». ' + c.detail + ' El primero en cumplirlo cobra x1,5.','hint'); }
       const list = el('div','rank-list'); list.append(el('p','hint','Cargando…')); parent.append(list);
       if (!Zak.Ranking.online()) paragraph(parent,'Para compartir el ranking con tus amigos hay que conectar Supabase en src/config.js (ver docs/RANKING.md). Mientras tanto se muestran las partidas jugadas en este dispositivo.','hint');
       Zak.Ranking.list(sort).then(result => render(result.entries)).catch(error => {
@@ -699,14 +703,15 @@
         if (version !== modalVersion) return;
         if (!append) list.replaceChildren();
         // En «Récord Zak» y «Revancha Zak» solo aparecen las partidas que lo vencieron, de la más rápida a la más lenta.
-        const zak = sort === 'zak', fury = sort === 'fury', medals = sort === 'medals', timed = zak || fury, timeOf = entry => fury ? entry.zak_fury_time : entry.zak_time;
+        const zak = sort === 'zak', fury = sort === 'fury', medals = sort === 'medals', weekly = sort === 'weekly', timed = zak || fury, timeOf = entry => fury ? entry.zak_fury_time : entry.zak_time;
         if (timed) entries = entries.filter(entry => timeOf(entry) > 0);
-        if (!entries.length) { list.append(el('p','hint',zak ? 'Todavía nadie venció a Zak. ¿Vas a ser el primero?' : fury ? 'Todavía nadie le ganó la revancha a Zak furioso.' : 'Todavía no hay partidas. ¡Salí a la aventura y estrená el ranking!')); return; }
-        const head = el('div','rank-row rank-head'); ['#','Jugador','Nvl.',timed ? 'Tiempo' : medals ? 'Medallas' : 'Enemigos','Jefes'].forEach(label => head.append(el('span','',label))); list.append(head);
+        if (weekly) entries = entries.filter(entry => entry.weekly === Zak.weekId() && entry.weekly_at > 0);
+        if (!entries.length) { list.append(el('p','hint',zak ? 'Todavía nadie venció a Zak. ¿Vas a ser el primero?' : fury ? 'Todavía nadie le ganó la revancha a Zak furioso.' : weekly ? 'Todavía nadie cumplió el desafío de esta semana. ¡El primero cobra x1,5!' : 'Todavía no hay partidas. ¡Salí a la aventura y estrená el ranking!')); return; }
+        const head = el('div','rank-row rank-head'); ['#','Jugador','Nvl.',timed ? 'Tiempo' : medals ? 'Medallas' : weekly ? 'Cumplido' : 'Enemigos','Jefes'].forEach(label => head.append(el('span','',label))); list.append(head);
         entries.slice(0,50).forEach((entry,index) => {
           const row = el('div','rank-row' + (entry.player_id === own ? ' mine' : '') + (index < 3 ? ' top' : ''));
           const who = el('span','rank-player'); who.append(el('strong','',entry.name),el('small','',character(entry.character).name + (entry.player_id === own ? ' · vos' : '')));
-          row.append(el('span','rank-pos',index < 3 ? ['♛','②','③'][index] : index + 1),who,el('span','',entry.level),el('span','',timed ? Zak.formatTime(timeOf(entry)) : medals ? '🏅 ' + (entry.medals || 0) : entry.kills),el('span','',entry.bosses));
+          row.append(el('span','rank-pos',index < 3 ? ['♛','②','③'][index] : index + 1),who,el('span','',entry.level),el('span','',timed ? Zak.formatTime(timeOf(entry)) : medals ? '🏅 ' + (entry.medals || 0) : weekly ? (index === 0 ? '🥇 ' : '') + whenDone(entry.weekly_at) : entry.kills),el('span','',entry.bosses));
           list.append(row);
         });
       }
@@ -742,14 +747,16 @@
     $('hud-safety').classList.toggle('danger',!Zak.isSafe(biome));
     const hours = (Zak.DAY_START + Math.floor(number(p.playTime) / 60)) % 24, minutes = Math.floor(number(p.playTime) % 60);
     const phase = Zak.DAY_PHASES[Zak.dayClock(p.playTime).phase], clockText = String(hours).padStart(2,'0') + ':' + String(minutes).padStart(2,'0');
-    const zakDimension = Zak.isZakDimension(biome), bloodMoon = p.bloodMoon === true && !zakDimension;
-    const rainy = !!(game.raining && game.raining());
-    text('hud-time',zakDimension ? '☾ NOCHE ETERNA' : bloodMoon ? '☾ LUNA ROJA · ' + clockText : (rainy ? '🌧 LLUVIA' : phase.icon + ' ' + phase.name.toUpperCase()) + ' · ' + clockText);
+    const zakDimension = Zak.isZakDimension(biome), bloodMoon = p.bloodMoon === true;
+    const sky = game.weatherNow ? game.weatherNow() : null, rainy = sky === 'rain' || sky === 'storm';
+    text('hud-time',zakDimension ? '☾ NOCHE ETERNA' + (bloodMoon ? ' · LUNA ROJA' : '') : bloodMoon ? '☾ LUNA ROJA · ' + clockText : (sky ? Zak.WEATHER_NAMES[sky] : phase.icon + ' ' + phase.name.toUpperCase()) + ' · ' + clockText);
     $('hud-time').classList.toggle('blood-moon',bloodMoon);
     if (lastPortrait !== c.id) { Zak.drawPortrait($('hud-portrait'),c.id); lastPortrait = c.id; }
     const statuses = [];
     if (bloodMoon) statuses.push('☾ Luna roja: x2 EXP y ◉');
-    if (rainy) statuses.push('🌧 Lluvia: los peces pican más rápido');
+    if (sky === 'rain') statuses.push('🌧 Lluvia: los peces pican más rápido');
+    if (sky === 'storm') statuses.push('⛈ Tormenta: cuidado con los rayos');
+    if (sky === 'fog') statuses.push('🌫 Niebla: se ve poco');
     (Zak.UI.statusTags || []).forEach(tags => tags(statuses));
     if (p.poison) statuses.push('☠ Veneno');
     if (p.slow > 0) statuses.push('↓ Mordedura ' + Math.ceil(p.slow) + ' s');

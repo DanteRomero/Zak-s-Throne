@@ -62,6 +62,17 @@ alter table public.scores add column if not exists zak_time int check (zak_time 
 
 Mientras no la agregues, el resto del ranking sigue andando (el juego reintenta sin esa columna), pero la pestaña Récord Zak muestra un aviso y solo las partidas de este dispositivo.
 
+### Desafío semanal (v2.24)
+
+La pestaña **Desafío** y el premio x1,5 para el primero usan dos columnas nuevas. Corré esto una vez en **SQL Editor**:
+
+```sql
+alter table public.scores add column if not exists weekly text check (weekly ~ '^[0-9]{4}-W[0-9]{2}$');
+alter table public.scores add column if not exists weekly_at bigint check (weekly_at > 0);
+```
+
+Mientras no las agregues, el resto del ranking sigue andando (el juego reintenta sin esas columnas), pero nadie cobra el x1,5 del primero: todos cobran el premio normal.
+
 ### Revancha Zak y Medallas (v2.21)
 
 Las pestañas **Revancha Zak** y **Medallas** usan dos columnas nuevas. Corré esto una vez en **SQL Editor**:

@@ -56,7 +56,7 @@
   const plainNight=await clockAt(13);assert('A las 21:00 dice Noche, sin luna roja',/☾ NOCHE · 21:00/.test(plainNight.shown)&&!plainNight.red&&!/Luna roja/.test(plainNight.statuses));
   const redNight=await clockAt(13,true);assert('Con luna roja se ve en rojo y entre los estados',/LUNA ROJA · 21:00/.test(redNight.shown)&&redNight.red&&/Luna roja/.test(redNight.statuses));
   const eternal=await clockAt(1,false,'magic');assert('En la dimensión de Zak siempre es de noche, aunque afuera sea de día',/NOCHE ETERNA/.test(eternal.shown)&&!/☀/.test(eternal.shown));
-  const noMoon=await clockAt(13,true,'throne');assert('Y la luna roja no se ve allá',/NOCHE ETERNA/.test(noMoon.shown)&&!noMoon.red&&!/Luna roja/.test(noMoon.statuses));
+  const realmMoon=await clockAt(13,true,'throne');assert('Desde la v2.24 la luna roja también llega a la dimensión de Zak',/NOCHE ETERNA · LUNA ROJA/.test(realmMoon.shown)&&realmMoon.red&&/Luna roja/.test(realmMoon.statuses));
   await clockAt(0);
   // Charla con un vecino: el aviso en pantalla, la tecla de verdad y el cuadro de diálogo.
   const press=key=>{for(const type of ['keydown','keyup'])document.body.dispatchEvent(new KeyboardEvent(type,{key,bubbles:true}));};
@@ -136,5 +136,29 @@
   document.getElementById('pause-button').click();[...document.querySelectorAll('#modal-content button')].find(b=>b.textContent.startsWith('Nombre en el ranking')).click();
   document.getElementById('rank-name').value='Dante';clickText('Guardar el nombre');
   assert('El apodo de la partida se cambia desde la pausa',g.player.rankName==='Dante'&&Zak.Ranking.profile().name==='Prueba-mer');close();
+
+  // v2.24: bestiario, medallas secretas, desafío semanal, vendedor ambulante y clima en el reloj.
+  if(!document.getElementById('modal-overlay').classList.contains('hidden'))close();
+  g.state='playing';g.player.medals=[];document.getElementById('world').dispatchEvent(new KeyboardEvent('keydown',{key:'l',bubbles:true}));window.dispatchEvent(new KeyboardEvent('keyup',{key:'l'}));
+  const scamCard=[...document.querySelectorAll('.medal-card')].find(c=>c.textContent.includes('Me siento estafado'));
+  assert('Las medallas que faltan muestran el nombre pero no cómo se consiguen',scamCard&&scamCard.classList.contains('locked')&&!scamCard.textContent.includes('vendedor')&&/secreto/.test(scamCard.textContent));close();
+  g.state='playing';g.questFlags={};g.player.bestiary={};g.player.moonKills={};document.getElementById('world').dispatchEvent(new KeyboardEvent('keydown',{key:'k',bubbles:true}));window.dispatchEvent(new KeyboardEvent('keyup',{key:'k'}));
+  assert('K abre el bestiario; sin vencerlo, una silueta sin datos',document.querySelector('.bestiary-page.locked')&&document.querySelector('.bestiary-title h3').textContent==='???'&&document.querySelector('.bestiary-story').textContent==='???');
+  close();g.questFlags.defeat_rat=true;g.state='playing';Zak.UI.showBestiary(0);
+  assert('Al vencerlo, su historia y sus estadísticas',!document.querySelector('.bestiary-page.locked')&&document.querySelector('.bestiary-title h3').textContent===Zak.ENEMY_TYPES.rat.name&&document.querySelectorAll('.bestiary-stats b').length>=10);
+  document.querySelector('.bestiary-moon').click();
+  assert('La luna roja del borde muestra su forma de noche sangrienta, que todavía falta',document.querySelector('.bestiary-page.moon.locked'));
+  g.player.moonKills={rat:1};Zak.UI.showBestiary(0,true);
+  assert('Vencido con luna roja: la historia cambia al principio y al final',/^Es parecido a la rata normal/.test(document.querySelector('.bestiary-story').textContent)&&/salvaje y fuerte/.test(document.querySelector('.bestiary-story').textContent));
+  document.querySelector('.bestiary-next').click();assert('Se pasa de página',/PÁGINA 2/.test(document.getElementById('modal-content').parentNode.textContent));
+  assert('Hay una miniatura por enemigo',document.querySelectorAll('.bestiary-thumb').length===Zak.BESTIARY_ORDER.length);close();
+  g.state='playing';document.getElementById('journal-button').click();
+  assert('El diario muestra el bestiario y el desafío semanal',[...document.querySelectorAll('#modal-content button')].some(b=>b.textContent.includes('Bestiario'))&&document.querySelector('.weekly-box strong').textContent===g.weeklyChallenge().name);close();
+  g.state='playing';document.getElementById('ranking-button').click();await wait();
+  assert('El ranking tiene la pestaña del desafío semanal',[...document.querySelectorAll('.rank-tab')].some(b=>b.textContent==='Desafío'));close();
+  {let t=0;while(!Zak.wandererAt(t,g.player.runId)&&t<1e6)t+=30;g.player.playTime=t;g.syncWanderer();const n=g.world.npcs.find(m=>m.id==='wanderer');g.state='playing';g.emit('npc',{npc:n});
+   assert('El vendedor ambulante vende curas y cosas raras, caras',/Cosas raras/.test(document.getElementById('modal-content').textContent)&&/Curación completa/.test(document.getElementById('modal-content').textContent)&&/me voy/i.test(document.getElementById('modal-content').textContent));close();}
+  {let t=240;while(Zak.weatherAt(t+60,g.player.runId).kind!=='storm')t+=240;g.state='playing';g.player.playTime=t+60;g.biome='weeds';g.updateWeather(0);Zak.UI.updateHud&&Zak.UI.updateHud(true);g.emit('tick');await new Promise(r=>setTimeout(r,150));
+   assert('El reloj avisa la tormenta',/TORMENTA/.test(document.getElementById('hud-time').textContent));}
   return {passed:results.filter(r=>r.pass).length,failed:results.filter(r=>!r.pass).length,results};
 })()

@@ -143,12 +143,12 @@ function showMedals(back = null) {
  const p = game.player; if (!p) return;
  const owned = p.medals || [];
  openModal('Medallero', 'MEDALLAS · ' + owned.length + ' DE ' + Zak.MEDALS.length, parent => {
-  paragraph(parent, 'Cada logro tiene su medalla. Las grises todavía te faltan: abajo dice cómo se consiguen.', 'hint');
+  paragraph(parent, 'Cada logro tiene su medalla. Las grises todavía te faltan, y cómo se consiguen es un secreto: solo se ve el nombre. Probá cosas.', 'hint');
   const grid = el('div', 'medal-grid');
   Zak.MEDALS.forEach(m => {
    const has = owned.includes(m.id), card = el('div', 'medal-card' + (has ? '' : ' locked'), ''), c = canvasOf(88, 96);
    Zak.drawMedalCanvas(c, m.id, !has); c.setAttribute('aria-label', (has ? 'Medalla ' : 'Medalla bloqueada ') + m.name);
-   card.append(c, el('strong', '', has ? m.name : '¿?'), el('small', '', m.detail)); grid.append(card);
+   card.append(c, el('strong', '', m.name), el('small', '', has ? m.detail : '¿Cómo se consigue? Es un secreto.')); grid.append(card);
   });
   parent.append(grid);
  }, back);

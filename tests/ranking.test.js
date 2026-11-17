@@ -54,6 +54,23 @@
     const mine = g.player.rankName; g.player.rankName = 'Otro apodo'; sent.length = 0; await Z.Ranking.submit(g);
     assert('Cada partida publica con su propio apodo', JSON.parse(sent.find(r => r.options.method === 'POST').options.body).name === 'Otro apodo');
     g.player.rankName = mine;
+    // v2.24: desafío semanal. Solo se manda cuando está cumplido; sin las columnas, se reintenta sin ellas.
+    g.player.weekly = {week: Z.weekId(), id: 'hunter', count: 10, done: false, at: 0, paid: false, first: false}; sent.length = 0; await Z.Ranking.submit(g);
+    assert('Sin cumplir, no manda el desafío', !/weekly/.test(sent.find(r => r.options.method === 'POST').options.body));
+    Object.assign(g.player.weekly, {count: 500, done: true, at: 1763300000000}); sent.length = 0; await Z.Ranking.submit(g);
+    const v224 = JSON.parse(sent.find(r => r.options.method === 'POST').options.body);
+    assert('Cumplido, manda la semana y cuándo', v224.weekly === Z.weekId() && v224.weekly_at === 1763300000000);
+    sent.length = 0; window.fetch = async (url, options = {}) => { sent.push({url, options}); if ((options.method || 'GET') === 'POST') return new Response(null, {status: /weekly/.test(String(options.body)) ? 400 : 201}); return okFetch(url, options); };
+    await Z.Ranking.submit(g); const weeklyRetry = sent.filter(r => r.options.method === 'POST');
+    assert('Sin las columnas del desafío reintenta sin ellas', weeklyRetry.length === 2 && !/weekly/.test(weeklyRetry[1].options.body));
+    const firstOf = rowsBack => async (url, options = {}) => { sent.push({url, options}); if (/weekly=eq/.test(url)) return new Response(JSON.stringify(rowsBack), {status: 200}); return okFetch(url, options); };
+    window.fetch = firstOf([]); assert('Si nadie lo cumplió antes, sos el primero', await Z.Ranking.weeklyFirst(Z.weekId(), g.player.runId) === true);
+    window.fetch = firstOf([{run_id: g.player.runId, weekly: Z.weekId(), weekly_at: 1}]); assert('Si el primero sos vos, también', await Z.Ranking.weeklyFirst(Z.weekId(), g.player.runId) === true);
+    window.fetch = firstOf([{run_id: 'otra-partida-123', weekly: Z.weekId(), weekly_at: 1}]); assert('Si alguien lo cumplió antes, no', await Z.Ranking.weeklyFirst(Z.weekId(), g.player.runId) === false);
+    assert('La consulta pide el más temprano de esta semana', /weekly=eq\.\d{4}-W\d{2}/.test(sent[sent.length - 1].url) && /order=weekly_at\.asc/.test(sent[sent.length - 1].url));
+    window.fetch = async (url, options = {}) => /weekly=eq/.test(url) ? new Response('', {status: 400}) : okFetch(url, options);
+    assert('Sin las columnas no se sabe (null)', await Z.Ranking.weeklyFirst(Z.weekId(), g.player.runId) === null);
+    window.fetch = okFetch; g.player.weekly = null;
     // v2.21: revancha contra Zak furioso y medallas, con su propia columna.
     g.player.zakFuryBest = 130.2; g.player.medals = ['capo', 'golem']; sent.length = 0; await Z.Ranking.submit(g);
     const v221 = JSON.parse(sent.find(r => r.options.method === 'POST').options.body);

@@ -6,6 +6,23 @@ Cada versión lista sus cambios agrupados por tipo:
 - **Change:** algo que ya existía y ahora funciona distinto.
 - **Fix:** un error corregido.
     
+## v2.24 — 2026-11-17
+* Feature
+    - **Tormenta eléctrica:** caen rayos en toda la superficie. Antes de cada uno titila una marca en el piso; si te pega, te saca un tercio de la vida y te paraliza 2,5 s. En Los Yuyos, donde cae un rayo se prende fuego el pasto y, si lo pisás, te quemás.
+    - **Niebla:** en toda la superficie se ve solo cerca tuyo. En el cementerio, de vez en cuando un esqueleto sale de la tierra pegado a vos, con un susto en la pantalla.
+    - **Vendedor ambulante:** Don Anselmo aparece cada tanto en alguna zona peligrosa (nunca en las aldeas), se queda unos minutos y se va. Vende curas y cosas raras, carísimas.
+    - **Desafío semanal:** el mismo para todos los amigos, de lunes a domingo, y difícil (lleva más de un día). Paga ◉ 2500 y 4000 de experiencia; el primero en cumplirlo cobra x1,5. Se ve en el diario y tiene su pestaña **Desafío** en el ranking.
+    - **Bestiario (K):** una página por enemigo con su mini historia y sus estadísticas de base y de ahora. Sin vencerlo, solo su silueta. En el borde, una luna roja muestra su forma de la noche sangrienta, que se completa al vencerlo durante una luna roja.
+    - **Medallas nuevas:** «Elegido del cielo», «Se me heló la sangre», «Olor a asado», «Me siento estafado...», «Siete días», «Madrugador» y «Conocé a tu enemigo».
+* Change
+    - **Medallas secretas:** el medallero muestra el nombre de las que faltan, pero no cómo se consiguen. Algunos nombres cambiaron para no dar pistas: «Mano dura», «Día de pique» y «Familia numerosa».
+    - **La luna roja llega a la dimensión de Zak:** sus enemigos y jefes, el Rey Mago y Zak incluidos, se ponen más fuertes y con los ojos rojos. El portal del altar se ve violeta con un contorno rojo oscuro y rayos rojos, y la dimensión se tiñe de rojo.
+    - La lluvia sale un poco menos para hacerle lugar a la tormenta y la niebla, que son las menos probables.
+    - **Ranking online:** para la pestaña Desafío y el x1,5 del primero hay que correr una vez el SQL de [docs/RANKING.md](docs/RANKING.md#desafío-semanal-v224) en Supabase.
+    - Las partidas guardadas cargan igual: el bestiario ya trae las páginas de lo que venciste y el desafío arranca cuando hace falta.
+* Fix
+    - El aviso de la luna roja aparecía una sola vez por sesión: si empezabas otra partida, no te avisaba.
+
 ## v2.23 — 2026-11-17
 * Change
     - **Lluvia:** los charcos y el pasto brilloso aparecen solo mientras llueve. Cuando para, todo se seca en unos segundos (antes quedaban 3 minutos).
