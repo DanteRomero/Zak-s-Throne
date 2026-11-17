@@ -182,8 +182,17 @@ function fence(c, o) {
  R(c, x + w - 5, y - 15, 5, 20, WOOD.dark); R(c, x + w - 4, y - 15, 3, 19, WOOD.base); R(c, x + w - 4, y - 15, 3, 2, WOOD.top);
  // El cartel de cada corral, del lado de la tranquera, con el nombre del compañero.
  if (o.plate) {
-  const g = Z.currentGame, id = o.plate, text = id === 'free' ? 'LIBRE' : g && g.ownsPet && g.ownsPet(id) ? g.petName(id).toUpperCase() : Z.PETS[id].species.toUpperCase();
-  const px = x + w - 30; R(c, px - 1, y - 22, 34, 11, WOOD.dark); R(c, px, y - 21, 32, 9, '#e8d9b4'); Z.Draw.pixelText(c, text.slice(0, 9), px + 16, y - 14, '#5a3a24', 5);
+  // El cartel se hace a la medida del nombre, centrado sobre la valla. Letra normal y sin sombra: sobre la madera
+  // clara la sombra la ensuciaba. Si el nombre no entra, pasa a la letra chiquita.
+  const g = Z.currentGame, id = o.plate, room = w - 4;
+  let text = id === 'free' ? 'Libre' : g && g.ownsPet && g.ownsPet(id) ? g.petName(id) : Z.PETS[id].species;
+  const size = Px.textWidth(text, 9) + 8 <= room ? 9 : 7;
+  while (text.length > 1 && Px.textWidth(text, size) + 6 > room) text = text.slice(0, -1);
+  const tw = Math.min(room, Px.textWidth(text, size) + 8), th = size === 9 ? 13 : 10;
+  const px = Math.round(x + w / 2 - tw / 2), top = y - 16 - th, ink = '#4a2e1a';
+  R(c, px + 3, top + th, 2, 3, WOOD.dark); R(c, px + tw - 5, top + th, 2, 3, WOOD.dark);
+  R(c, px, top, tw, th, WOOD.dark); R(c, px + 1, top + 1, tw - 2, th - 2, '#e8d9b4'); R(c, px + 1, top + 1, tw - 2, 1, '#f6ead0'); R(c, px + 1, top + th - 2, tw - 2, 1, '#cbb68a');
+  Px.text(c, text, px + tw / 2, top + th / 2, ink, size, 'center', '#e8d9b4');
  }
 }
 function bowl(c, o) {

@@ -6,6 +6,10 @@ Cada versión lista sus cambios agrupados por tipo:
 - **Change:** algo que ya existía y ahora funciona distinto.
 - **Fix:** un error corregido.
 
+## v2.33 — 2026-11-17
+* Fix
+    - **Carteles de los corrales de La guardería:** el nombre se veía borroso y corrido hacia abajo. Ahora el cartel se hace a la medida del nombre, con la letra normal, centrada y sin sombra. Si el nombre es muy largo, usa la letra chiquita y se recorta para no salirse.
+
 ## v2.32 — 2026-11-17
 * Feature
     - **Se puede entrar a La guardería:** adentro hay seis corrales separados por vallas, con cartel y tranquera. Los compañeros que no llevás esperan cada uno en el suyo, con su decoración: el murciélago tiene un rincón oscuro, una percha y frutas; el perro, cucha, camita, platos, hueso y pelota; la serpiente, arena, piedra, tronco, lámpara de calor y cactus; el Golemsín, piedritas, mineral, una zorra de mina y un yunque. Dos corrales quedan libres.
