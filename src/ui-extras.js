@@ -144,8 +144,11 @@ function showMedals(back = null) {
  const owned = p.medals || [];
  openModal('Medallero', 'MEDALLAS · ' + owned.length + ' DE ' + Zak.MEDALS.length, parent => {
   paragraph(parent, 'Cada logro tiene su medalla. Las grises todavía te faltan, y cómo se consiguen es un secreto: solo se ve el nombre. Probá cosas.', 'hint');
+  const progress = el('div', 'medal-progress'), bar = el('div', 'sheet-xp'), fill = el('i'); fill.style.width = Math.round(100 * owned.length / Zak.MEDALS.length) + '%'; bar.append(fill);
+  progress.append(el('span', '', '🏅'), bar, el('b', '', owned.length + ' / ' + Zak.MEDALS.length)); parent.append(progress);
   const grid = el('div', 'medal-grid');
-  Zak.MEDALS.forEach(m => {
+  // Primero las que ya ganaste.
+  [...Zak.MEDALS].sort((a, b) => owned.includes(b.id) - owned.includes(a.id)).forEach(m => {
    const has = owned.includes(m.id), card = el('div', 'medal-card' + (has ? '' : ' locked'), ''), c = canvasOf(88, 96);
    Zak.drawMedalCanvas(c, m.id, !has); c.setAttribute('aria-label', (has ? 'Medalla ' : 'Medalla bloqueada ') + m.name);
    card.append(c, el('strong', '', m.name), el('small', '', has ? m.detail : '¿Cómo se consigue? Es un secreto.')); grid.append(card);
@@ -186,9 +189,9 @@ function showKennel(id) {
  openModal('La guardería', 'DOÑA HERMINIA CUIDA A TUS COMPAÑEROS', parent => {
   petCard(parent, id);
   paragraph(parent, p.pet ? 'Ahora te acompaña ' + game.petName(p.pet) + '. Si salís con ' + game.petName(id) + ', ' + game.petName(p.pet) + ' se queda acá.' : 'Ahora no te acompaña nadie.', 'hint');
-  const go = button('Salir con ' + game.petName(id), () => { const r = game.equipPet(id); toast(r.message); hideModal(); updateHud(true); }, 'button primary');
-  const rename = button('Cambiarle el nombre', () => showNamePet(id, () => showKennel(id)));
-  if (p.pet !== id && game.petLevel(id) < Zak.PET_LEVELS.max) { const price = Zak.PET_LEVELS.train.price(game.petLevel(id)), train = button('Que Doña Herminia lo entrene · ◉ ' + price, () => { const r = game.trainPet(id); updateHud(true); toast(r.message, !r.ok); showKennel(id); }); train.disabled = p.coins < price; parent.append(train); paragraph(parent, 'Cada entrenamiento le da medio nivel. Al que llevás con vos lo entrenás peleando.', 'hint'); }
+  const go = UI.iconed(button('Salir con ' + game.petName(id), () => { const r = game.equipPet(id); toast(r.message); hideModal(); updateHud(true); }, 'button primary'), '🐾');
+  const rename = UI.iconed(button('Cambiarle el nombre', () => showNamePet(id, () => showKennel(id))), '✎');
+  if (p.pet !== id && game.petLevel(id) < Zak.PET_LEVELS.max) { const price = Zak.PET_LEVELS.train.price(game.petLevel(id)), train = UI.iconed(button('Que Doña Herminia lo entrene · ◉ ' + price, () => { const r = game.trainPet(id); updateHud(true); toast(r.message, !r.ok); showKennel(id); }), '★'); train.disabled = p.coins < price; parent.append(train); paragraph(parent, 'Cada entrenamiento le da medio nivel. Al que llevás con vos lo entrenás peleando.', 'hint'); }
   const extra = p.pet ? [button('Dejar a ' + game.petName(p.pet) + ' acá y salir sin compañero', () => { const r = game.equipPet(null); toast(r.message); hideModal(); updateHud(true); })] : [];
   actions(parent, go, rename, ...extra, button('Listo', () => hideModal()));
  });

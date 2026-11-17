@@ -6,6 +6,15 @@ Cada versión lista sus cambios agrupados por tipo:
 - **Change:** algo que ya existía y ahora funciona distinto.
 - **Fix:** un error corregido.
     
+## v2.27 — 2026-11-17
+* Change
+    - **Todos los menús con el estilo de la ficha:** marco con doble filete dorado, títulos con adorno, secciones con su título, tarjetas con relieve y botones con sombra. Abarca la pausa, las opciones, las ranuras, el ranking, El Almacén, El Taller, los vecinos, el vendedor ambulante, la guardería, el medallero, el truco y las confirmaciones.
+    - **Pausa:** arriba, una tarjeta con tu personaje, la ranura, el tiempo de aventura y tu guita. Los botones van en dos columnas, con íconos.
+    - **Opciones:** separadas en «Pantalla y sonido», «Pantalla táctil» y «Teclas». Cada opción tiene un interruptor que muestra si está activada.
+    - **Pedidos de los vecinos:** se muestran en un papelito, como el del diario.
+    - **Ranking:** la tabla va en un panel y los tres primeros puestos se destacan en oro, plata y bronce.
+    - **Medallero:** primero las medallas que ganaste, que brillan, y una barra con cuántas llevás.
+
 ## v2.26 — 2026-11-17
 * Feature
     - **Ficha en dos páginas:** «Tu personaje» y «Tu compañero». La del personaje tiene su retrato en un recuadro; la del compañero, su retrato, su nivel, sus números (daño, cada cuánto pega y saca su especial, cuánto le duran los efectos), su habilidad y un campo para cambiarle el nombre. Los que todavía no tenés se ven como silueta, con la pista de cómo se consiguen.

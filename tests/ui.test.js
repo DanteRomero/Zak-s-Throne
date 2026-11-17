@@ -120,7 +120,8 @@
   // v2.21: medallero, truco con las almas, nombre de los compañeros y la puerta del trono.
   if(!document.getElementById('modal-overlay').classList.contains('hidden'))close();
   g.state='playing';g.awardMedal('capo',true);document.getElementById('world').dispatchEvent(new KeyboardEvent('keydown',{key:'l',bubbles:true}));window.dispatchEvent(new KeyboardEvent('keyup',{key:'l'}));
-  assert('L abre el medallero con todas las medallas',document.querySelectorAll('#modal-content .medal-card').length===Zak.MEDALS.length&&document.querySelectorAll('#modal-content .medal-card.locked').length===Zak.MEDALS.length-g.player.medals.length);close();
+  assert('L abre el medallero con todas las medallas',document.querySelectorAll('#modal-content .medal-card').length===Zak.MEDALS.length&&document.querySelectorAll('#modal-content .medal-card.locked').length===Zak.MEDALS.length-g.player.medals.length);
+  assert('El medallero muestra primero las que ganaste, con su barra',!document.querySelector('#modal-content .medal-card').classList.contains('locked')&&!!document.querySelector('.medal-progress .sheet-xp'));close();
   g.state='playing';document.getElementById('journal-button').click();
   assert('El diario lleva al medallero',[...document.querySelectorAll('#modal-content button')].some(b=>b.textContent.includes('Medallero')));close();
   const soul=g.world.npcs.find(n=>n.id==='truco');g.player.coins=600;g.emit('npc',{npc:soul});
@@ -185,5 +186,9 @@
    assert('El vendedor ambulante vende curas y cosas raras, caras',/Cosas raras/.test(document.getElementById('modal-content').textContent)&&/Curación completa/.test(document.getElementById('modal-content').textContent)&&/me voy/i.test(document.getElementById('modal-content').textContent));close();}
   {let t=240;while(Zak.weatherAt(t+60,g.player.runId).kind!=='storm')t+=240;g.state='playing';g.player.playTime=t+60;g.biome='weeds';g.updateWeather(0);Zak.UI.updateHud&&Zak.UI.updateHud(true);g.emit('tick');await new Promise(r=>setTimeout(r,150));
    assert('El reloj avisa la tormenta',/TORMENTA/.test(document.getElementById('hud-time').textContent));}
+  // v2.27: la pausa muestra al personaje y sus botones llevan íconos sin cambiar el texto.
+  if(!document.getElementById('modal-overlay').classList.contains('hidden'))close();
+  g.state='playing';Zak.UI.showPause();
+  assert('La pausa muestra al personaje y botones con íconos',!!document.querySelector('.pause-card canvas')&&document.querySelectorAll('#modal-content .button[data-icon]').length>=5&&[...document.querySelectorAll('#modal-content button')].some(b=>b.textContent==='Guardar partida'));close();
   return {passed:results.filter(r=>r.pass).length,failed:results.filter(r=>!r.pass).length,results};
 })()

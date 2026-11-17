@@ -26,6 +26,8 @@
     node.type = 'button'; node.addEventListener('click', action);
     return node;
   }
+  // Ícono decorativo por CSS: el texto del botón queda igual.
+  function iconed(node, icon) { node.dataset.icon = icon; return node; }
   function paragraph(parent, text, className = '') { const node = el('p', className, text); parent.append(node); return node; }
   function text(id, value) { const node = $(id); if (node && node.textContent !== String(value)) node.textContent = String(value); }
   function toast(message, error = false) {
@@ -423,26 +425,36 @@
   $('cloud-button').addEventListener('click',showCloud);
   function showPause() {
     openModal('Un respiro en el camino', 'PARTIDA EN PAUSA', parent => {
-      if (game.player) paragraph(parent,saveLabel({player:game.player}) + ' · ' + (game.currentSlot ? 'Ranura ' + game.currentSlot : 'Todavía sin guardar'));
+      if (game.player) {
+        const p = game.player, card = el('div','pause-card'), face = el('canvas','pause-portrait'), info = el('div','pause-info');
+        face.width = 40; face.height = 48; face.setAttribute('aria-hidden','true'); Zak.drawPortrait(face,p.characterId);
+        info.append(el('strong','',saveLabel({player:p})),el('small','',(game.currentSlot ? 'Ranura ' + game.currentSlot : 'Todavía sin guardar') + ' · ' + Zak.formatTime(p.playTime || 0) + ' de aventura'));
+        card.append(face,info,el('span','pause-coins','◉ ' + fmt(p.coins || 0))); parent.append(card);
+      }
       const actions = el('div','modal-actions');
-      actions.append(button('Continuar la aventura', () => hideModal(), 'button primary'), button('Guardar partida', () => showSlots('save')), button('Ranking de amigos', () => showRanking('level', showPause)), button('Nombre en el ranking: ' + (game.player && game.player.rankName || Zak.Ranking.profile().name || '—'), showRankName), ...(Zak.Cloud.available() ? [button('Cuenta y nube',showCloud)] : []), button('Opciones y controles',showSettings), button('Volver al inicio',requestMenu));
-      parent.append(actions); paragraph(parent,'La partida se guarda manualmente. Cerrá la pausa para seguir explorando.','hint');
+      actions.append(iconed(button('Continuar la aventura', () => hideModal(), 'button primary'),'▶'));
+      const grid = el('div','pause-grid');
+      grid.append(iconed(button('Guardar partida', () => showSlots('save')),'💾'), iconed(button('Ranking de amigos', () => showRanking('level', showPause)),'♛'), iconed(button('Nombre en el ranking: ' + (game.player && game.player.rankName || Zak.Ranking.profile().name || '—'), showRankName),'✎'), ...(Zak.Cloud.available() ? [iconed(button('Cuenta y nube',showCloud),'☁')] : []), iconed(button('Opciones y controles',showSettings),'⚙'), iconed(button('Volver al inicio',requestMenu,'button secondary leave'),'⌂'));
+      actions.append(grid); parent.append(actions); paragraph(parent,'La partida se guarda manualmente. Cerrá la pausa para seguir explorando.','hint');
     });
   }
   function showSettings() {
     const returnToPause = !!game.player && (game.state === 'playing' || game.state === 'paused');
     openModal('A tu manera', 'OPCIONES Y CONTROLES', parent => {
+      parent.append(el('h3','sheet-heading','Pantalla y sonido'));
       [['sound','Sonido ambiental y combate'],['particles','Partículas y efectos'],['shake','Sacudida de pantalla'],['tutorial','Consejos al empezar'],['tips','Tips: tecla para interactuar'],['notices','Avisos durante el juego'],['fullscreen','Pantalla completa al jugar (celular)']].forEach(([key,label]) => {
         const row = el('div','setting-row'); row.append(el('span','',label));
         const toggle = button(game.settings[key] ? 'ACTIVADO' : 'DESACTIVADO', () => { game.settings[key] = !game.settings[key]; persistSettings(); toggle.textContent = game.settings[key] ? 'ACTIVADO' : 'DESACTIVADO'; toggle.setAttribute('aria-pressed',String(game.settings[key])); },'toggle');
         toggle.setAttribute('aria-label',label); toggle.setAttribute('aria-pressed',String(game.settings[key])); row.append(toggle); parent.append(row);
       });
+      parent.append(el('h3','sheet-heading','Pantalla táctil'));
       const sizes = Object.keys(CONTROL_SIZES), sizeRow = el('div','setting-row'); sizeRow.append(el('span','','Tamaño de los controles táctiles'));
       const sizeToggle = button(CONTROL_SIZES[game.settings.controls][0].toUpperCase(), () => {
         game.settings.controls = sizes[(sizes.indexOf(game.settings.controls) + 1) % sizes.length]; persistSettings(); applyControls();
         sizeToggle.textContent = CONTROL_SIZES[game.settings.controls][0].toUpperCase();
       },'toggle');
       sizeToggle.setAttribute('aria-label','Tamaño de los controles táctiles'); sizeRow.append(sizeToggle); parent.append(sizeRow);
+      parent.append(el('h3','sheet-heading','Teclas'));
       const help = el('div','help-grid');
       [['Moverte','WASD / flechas'],['Talar o picar','E, quieto'],['Correr','Shift'],['Atacar','Espacio / clic'],['Rodar','Ctrl / clic derecho (hacia donde vas)'],['Habilidad','Q'],['Interactuar','E'],['Usar hierba','R'],['Usar objeto','F'],['Cambiar objeto','G'],['Bolsa y amuletos','B'],['Pescar','E en una laguna'],['Armas','1 — 5'],['Personaje','C'],['Diario','J'],['Medallas','L'],['Bestiario','K'],['Pausa','Esc']].forEach(([action,key]) => { const row = el('div'); row.append(el('span','',action),el('kbd','',key)); help.append(row); });
       parent.append(help);
@@ -1031,7 +1043,7 @@
   $('exit-game').addEventListener('click',exitGame);
   document.querySelector('.brand').addEventListener('click',event => { event.preventDefault(); if (game.state === 'characters') showMenu(); });
   // Lo que usan las ventanas nuevas (ui-extras.js).
-  Zak.UI = Object.assign(Zak.UI || {}, { journalBlock, showMissions, el, button, paragraph, openModal, hideModal, closeModal, toast, updateHud, showNpc, showBag, isTouch, showPause, showJournal, confirmAction });
+  Zak.UI = Object.assign(Zak.UI || {}, { iconed, journalBlock, showMissions, el, button, paragraph, openModal, hideModal, closeModal, toast, updateHud, showNpc, showBag, isTouch, showPause, showJournal, confirmAction });
   game.onEvent = (type, detail = {}) => {
     if (type === 'tick') { document.body.classList.toggle('cutscene', !!game.cutscene && game.state === 'playing'); updateHud(); if (game.player && game.state === 'playing' && game.player.kills - lastKills >= 5) submitScore(); }
     else if (type === 'toast') { if (game.settings.notices || detail.error) toast(detail.message,detail.error); }

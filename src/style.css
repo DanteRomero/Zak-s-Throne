@@ -287,3 +287,86 @@ canvas{image-rendering:crisp-edges;image-rendering:pixelated}
 #modal .bag-empty{font-size:12px;font-style:italic}
 @media(max-width:700px),(max-height:520px){.sheet-now.three{grid-template-columns:repeat(2,1fr)}.sheet-hero{gap:14px;padding:12px 12px 16px}.sheet-portrait{width:84px;height:105px}.sheet-frame.pet .sheet-portrait{height:95px}.sheet-name{font-size:22px}.sheet-now{grid-template-columns:repeat(2,1fr)}.sheet-traits,.sheet-traits.pet{grid-template-columns:1fr}.sheet-stats .stats-upgrade{grid-template-columns:92px 1fr 40px 30px;gap:8px}.journal-block{padding:10px 6px}.journal-block-icon{font-size:24px}.journal-block strong{font-size:14px}.bag-grid{grid-template-columns:1fr}}
 @media(max-width:420px){.sheet-hero{flex-direction:column;align-items:flex-start}.journal-blocks{grid-template-columns:1fr}.journal-block{flex-direction:row;justify-content:flex-start;gap:10px}.journal-block-bar{display:none}}
+/* v2.27: todos los menús con el estilo de la ficha: marco con doble filete, títulos con adorno, tarjetas y botones con relieve. */
+#modal{width:640px;background:radial-gradient(130% 55% at 50% 0%,#23463b 0%,#19342b 50%,#142c24 100%);border:1px solid #c9b47a;box-shadow:inset 0 0 0 4px #19342b,inset 0 0 0 5px #b8aa7c40,8px 8px 0 #071b15aa,0 0 60px #000a;scrollbar-color:#b8aa7c66 transparent;scrollbar-width:thin}
+#modal::-webkit-scrollbar{width:8px}#modal::-webkit-scrollbar-thumb{background:#b8aa7c55}
+.modal-eyebrow{display:flex;align-items:center;gap:8px}.modal-eyebrow::before{content:'◆';font-size:8px;color:var(--gold)}
+#modal h2{font-size:31px;text-shadow:2px 2px 0 #071b15}
+#modal h2::after{content:'';display:block;width:140px;height:2px;margin-top:12px;background:linear-gradient(90deg,var(--gold),transparent)}
+.modal-close{width:34px;height:34px;display:grid;place-items:center;border:1px solid transparent!important;line-height:1;transition:color .15s,border-color .15s,background .15s}
+.modal-close:hover{color:var(--gold);border-color:#b8aa7c66!important;background:#10281f}
+/* Botones de los menús */
+#modal .modal-actions{gap:8px}
+#modal .button{position:relative;padding:13px 16px;border:1px solid #b8aa7c50;box-shadow:3px 3px 0 #071b15aa;font-size:15px;transition:background .15s,border-color .15s,transform .15s}
+#modal .button.secondary{background:linear-gradient(#22423a,#173129);color:#e7e6d0}
+#modal .button.secondary:hover{background:linear-gradient(#2b5144,#1d3a30);border-color:var(--gold);transform:translateX(3px)}
+#modal .button.primary{background:linear-gradient(#f2d593,#e0b466);border-color:#f6e2ae;color:#22392c}
+#modal .button.primary:hover{background:linear-gradient(#f7dfa6,#e8c079)}
+#modal .modal-actions .button:not(.primary)::after{content:'›';margin-left:auto;font-size:20px;line-height:1;color:var(--gold);opacity:.7}
+#modal .button[data-icon]::before{content:attr(data-icon);display:inline-grid;place-items:center;width:28px;height:28px;flex:none;font-size:15px;background:#071d17aa;border:1px solid #b8aa7c40;color:var(--gold)}
+#modal .button.primary[data-icon]::before{background:#22392c22;border-color:#22392c33;color:#22392c}
+#modal .button.leave{color:#f0c0b0}#modal .button.leave:hover{border-color:var(--red)}
+#modal .button:disabled{transform:none;box-shadow:none}
+.shop-buy{border:1px solid #f0d99b;box-shadow:2px 2px 0 #071b15aa;transition:background .15s,transform .1s}.shop-buy:not(:disabled):active{transform:translate(1px,1px);box-shadow:1px 1px 0 #071b15aa}
+.shop-buy:disabled{background:#2a4337;color:#8fa08b;border-color:transparent;box-shadow:none;opacity:1}
+/* Títulos de sección: el mismo adorno que la ficha */
+#modal h3.smith-heading{display:flex;align-items:center;gap:10px;font:normal 12px 'Courier New',monospace;letter-spacing:2.5px;text-transform:uppercase;color:var(--gold);margin:22px 0 8px}
+#modal h3.smith-heading::before,#modal h3.smith-heading::after{content:'';height:1px;background:linear-gradient(90deg,transparent,#e7be7266);flex:1}#modal h3.smith-heading::after{background:linear-gradient(90deg,#e7be7266,transparent)}
+/* Tarjetas de tienda, taller y vecinos */
+#modal .shop-item{background:#10281f;border:1px solid var(--line);border-left:3px solid #b8aa7c55;padding:11px 14px;margin:6px 0;transition:border-color .15s,background .15s}
+#modal .shop-item:hover{border-left-color:var(--gold);background:#152f26}
+#modal .shop-item.sold-out{opacity:.55}#modal .shop-item.sold-out:hover{background:#10281f;border-left-color:#b8aa7c55}
+#modal .shop-item strong{font-size:16px}
+.shop-purse{background:linear-gradient(90deg,#10281f,#22402f)!important;border:1px solid #c9a36266!important;box-shadow:3px 3px 0 #071b15aa;position:relative}
+.shop-purse span{letter-spacing:2px;text-transform:uppercase;font-size:10px;color:var(--muted)}.shop-purse strong{font-size:20px!important;text-shadow:0 0 10px #f2cb5b55}
+.smith-portrait{border:3px solid #c9a362!important;box-shadow:inset 0 0 0 2px #6b4422,4px 4px 0 #071b15aa}
+.smith-bag{background:#10281f;border:1px solid var(--line);padding:8px}.smith-bag span{background:#071d17}
+/* Pedidos de los vecinos: un papelito */
+#modal .request-box{background:linear-gradient(#f1e7cc,#e2d2aa);color:#3a2a1a;border:3px solid #6b4422;box-shadow:inset 0 0 0 2px #c9a26a,inset 0 0 26px rgba(107,68,34,.25),4px 4px 0 #071b15aa;padding:14px 18px}
+#modal .request-box strong{color:#6b2f14;font-size:16px}#modal .request-box p{color:#4a3420;font:italic 14px/1.5 Georgia;margin:8px 0}
+#modal .request-box small{color:#6b5236}
+/* Pausa */
+.pause-card{display:flex;align-items:center;gap:14px;background:radial-gradient(circle at 10% 50%,#2c4d3e,#10281f 70%);border:1px solid var(--line);padding:10px 14px;margin-bottom:6px}
+.pause-portrait{width:40px;height:48px;image-rendering:pixelated;border:2px solid #c9a362;box-shadow:inset 0 0 0 1px #6b4422,2px 2px 0 #071b15aa;flex:none}
+.pause-info{flex:1;min-width:0}.pause-info strong{display:block;font:normal 18px Georgia}.pause-info small{display:block;font:10px 'Courier New',monospace;color:var(--muted);margin-top:4px}
+.pause-coins{font:bold 15px 'Courier New',monospace;color:#f2cb5b}
+.pause-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+#modal .pause-grid .button{font-size:14px;padding:11px 12px;gap:10px}
+#modal .pause-grid .button::after{display:none}#modal .pause-grid .button{justify-content:flex-start;text-align:left}
+.medal-progress{display:flex;align-items:center;gap:12px;background:#10281f;border:1px solid var(--line);padding:10px 14px;margin:4px 0 10px}.medal-progress .sheet-xp{flex:1;max-width:none}.medal-progress b{font:bold 14px 'Courier New',monospace;color:var(--gold);white-space:nowrap}
+#modal .modal-actions>.button.primary[data-icon]{justify-content:center;font-size:17px}
+/* Opciones */
+#modal .setting-row{background:#10281f;border:1px solid var(--line);padding:9px 14px;margin:5px 0}
+.toggle{min-width:132px;display:flex;align-items:center;gap:9px;justify-content:flex-start;border:1px solid #b8aa7c66;background:#071d17;color:var(--muted);padding:7px 10px;transition:color .15s,border-color .15s}
+.toggle[aria-pressed]::before{content:'';width:28px;height:14px;flex:none;border:1px solid currentColor;background:linear-gradient(90deg,currentColor 0 12px,transparent 12px);transition:background .15s}
+.toggle[aria-pressed="true"]{color:var(--gold);border-color:var(--gold)}.toggle[aria-pressed="true"]::before{background:linear-gradient(90deg,transparent 14px,currentColor 14px)}
+.toggle:not([aria-pressed]){justify-content:center;color:var(--gold)}
+.help-grid{background:#10281f;border:1px solid var(--line);padding:12px 14px;margin:0 0 12px!important}
+.help-grid kbd{background:#071d17;border-color:#b8aa7c55;color:var(--gold);box-shadow:0 2px 0 #b8aa7c33}
+/* Ranuras */
+#modal .save-slot{background:linear-gradient(90deg,#10281f,#152f26);box-shadow:3px 3px 0 #071b15aa;transition:border-color .15s,background .15s,transform .15s}
+#modal .save-slot:not(:disabled):hover{transform:translateX(3px)}
+.slot-index{width:44px;height:44px;flex:none;display:grid;place-items:center;border:1px solid #c9a36288;background:#071d17;box-shadow:inset 0 0 0 2px #19342b}
+.slot-delete{box-shadow:3px 3px 0 #071b15aa}
+/* Ranking */
+.rank-tabs{gap:5px!important}
+#modal .rank-tab{border-color:var(--line);transition:color .15s,background .15s}#modal .rank-tab:hover{color:var(--paper);background:#1f3d33}
+#modal .rank-tab.selected{background:linear-gradient(#2a4a3c,#19342b);color:var(--gold);border-color:var(--gold);box-shadow:inset 0 -2px 0 var(--gold)}
+.rank-list{background:#10281f;border:1px solid var(--line)}
+.rank-head{background:#10281f!important;border-bottom:1px solid #b8aa7c55}
+.rank-row:not(.rank-head):nth-child(odd){background:#ffffff05}
+.rank-row:nth-child(2) .rank-pos{color:#f2cb5b;text-shadow:0 0 8px #f2cb5b88}.rank-row:nth-child(3) .rank-pos{color:#d6dde4}.rank-row:nth-child(4) .rank-pos{color:#d79b6a}
+/* Compañeros en la guardería y al ponerle nombre */
+#modal .pet-card{background:radial-gradient(circle at 15% 30%,#2c4d3e,#12291f 70%);padding:12px 14px}
+#modal .pet-card canvas{border:3px solid #c9a362;box-shadow:inset 0 0 0 2px #6b4422,4px 4px 0 #071b15aa;background:radial-gradient(circle at 50% 70%,#4a6b4e,#24402f)}
+/* Medallero */
+#modal .medal-card{background:radial-gradient(circle at 50% 32%,#2a4a3e,#10281f 68%);border:1px solid #b8aa7c66;box-shadow:3px 3px 0 #071b15aa;padding:10px 8px;transition:transform .15s,border-color .15s}
+#modal .medal-card:not(.locked){border-color:var(--gold);box-shadow:3px 3px 0 #071b15aa,inset 0 0 18px #e7be7222}
+#modal .medal-card:not(.locked):hover{transform:translateY(-2px)}
+#modal .medal-card.locked{background:#0f241c;border-color:var(--line)}#modal .medal-card.locked small{font-style:italic;opacity:.65}
+/* Truco y campos de texto */
+.truco-bets .shop-buy{min-width:74px;font-size:13px}
+#modal .cloud-field input,#modal .rank-name-input{box-shadow:inset 2px 2px 0 #071b15}
+#modal .hint{line-height:1.55}
+@media(max-width:700px),(max-height:520px){#modal{padding:20px 18px}#modal h2{font-size:22px}#modal h2::after{margin-top:8px}.pause-grid{grid-template-columns:1fr 1fr}#modal .pause-grid .button{font-size:12px;padding:9px 10px}#modal .button[data-icon]::before{width:24px;height:24px;font-size:13px}#modal .button{padding:11px 13px;font-size:14px}}
+@media(max-width:420px){.pause-grid{grid-template-columns:1fr}}
