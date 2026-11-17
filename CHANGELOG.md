@@ -6,6 +6,16 @@ Cada versión lista sus cambios agrupados por tipo:
 - **Change:** algo que ya existía y ahora funciona distinto.
 - **Fix:** un error corregido.
     
+## v2.30 — 2026-11-17
+* Feature
+    - **Campanitas de Don Anselmo:** cuando el vendedor ambulante llega a la zona donde estás, o entrás a la zona donde está él, suenan unas campanitas y aparece un aviso.
+* Change
+    - **El perro inmoviliza menos seguido:** cada 22 s (antes, cada 13 s). Con el nivel sigue saliendo un 3% más seguido por nivel.
+    - **Inmovilizar corta el ataque:** si el perro (o el abrazo de la serpiente, la avalancha del Golemsín o la danza de Tena) inmoviliza a un enemigo en medio de un ataque, se lo cancela, también a los jefes. El jefe tarda 4 s en volver a intentar ese ataque. Antes los jefes se quedaban congelados a mitad del ataque y lo terminaban después.
+* Fix
+    - **Los efectos tocaban a enemigos inmunes:** durante el Refuerzo del Gólem (y los otros momentos en que un jefe no recibe golpes) los compañeros lo podían inmovilizar, desangrar o envenenar, y Tena lo podía paralizar. Ahora no le hace nada ningún efecto, y el compañero se guarda el especial para después.
+    - **El primer aviso del vendedor ambulante:** después de empezar o cargar una partida, su primera visita no se avisaba.
+
 ## v2.29 — 2026-11-17
 * Feature
     - **🎲 Dado cargado:** un amuleto nuevo que suma 10 puntos a cada probabilidad del juego, buena o mala (un 5% pasa a 15%): luna roja, dorado, huevos y escombros de los jefes, clima, vendedor ambulante, mimics y premios de las carpas, revancha del truco, bloqueos y venenos de los enemigos, rayos y más. Lo vende siempre Don Anselmo, el vendedor ambulante, a ◉ 4000.

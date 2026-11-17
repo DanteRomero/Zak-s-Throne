@@ -2,7 +2,7 @@
 
 Una aventura de acción y exploración en pixel art, vista desde arriba. Elegí a uno de siete amigos, preparate en la aldea y salí a explorar la cueva y los Yuyos.
 
-Versión actual: **v2.29**. Los cambios de cada versión están en [CHANGELOG.md](CHANGELOG.md).
+Versión actual: **v2.30**. Los cambios de cada versión están en [CHANGELOG.md](CHANGELOG.md).
 
 ## Jugar
 
@@ -233,7 +233,7 @@ Atiende su puesto en la Feria de las Almas (E en el puesto o hablándole). Vende
 
 ### El vendedor ambulante
 
-**Don Anselmo** anda de acá para allá. Cada tanto aparece en alguna **zona peligrosa** (Los Yuyos, el cementerio o alguna cueva; nunca en las aldeas), se queda unos minutos y se va. Cuando llega, corre la voz: un aviso dice en qué zona anda.
+**Don Anselmo** anda de acá para allá. Cada tanto aparece en alguna **zona peligrosa** (Los Yuyos, el cementerio o alguna cueva; nunca en las aldeas), se queda unos minutos y se va. Cuando llega, corre la voz: un aviso dice en qué zona anda. Si llega a la zona donde estás, o entrás a la zona donde está él, se escuchan sus **campanitas** 🔔.
 
 Siempre tiene **curas** (curación completa y sacarte los males) y el **🎲 Dado cargado**, y trae **tres cosas raras** distintas en cada visita: ofrendas de jefe, Piedras Elementales, diamantes, un Dorado, amuletos… Todo **carísimo**. Comprarle cualquier cosa da una medalla.
 
@@ -253,10 +253,12 @@ Su daño es una parte chica del de tu golpe con el arma que tenés en la mano: a
 
 | Compañero | Cómo se consigue | Qué hace |
 | --- | --- | --- |
-| 🐕 **Perro** | En la puerta de La guardería hay un perro sentado con el plato vacío. Comprá **comida para perro** en El Almacén (◉ 15) y dásela con E **5 veces**, esperando **2 minutos** entre plato y plato. Con el quinto se acerca corriendo y te llena la cara de lengüetazos. | Muerde, y cada **13 s** inmoviliza al enemigo **3 s** (a los jefes, 1,5 s; a Zak, nada). |
+| 🐕 **Perro** | En la puerta de La guardería hay un perro sentado con el plato vacío. Comprá **comida para perro** en El Almacén (◉ 15) y dásela con E **5 veces**, esperando **2 minutos** entre plato y plato. Con el quinto se acerca corriendo y te llena la cara de lengüetazos. | Muerde, y cada **22 s** inmoviliza al enemigo **3 s** (a los jefes, 1,5 s; a Zak, nada). Si lo agarra en medio de un ataque, se lo corta. |
 | 🦇 **Murciélago** | En la Cueva Profunda, en la esquina de arriba a la derecha (arriba del Chupasangre), cuelga un murcielaguito. Con la vida llena, dale de tu sangre **3 veces**: cada vez te deja con **1 de vida**. Si no tenés la vida llena, solo te dice «Un murciélago chiquito... el pobre parece tener hambre». | Muerde rápido pero despacito, y cada **15 s** deja al enemigo **desangrándose 5 s**: cada segundo le saca lo mismo que una mordida (la armadura lo frena). |
 | 🐍 **Serpiente** | Al caer la Yarará Madre, hay un **5%** de que uno de sus huevos se rompa (con escena del cascarón). Agarrá la viborita con E y **llevala en brazos** a la aldea: mientras tanto no podés atacar, y si te noquean vuelve sola al nido. **Doña Herminia**, la señora de vestido verde de La guardería, te la cría en **10 minutos** por **◉ 2000**; si no te alcanza, se los pagás cuando la vas a buscar, y hasta entonces no te la devuelve. Vuelve grande, de tu tamaño. | Pega cuerpo a cuerpo. Cada **15 s** envenena al enemigo **5 s**, y en cada golpe hay un **4%** de que se coma de un bocado a un enemigo que no sea jefe: tarda **3 s** en tragarlo. |
 | 🪨 **Golemsín** | Al caer el Gólem Minero en Las Entrañas (no el que invoca Zak), hay un **5%** de que entre los escombros aparezca uno chiquito. Te tira una piedra cada **2 s** que saca **5 de vida** sin importar la armadura. Acercate y dale, de a poco o todo junto: **2 de piedra, 2 de hierro, 2 de oro, 2 de diamante y 2 Piedras Elementales**. | Tira piedras de lejos. Cada **20 s**, en plena pelea, te protege **3 s de todo daño** (también de los jefes). Mientras te acompaña, juntás **+1 de cada material** al talar o picar, y **+1 Piedra Elemental** cada vez que levantás una. |
+
+Mientras un enemigo no recibe golpes (el **Refuerzo** del Gólem, el salto de Cerbero, cuando se levanta con otra vida, la Tormenta de Zak…), tampoco le hace nada ningún efecto: ni inmovilizar, ni desangrar, ni envenenar, ni asustar. El compañero se guarda el especial para cuando se pueda. Lo mismo pasa con la danza de Tena.
 
 **La guardería** queda al noreste de la plaza, sobre la calle que sube al norte. Ahí esperan los compañeros que no llevás: acercate a uno y apretá E para salir con él (el que llevabas se queda), cambiarle el nombre o dejar al tuyo y seguir solo.
 
@@ -559,7 +561,7 @@ Si ya tenés Node instalado:
 node tests/rules.test.js
 ```
 
-Abrí `tests/index.html` para ejecutar las 46 pruebas de reglas y las 175 pruebas de integración del motor en el navegador. El resultado detalla cada caso aprobado o fallido.
+Abrí `tests/index.html` para ejecutar las 46 pruebas de reglas y las 178 pruebas de integración del motor en el navegador. El resultado detalla cada caso aprobado o fallido.
 
 También se incluyen 88 pruebas de interfaz y de pixel art, 31 del ranking (con un servidor simulado), 36 de controles táctiles y 42 de la nube (también con un servidor simulado) con Chrome y Python 3, sin librerías adicionales. El verificador abre un perfil temporal aislado; nunca usa tus guardados personales:
 

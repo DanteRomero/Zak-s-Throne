@@ -57,9 +57,18 @@ Object.assign(P, {
    npcs.push({id: NPC_ID, name: W.name, shop: 'wanderer', visit: key, label: 'Hablar con ' + W.name + ', el vendedor ambulante', x: s.x, y: s.y, homeX: s.x, homeY: s.y, targetX: s.x, targetY: s.y,
     dir: 'down', walk: 0, moving: false, wait: 2, roam: [10, 5], rest: [3, 7], speed: 22, look, lines: LINES});
   }
-  if (key !== (this.wandererSeen === undefined ? null : this.wandererSeen)) {
-   if (now && this.wandererSeen !== undefined && this.state === 'playing') this.emit('toast', {message: 'Dicen que anda un vendedor ambulante por ' + (Z.BIOME_NAMES[now.spot.zone] || 'ahí') + '... y que no se queda mucho.'});
+  const here = !!now && now.spot.zone === this.biome;
+  // Al empezar o cargar una partida solo anota la visita de ahora: el aviso es para las que llegan después.
+  if (this.wandererSeen === undefined) this.wandererSeen = key;
+  else if (key !== this.wandererSeen) {
+   if (now && !here && this.state === 'playing') this.emit('toast', {message: 'Dicen que anda un vendedor ambulante por ' + (Z.BIOME_NAMES[now.spot.zone] || 'ahí') + '... y que no se queda mucho.'});
    this.wandererSeen = key;
+  }
+  // Campanitas: cuando llega a la zona donde estás, o cuando entrás a la zona donde está él.
+  const bell = here ? key : null;
+  if (bell !== (this.wandererBell === undefined ? null : this.wandererBell) && (bell === null || this.state === 'playing')) {
+   if (bell !== null) { this.sound.play('bells'); this.emit('toast', {message: '🔔 Se escuchan campanitas: ' + W.name + ', el vendedor ambulante, anda por esta zona... y no se queda mucho.'}); }
+   this.wandererBell = bell;
   }
  },
  wandererOffers() {
@@ -103,7 +112,7 @@ P.npcTrade = function (n, offerId) { return this.npcShop(n) === 'wanderer' ? thi
 P.npcMenuHint = function (n) { return this.npcShop(n) === 'wanderer' ? 'vende cosas raras (y caras)' : baseHint.call(this, n); };
 Z.UPDATERS = Z.UPDATERS || []; Z.UPDATERS.push(function () { this.syncWanderer(); });
 const baseNew = P.newGame;
-P.newGame = function (id) { this.wandererSeen = undefined; return baseNew.call(this, id); };
+P.newGame = function (id) { this.wandererSeen = undefined; this.wandererBell = undefined; return baseNew.call(this, id); };
 const baseRestore = P.restoreInventory;
-P.restoreInventory = function (p, source) { baseRestore.call(this, p, source); this.wandererSeen = undefined; };
+P.restoreInventory = function (p, source) { baseRestore.call(this, p, source); this.wandererSeen = undefined; this.wandererBell = undefined; };
 })();

@@ -9,7 +9,7 @@ const isBoss = e => !!(Z.ENEMY_TYPES[e.type] && Z.ENEMY_TYPES[e.type].boss);
 // Daño de menor a mayor: murciélago, perro, serpiente y Golemsín. Ayudan un poco: entre los cuatro, un 5 a 20% de tu daño.
 Z.PETS = {
  bat: {species: 'Murciélago', icon: '🦇', hit: .08, every: .8, special: 15, reach: 16, speed: 175, fly: true, name: 'Drácula', detail: 'Muerde rápido. Cada 15 s deja al enemigo desangrándose 5 s.'},
- dog: {species: 'Perro', icon: '🐕', hit: .105, every: 1, special: 13, reach: 22, speed: 160, name: 'Firulais', detail: 'Muerde, y cada 13 s inmoviliza al enemigo 3 s (a los jefes, 1,5 s; a Zak, nada).'},
+ dog: {species: 'Perro', icon: '🐕', hit: .105, every: 1, special: 22, reach: 22, speed: 160, name: 'Firulais', detail: 'Muerde, y cada 22 s inmoviliza al enemigo 3 s (a los jefes, 1,5 s; a Zak, nada) y le corta el ataque que estaba haciendo.'},
  snake: {species: 'Serpiente', icon: '🐍', hit: .14, every: 1.2, special: 15, reach: 24, speed: 130, name: 'Yarita', detail: 'Pega cuerpo a cuerpo. Cada 15 s envenena 5 s, y a veces (4%) se come de un bocado a un enemigo que no sea jefe: tarda 3 s en tragarlo.'},
  golem: {species: 'Golemsín', icon: '🪨', hit: .26, every: 2, special: 20, range: 210, speed: 120, name: 'Piedrita', detail: 'Tira piedras de lejos. Cada 20 s, en plena pelea, te protege 3 s de todo daño, también de los jefes. Mientras lo llevás, juntás +1 de cada material (y de cada Piedra Elemental).'}
 };
@@ -218,13 +218,15 @@ Object.assign(P, {
  petStrike(pet, e) {
   const id = pet.id, dmg = this.petDamage(id), boss = isBoss(e);
   this.sound.play(id === 'dog' ? 'bite' : id === 'bat' ? 'bite' : 'swing');
-  if (id === 'snake' && !boss && !e.illusion && !e.summoned && this.chance(SNAKE.eat)) {
+  // Mientras el enemigo es inmune (el refuerzo del Gólem, por ejemplo), no le hace ningún efecto: el especial queda para después.
+  const immune = this.effectImmune(e);
+  if (id === 'snake' && !boss && !immune && !e.illusion && !e.summoned && this.chance(SNAKE.eat)) {
    this.hitEnemy(e, e.hp + 1e6, true, false, 'pet');
    if (e.dead) { pet.eat = SNAKE.eatTime; pet.gulp = e.type; this.player.petEats = (this.player.petEats || 0) + 1; this.effect(e.x, e.y - 30, 'miss', 1.2, {text: '¡Ñam! De un bocado'}); this.sound.play('drain'); return 'eaten'; }
   }
-  if (pet.special <= 0) {
+  if (pet.special <= 0 && !immune) {
    pet.special = Z.PETS[id].special;
-   if (id === 'dog' && e.type !== 'zak') { e.stun = Math.max(e.stun || 0, boss ? DOG.bossStun : DOG.stun); if (!boss) { e.act = null; e.dash = 0; e.telegraph = 0; } this.effect(e.x, e.y - 30, 'miss', 1, {text: '¡Mordida! Inmovilizado'}); }
+   if (id === 'dog' && e.type !== 'zak') { e.stun = Math.max(e.stun || 0, boss ? DOG.bossStun : DOG.stun); this.interruptEnemy(e); this.effect(e.x, e.y - 30, 'miss', 1, {text: '¡Mordida! Inmovilizado'}); }
    if (id === 'bat') { e.bleeding = {time: BAT.bleed, tick: 1, damage: dmg * BAT.tick}; this.effect(e.x, e.y - 30, 'miss', 1, {text: '¡Desangrado!'}); }
    if (id === 'snake') { e.venom = {time: SNAKE.venom, tick: 1, damage: dmg * .5}; this.effect(e.x, e.y - 30, 'miss', 1, {text: '¡Envenenado!'}); }
   }

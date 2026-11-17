@@ -3,6 +3,7 @@
 'use strict';
 const Z = window.Zak, clamp = (v,a,b) => Math.max(a,Math.min(b,v));
 const distance = (a,b) => Math.hypot(a.x-b.x,a.y-b.y);
+const isBoss = e => !!(Z.ENEMY_TYPES[e.type]&&Z.ENEMY_TYPES[e.type].boss);
 // Cada vida del Gólem es de otro material: más vida y más fuerza que la anterior.
 const GOLEM_LIVES = Z.GOLEM_LIVES = [
  {name:'piedra',hp:1,str:1,color:'#8a8f96'},{name:'hierro',hp:1.15,str:1.15,color:'#c3ccd6'},
@@ -19,6 +20,8 @@ const OPENING = {
 };
 // Segundos que Zak se queda quieto después de cada ataque: la ventana para pegarle cuerpo a cuerpo.
 const ZAK_REST = 2;
+// Ataque cortado por una inmovilización: segundos hasta que el jefe lo vuelve a intentar, y qué espera usa cada ataque.
+const CANCEL_REST = 4, CANCEL_KEY = {throw: 'rock', roar: 'wrath', drain: 'lunge', retreat: 'summon'};
 const LINES = {
  yield:'Dejémoslo acá y volvé a tu dimensión, mortal.',
  execute:'¿Sabés lo que le pasa al que no sigue mis órdenes?',
@@ -141,6 +144,18 @@ Object.assign(Z.Game.prototype, {
   if(e.type==='zak'&&e.act&&e.act.id==='storm'&&source!=='stone')return'Solo la piedra';
   return null;
  },
+ // Mientras un enemigo no recibe golpes (refuerzo del Gólem, saltos, resurrecciones...), tampoco lo toca ningún efecto:
+ // ni inmovilizar, ni desangrar, ni envenenar, ni asustar.
+ effectImmune(e){return!!e&&!!this.bossShield(e,null);},
+ // Inmovilizar a un enemigo corta el ataque que estaba haciendo. Al jefe le queda un rato para volver a intentarlo.
+ interruptEnemy(e){
+  const a=e.act;e.telegraph=0;e.dash=0;
+  if(!a)return;
+  if(a.id==='rise'||a.id==='teleport')return;
+  if(a.id==='drain')this.player.grabbed=0;
+  e.act=null;if(a.id==='jump'){e.air=false;e.lift=0;}
+  if(isBoss(e)&&e.cd){const key=CANCEL_KEY[a.id]||a.id;if(key in e.cd)e.cd[key]=Math.max(e.cd[key],CANCEL_REST);}
+ },
  // Pegarle a Cerbero mientras escarba lo interrumpe.
  bossHitReact(e){
   if(e.type==='cerbero'&&e.act&&e.act.id==='dig'){e.act=null;e.cd.dig=14;this.effect(e.x,e.y-40,'miss',1,{text:'¡Lo interrumpiste!'});}
@@ -151,7 +166,7 @@ Object.assign(Z.Game.prototype, {
   if(e.summoned&&e.type==='zak')return false;
   if(e.type==='zak'&&e.life>=def.lives-1){this.zakYield(e);return true;}
   if(!def.lives||e.life>=def.lives-1)return false;
-  e.hp=1;e.act={id:'rise',t:0};e.shield=0;e.telegraph=0;e.dash=0;e.seated=false;
+  e.hp=1;e.act={id:'rise',t:0};e.shield=0;e.stun=0;e.telegraph=0;e.dash=0;e.seated=false;
   this.sound.play('roar');this.shake(6,.5);this.player.grabbed=0;
   if(e.type==='golem')this.emit('toast',{message:'El Gólem se desarma… ¡y se rearma de '+GOLEM_LIVES[e.life+1].name+'!',error:true});
   if(e.type==='zak')this.emit('toast',{message:e.life+1===def.lives-1?'Zak se levanta por última vez. Ahora viene con todo.':'Zak se levanta otra vez.',error:true});

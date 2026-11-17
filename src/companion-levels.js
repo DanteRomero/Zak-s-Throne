@@ -56,20 +56,20 @@ Object.assign(P, {
   if (!fighting.length) return false;
   const eff = this.petFactor(id, 'effect');
   if (id === 'dog') {
-   const scared = this.enemies.filter(e => this.petCanHit(e) && !isBoss(e) && distance(e, p) <= L.howl.radius); if (!scared.length) return false;
-   for (const e of scared) { const t = L.howl.time * eff; e.charm = Math.max(e.charm || 0, t); e.feared = Math.max(e.feared || 0, t); e.latched = 0; e.act = null; e.telegraph = 0; e.dash = 0; this.effect(e.x, e.y - 30, 'miss', .9, {text: '¡!'}); }
+   const scared = this.enemies.filter(e => this.petCanHit(e) && !isBoss(e) && !this.effectImmune(e) && distance(e, p) <= L.howl.radius); if (!scared.length) return false;
+   for (const e of scared) { const t = L.howl.time * eff; e.charm = Math.max(e.charm || 0, t); e.feared = Math.max(e.feared || 0, t); e.latched = 0; this.interruptEnemy(e); e.act = null; this.effect(e.x, e.y - 30, 'miss', .9, {text: '¡!'}); }
    this.effect(pet.x, pet.y - 24, 'miss', 1.2, {text: '¡Auuuu!'}); this.effect(p.x, p.y, 'wave', .6, {radius: L.howl.radius}); this.sound.play('woof'); return true;
   }
   if (id === 'snake') {
-   const e = fighting.filter(m => m.type !== 'zak').sort((a, b) => distance(a, pet) - distance(b, pet))[0]; if (!e) return false;
-   const t = (isBoss(e) ? L.coil.bossTime : L.coil.time) * eff; e.stun = Math.max(e.stun || 0, t); if (!isBoss(e)) { e.act = null; e.dash = 0; e.telegraph = 0; }
+   const e = fighting.filter(m => m.type !== 'zak' && !this.effectImmune(m)).sort((a, b) => distance(a, pet) - distance(b, pet))[0]; if (!e) return false;
+   const t = (isBoss(e) ? L.coil.bossTime : L.coil.time) * eff; e.stun = Math.max(e.stun || 0, t); this.interruptEnemy(e);
    e.coiled = t; this.effect(e.x, e.y - 30, 'miss', 1.1, {text: '¡Abrazo de serpiente!'}); this.sound.play('drain'); return true;
   }
   if (id === 'golem') {
    const e = fighting.sort((a, b) => distance(a, p) - distance(b, p))[0];
    this.effect(e.x, e.y, 'avalanche', .9, {seed: Math.random() * 99, radius: L.rocks.radius}); this.shake(3, .25); this.sound.play('crumble');
    for (const m of this.enemies) if (this.petCanHit(m) && Math.hypot(m.x - e.x, (m.y - e.y) / .75) <= L.rocks.radius) {
-    if (m.type !== 'zak') { m.stun = Math.max(m.stun || 0, (isBoss(m) ? L.rocks.bossTime : L.rocks.time) * eff); if (!isBoss(m)) { m.act = null; m.dash = 0; m.telegraph = 0; } }
+    if (m.type !== 'zak' && !this.effectImmune(m)) { m.stun = Math.max(m.stun || 0, (isBoss(m) ? L.rocks.bossTime : L.rocks.time) * eff); this.interruptEnemy(m); }
     this.hitEnemy(m, this.petDamage('golem') * L.rocks.hit, false, false, 'pet');
    }
    this.effect(e.x, e.y - 40, 'miss', 1.1, {text: '¡Avalancha!'}); return true;

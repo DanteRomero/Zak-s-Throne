@@ -1128,10 +1128,10 @@
       advance(.1); equal(wild('pet-wild-dog'), undefined, 'it left the kennel door');
       ok(game.namePet('dog', 'Firulais <3').ok); equal(game.petName('dog'), 'Firulais 3');
     });
-    test('v2.21: the dog bites and every 13 s immobilizes an enemy for 3 s; bosses 1,5 s and Zak nothing', () => {
+    test('v2.21: the dog bites and every 22 s (13 s before v2.30) immobilizes an enemy for 3 s; bosses 1,5 s and Zak nothing', () => {
       const p = fixture('gero'); const pet = keepPet('dog'); pet.special = 0; Object.assign(pet, {x: p.x + 20, y: p.y});
       const thief = enemy('thief', p.x + 40); thief.cooldown = 9; const hp = thief.hp; advance(1.1);
-      ok(thief.hp < hp, 'bites'); ok(thief.stun > 2.5 && thief.stun <= 3, 'immobilized 3 s'); ok(pet.special > 11, 'special every 13 s');
+      ok(thief.hp < hp, 'bites'); ok(thief.stun > 2.5 && thief.stun <= 3, 'immobilized 3 s'); ok(pet.special > 20, 'special every 22 s');
       thief.stun = 0; const before = thief.hp; advance(1.1); ok(thief.hp < before && !(thief.stun > 0), 'plain bites in between');
       game.enemies = []; const capo = enemy('capo', p.x + 30); pet.special = 0; game.petStrike(pet, capo); near(capo.stun, 1.5);
       const zak = enemy('zak', p.x + 30); pet.special = 0; game.petStrike(pet, zak); ok(!(zak.stun > 0), 'Zak is not immobilized');
@@ -1353,6 +1353,44 @@
       const offer = game.wandererOffers().find(o => o.id === 'amulet:dice'); ok(offer, 'on sale'); equal(offer.cost.coins, Z.LUCK.price);
       ok(game.wandererTrade('amulet:dice').ok); ok(game.hasAmuletOwned('dice')); equal(p.coins, 5000 - Z.LUCK.price);
       ok(game.wandererOffers().find(o => o.id === 'amulet:dice').done, 'only once');
+    });
+    test('v2.30: Don Anselmo rings his bells when he shows up in your zone or you walk into his', () => {
+      const p = fixture('gero'), played = [], toasts = [], play = game.sound.play; game.sound.play = kind => played.push(kind);
+      game.onEvent = (type, detail) => { if (type === 'toast') toasts.push(detail.message); }; game.state = 'playing';
+      const bells = () => played.filter(k => k === 'bells').length;
+      try {
+        let t = 30; while (!Z.wandererAt(t, p.runId)) t += 30; const zone = Z.wandererAt(t, p.runId).spot.zone;
+        game.biome = zone; p.playTime = t - 30; game.syncWanderer(); equal(bells(), 0, 'not before he arrives');
+        p.playTime = t; game.syncWanderer(); equal(bells(), 1, 'he arrives where you are'); ok(toasts.some(m => /campanitas/.test(m)), 'with a notice too');
+        game.syncWanderer(); p.playTime = t + 5; game.syncWanderer(); equal(bells(), 1, 'only once');
+        game.biome = zone === 'weeds' ? 'altar' : 'weeds'; game.syncWanderer(); equal(bells(), 1, 'not while you are elsewhere');
+        game.biome = zone; game.syncWanderer(); equal(bells(), 2, 'again when you walk back into his zone');
+        const q = fixture('gero'); game.onEvent = (type, detail) => { if (type === 'toast') toasts.push(detail.message); }; game.state = 'playing';
+        let u = 30; while (!Z.wandererAt(u, q.runId)) u += 30; game.biome = Z.wandererAt(u, q.runId).spot.zone === 'weeds' ? 'altar' : 'weeds';
+        toasts.length = 0; q.playTime = u - 30; game.syncWanderer(); q.playTime = u; game.syncWanderer();
+        equal(bells(), 2, 'no bells when he shows up in another zone'); ok(toasts.some(m => /Dicen que anda/.test(m)), 'just the rumor');
+      } finally { game.sound.play = play; }
+    });
+    test('v2.30: an enemy that cannot be hit cannot be immobilized, poisoned or bled either', () => {
+      const p = fixture('gero'), golem = enemy('golem', p.x + 30); golem.shield = 5; const hp = golem.hp;
+      for (const id of ['dog', 'bat', 'snake']) {
+        const pet = keepPet(id); pet.special = 0; game.petStrike(pet, golem);
+        equal(golem.hp, hp, id + ': the reinforcement blocks the bite'); ok(!(golem.stun > 0) && !golem.bleeding && !golem.venom, id + ': no effect'); equal(pet.special, 0, id + ': the special waits for later');
+      }
+      golem.shield = 0; const pet = keepPet('dog'); pet.special = 0; game.petStrike(pet, golem); ok(golem.stun > 0, 'without the reinforcement it works');
+      const t = fixture('tena'), other = enemy('golem', t.x + 20); other.shield = 5; game.state = 'playing'; game.ability();
+      ok(t.dance > 0, 'Tena dances'); ok(!(other.stun > 0), 'but the reinforced golem is not stunned by it');
+    });
+    test('v2.30: immobilizing an enemy in the middle of an attack cancels it', () => {
+      const p = fixture('gero'), golem = enemy('golem', p.x + 30); golem.cd = {quake: 0, rock: 99, fortify: 99, ready: 1}; golem.alert = true;
+      golem.act = {id: 'quake', t: .5, done: -1, slam: 0}; const pet = keepPet('dog'); pet.special = 0; game.petStrike(pet, golem);
+      ok(golem.stun > 0, 'immobilized'); equal(golem.act, null, 'the quake is cancelled'); ok(golem.cd.quake >= 4, 'and it takes a while to try again');
+      const hp = p.hp; advance(1.4); equal(p.hp, hp, 'no quake hits while immobilized');
+      game.enemies = []; const vampire = enemy('vampire', p.x + 20); vampire.cd = {swipe: 99, lunge: 99, summon: 99, ready: 1};
+      vampire.act = {id: 'drain', t: .2, ticks: 0}; p.grabbed = 1.7; pet.special = 0; game.petStrike(pet, vampire);
+      equal(vampire.act, null, 'the drain is cancelled'); equal(p.grabbed, 0, 'and it lets you go');
+      game.enemies = []; const thief = enemy('thief', p.x + 20); thief.telegraph = .5; thief.dash = .3; pet.special = 0; game.petStrike(pet, thief);
+      ok(!thief.telegraph && !thief.dash, 'common enemies lose their attack too');
     });
     test('v2.29: companions help a little: every pet hits for a small part of your blow', () => {
       for (const id of Z.PET_ORDER) ok(Z.PETS[id].hit / (Z.PETS[id].every || 1) <= .14, id + ' hits softly');

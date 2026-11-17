@@ -77,6 +77,8 @@ class Sound {
   if(kind==='boom'){this.tone(80,.4,'sawtooth',.08,0,30);this.tone(400,.12,'square',.03,0,80);}
   if(kind==='rune')[880,1175,1568].forEach((n,i)=>this.tone(n,.2,'sine',.035,i*.05));
   if(kind==='legend')[392,494,587,784,988,1175].forEach((n,i)=>this.tone(n,.35,'triangle',.05,i*.09));
+  // Las campanitas de Don Anselmo, el vendedor ambulante: dos tiras de campanitas con su armónico de campana.
+  if(kind==='bells')[1319,1760,1568,2093,1760,2349].forEach((n,i)=>{const d=i*.09+(i>2?.14:0);this.tone(n,.55,'sine',.035,d);this.tone(n*2.76,.22,'sine',.008,d);});
  }
  update(dt,biome){if(!this.enabled)return;this.ambientTime-=dt;if(this.ambientTime<=0){this.ambientTime=3+Math.random()*3;if(biome==='altar'||Z.isZakDimension(biome))this.tone(biome==='altar'?58:46,2.8,'sawtooth',.012);else if(isCave(biome))this.tone(biome==='cave'?65:52,2.5,'sine',.018);else{const n=[262,330,392,440,523][Math.floor(Math.random()*5)];this.tone(n,1.8,'sine',.016);this.tone(n*1.5,1.5,'sine',.009,.7);}}}
 }
@@ -340,7 +342,7 @@ class Game {
   const p=this.player;for(const e of this.enemies){
    if(e.dead){if(e.summoned)continue;e.respawn-=dt;if(e.respawn<=0&&distance({x:e.homeX,y:e.homeY},p)>230)Object.assign(e,this.makeEnemy({id:e.id,type:e.type,x:e.homeX,y:e.homeY}));continue;}
    e.cooldown=Math.max(0,e.cooldown-dt*(isBoss(e)?Z.BOSS_TEMPO:1));e.hitFlash=Math.max(0,e.hitFlash-dt);e.latchRest=Math.max(0,e.latchRest-dt);e.stun=Math.max(0,e.stun-dt);e.charm=Math.max(0,e.charm-dt);e.moving=false;
-   if(e.stun>0){e.alert=false;e.telegraph=0;e.dash=0;e.backoff=0;if(e.rain){e.rain=null;e.rainCd=KNIFE_COOLDOWN;}if(!isBoss(e))e.act=null;continue;}const sameZone=e.biome===this.biome&&!Z.isSafe(this.biome);
+   if(e.stun>0){e.alert=false;e.telegraph=0;e.dash=0;e.backoff=0;if(e.rain){e.rain=null;e.rainCd=KNIFE_COOLDOWN;}if(!isBoss(e))e.act=null;else if(e.act)this.interruptEnemy(e);continue;}const sameZone=e.biome===this.biome&&!Z.isSafe(this.biome);
    if(isBoss(e)){const bossDt=dt*Z.BOSS_TEMPO;if(e.type==='capo'||e.type==='yarara')this.updateBoss(e,bossDt,sameZone);else this.updateBigBoss(e,bossDt,sameZone);if(this.state!=='playing')break;continue;}
    if(Z.DIMENSION_AI[e.type]){this.updateDimensionEnemy(e,dt,sameZone);if(this.state!=='playing')break;continue;}
    if(e.latched>0){
@@ -487,7 +489,7 @@ class Game {
   p.abilityCooldown=c.abilityCooldown;this.sound.play('ability');
   if(p.characterId==='gero'){p.buffs.gero=5;p.healClock=0;}
   if(p.characterId==='paco'){let count=0;this.enemies.forEach(e=>{if(!e.dead&&e.type!=='thief'&&!isBoss(e)&&distance(e,p)<=c.abilityRadius&&e.biome===this.biome){e.charm=10;e.latched=0;e.alert=false;count++;this.effect(e.x,e.y-25,'heart',1.4);}});p.buffs.paco=10;p.buffs.pacoAnimals=count;this.effect(p.x,p.y,'wave',.8,{radius:c.abilityRadius});this.emit('toast',{message:count+' animales encantados. +'+count*2+' de fuerza por 10 s.'});}
-  if(p.characterId==='tena'){this.enemies.forEach(e=>{if(!e.dead&&distance(e,p)<=c.abilityRadius&&e.biome===this.biome){e.stun=isBoss(e)?2.5:7;e.latched=0;e.alert=false;e.telegraph=0;e.dash=0;}});p.dance=7;this.effect(p.x,p.y,'wave',1,{radius:c.abilityRadius});}
+  if(p.characterId==='tena'){this.enemies.forEach(e=>{if(!e.dead&&distance(e,p)<=c.abilityRadius&&e.biome===this.biome&&!this.effectImmune(e)){e.stun=isBoss(e)?2.5:7;e.latched=0;e.alert=false;this.interruptEnemy(e);}});p.dance=7;this.effect(p.x,p.y,'wave',1,{radius:c.abilityRadius});}
   if(p.characterId==='dante'){this.wave();this.queuedWaves=[{delay:.55},{delay:1.1}];}
   if(p.characterId==='mer')this.summonSpirits(c.abilityDuration);this.emit('toast',{message:'✦ '+c.ability});
  }
