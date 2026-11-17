@@ -132,7 +132,7 @@ class Game {
  // La luna roja se tira una sola vez por noche y dura hasta que amanece. El reloj sigue corriendo en la dimensión de Zak, pero allá no se nota.
  updateDayCycle(){
   const p=this.player,clock=Z.dayClock(p.playTime),moon=Z.BLOOD_MOON;
-  if(clock.phase==='night'){if(p.moonNight!==clock.night){p.moonNight=clock.night;this.setBloodMoon(Math.random()<moon.chance);}}
+  if(clock.phase==='night'){if(p.moonNight!==clock.night){p.moonNight=clock.night;this.setBloodMoon(this.chance(moon.chance));}}
   else if(p.bloodMoon){this.setBloodMoon(false);this.emit('toast',{message:Z.isZakDimension(this.biome)?'Afuera amaneció: la dimensión de Zak se calma.':'Amanece: se fue la luna roja.'});}
   // La luna roja llega también a la dimensión de Zak: allá no se ve, pero se nota.
   const visible=p.bloodMoon===true;
@@ -299,7 +299,7 @@ class Game {
   if(e.illusion){e.dead=true;e.hp=0;this.effect(e.x,e.y-12,'poof',.6,{seed:Math.random()*99});this.effect(e.x,e.y-28,'miss',.8,{text:'¡Era una copia!'});this.sound.play('teleport');return;}
   // Escudos, refuerzos y momentos invulnerables de los jefes.
   const immune=this.bossShield(e,source);if(immune){e.provoked=true;e.alert=true;this.effect(e.x,e.y-28,'miss',.7,{text:immune});this.sound.play('block');return;}
-  if(definition.block&&!exact&&Math.random()<definition.block){e.provoked=true;e.alert=true;this.effect(e.x,e.y-28,'miss',.7,{text:'¡Bloqueó!'});this.sound.play('block');return;}
+  if(definition.block&&!exact&&this.chance(definition.block)){e.provoked=true;e.alert=true;this.effect(e.x,e.y-28,'miss',.7,{text:'¡Bloqueó!'});this.sound.play('block');return;}
   const damage=exact?raw:Z.damageAfterArmor(raw,e.stats.armor);e.hp-=damage;e.hitFlash=.16;e.provoked=true;e.alert=true;this.bossHitReact(e);
   this.effect(e.x,e.y-23,'hit',.8,{text:(crit?'¡':'')+this.number(damage)+(crit?'!':''),crit});this.effect(e.x,e.y-10,'spark',.35,{seed:Math.random()*99,crit});
   this.sound.play(crit?'crit':'hit');if(crit)this.shake(3,.2);
@@ -434,8 +434,8 @@ class Game {
   if(e.type==='rat'&&e.latched>0){raw*=.6;e.cooldown=Math.max(.9,e.cooldown);}
   if(e.type==='dog'&&p.characterId==='pepe')raw*=1.1;if(!this.hurtPlayer(raw,e.type)||this.state!=='playing')return;
   if(e.type==='dog')p.slow=4;
-  if(e.type==='snake'&&Math.random()<(p.characterId==='fede'?.15:.4))this.poisonPlayer(e.stats.poison);
-  if(e.type==='spider'&&Math.random()<(p.characterId==='fede'?.05:.15))this.poisonPlayer(e.stats.poison);
+  if(e.type==='snake'&&this.chance(p.characterId==='fede'?.15:.4))this.poisonPlayer(e.stats.poison);
+  if(e.type==='spider'&&this.chance(p.characterId==='fede'?.05:.15))this.poisonPlayer(e.stats.poison);
  }
  poisonPlayer(damage){if(Z.hasAmulet(this.player,'fang')){if(!this.lastFang||this.time-this.lastFang>1){this.lastFang=this.time;this.effect(this.player.x,this.player.y-29,'miss',.7,{text:'Inmune al veneno'});}return;}this.player.poison={time:5,tick:1,damage};this.emit('toast',{message:'Envenenado: '+damage+' de vida por segundo durante 5 s.',error:true});}
  hurtPlayer(raw,source,poison=false,opts={}){
@@ -469,7 +469,7 @@ class Game {
    if(s.hostile){if(Math.hypot(p.x-s.x,p.y-8-s.y)<(s.type==='boulder'?16:s.type==='fireball'?13:11)){const hit=this.hurtPlayer(s.damage,s.source,false,s.pierce?{pierce:true}:{});
      if(hit&&this.state==='playing'&&s.tally&&++s.tally.hits>=KNIFE_KO){this.emit('toast',{message:'¡Cinco cuchillazos! El Capo te noqueó.',error:true});this.knockout(s.source);return false;}
      if(hit&&this.state==='playing'&&s.burn)this.burnPlayer(s.burn);
-     if(hit&&this.state==='playing'&&s.type==='venom'&&Math.random()<(p.characterId==='fede'?.15:.5))this.poisonPlayer(s.poison);
+     if(hit&&this.state==='playing'&&s.type==='venom'&&this.chance(p.characterId==='fede'?.15:.5))this.poisonPlayer(s.poison);
      if(hit&&this.state==='playing'&&s.stun){p.stunned=s.stun;p.gather=null;this.shake(5,.3);this.emit('toast',{message:'¡Piedrazo! Quedaste aturdido '+s.stun+' segundos.',error:true});}
      return p.roll>0;}return true;}
    const enemy=this.projectileTarget(s.x,s.y);

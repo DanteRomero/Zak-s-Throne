@@ -20,17 +20,19 @@ const seedOf = id => { let h = 2166136261; for (const ch of String(id || 'zak'))
 const roll = (a, b) => { let n = Math.imul(a + 40503, 374761393) ^ Math.imul(b + 9127, 668265263); n = Math.imul(n ^ n >>> 13, 1274126177); return ((n ^ n >>> 16) >>> 0) / 4294967296; };
 const between = ([a, b]) => a + Math.random() * (b - a);
 // El clima en un momento de la partida: {kind: 'rain' | 'storm' | 'fog' | null, k: intensidad de 0 a 1}. Los primeros 4 minutos nunca hay.
-Z.weatherAt = function (playTime, runId) {
+// `luck`: con el Dado cargado, cada clima suma 10 puntos.
+Z.weatherAt = function (playTime, runId, luck = 0) {
  const t = Math.max(0, Number(playTime) || 0), block = Math.floor(t / RAIN.block);
  if (block < 1) return {kind: null, k: 0};
  const r = roll(block, seedOf(runId));
- const kind = r < RAIN.chance ? 'rain' : r < RAIN.chance + STORM.chance ? 'storm' : r < RAIN.chance + STORM.chance + FOG.chance ? 'fog' : null;
+ const rain = Z.withLuck(RAIN.chance, luck), storm = Z.withLuck(STORM.chance, luck), fog = Z.withLuck(FOG.chance, luck);
+ const kind = r < rain ? 'rain' : r < rain + storm ? 'storm' : r < rain + storm + fog ? 'fog' : null;
  if (!kind) return {kind: null, k: 0};
  const into = t - block * RAIN.block;
  return {kind, k: Math.max(0, Math.min(1, into / RAIN.fade, (RAIN.block - into) / RAIN.fade))};
 };
 // Intensidad de la lluvia (la tormenta también llueve).
-Z.rainAt = function (playTime, runId) { const w = Z.weatherAt(playTime, runId); return w.kind === 'rain' || w.kind === 'storm' ? w.k : 0; };
+Z.rainAt = function (playTime, runId, luck = 0) { const w = Z.weatherAt(playTime, runId, luck); return w.kind === 'rain' || w.kind === 'storm' ? w.k : 0; };
 // Lugares de los charcos: siempre los mismos en cada mapa, sobre pasto o tierra y lejos de casas, árboles y lagunas.
 Z.puddlesOf = function (world) {
  if (world.puddles) return world.puddles;
@@ -60,7 +62,7 @@ Object.assign(Z.Game.prototype, {
   return Z.puddlesOf(this.world).find(p => ((x - p.x) / (p.rx * k)) ** 2 + ((y - p.y) / (p.ry * k + 2)) ** 2 < 1) || null;
  },
  updateWeather(dt) {
-  const p = this.player, w = Z.weatherAt(p.playTime, p.runId), outside = Z.isOutdoors(this.biome);
+  const p = this.player, w = Z.weatherAt(p.playTime, p.runId, this.luck()), outside = Z.isOutdoors(this.biome);
   this.weather = w; this.rain = w.kind === 'rain' || w.kind === 'storm' ? w.k : 0; this.fog = w.kind === 'fog' ? w.k : 0;
   this.wetness = this.rain > .05 ? Math.min(1, (this.wetness || 0) + dt / RAIN.fill) : Math.max(0, (this.wetness || 0) - dt / RAIN.dry);
   if (this.flash > 0) this.flash = Math.max(0, this.flash - dt * 2.5);
@@ -94,7 +96,7 @@ Object.assign(Z.Game.prototype, {
   const p = this.player, safe = Z.isSafe(this.biome);
   // En la aldea (zona segura) los rayos caen lejos y no lastiman.
   let x = p.x, y = p.y;
-  if (safe || Math.random() >= STORM.aimed) { const a = Math.random() * Math.PI * 2, r = (safe ? 120 : 50) + Math.random() * 170; x = p.x + Math.cos(a) * r; y = p.y + Math.sin(a) * r * .7; }
+  if (safe || !this.chance(STORM.aimed)) { const a = Math.random() * Math.PI * 2, r = (safe ? 120 : 50) + Math.random() * 170; x = p.x + Math.cos(a) * r; y = p.y + Math.sin(a) * r * .7; }
   if (Z.biomeAt(x, y) !== this.biome) { if (safe) return; x = p.x; y = p.y; }
   this.strikes.push({x, y, t: 0, warn: STORM.warn, biome: this.biome, seed: Math.random() * 99});
   this.sound.tone(90, .5, 'sawtooth', .012, 0, 60);
@@ -161,7 +163,7 @@ const resetSky = g => { g.strikes = []; g.fires = []; g.scare = 0; g.flash = 0; 
 Z.Game.prototype.restoreInventory = function (p, source) {
  baseRestore.call(this, p, source);
  p.puddles = Math.floor(Math.max(0, Math.min(1e6, Number(source.puddles) || 0)));
- const w = Z.weatherAt(p.playTime, p.runId); this.weather = w;
+ const w = Z.weatherAt(p.playTime, p.runId, this.luck()); this.weather = w;
  this.wetness = (w.kind === 'rain' || w.kind === 'storm') && w.k > 0 ? 1 : 0; this.weatherNotified = w.k > .5 ? w.kind : null; resetSky(this);
 };
 const baseNew = Z.Game.prototype.newGame;

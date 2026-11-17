@@ -299,7 +299,7 @@ Object.assign(Z.Game.prototype, {
     return;}
    if(a.id==='storm'){
     a.next-=dt;
-    if(a.next<=0&&a.t<9.2){a.next=.3;const ang=Math.random()*Math.PI*2,r=Math.random()<.35?0:30+Math.random()*130;this.bolts.push({x:p.x+Math.cos(ang)*r,y:p.y+Math.sin(ang)*r*.75,t:.85,max:.85});}
+    if(a.next<=0&&a.t<9.2){a.next=.3;const ang=Math.random()*Math.PI*2,r=this.chance(.35)?0:30+Math.random()*130;this.bolts.push({x:p.x+Math.cos(ang)*r,y:p.y+Math.sin(ang)*r*.75,t:.85,max:.85});}
     if(a.t>=10){e.act=null;e.cd.storm=32;e.cd.rest=ZAK_REST;}
     return;}
    if(a.id==='roar'){

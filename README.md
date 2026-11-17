@@ -2,7 +2,7 @@
 
 Una aventura de acción y exploración en pixel art, vista desde arriba. Elegí a uno de siete amigos, preparate en la aldea y salí a explorar la cueva y los Yuyos.
 
-Versión actual: **v2.28**. Los cambios de cada versión están en [CHANGELOG.md](CHANGELOG.md).
+Versión actual: **v2.29**. Los cambios de cada versión están en [CHANGELOG.md](CHANGELOG.md).
 
 ## Jugar
 
@@ -195,6 +195,9 @@ Los consumibles van a la **bolsa** (B, o 🎒): hasta **10 de cada uno**. **F** 
 | 🐍 Diente de la Yarará | Inmune al veneno | El herrero: 3 Colmillos Tóxicos, 5 de oro y ◉ 100 |
 | 💰 Anillo del Capo | +25% de monedas de los enemigos | El Mercader del Vacío: 2 Anillos de la mafia, 6 cristales arcanos y ◉ 300 |
 | 🧿 Ojo de Cerbero | Ves en la oscuridad de las cuevas profundas y podés bajar sin antorcha | El Mercader del Vacío: 1 Ojo del alma, 8 cristales arcanos y ◉ 500 |
+| 🎲 Dado cargado | Todo lo que es cuestión de suerte pasa un 10% más seguido, lo bueno y lo malo | Don Anselmo, el vendedor ambulante: ◉ 4000 |
+
+**🎲 Dado cargado.** Suma **10 puntos** a cada probabilidad del juego, sea buena o mala: lo que salía el 5% de las veces pasa a salir el 15%. Toca la luna roja, el dorado, los huevos de la Yarará y los escombros del Gólem, los bocados de la serpiente, el vendedor ambulante, la lluvia, la tormenta y la niebla, los rayos que caen justo donde estás, los mimics, las carpas vacías y los premios raros de las carpas, la revancha del truco, los bloqueos de los enemigos, el veneno de serpientes y arañas y los rayos de Zak que caen encima tuyo. Lo que nunca pasa sigue sin pasar.
 
 ### Pesca
 
@@ -232,7 +235,7 @@ Atiende su puesto en la Feria de las Almas (E en el puesto o hablándole). Vende
 
 **Don Anselmo** anda de acá para allá. Cada tanto aparece en alguna **zona peligrosa** (Los Yuyos, el cementerio o alguna cueva; nunca en las aldeas), se queda unos minutos y se va. Cuando llega, corre la voz: un aviso dice en qué zona anda.
 
-Siempre tiene **curas** (curación completa y sacarte los males) y trae **tres cosas raras** distintas en cada visita: ofrendas de jefe, Piedras Elementales, diamantes, un Dorado, amuletos… Todo **carísimo**. Comprarle cualquier cosa da una medalla.
+Siempre tiene **curas** (curación completa y sacarte los males) y el **🎲 Dado cargado**, y trae **tres cosas raras** distintas en cada visita: ofrendas de jefe, Piedras Elementales, diamantes, un Dorado, amuletos… Todo **carísimo**. Comprarle cualquier cosa da una medalla.
 
 ### Truco en la Feria
 
@@ -246,14 +249,14 @@ Si el alma pierde, hay un **30%** de que te pida la **revancha**: si gana ella, 
 
 Hay cuatro bichos para domesticar. Te acompaña uno por vez: te sigue a todos lados (también a las cuevas y a la dimensión de Zak), ataca a los enemigos cercanos y los enemigos no lo ven ni le pueden pegar. Al domesticarlo le ponés un nombre, que después podés cambiar desde la ficha (C, página «Tu compañero») o la guardería. El que llega último sale con vos y el que llevabas se queda en **La guardería**.
 
-Su daño es una parte del de tu golpe con el arma que tenés en la mano. De menor a mayor: murciélago, perro, serpiente y Golemsín.
+Su daño es una parte chica del de tu golpe con el arma que tenés en la mano: ayudan un poco, entre un 5 y un 25% de lo que pegás vos. Lo que más ayuda son sus efectos. De menor a mayor: murciélago, perro, serpiente y Golemsín.
 
 | Compañero | Cómo se consigue | Qué hace |
 | --- | --- | --- |
 | 🐕 **Perro** | En la puerta de La guardería hay un perro sentado con el plato vacío. Comprá **comida para perro** en El Almacén (◉ 15) y dásela con E **5 veces**, esperando **2 minutos** entre plato y plato. Con el quinto se acerca corriendo y te llena la cara de lengüetazos. | Muerde, y cada **13 s** inmoviliza al enemigo **3 s** (a los jefes, 1,5 s; a Zak, nada). |
 | 🦇 **Murciélago** | En la Cueva Profunda, en la esquina de arriba a la derecha (arriba del Chupasangre), cuelga un murcielaguito. Con la vida llena, dale de tu sangre **3 veces**: cada vez te deja con **1 de vida**. Si no tenés la vida llena, solo te dice «Un murciélago chiquito... el pobre parece tener hambre». | Muerde rápido pero despacito, y cada **15 s** deja al enemigo **desangrándose 5 s**: cada segundo le saca lo mismo que una mordida (la armadura lo frena). |
-| 🐍 **Serpiente** | Al caer la Yarará Madre, hay un **5%** de que uno de sus huevos se rompa (con escena del cascarón). Agarrá la viborita con E y **llevala en brazos** a la aldea: mientras tanto no podés atacar, y si te noquean vuelve sola al nido. **Doña Herminia**, la señora de vestido verde de La guardería, te la cría en **10 minutos** por **◉ 2000**; si no te alcanza, se los pagás cuando la vas a buscar, y hasta entonces no te la devuelve. Vuelve grande, de tu tamaño. | Pega fuerte cuerpo a cuerpo. Cada **15 s** envenena al enemigo **5 s**, y en cada golpe hay un **15%** de que se coma de un bocado a un enemigo que no sea jefe: tarda **3 s** en tragarlo. |
-| 🪨 **Golemsín** | Al caer el Gólem Minero en Las Entrañas (no el que invoca Zak), hay un **5%** de que entre los escombros aparezca uno chiquito. Te tira una piedra cada **2 s** que saca **5 de vida** sin importar la armadura. Acercate y dale, de a poco o todo junto: **2 de piedra, 2 de hierro, 2 de oro, 2 de diamante y 2 Piedras Elementales**. | Tira piedras de lejos que sacan bastante vida. Cada **20 s**, en plena pelea, te protege **3 s de todo daño** (también de los jefes). Mientras te acompaña, juntás **+1 de cada material** al talar o picar, y **+1 Piedra Elemental** cada vez que levantás una. |
+| 🐍 **Serpiente** | Al caer la Yarará Madre, hay un **5%** de que uno de sus huevos se rompa (con escena del cascarón). Agarrá la viborita con E y **llevala en brazos** a la aldea: mientras tanto no podés atacar, y si te noquean vuelve sola al nido. **Doña Herminia**, la señora de vestido verde de La guardería, te la cría en **10 minutos** por **◉ 2000**; si no te alcanza, se los pagás cuando la vas a buscar, y hasta entonces no te la devuelve. Vuelve grande, de tu tamaño. | Pega cuerpo a cuerpo. Cada **15 s** envenena al enemigo **5 s**, y en cada golpe hay un **4%** de que se coma de un bocado a un enemigo que no sea jefe: tarda **3 s** en tragarlo. |
+| 🪨 **Golemsín** | Al caer el Gólem Minero en Las Entrañas (no el que invoca Zak), hay un **5%** de que entre los escombros aparezca uno chiquito. Te tira una piedra cada **2 s** que saca **5 de vida** sin importar la armadura. Acercate y dale, de a poco o todo junto: **2 de piedra, 2 de hierro, 2 de oro, 2 de diamante y 2 Piedras Elementales**. | Tira piedras de lejos. Cada **20 s**, en plena pelea, te protege **3 s de todo daño** (también de los jefes). Mientras te acompaña, juntás **+1 de cada material** al talar o picar, y **+1 Piedra Elemental** cada vez que levantás una. |
 
 **La guardería** queda al noreste de la plaza, sobre la calle que sube al norte. Ahí esperan los compañeros que no llevás: acercate a uno y apretá E para salir con él (el que llevabas se queda), cambiarle el nombre o dejar al tuyo y seguir solo.
 
@@ -556,7 +559,7 @@ Si ya tenés Node instalado:
 node tests/rules.test.js
 ```
 
-Abrí `tests/index.html` para ejecutar las 46 pruebas de reglas y las 172 pruebas de integración del motor en el navegador. El resultado detalla cada caso aprobado o fallido.
+Abrí `tests/index.html` para ejecutar las 46 pruebas de reglas y las 175 pruebas de integración del motor en el navegador. El resultado detalla cada caso aprobado o fallido.
 
 También se incluyen 88 pruebas de interfaz y de pixel art, 31 del ranking (con un servidor simulado), 36 de controles táctiles y 42 de la nube (también con un servidor simulado) con Chrome y Python 3, sin librerías adicionales. El verificador abre un perfil temporal aislado; nunca usa tus guardados personales:
 

@@ -6,6 +6,14 @@ Cada versión lista sus cambios agrupados por tipo:
 - **Change:** algo que ya existía y ahora funciona distinto.
 - **Fix:** un error corregido.
     
+## v2.29 — 2026-11-17
+* Feature
+    - **🎲 Dado cargado:** un amuleto nuevo que suma 10 puntos a cada probabilidad del juego, buena o mala (un 5% pasa a 15%): luna roja, dorado, huevos y escombros de los jefes, clima, vendedor ambulante, mimics y premios de las carpas, revancha del truco, bloqueos y venenos de los enemigos, rayos y más. Lo vende siempre Don Anselmo, el vendedor ambulante, a ◉ 4000.
+* Change
+    - **Menú principal:** dice «Siete aventureros» en vez de «Seis amigos», que eran siete desde que llegó Mer.
+* Fix
+    - **Los compañeros pegaban de más:** el perro, la serpiente y el Golemsín sumaban entre el 64 y el 120% de tu daño. Ahora, como el murciélago, suman entre un 5 y un 25%. La serpiente se come un enemigo de un bocado el 4% de las veces (antes, el 15%). Sus efectos (inmovilizar, envenenar, el escudo de piedra y las habilidades del nivel 5) no cambian.
+
 ## v2.28 — 2026-11-17
 * Change
     - **Menú principal:** el título y los botones van en un panel con el mismo marco dorado que los menús. Los íconos tienen su cajita y los botones, relieve.

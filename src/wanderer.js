@@ -15,9 +15,9 @@ const W = Z.WANDERER = {block: 420, chance: .6, arrive: 90, stay: 210, name: 'Do
 const seedOf = id => { let h = 2166136261; for (const ch of String(id || 'zak')) h = Math.imul(h ^ ch.charCodeAt(0), 16777619); return h >>> 0; };
 const roll = (a, b, c = 0) => { let n = Math.imul(a + 7919, 374761393) ^ Math.imul(b + 104729, 668265263) ^ Math.imul(c + 31, 2246822519); n = Math.imul(n ^ n >>> 13, 1274126177); return ((n ^ n >>> 16) >>> 0) / 4294967296; };
 // ¿Está el ambulante? Devuelve {visit, spot, left (segundos que le quedan)} o null.
-Z.wandererAt = function (playTime, runId) {
+Z.wandererAt = function (playTime, runId, luck = 0) {
  const t = Math.max(0, finite(playTime)), visit = Math.floor(t / W.block), seed = seedOf(runId);
- if (visit < 1 || roll(visit, seed) >= W.chance) return null;
+ if (visit < 1 || roll(visit, seed) >= Z.withLuck(W.chance, luck)) return null;
  const into = t - visit * W.block; if (into < W.arrive || into >= W.arrive + W.stay) return null;
  return {visit, spot: W.spots[Math.floor(roll(visit, seed, 1) * W.spots.length)], left: W.arrive + W.stay - into};
 };
@@ -47,7 +47,7 @@ const LINES = ['Pasá, pasá, que no muerdo. Todo original, eh. Bueno, casi todo
 
 const P = Z.Game.prototype;
 Object.assign(P, {
- wanderer() { return Z.wandererAt(this.player.playTime, this.player.runId); },
+ wanderer() { return Z.wandererAt(this.player.playTime, this.player.runId, this.luck()); },
  // Pone o saca al ambulante del mapa según el reloj.
  syncWanderer() {
   const npcs = this.world.npcs, now = this.wanderer(), old = npcs.find(n => n.id === NPC_ID), key = now ? now.visit : null;
@@ -65,6 +65,8 @@ Object.assign(P, {
  wandererOffers() {
   const p = this.player, now = this.wanderer(); if (!now) return [];
   const list = HEALS.map(h => ({id: h.id, kind: 'buy', icon: h.icon, name: h.name, detail: h.detail, cost: {coins: h.price(p), materials: {}}, done: false}));
+  // El Dado cargado: siempre lo tiene. «No está cargado. Bueno, un poquito.»
+  const dice = Z.AMULETS.dice; list.push({id: 'amulet:dice', kind: 'buy', icon: dice.icon, name: dice.name, detail: 'Amuleto: ' + dice.detail + ' «No está cargado. Bueno, un poquito.»', cost: {coins: Z.LUCK.price, materials: {}}, done: this.hasAmuletOwned('dice'), doneText: 'Ya lo tenés'});
   for (const r of Z.wandererStock(now.visit, p.runId)) {
    const [kind, id] = r.id.split(':');
    if (kind === 'buy') { const item = Z.ITEMS[id]; list.push({id: r.id, kind: 'buy', icon: item.icon, name: item.name, detail: item.detail, cost: {coins: r.price, materials: {}}, done: this.itemCount(id) >= Z.ITEM_STACK, doneText: 'Bolsa llena', note: 'En la bolsa: ' + this.itemCount(id) + '/' + Z.ITEM_STACK}); }

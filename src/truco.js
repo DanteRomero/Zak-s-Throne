@@ -208,7 +208,7 @@ Object.assign(P, {
   t.settled = true; const won = t.match.winner === 'player';
   if (won) { p.trucoWins = (p.trucoWins || 0) + 1; this.sound.play('legend'); }
   else { p.trucoLosses = (p.trucoLosses || 0) + 1; this.sound.play('death'); }
-  if (!t.rematch) { if (won) p.coins += t.bet * 2; t.offer = won && Math.random() < T.rematch; }
+  if (!t.rematch) { if (won) p.coins += t.bet * 2; t.offer = won && this.chance(T.rematch); }
   else if (won) { p.trucoRematchWins = (p.trucoRematchWins || 0) + 1; t.prize = this.trucoPrize(); }
   else p.coins = Math.max(0, p.coins - t.bet * 2);
   this.emit('progress');

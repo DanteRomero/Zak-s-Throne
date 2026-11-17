@@ -6,19 +6,19 @@ const Z = window.Zak, clamp = (v, a, b) => Math.max(a, Math.min(b, v)), finite =
 const distance = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
 const isBoss = e => !!(Z.ENEMY_TYPES[e.type] && Z.ENEMY_TYPES[e.type].boss);
 // `hit`: parte del daño de tu golpe con el arma que tenés en la mano. `every`: segundos entre golpes. `special`: segundos entre especiales.
-// Daño de menor a mayor: murciélago, perro, serpiente y Golemsín.
+// Daño de menor a mayor: murciélago, perro, serpiente y Golemsín. Ayudan un poco: entre los cuatro, un 5 a 20% de tu daño.
 Z.PETS = {
  bat: {species: 'Murciélago', icon: '🦇', hit: .08, every: .8, special: 15, reach: 16, speed: 175, fly: true, name: 'Drácula', detail: 'Muerde rápido. Cada 15 s deja al enemigo desangrándose 5 s.'},
- dog: {species: 'Perro', icon: '🐕', hit: .4, every: 1, special: 13, reach: 22, speed: 160, name: 'Firulais', detail: 'Muerde, y cada 13 s inmoviliza al enemigo 3 s (a los jefes, 1,5 s; a Zak, nada).'},
- snake: {species: 'Serpiente', icon: '🐍', hit: .75, every: 1.2, special: 15, reach: 24, speed: 130, name: 'Yarita', detail: 'Pega fuerte cuerpo a cuerpo. Cada 15 s envenena 5 s, y a veces (15%) se come de un bocado a un enemigo que no sea jefe: tarda 3 s en tragarlo.'},
- golem: {species: 'Golemsín', icon: '🪨', hit: 1.4, every: 2, special: 20, range: 210, speed: 120, name: 'Piedrita', detail: 'Tira piedras de lejos que sacan bastante vida. Cada 20 s, en plena pelea, te protege 3 s de todo daño, también de los jefes. Mientras lo llevás, juntás +1 de cada material (y de cada Piedra Elemental).'}
+ dog: {species: 'Perro', icon: '🐕', hit: .105, every: 1, special: 13, reach: 22, speed: 160, name: 'Firulais', detail: 'Muerde, y cada 13 s inmoviliza al enemigo 3 s (a los jefes, 1,5 s; a Zak, nada).'},
+ snake: {species: 'Serpiente', icon: '🐍', hit: .14, every: 1.2, special: 15, reach: 24, speed: 130, name: 'Yarita', detail: 'Pega cuerpo a cuerpo. Cada 15 s envenena 5 s, y a veces (4%) se come de un bocado a un enemigo que no sea jefe: tarda 3 s en tragarlo.'},
+ golem: {species: 'Golemsín', icon: '🪨', hit: .26, every: 2, special: 20, range: 210, speed: 120, name: 'Piedrita', detail: 'Tira piedras de lejos. Cada 20 s, en plena pelea, te protege 3 s de todo daño, también de los jefes. Mientras lo llevás, juntás +1 de cada material (y de cada Piedra Elemental).'}
 };
 Z.PET_ORDER = ['dog', 'bat', 'snake', 'golem'];
 const DOG = Z.PET_DOG = {feeds: 5, wait: 120, price: 15, stun: 3, bossStun: 1.5};
 // Desangrado: cada segundo, lo mismo que una mordida; la armadura lo frena.
 const BAT = Z.PET_BAT = {feeds: 3, bleed: 5, tick: 1};
 const GOLEM = Z.PET_GOLEM = {chance: .05, gift: {stone: 2, iron: 2, gold: 2, diamond: 2, elemental: 2}, throwEvery: 2, damage: 5, range: 220, shield: 3};
-const SNAKE = Z.PET_SNAKE = {chance: .05, time: 600, price: 2000, eat: .15, eatTime: 3, venom: 5};
+const SNAKE = Z.PET_SNAKE = {chance: .05, time: 600, price: 2000, eat: .04, eatTime: 3, venom: 5};
 const LADY = 'Doña Herminia';
 // La guardería queda al noreste de la plaza, sobre la calle que va al norte.
 const KENNEL = Z.KENNEL = {house: {x: 1182, y: 700, w: 98, h: 52}, dog: {x: 1258, y: 772}, lady: {x: 1312, y: 770}, spots: [[1170, 776], [1198, 792], [1226, 780], [1340, 790]]};
@@ -218,7 +218,7 @@ Object.assign(P, {
  petStrike(pet, e) {
   const id = pet.id, dmg = this.petDamage(id), boss = isBoss(e);
   this.sound.play(id === 'dog' ? 'bite' : id === 'bat' ? 'bite' : 'swing');
-  if (id === 'snake' && !boss && !e.illusion && !e.summoned && Math.random() < SNAKE.eat) {
+  if (id === 'snake' && !boss && !e.illusion && !e.summoned && this.chance(SNAKE.eat)) {
    this.hitEnemy(e, e.hp + 1e6, true, false, 'pet');
    if (e.dead) { pet.eat = SNAKE.eatTime; pet.gulp = e.type; this.player.petEats = (this.player.petEats || 0) + 1; this.effect(e.x, e.y - 30, 'miss', 1.2, {text: '¡Ñam! De un bocado'}); this.sound.play('drain'); return 'eaten'; }
   }
@@ -265,7 +265,7 @@ Object.assign(P, {
  },
  // 5%: al caer el Gólem en Las Entrañas, entre los escombros aparece un Golemsín.
  maybeGolemsin(e) {
-  const g = this.petData().golem; if (this.ownsPet('golem') || g.found || e.summoned || Math.random() >= GOLEM.chance) return false;
+  const g = this.petData().golem; if (this.ownsPet('golem') || g.found || e.summoned || !this.chance(GOLEM.chance)) return false;
   const spot = this.freeSpot(e.x + 50, e.y + 10, 'cave3'); g.found = true; g.x = Math.round(spot.x); g.y = Math.round(spot.y);
   this.syncPetNpcs(); this.effect(g.x, g.y - 10, 'poof', .8, {seed: 5}); this.sound.play('crumble');
   this.emit('toast', {message: 'Entre los escombros del Gólem se mueve algo chiquito… ¡y te tira piedras! Es un Golemsín: dale 2 de piedra, hierro, oro, diamante y Piedra Elemental.'});
@@ -273,7 +273,7 @@ Object.assign(P, {
  },
  // 5%: al caer la Yarará, uno de sus huevos se rompe y sale una viborita.
  maybeHatch(e) {
-  const s = this.petData().snake; if (this.ownsPet('snake') || s.state !== 'none' || e.summoned || Math.random() >= SNAKE.chance) return false;
+  const s = this.petData().snake; if (this.ownsPet('snake') || s.state !== 'none' || e.summoned || !this.chance(SNAKE.chance)) return false;
   s.state = 'hatched'; this.syncPetNpcs();
   this.startCutscene('hatch', {focus: {x: NEST_SPOT.x, y: NEST_SPOT.y - 20}, nest: {...NEST_SPOT}});
   return true;

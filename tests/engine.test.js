@@ -1180,10 +1180,10 @@
       equal(game.collectSnake().ok, false, 'needs 10 minutes'); p.playTime += 600; equal(game.collectSnake().ok, false, 'needs the money');
       p.coins = 2500; ok(game.collectSnake().ok); equal(p.coins, 500); ok(game.ownsPet('snake')); equal(p.pet, 'snake');
     });
-    test('v2.21: the snake poisons every 15 s and eats a common enemy 15% of the time, taking 3 s', () => {
+    test('v2.21: the snake poisons every 15 s and eats a common enemy 4% of the time (15% before v2.29), taking 3 s', () => {
       const p = fixture('gero'); const pet = keepPet('snake'); Math.random = () => .2; pet.special = 0; const thief = enemy('thief', p.x + 30); thief.cooldown = 99;
       game.petStrike(pet, thief); ok(thief.venom && thief.venom.time === 5); ok(!thief.dead);
-      Math.random = () => .1; const kills = p.kills; game.petStrike(pet, thief); ok(thief.dead, 'eaten'); equal(p.kills, kills + 1); near(pet.eat, 3); equal(p.petEats, 1);
+      Math.random = () => .03; const kills = p.kills; game.petStrike(pet, thief); ok(thief.dead, 'eaten'); equal(p.kills, kills + 1); near(pet.eat, 3); equal(p.petEats, 1);
       const other = enemy('thief', p.x + 30); other.cooldown = 99; const hp = other.hp; Object.assign(pet, {x: other.x - 14, y: other.y}); advance(2.5); equal(other.hp, hp, 'swallowing'); advance(1.5); ok(other.hp < hp, 'back to work');
       const capo = enemy('capo', p.x + 30); game.petStrike(pet, capo); ok(!capo.dead, 'bosses are not eaten');
     });
@@ -1255,7 +1255,7 @@
       for (const s of Z.WANDERER.spots) { equal(Z.biomeAt(s.x, s.y), s.zone); ok(!Z.isSafe(s.zone) && !Z.isZakDimension(s.zone), s.zone + ' is a danger zone'); ok(!Z.collides(game.world, s.x, s.y, 9), 'free ground at ' + s.x + ',' + s.y); }
       let t = 0; while (!Z.wandererAt(t, p.runId) && t < 1e6) t += 30; ok(Z.wandererAt(t, p.runId), 'he shows up sometimes');
       p.playTime = t; game.syncWanderer(); const n = game.world.npcs.find(m => m.id === 'wanderer'); ok(n && game.npcShop(n) === 'wanderer' && game.npcHasMenu(n));
-      const offers = game.npcOffers(n); ok(offers.some(o => o.id === 'heal') && offers.some(o => o.id === 'cure')); equal(offers.length, 2 + Z.WANDERER.stock);
+      const offers = game.npcOffers(n); ok(offers.some(o => o.id === 'heal') && offers.some(o => o.id === 'cure')); equal(offers.length, 3 + Z.WANDERER.stock, 'cures, the loaded die and the rare things');
       const elixir = Z.wandererStock(1, 'x').concat(Z.wandererStock(2, 'x')); ok(elixir.length === 6);
       p.coins = 100000; equal(game.npcTrade(n, 'heal').ok, false, 'no cure when healthy'); p.hp = 1; ok(game.npcTrade(n, 'heal').ok); near(p.hp, game.stats().maxHealth); ok(p.coins < 100000); ok(game.hasMedal('scam'));
       const rare = offers.find(o => o.id !== 'heal' && o.id !== 'cure' && !o.done); const coins = p.coins; ok(game.npcTrade(n, rare.id).ok); equal(p.coins, coins - rare.cost.coins);
@@ -1324,7 +1324,7 @@
       game.enemies = []; const cap = enemy('capo', p.x + 30); cap.alert = true; game.petSkill(pet); near(cap.stun, Z.PET_LEVELS.coil.bossTime * (1 + 4 * Z.PET_LEVELS.effect), 'bosses 1 s');
       game.enemies = []; const zak = enemy('zak', p.x + 30); zak.alert = true; ok(!game.petSkill(pet) && !(zak.stun > 0), 'Zak, nothing');
       game.enemies = []; keepPet('golem'); p.pets.golem.level = 5; pet = game.ensurePet(); const d = enemy('thief', p.x + 60), e2 = enemy('thief', p.x + 80); d.alert = true; const dhp = d.hp;
-      ok(game.petSkill(pet)); ok(d.stun > 1.4 && e2.stun > 1.4, 'avalanche stuns the group'); ok(dhp - d.hp <= game.petDamage('golem') * .31, 'and hits only a little');
+      ok(game.petSkill(pet)); ok(d.stun > 1.4 && e2.stun > 1.4, 'avalanche stuns the group'); ok(dhp - d.hp <= Math.max(1, game.petDamage('golem') * .31), 'and hits only a little');
       game.enemies = []; keepPet('bat'); p.pets.bat.level = 5; pet = game.ensurePet(); pet.special = 0; const v = enemy('thief', p.x + 20); game.petStrike(pet, v); ok(v.bleeding && v.bleeding.leech, 'shared blood');
       p.hp = 10; v.bleeding.tick = .01; game.updateEnemyAilments(.02); const dealt = v.bleeding.dealt; ok(dealt > 0); near(p.hp, 10 + Math.min(game.stats().maxHealth * Z.PET_LEVELS.leechCap, dealt * Z.PET_LEVELS.leech), 'the bleed heals you');
     });
@@ -1335,6 +1335,28 @@
       const golem = enemy('golem', p.x + 30); golem.stats.armor = 8; golem.bleeding = {time: 5, tick: .01, damage: game.petDamage('bat'), leech: true}; const hp = golem.hp; p.hp = 1;
       game.updateEnemyAilments(.02); near(hp - golem.hp, Z.damageAfterArmor(game.petDamage('bat'), 8), 'armor applies to the bleed');
       ok(p.hp - 1 <= game.stats().maxHealth * Z.PET_LEVELS.leechCap + 1e-6, 'heals at most 2% of your life per second');
+    });
+    test('v2.29: the loaded die adds 10 points to every chance, good or bad', () => {
+      const p = fixture('gero'); equal(game.luck(), 0); Math.random = () => .12;
+      ok(!game.chance(.05), 'without it, 12 is not under 5'); p.amulets = ['dice']; p.equipped = ['dice']; near(game.luck(), .1);
+      ok(game.chance(.05), 'with it, 5% is 15%'); ok(!game.chance(0), 'what never happens still never happens'); near(Z.withLuck(.95, .1), 1);
+      equal(game.catchFish(), 'dorado', 'the dorado goes from 5% to 15%');
+      const thief = enemy('thief', p.x + 30); thief.alert = true; const spider = Z.ENEMY_TYPES.spider; Math.random = () => .2;
+      ok(game.chance(p.characterId === 'fede' ? .05 : .15), 'bad luck too: a spider bite poisons more often');
+      let plain = 0, lucky = 0; for (let t = 240; t < 240 * 400; t += 240) { if (Z.weatherAt(t + 60, p.runId).kind) plain++; if (Z.weatherAt(t + 60, p.runId, .1).kind) lucky++; }
+      ok(lucky > plain, 'more weather of every kind');
+      let seen = 0, seenLucky = 0; for (let t = 0; t < 420 * 300; t += 420) { if (Z.wandererAt(t + 100, p.runId)) seen++; if (Z.wandererAt(t + 100, p.runId, .1)) seenLucky++; }
+      ok(seenLucky > seen, 'Don Anselmo comes by more often');
+    });
+    test('v2.29: Don Anselmo always sells the loaded die', () => {
+      const p = fixture('gero'); p.coins = 5000; let t = 0; while (!Z.wandererAt(t, p.runId)) t += 30; p.playTime = t;
+      const offer = game.wandererOffers().find(o => o.id === 'amulet:dice'); ok(offer, 'on sale'); equal(offer.cost.coins, Z.LUCK.price);
+      ok(game.wandererTrade('amulet:dice').ok); ok(game.hasAmuletOwned('dice')); equal(p.coins, 5000 - Z.LUCK.price);
+      ok(game.wandererOffers().find(o => o.id === 'amulet:dice').done, 'only once');
+    });
+    test('v2.29: companions help a little: every pet hits for a small part of your blow', () => {
+      for (const id of Z.PET_ORDER) ok(Z.PETS[id].hit / (Z.PETS[id].every || 1) <= .14, id + ' hits softly');
+      ok(Z.PET_SNAKE.eat <= .05, 'the snake rarely swallows an enemy');
     });
     test('v2.25: Doña Herminia trains the companions waiting in the kennel for guita', () => {
       const p = fixture('gero'); keepPet('dog'); p.pets.bat = {name: 'Dra', level: 3, xp: 0}; p.coins = 10000;

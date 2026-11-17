@@ -32,8 +32,12 @@ Z.AMULETS = {
  horseshoe: {name: 'Herradura de Zaino', icon: '🐴', detail: '+8% de movimiento.', how: 'Mimá a los caballos de la aldea 10 veces.'},
  fang: {name: 'Diente de la Yarará', icon: '🐍', detail: 'Inmune al veneno.', how: 'El herrero lo talla con 3 Colmillos Tóxicos, 5 de oro y ◉ 100.'},
  ring: {name: 'Anillo del Capo', icon: '💰', detail: '+25% de monedas de los enemigos.', how: 'El Mercader del Vacío lo arma con 2 Anillos de la mafia, 6 cristales arcanos y ◉ 300.'},
+ dice: {name: 'Dado cargado', icon: '🎲', detail: 'Todo lo que es cuestión de suerte pasa un 10% más seguido: lo bueno y lo malo.', how: 'Lo vende Don Anselmo, el vendedor ambulante.'},
  eye: {name: 'Ojo de Cerbero', icon: '🧿', detail: 'Ves en la oscuridad de las cuevas profundas y podés bajar sin antorcha.', how: 'El Mercader del Vacío lo arma con 1 Ojo del alma, 8 cristales arcanos y ◉ 500.'}
 };
+// Dado cargado: suma 10 puntos a cada probabilidad del juego (un 5% pasa a 15%), buena o mala.
+Z.LUCK = {bonus: .1, price: 4000};
+Z.withLuck = (chance, luck) => chance > 0 ? Math.min(1, chance + (luck || 0)) : chance;
 Z.HORSE_PETS = 10;
 Z.SLOT_PRICE = 4000;
 Z.stardustPrice = p => 500 + 250 * Math.floor(finite(p.stardust));
@@ -57,6 +61,9 @@ Z.requestOf = requestOf;
 const SHOP_OF = {'El Gaucho': 'gaucho', 'Don Chiche': 'chiche'};
 
 Object.assign(Z.Game.prototype, {
+ // Suerte: 0, o 0,1 con el Dado cargado puesto. `chance(p)` tira con esa suerte.
+ luck() { const p = this.player; return p && Array.isArray(p.equipped) && p.equipped.includes('dice') ? Z.LUCK.bonus : 0; },
+ chance(probability) { return Math.random() < Z.withLuck(probability, this.luck()); },
  itemCount(id) { return Math.max(0, Math.floor(finite((this.player.items || {})[id]))); },
  // Suma a la bolsa sin pasarse del tope y devuelve cuántos entraron.
  addItem(id, n = 1) {
@@ -287,8 +294,9 @@ Object.assign(Z.Game.prototype, {
   return this.catchFish();
  },
  catchFish() {
-  const p = this.player, roll = Math.random() * 100; let fish = 'mojarra', sum = 0;
-  for (const [id, chance] of Z.FISH_TABLE) { sum += chance; if (roll < sum) { fish = id; break; } }
+  // Con el Dado cargado el dorado sale más (5% → 15%) y la mojarra, la más común, cede ese lugar.
+  const p = this.player, roll = Math.random() * 100, extra = this.luck() * 100; let fish = 'mojarra', sum = 0;
+  for (const [id, chance] of Z.FISH_TABLE) { sum += chance + (id === 'dorado' ? extra : id === 'mojarra' ? -extra : 0); if (roll < sum) { fish = id; break; } }
   const item = Z.ITEMS[fish]; this.sound.play(fish === 'dorado' ? 'legend' : 'splash'); this.questFlags.fished = true;
   if (!this.addItem(fish, 1)) { this.emit('toast', {message: 'Sacaste ' + (fish === 'dorado' ? 'un dorado' : 'un' + (fish === 'mojarra' ? 'a ' : ' ') + item.name.toLowerCase()) + ', pero no te entra en la bolsa. Lo devolviste al agua.'}); return fish; }
   if (fish === 'dorado') { this.shake(3, .3); this.effect(p.x, p.y - 34, 'coin', 1.6, {text: '🐠 ¡DORADO!'}); this.emit('toast', {message: '¡Sacaste un DORADO, el tigre del río! Comelo cuando estés en las malas: te cura todo y te deja 3 s sin recibir daño.'}); }

@@ -106,15 +106,17 @@ Object.assign(Z.Game.prototype, {
  // Revisar una carpa: guita, un consumible, cristal arcano, nada… o un mimic.
  searchTent(o) {
   const p = this.player; o.searched = TENT_REST;
-  const roll = Math.random();
-  if (roll < MIMIC_CHANCE) {
+  const roll = Math.random(), luck = this.luck(), mimic = Z.withLuck(MIMIC_CHANCE, luck);
+  if (roll < mimic) {
    const m = this.summon('mimic', o.x + o.w/2, o.y + o.h + 16, {id: 'tent-' + o.id, biome: Z.biomeAt(o.x + o.w/2, o.y + o.h + 16)});
    m.cooldown = 1; this.sound.play('roar'); this.shake(4, .3);
    this.emit('toast', {message: '¡No era un cofre! Un mimic salió de la carpa.', error: true}); return 'mimic';
   }
-  if (roll < MIMIC_CHANCE + EMPTY_CHANCE) { this.emit('toast', {message: 'La carpa está vacía. Alguien pasó antes que vos.'}); return 'empty'; }
-  let pick = Math.random() * TENT_LOOT.reduce((sum, [, w]) => sum + w, 0), found = TENT_LOOT[0][0];
-  for (const [id, w] of TENT_LOOT) { if (pick < w) { found = id; break; } pick -= w; }
+  if (roll < mimic + Z.withLuck(EMPTY_CHANCE, luck)) { this.emit('toast', {message: 'La carpa está vacía. Alguien pasó antes que vos.'}); return 'empty'; }
+  // Con el Dado cargado, cada premio suma 10 puntos: lo raro sale más seguido.
+  const loot = TENT_LOOT.map(([id, w]) => [id, Z.withLuck(w, luck)]);
+  let pick = Math.random() * loot.reduce((sum, [, w]) => sum + w, 0), found = loot[0][0];
+  for (const [id, w] of loot) { if (pick < w) { found = id; break; } pick -= w; }
   this.sound.play('pickup');
   if (found === 'coins') { const n = 15 + Math.floor(Math.random() * 26); this.dropCoins(o.x + o.w/2, o.y + o.h + 8, n); this.emit('toast', {message: 'Adentro había un cofrecito con ◉ ' + n + '.'}); return found; }
   if (found === 'arcane') { p.materials.arcane = (p.materials.arcane || 0) + 1; this.emit('toast', {message: 'Encontraste 1 cristal arcano.'}); return found; }
