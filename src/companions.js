@@ -8,14 +8,15 @@ const isBoss = e => !!(Z.ENEMY_TYPES[e.type] && Z.ENEMY_TYPES[e.type].boss);
 // `hit`: parte del daño de tu golpe con el arma que tenés en la mano. `every`: segundos entre golpes. `special`: segundos entre especiales.
 // Daño de menor a mayor: murciélago, perro, serpiente y Golemsín.
 Z.PETS = {
- bat: {species: 'Murciélago', icon: '🦇', hit: .25, every: .8, special: 15, reach: 16, speed: 175, fly: true, name: 'Drácula', detail: 'Muerde rápido. Cada 15 s deja al enemigo desangrándose 5 s.'},
+ bat: {species: 'Murciélago', icon: '🦇', hit: .08, every: .8, special: 15, reach: 16, speed: 175, fly: true, name: 'Drácula', detail: 'Muerde rápido. Cada 15 s deja al enemigo desangrándose 5 s.'},
  dog: {species: 'Perro', icon: '🐕', hit: .4, every: 1, special: 13, reach: 22, speed: 160, name: 'Firulais', detail: 'Muerde, y cada 13 s inmoviliza al enemigo 3 s (a los jefes, 1,5 s; a Zak, nada).'},
  snake: {species: 'Serpiente', icon: '🐍', hit: .75, every: 1.2, special: 15, reach: 24, speed: 130, name: 'Yarita', detail: 'Pega fuerte cuerpo a cuerpo. Cada 15 s envenena 5 s, y a veces (15%) se come de un bocado a un enemigo que no sea jefe: tarda 3 s en tragarlo.'},
  golem: {species: 'Golemsín', icon: '🪨', hit: 1.4, every: 2, special: 20, range: 210, speed: 120, name: 'Piedrita', detail: 'Tira piedras de lejos que sacan bastante vida. Cada 20 s, en plena pelea, te protege 3 s de todo daño, también de los jefes. Mientras lo llevás, juntás +1 de cada material (y de cada Piedra Elemental).'}
 };
 Z.PET_ORDER = ['dog', 'bat', 'snake', 'golem'];
 const DOG = Z.PET_DOG = {feeds: 5, wait: 120, price: 15, stun: 3, bossStun: 1.5};
-const BAT = Z.PET_BAT = {feeds: 3, bleed: 5};
+// Desangrado: cada segundo, lo mismo que una mordida; la armadura lo frena.
+const BAT = Z.PET_BAT = {feeds: 3, bleed: 5, tick: 1};
 const GOLEM = Z.PET_GOLEM = {chance: .05, gift: {stone: 2, iron: 2, gold: 2, diamond: 2, elemental: 2}, throwEvery: 2, damage: 5, range: 220, shield: 3};
 const SNAKE = Z.PET_SNAKE = {chance: .05, time: 600, price: 2000, eat: .15, eatTime: 3, venom: 5};
 const LADY = 'Doña Herminia';
@@ -224,7 +225,7 @@ Object.assign(P, {
   if (pet.special <= 0) {
    pet.special = Z.PETS[id].special;
    if (id === 'dog' && e.type !== 'zak') { e.stun = Math.max(e.stun || 0, boss ? DOG.bossStun : DOG.stun); if (!boss) { e.act = null; e.dash = 0; e.telegraph = 0; } this.effect(e.x, e.y - 30, 'miss', 1, {text: '¡Mordida! Inmovilizado'}); }
-   if (id === 'bat') { e.bleeding = {time: BAT.bleed, tick: 1, damage: dmg * .6}; this.effect(e.x, e.y - 30, 'miss', 1, {text: '¡Desangrado!'}); }
+   if (id === 'bat') { e.bleeding = {time: BAT.bleed, tick: 1, damage: dmg * BAT.tick}; this.effect(e.x, e.y - 30, 'miss', 1, {text: '¡Desangrado!'}); }
    if (id === 'snake') { e.venom = {time: SNAKE.venom, tick: 1, damage: dmg * .5}; this.effect(e.x, e.y - 30, 'miss', 1, {text: '¡Envenenado!'}); }
   }
   this.hitEnemy(e, dmg, false, false, 'pet');
@@ -240,13 +241,14 @@ Object.assign(P, {
    s.x += dx / len * step; s.y += dy / len * step; s.spin = (s.spin || 0) + dt * 12; return true;
   });
  },
- // Desangrado del murciélago y veneno de la serpiente: daño por segundo que ignora la armadura.
+ // Desangrado del murciélago (la armadura lo frena) y veneno de la serpiente (la ignora): daño por segundo.
+ // `dealt` guarda lo que sacó el último segundo, para la Sangre compartida.
  updateEnemyAilments(dt) {
   for (const e of this.enemies) {
    if (e.dead) { e.bleeding = null; e.venom = null; continue; }
    for (const key of ['bleeding', 'venom']) {
     const a = e[key]; if (!a) continue; a.time -= dt; a.tick -= dt;
-    if (a.tick <= 1e-8) { a.tick += 1; this.hitEnemy(e, a.damage, true, false, 'pet'); if (this.state !== 'playing') return; }
+    if (a.tick <= 1e-8) { a.tick += 1; const hp = e.hp; this.hitEnemy(e, a.damage, key !== 'bleeding', false, 'pet'); a.dealt = Math.max(0, hp - e.hp); if (this.state !== 'playing') return; }
     if (e[key] && e[key].time <= 1e-6) e[key] = null;
    }
   }

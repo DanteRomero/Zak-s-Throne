@@ -6,6 +6,13 @@ Cada versión lista sus cambios agrupados por tipo:
 - **Change:** algo que ya existía y ahora funciona distinto.
 - **Fix:** un error corregido.
     
+## v2.28 — 2026-11-17
+* Change
+    - **Menú principal:** el título y los botones van en un panel con el mismo marco dorado que los menús. Los íconos tienen su cajita y los botones, relieve.
+    - **Elección de personaje:** las tarjetas tienen el retrato en un marco de madera, y la elegida brilla en dorado. Abajo hay un panel con el retrato grande del elegido y cómo es, sus estadísticas y su habilidad, ventaja y desventaja en tarjetas.
+* Fix
+    - **El murciélago pegaba y curaba de más:** contra el Gólem Minero llegaba a sumar el 75% de tu daño y a curarte 4 de vida por segundo. Ahora la mordida es más chica (8% de tu golpe), el desangrado respeta la armadura y la **Sangre compartida** cura el 30% de lo que saca de verdad, hasta un 2% de tu vida máxima por segundo. Queda en un 5 a 20% de tu daño.
+
 ## v2.27 — 2026-11-17
 * Change
     - **Todos los menús con el estilo de la ficha:** marco con doble filete dorado, títulos con adorno, secciones con su título, tarjetas con relieve y botones con sombra. Abarca la pausa, las opciones, las ranuras, el ranking, El Almacén, El Taller, los vecinos, el vendedor ambulante, la guardería, el medallero, el truco y las confirmaciones.

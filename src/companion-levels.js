@@ -10,11 +10,11 @@ const isBoss = e => !!(Z.ENEMY_TYPES[e.type] && Z.ENEMY_TYPES[e.type].boss);
 // `damage`: +1,5% de daño por nivel (+13,5% al 10). `cooldown`: especiales 3% más seguido por nivel. `effect`: efectos 4% más largos por nivel.
 // `xp`: experiencia para pasar del nivel n al n+1. `assist`: parte de la experiencia si el compañero no le pegó a ese enemigo.
 const L = Z.PET_LEVELS = {max: 10, damage: .015, cooldown: .03, effect: .04, xp: n => 400 * n, assist: .4, skillAt: 5, skillEvery: 24,
- howl: {radius: 100, time: 3}, coil: {time: 2.5, bossTime: 1}, rocks: {radius: 55, time: 1.5, bossTime: .6, hit: .3}, leech: .3,
+ howl: {radius: 100, time: 3}, coil: {time: 2.5, bossTime: 1}, rocks: {radius: 55, time: 1.5, bossTime: .6, hit: .3}, leech: .3, leechCap: .02,
  train: {price: n => 150 * n, part: .5}};
 Z.PET_SKILLS = {
  dog: {name: 'Aullido', detail: 'Aúlla y los enemigos comunes de alrededor se asustan: huyen y no atacan durante 3 s. A los jefes no les hace nada.'},
- bat: {name: 'Sangre compartida', detail: 'Lo que desangra te cura: cada segundo del desangrado te devuelve un 30% de ese daño.'},
+ bat: {name: 'Sangre compartida', detail: 'Lo que desangra te cura: cada segundo del desangrado te devuelve un 30% del daño que hizo, hasta un 2% de tu vida máxima.'},
  snake: {name: 'Abrazo', detail: 'Se enrosca a un enemigo y lo deja quieto 2,5 s (a los jefes, 1 s; a Zak, nada). No le saca vida.'},
  golem: {name: 'Avalancha', detail: 'Hace caer piedras alrededor de un enemigo: los de ahí quedan aturdidos 1,5 s (los jefes, 0,6 s; Zak, nada). Pegan poquito.'}
 };
@@ -98,13 +98,15 @@ P.petStrike = function (pet, e) {
 // Qué enemigos tocó el compañero (para darle toda la experiencia).
 const baseHit = P.hitEnemy;
 P.hitEnemy = function (e, damage, ...rest) { if (rest[2] === 'pet' && e) e.petHit = true; return baseHit.call(this, e, damage, ...rest); };
-// Murciélago, nivel 5: el desangrado te cura.
+// Murciélago, nivel 5: el desangrado te cura un 30% de lo que saca de verdad (después de la armadura),
+// hasta un 2% de tu vida máxima por segundo.
 const baseAilments = P.updateEnemyAilments;
 P.updateEnemyAilments = function (dt) {
- const leeching = this.enemies.filter(e => !e.dead && e.bleeding && e.bleeding.leech && e.bleeding.tick - dt <= 1e-8).map(e => e.bleeding.damage);
+ const leeching = this.enemies.filter(e => !e.dead && e.bleeding && e.bleeding.leech && e.bleeding.tick - dt <= 1e-8).map(e => e.bleeding);
  baseAilments.call(this, dt);
  if (!leeching.length || this.state !== 'playing') return;
- const p = this.player, max = this.stats().maxHealth, heal = leeching.reduce((a, b) => a + b, 0) * L.leech;
+ const p = this.player, max = this.stats().maxHealth, heal = Math.min(max * L.leechCap * leeching.length, leeching.reduce((a, b) => a + (b.dealt || 0), 0) * L.leech);
+ if (heal <= 0) return;
  if (p.hp < max) { p.hp = Math.min(max, p.hp + heal); this.effect(p.x, p.y - 32, 'heal', .7, {text: '+' + this.number(heal)}); }
 };
 // Golemsín: el escudo dura más y sale más seguido; habilidad del nivel 5 y miedo del aullido.

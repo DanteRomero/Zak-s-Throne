@@ -1144,7 +1144,7 @@
       ok(game.ownsPet('bat')); equal(p.pet, 'bat');
       fixture('gero'); const pet = keepPet('bat'); pet.special = 0; Object.assign(pet, {x: game.player.x + 20, y: game.player.y}); const rat = enemy('thief', game.player.x + 35); rat.cooldown = 99; rat.stats.armor = 50;
       advance(.9); ok(rat.bleeding && rat.bleeding.time > 4, 'bleeding 5 s'); const hp = rat.hp; rat.stun = 99; Object.assign(pet, {x: rat.x + 400}); game.pet.clock = -99;
-      advance(1.02); ok(rat.hp < hp, 'bleeding ignores armor'); advance(5); equal(rat.bleeding, null);
+      advance(1.02); ok(rat.hp < hp, 'bleeding hurts even through armor (at least 1)'); advance(5); equal(rat.bleeding, null);
     });
     test('v2.21: damage order is bat < dog < snake < golemsín', () => {
       fixture('gero'); const d = id => game.petDamage(id);
@@ -1326,7 +1326,15 @@
       game.enemies = []; keepPet('golem'); p.pets.golem.level = 5; pet = game.ensurePet(); const d = enemy('thief', p.x + 60), e2 = enemy('thief', p.x + 80); d.alert = true; const dhp = d.hp;
       ok(game.petSkill(pet)); ok(d.stun > 1.4 && e2.stun > 1.4, 'avalanche stuns the group'); ok(dhp - d.hp <= game.petDamage('golem') * .31, 'and hits only a little');
       game.enemies = []; keepPet('bat'); p.pets.bat.level = 5; pet = game.ensurePet(); pet.special = 0; const v = enemy('thief', p.x + 20); game.petStrike(pet, v); ok(v.bleeding && v.bleeding.leech, 'shared blood');
-      p.hp = 10; const tick = v.bleeding.damage; v.bleeding.tick = .01; game.updateEnemyAilments(.02); near(p.hp, 10 + tick * Z.PET_LEVELS.leech, 'the bleed heals you');
+      p.hp = 10; v.bleeding.tick = .01; game.updateEnemyAilments(.02); const dealt = v.bleeding.dealt; ok(dealt > 0); near(p.hp, 10 + Math.min(game.stats().maxHealth * Z.PET_LEVELS.leechCap, dealt * Z.PET_LEVELS.leech), 'the bleed heals you');
+    });
+    test('v2.28: the bat helps a little: small bites, armor stops the bleed and it heals at most 2% per second', () => {
+      const p = fixture('gero'); Object.assign(p, {level: 40}); p.stats.strength = 40; p.weapons = ['fists', 'sword']; p.weapon = 'sword'; p.weaponLevels = {sword: 6};
+      const s = game.stats(), raw = s.power * Z.WEAPON_TYPES.sword.damageMultiplier * s.damageMultiplier * game.weaponLevelMultiplier();
+      keepPet('bat'); p.pets.bat.level = 10; ok(game.petDamage('bat') < raw * .1, 'a bite is under a tenth of your hit');
+      const golem = enemy('golem', p.x + 30); golem.stats.armor = 8; golem.bleeding = {time: 5, tick: .01, damage: game.petDamage('bat'), leech: true}; const hp = golem.hp; p.hp = 1;
+      game.updateEnemyAilments(.02); near(hp - golem.hp, Z.damageAfterArmor(game.petDamage('bat'), 8), 'armor applies to the bleed');
+      ok(p.hp - 1 <= game.stats().maxHealth * Z.PET_LEVELS.leechCap + 1e-6, 'heals at most 2% of your life per second');
     });
     test('v2.25: Doña Herminia trains the companions waiting in the kennel for guita', () => {
       const p = fixture('gero'); keepPet('dog'); p.pets.bat = {name: 'Dra', level: 3, xp: 0}; p.coins = 10000;

@@ -178,9 +178,15 @@
       const portrait = el('canvas'); portrait.width = 88; portrait.height = 105;
       card.append(portrait,el('strong','',c.name),el('small','',c.abilityPassive ? 'HABILIDAD PASIVA' : 'HABILIDAD ACTIVA')); grid.append(card); Zak.drawPortrait(portrait,c.id);
     });
+    // Detalle: retrato grande en su marco, estadísticas y lo que lo hace único.
     const detail = $('character-detail'); detail.replaceChildren();
-    const stats = el('div'), benefits = el('div','traits'), c = character(selected);
-    statRows(stats,c.stats); traits(benefits,c); detail.append(stats,benefits);
+    const c = character(selected), hero = el('div','choose-hero'), frame = el('div','sheet-frame'), big = el('canvas','sheet-portrait'), info = el('div','choose-info');
+    big.width = 120; big.height = 150; big.setAttribute('aria-hidden','true'); Zak.drawPortrait(big,c.id); frame.append(big);
+    info.append(el('span','sheet-kicker',c.abilityPassive ? 'HABILIDAD PASIVA' : 'HABILIDAD ACTIVA'),el('strong','sheet-name',c.name),el('p','choose-look',c.appearance)); hero.append(frame,info);
+    const stats = el('div','choose-stats'), right = el('div','choose-traits'), benefits = el('div','traits sheet-traits stack');
+    stats.append(el('h3','sheet-heading','Estadísticas')); statRows(stats,c.stats);
+    traits(benefits,c); right.append(el('h3','sheet-heading','Lo que lo hace único'),benefits);
+    detail.append(hero,stats,right);
   }
   $('new-game').addEventListener('click', showCharacters);
   document.querySelectorAll('[data-back="menu"]').forEach(node => node.addEventListener('click', showMenu));

@@ -2,7 +2,7 @@
 
 Una aventura de acción y exploración en pixel art, vista desde arriba. Elegí a uno de siete amigos, preparate en la aldea y salí a explorar la cueva y los Yuyos.
 
-Versión actual: **v2.27**. Los cambios de cada versión están en [CHANGELOG.md](CHANGELOG.md).
+Versión actual: **v2.28**. Los cambios de cada versión están en [CHANGELOG.md](CHANGELOG.md).
 
 ## Jugar
 
@@ -251,7 +251,7 @@ Su daño es una parte del de tu golpe con el arma que tenés en la mano. De meno
 | Compañero | Cómo se consigue | Qué hace |
 | --- | --- | --- |
 | 🐕 **Perro** | En la puerta de La guardería hay un perro sentado con el plato vacío. Comprá **comida para perro** en El Almacén (◉ 15) y dásela con E **5 veces**, esperando **2 minutos** entre plato y plato. Con el quinto se acerca corriendo y te llena la cara de lengüetazos. | Muerde, y cada **13 s** inmoviliza al enemigo **3 s** (a los jefes, 1,5 s; a Zak, nada). |
-| 🦇 **Murciélago** | En la Cueva Profunda, en la esquina de arriba a la derecha (arriba del Chupasangre), cuelga un murcielaguito. Con la vida llena, dale de tu sangre **3 veces**: cada vez te deja con **1 de vida**. Si no tenés la vida llena, solo te dice «Un murciélago chiquito... el pobre parece tener hambre». | Muerde rápido y cada **15 s** deja al enemigo **desangrándose 5 s** (ignora la armadura). |
+| 🦇 **Murciélago** | En la Cueva Profunda, en la esquina de arriba a la derecha (arriba del Chupasangre), cuelga un murcielaguito. Con la vida llena, dale de tu sangre **3 veces**: cada vez te deja con **1 de vida**. Si no tenés la vida llena, solo te dice «Un murciélago chiquito... el pobre parece tener hambre». | Muerde rápido pero despacito, y cada **15 s** deja al enemigo **desangrándose 5 s**: cada segundo le saca lo mismo que una mordida (la armadura lo frena). |
 | 🐍 **Serpiente** | Al caer la Yarará Madre, hay un **5%** de que uno de sus huevos se rompa (con escena del cascarón). Agarrá la viborita con E y **llevala en brazos** a la aldea: mientras tanto no podés atacar, y si te noquean vuelve sola al nido. **Doña Herminia**, la señora de vestido verde de La guardería, te la cría en **10 minutos** por **◉ 2000**; si no te alcanza, se los pagás cuando la vas a buscar, y hasta entonces no te la devuelve. Vuelve grande, de tu tamaño. | Pega fuerte cuerpo a cuerpo. Cada **15 s** envenena al enemigo **5 s**, y en cada golpe hay un **15%** de que se coma de un bocado a un enemigo que no sea jefe: tarda **3 s** en tragarlo. |
 | 🪨 **Golemsín** | Al caer el Gólem Minero en Las Entrañas (no el que invoca Zak), hay un **5%** de que entre los escombros aparezca uno chiquito. Te tira una piedra cada **2 s** que saca **5 de vida** sin importar la armadura. Acercate y dale, de a poco o todo junto: **2 de piedra, 2 de hierro, 2 de oro, 2 de diamante y 2 Piedras Elementales**. | Tira piedras de lejos que sacan bastante vida. Cada **20 s**, en plena pelea, te protege **3 s de todo daño** (también de los jefes). Mientras te acompaña, juntás **+1 de cada material** al talar o picar, y **+1 Piedra Elemental** cada vez que levantás una. |
 
@@ -266,7 +266,7 @@ Al **nivel 5** aprenden una habilidad, que no hace daño (o casi):
 | Compañero | Habilidad | Qué hace |
 | --- | --- | --- |
 | 🐕 Perro | **Aullido** | Los enemigos comunes de alrededor se asustan: huyen y no atacan durante 3 s. A los jefes no les hace nada. |
-| 🦇 Murciélago | **Sangre compartida** | Lo que desangra te cura: cada segundo del desangrado te devuelve un 30% de ese daño. |
+| 🦇 Murciélago | **Sangre compartida** | Lo que desangra te cura: cada segundo del desangrado te devuelve un 30% del daño que hizo, hasta un **2% de tu vida máxima**. |
 | 🐍 Serpiente | **Abrazo** | Se enrosca a un enemigo y lo deja quieto 2,5 s (a los jefes, 1 s; a Zak, nada). |
 | 🪨 Golemsín | **Avalancha** | Caen piedras alrededor de un enemigo: los de ahí quedan aturdidos 1,5 s (los jefes, 0,6 s; Zak, nada). Pegan poquito. |
 
@@ -556,7 +556,7 @@ Si ya tenés Node instalado:
 node tests/rules.test.js
 ```
 
-Abrí `tests/index.html` para ejecutar las 46 pruebas de reglas y las 171 pruebas de integración del motor en el navegador. El resultado detalla cada caso aprobado o fallido.
+Abrí `tests/index.html` para ejecutar las 46 pruebas de reglas y las 172 pruebas de integración del motor en el navegador. El resultado detalla cada caso aprobado o fallido.
 
 También se incluyen 88 pruebas de interfaz y de pixel art, 31 del ranking (con un servidor simulado), 36 de controles táctiles y 42 de la nube (también con un servidor simulado) con Chrome y Python 3, sin librerías adicionales. El verificador abre un perfil temporal aislado; nunca usa tus guardados personales:
 
