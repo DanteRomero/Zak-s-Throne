@@ -2551,7 +2551,14 @@
           // Se achica hasta desaparecer al entrar y vuelve a crecer al salir.
           const P=Z.PORTAL_SCENE,t=scene.t,before=Math.max(0,(t-.45)/(P.travel-.45)),size=t<P.travel?1-before*before:Math.min(1,(t-P.travel-.15)/.6);
           if(size>.02){c.save();c.translate(p.x,p.y-10);c.scale(size,size);c.translate(-p.x,-p.y+10);c.globalAlpha=Math.min(1,size*1.6);drawCharacter(c,p,time);c.restore();}
-        } else drawCharacter(c,p,time);
+        } else {
+          // Contragolpe (counter.js): el personaje brilla dorado un momento.
+          const glow=!menu&&game.counterGlow>0?game.counterGlow/((Z.COUNTER&&Z.COUNTER.glow)||.6):0;
+          if(glow>0)Px.glow(c,p.x,p.y-12,42,"#ffc93a",.9*glow);
+          drawCharacter(c,p,time);
+          if(glow>0){c.save();c.globalCompositeOperation="lighter";Px.glow(c,p.x,p.y-12,26,"#ffe08a",.8*glow);c.restore();
+            for(let k=0;k<6;k++){const a=k*Math.PI/3+time*5,r=14+(1-glow)*12;c.globalAlpha=glow;rect(c,Math.round(p.x+Math.cos(a)*r),Math.round(p.y-12+Math.sin(a)*r*.8),2,2,"#fff1b8");}c.globalAlpha=1;}
+        }
       }
       if(p.fishing&&!menu){
         // Caña, línea y corcho: cuando pica, el corcho se hunde y salta el aviso.

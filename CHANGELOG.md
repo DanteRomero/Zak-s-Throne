@@ -6,6 +6,14 @@ Cada versión lista sus cambios agrupados por tipo:
 - **Change:** algo que ya existía y ahora funciona distinto.
 - **Fix:** un error corregido.
 
+## v2.37 — 2026-11-18
+* Feature
+    - **Contragolpe:** si un enemigo te pega mientras rodás, además de esquivarlo le devolvés un golpe al instante que hace 2,5 veces el daño de tu arma. A los enemigos comunes también los empuja; a los jefes, no. Tu personaje brilla dorado. Sale una vez por rodada y contra el que te atacó, si está al alcance de tu arma.
+* Change
+    - **Esqueletos arqueros más lentos:** caminan un 30% más despacio y recién se alejan cuando estás a menos de 110 píxeles (antes, 150). Disparan igual que antes.
+* Fix
+    - **Pruebas del navegador:** el verificador esperaba como mucho 10 s una respuesta de Chrome y en una máquina cargada cortaba las pruebas del motor. Ahora espera hasta 60 s.
+
 ## v2.36 — 2026-11-18
 * Change
     - **Se sacó la pista del diario:** ya no aparece la flechita al lado del personaje, ni la dirección y los metros en el recuadro del diario. La opción también se fue.

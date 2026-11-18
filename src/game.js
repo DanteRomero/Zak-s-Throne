@@ -12,6 +12,8 @@ const isCave = biome => /^cave/.test(biome||'');
 const ROLL_TIME=.3,ROLL_COOLDOWN=.55,ROLL_COST=.2,COMBO_CRIT=4,CRIT_MULTIPLIER=1.75,HERB_REGROW=90,TAIL_RADIUS=62;
 // Guita por cada objetivo del diario: más difícil, más guita, sin romper la economía.
 const QUEST_REWARDS={archmage:150,bow:5,cave:5,stone:5,weeds:5,sword:10,shop:10,smith:15,bestiary:20,level5:25,deep:30,capo:40,yarara:40,deepest:50,vampire:60,golem:80,cerbero:100,altar:60,elemental:100,zak:300};
+// El arquero recién se aleja cuando estás a menos de esta distancia (antes, 150).
+Z.ARCHER_RETREAT=110;
 // Versión del balance de las partidas guardadas y la compensación por el rebalanceo de niveles.
 const BALANCE=2,REBALANCE_GIFT=Z.REBALANCE_GIFT=10000;
 const WEAPON_ORDER=['fists','bow','sword','stone','elemental'];
@@ -305,7 +307,7 @@ class Game {
   if(e.illusion){e.dead=true;e.hp=0;this.effect(e.x,e.y-12,'poof',.6,{seed:Math.random()*99});this.effect(e.x,e.y-28,'miss',.8,{text:'¡Era una copia!'});this.sound.play('teleport');return;}
   // Escudos, refuerzos y momentos invulnerables de los jefes.
   const immune=this.bossShield(e,source);if(immune){e.provoked=true;e.alert=true;this.effect(e.x,e.y-28,'miss',.7,{text:immune});this.sound.play('block');return;}
-  if(definition.block&&!exact&&this.chance(definition.block)){e.provoked=true;e.alert=true;this.effect(e.x,e.y-28,'miss',.7,{text:'¡Bloqueó!'});this.sound.play('block');return;}
+  if(definition.block&&!exact&&source!=='counter'&&this.chance(definition.block)){e.provoked=true;e.alert=true;this.effect(e.x,e.y-28,'miss',.7,{text:'¡Bloqueó!'});this.sound.play('block');return;}
   const damage=exact?raw:Z.damageAfterArmor(raw,e.stats.armor);e.hp-=damage;e.hitFlash=.16;e.provoked=true;e.alert=true;this.bossHitReact(e);
   this.effect(e.x,e.y-23,'hit',.8,{text:(crit?'¡':'')+this.number(damage)+(crit?'!':''),crit});this.effect(e.x,e.y-10,'spark',.35,{seed:Math.random()*99,crit});
   this.sound.play(crit?'crit':'hit');if(crit)this.shake(3,.2);
@@ -362,7 +364,7 @@ class Game {
     if(e.type==='bat'&&len>18){const wobble=Math.sin(this.time*5+e.homeX)*38;tx+=-(p.y-e.y)/(len||1)*wobble;ty+=(p.x-e.x)/(len||1)*wobble;}
     if(e.type==='worm'&&!wasAlert)this.effect(e.x,e.y,'dust',.6);
     // El arquero mantiene la distancia: se aleja si te acercás y se acerca si te alejás.
-    if(e.type==='archer'){const ux=(e.x-p.x)/(len||1),uy=(e.y-p.y)/(len||1);if(len<150){tx=e.x+ux*60;ty=e.y+uy*60;}else if(len<230){tx=e.x-uy*40*Math.sin(this.time+e.homeX);ty=e.y+ux*40*Math.sin(this.time+e.homeX);velocity*=.5;}}}
+    if(e.type==='archer'){const ux=(e.x-p.x)/(len||1),uy=(e.y-p.y)/(len||1);if(len<Z.ARCHER_RETREAT){tx=e.x+ux*60;ty=e.y+uy*60;}else if(len<230){tx=e.x-uy*40*Math.sin(this.time+e.homeX);ty=e.y+ux*40*Math.sin(this.time+e.homeX);velocity*=.5;}}}
    else if(e.type==='worm'){tx=e.x;ty=e.y;}else{tx=e.homeX+Math.sin(this.time*.2+e.homeX)*28;ty=e.homeY+Math.cos(this.time*.15+e.homeY)*22;velocity*=.28;}
    this.steer(e,tx,ty,velocity,dt,len);
    if(e.type==='archer'){if(e.alert&&len<290&&e.cooldown<=0&&!Z.isSafe(this.biome))this.shootArrow(e);if(this.state!=='playing')break;continue;}

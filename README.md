@@ -2,7 +2,7 @@
 
 Una aventura de acción y exploración en pixel art, vista desde arriba. Elegí a uno de siete amigos, preparate en la aldea y salí a explorar la cueva y los Yuyos.
 
-Versión actual: **v2.36**. Los cambios de cada versión están en [CHANGELOG.md](CHANGELOG.md).
+Versión actual: **v2.37**. Los cambios de cada versión están en [CHANGELOG.md](CHANGELOG.md).
 
 ## Jugar
 
@@ -106,6 +106,7 @@ En la **dimensión de Zak** siempre es de noche. La luna roja no se ve allá, pe
 ## Combate
 
 - **Rodar (Ctrl o clic derecho):** una voltereta rápida hacia donde te movés (quieto, hacia donde mirás) que gasta 20% de energía. Mientras dura (0,3 s) ningún golpe ni proyectil te hace daño; el veneno que ya tenés sigue actuando. Rodar también te saca de encima una rata prendida. No se puede rodar agotado.
+- **Contragolpe:** si un enemigo te pega mientras rodás, además de esquivarlo le devolvés un golpe al instante que hace **2,5 veces** el daño de tu arma (el escudo de los esqueletos no lo para). A los enemigos comunes también los empuja; a los jefes, no. Tu personaje brilla dorado. Sale **una vez por rodada** y solo contra el que te atacó, si está al alcance de tu arma (más un poco): contra flechas o bolas de fuego que vienen de lejos, solo esquivás. Lo que no viene de un enemigo (rayos, runas, fuego) no se contragolpea.
 - **Combos:** cada golpe que conecta suma al combo si no dejás pasar mucho tiempo. El **cuarto golpe seguido es crítico** e inflige ×1,75. El HUD muestra el combo y avisa con ✦ cuando el próximo golpe es crítico.
 - Los golpes producen chispas, la cámara se sacude con críticos y daño fuerte, y la pantalla destella al recibir daño.
 
@@ -514,7 +515,7 @@ Casi todos comparten un radio de detección de **195 píxeles**. Tienen **el mis
 - Las **arañas** (Cueva Profunda) tienen 15% de probabilidad de envenenar como las serpientes (5% contra Fede). Su caparazón absorbe 4 de daño por golpe.
 - Los **gusanos de tierra** (Las Entrañas) esperan enterrados, salen cuando te acercás a unos 120 píxeles y absorben 6 de daño por golpe. Reaparecen a los 90 segundos. Para pelear cómodo en los niveles profundos conviene llevar armas mejoradas.
 - Los **esqueletos con escudo** (cementerio) son lentos, pegan fuerte y tienen 15% de probabilidad de bloquear cada golpe.
-- Los **esqueletos arqueros** (cementerio) te ven desde 260 píxeles, disparan flechas cada 1,7 s y se alejan si te acercás. Sus flechas pegan un **75% más** que su fuerza (también por encima del tope de 100). Se rompen de un golpe.
+- Los **esqueletos arqueros** (cementerio) te ven desde 260 píxeles, disparan flechas cada 1,7 s y caminan un **30% más lento** que su velocidad. Recién se alejan cuando estás a menos de **110 píxeles**; entre 110 y 230 se mueven de costado. Sus flechas pegan un **75% más** que su fuerza (también por encima del tope de 100). Se rompen de un golpe.
 - Los **magos** (Pueblo Mágico) se quedan quietos **2 s conjurando** (un anillo naranja se va llenando) y tiran una **bola de fuego** que pega un 50% más que su fuerza y **quema**. Caminan algo lento y siempre buscan distancia.
 - Las **armaduras vivientes** (Pueblo Mágico) tienen mucha vida y armadura, caminan muy despacio y tardan en pegar: levantan la espada 1,1 s (círculo rojo) y **giran**, golpeando todo a su alrededor con el 150% de su fuerza.
 - Los **libros voladores** (Biblioteca) andan de a cuatro: te rodean volando y se tiran en picada a picarte. Tienen poca vida.
@@ -559,6 +560,7 @@ Implementado con **HTML, CSS y JavaScript**, sin paquetes externos. El mundo se 
 - `src/wanderer.js`: el vendedor ambulante, cuándo y dónde aparece y qué vende.
 - `src/weekly.js`: el desafío semanal y su premio.
 - `src/bestiary.js`: las historias del bestiario y qué enemigos venciste.
+- `src/counter.js`: el contragolpe al rodar justo cuando te pegan.
 - `src/ui.js`: menús, HUD, ficha, bolsa, diario y misiones, tienda, ranking, guardados y controles táctiles.
 - `src/ui-extras.js`: la mesa de truco, el medallero, la página del compañero en la ficha, la guardería y la puerta del trono.
 - `src/ui-codex.js`: el bestiario, el desafío semanal del diario y el vendedor ambulante.
@@ -572,7 +574,7 @@ Si ya tenés Node instalado:
 node tests/rules.test.js
 ```
 
-Abrí `tests/index.html` para ejecutar las 47 pruebas de reglas y las 234 pruebas de integración del motor en el navegador. El resultado detalla cada caso aprobado o fallido.
+Abrí `tests/index.html` para ejecutar las 47 pruebas de reglas y las 237 pruebas de integración del motor en el navegador. El resultado detalla cada caso aprobado o fallido.
 
 También se incluyen 96 pruebas de interfaz y de pixel art, 31 del ranking (con un servidor simulado), 36 de controles táctiles y 42 de la nube (también con un servidor simulado) con Chrome y Python 3, sin librerías adicionales. El verificador abre un perfil temporal aislado; nunca usa tus guardados personales:
 

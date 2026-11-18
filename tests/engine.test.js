@@ -1500,6 +1500,29 @@
       const lvl = game.player.level, thief = Z.enemyStats('thief', lvl), zak = Z.enemyStats('zak', lvl), capo = Z.enemyStats('capo', lvl);
       near(thief.health, 100 * 1.45); near(capo.health, 520 * 1.3); near(zak.health, 20000 * 1.1); near(capo.strength, 12 * .71); near(zak.strength, 40 * .68);
     });
+    test('v2.37: rolling right when an enemy hits dodges and counters for 2.5x your weapon damage', () => {
+      const p = fixture(); p.weapon = 'fists'; Math.random = () => .99;
+      const thief = enemy('thief', p.x + 30); thief.stun = 100; const hp = thief.hp, full = p.hp, damage = game.weaponDamage();
+      ok(game.roll()); p.rollX = 0; p.rollY = 0; const x = thief.x;
+      equal(game.hurtPlayer(10, 'thief'), false, 'the hit is dodged'); near(p.hp, full, 'no damage');
+      near(hp - thief.hp, Z.damageAfterArmor(damage * 2.5, thief.stats.armor), 'counter for 2.5x'); ok(thief.x - x >= Z.COUNTER.push - 1, 'common enemies are pushed');
+      ok(game.counterGlow > 0, 'the player glows gold'); advance(1); equal(game.counterGlow, 0);
+      // Una sola vez por rodada.
+      const after = thief.hp; game.counterUsed = true; game.hurtPlayer(10, 'thief'); equal(thief.hp, after, 'once per roll');
+      game.counterUsed = false; p.rollCooldown = 0; ok(game.roll()); p.rollX = 0; p.rollY = 0; game.hurtPlayer(10, 'thief'); ok(thief.hp < after || thief.dead, 'a new roll counters again');
+    });
+    test('v2.37: bosses take the counter but are not pushed; no counter without an attacker nearby or without rolling', () => {
+      const p = fixture(); const capo = enemy('capo', p.x + 30); capo.stun = 100; const x = capo.x, hp = capo.hp;
+      ok(game.roll()); p.rollX = 0; p.rollY = 0; game.hurtPlayer(10, 'capo'); ok(capo.hp < hp, 'hit'); near(capo.x, x, 'bosses stay put');
+      game.enemies = []; const far = enemy('mage', p.x + 300); far.stun = 100; const fhp = far.hp; p.rollCooldown = 0; p.roll = 0; ok(game.roll()); p.rollX = 0; p.rollY = 0;
+      game.hurtPlayer(10, 'mage'); equal(far.hp, fhp, 'too far for fists'); game.hurtPlayer(10, 'lightning', false, {pierce: true}); equal(game.counterUsed, false, 'nobody to counter');
+      p.roll = 0; const near2 = enemy('thief', p.x + 30); near2.stun = 100; const nhp = near2.hp; game.hurtPlayer(1, 'thief'); equal(near2.hp, nhp, 'without rolling there is no counter');
+    });
+    test('v2.37: skeleton archers walk slower and only back away when you get closer', () => {
+      const p = fixture(); near(Z.enemyStats('archer', 1).moveSpeed, Z.speedBand(30).moveSpeed * .7); equal(Z.ARCHER_RETREAT, 110);
+      const archer = enemy('archer', p.x + 130); archer.cooldown = 99; archer.alert = true; const start = archer.x; advance(.3); ok(archer.x <= start + 1, 'at 130 it does not run away');
+      archer.x = p.x + 80; const close = archer.x; advance(.3); ok(archer.x > close, 'at 80 it backs away');
+    });
     game.pause(); cancelAnimationFrame(game.frame);
     return {passed: results.filter(r=>r.pass).length, failed: results.filter(r=>!r.pass).length, results};
   };

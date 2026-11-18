@@ -131,8 +131,8 @@
     archer: {
       name: 'Esqueleto arquero', base: { health: 1, strength: 18, speed: 30, endurance: 0 },
       growth: { health: 0, strength: 1, speed: 0.5, endurance: 0 },
-      xp: 30, coins: [2, 4], color: '#cfc8b0', visionRange: 260, knockback: true, ranged: true, fixedHealth: true, power: 1.75,
-      description: 'Dispara flechas que pegan muy fuerte y siempre trata de mantener la distancia. Se rompe de un golpe.'
+      xp: 30, coins: [2, 4], color: '#cfc8b0', visionRange: 260, knockback: true, ranged: true, fixedHealth: true, power: 1.75, pace: 0.7,
+      description: 'Dispara flechas que pegan muy fuerte y se aleja si te le acercás mucho, pero es lento. Se rompe de un golpe.'
     },
     // Pueblo Mágico (dimensión de Zak). `pace` multiplica su paso; `burn` quema al pegar.
     mage: {

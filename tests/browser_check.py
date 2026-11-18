@@ -16,7 +16,8 @@ class Browser:
         self.port=int(portfile.read_text().splitlines()[0])
         targets=json.load(urllib.request.urlopen(f'http://localhost:{self.port}/json'))
         page=next(t for t in targets if t['type']=='page')
-        self.sock=socket.create_connection(('localhost',self.port),10)
+        # Las pruebas del motor corren todas juntas al cargar la página: en una máquina cargada tardan más de 10 s.
+        self.sock=socket.create_connection(('localhost',self.port),60)
         path=page['webSocketDebuggerUrl'].split(str(self.port),1)[1]
         key=base64.b64encode(os.urandom(16)).decode()
         request=f'GET {path} HTTP/1.1\r\nHost: localhost:{self.port}\r\nOrigin: http://localhost\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Key: {key}\r\nSec-WebSocket-Version: 13\r\n\r\n'
