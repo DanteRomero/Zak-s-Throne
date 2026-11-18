@@ -2,7 +2,7 @@
 
 Una aventura de acción y exploración en pixel art, vista desde arriba. Elegí a uno de siete amigos, preparate en la aldea y salí a explorar la cueva y los Yuyos.
 
-Versión actual: **v2.38**. Los cambios de cada versión están en [CHANGELOG.md](CHANGELOG.md).
+Versión actual: **v2.39**. Los cambios de cada versión están en [CHANGELOG.md](CHANGELOG.md).
 
 ## Jugar
 
@@ -106,7 +106,7 @@ En la **dimensión de Zak** siempre es de noche. La luna roja no se ve allá, pe
 ## Combate
 
 - **Rodar (Ctrl o clic derecho):** una voltereta rápida hacia donde te movés (quieto, hacia donde mirás) que gasta 20% de energía. Mientras dura (0,3 s) ningún golpe ni proyectil te hace daño; el veneno que ya tenés sigue actuando. Rodar también te saca de encima una rata prendida. No se puede rodar agotado.
-- **Contragolpe:** si un enemigo te pega mientras rodás, además de esquivarlo le devolvés un golpe al instante que hace **2,5 veces** el daño de tu arma (el escudo de los esqueletos no lo para). A los enemigos comunes también los empuja; a los jefes, no. Tu personaje brilla dorado. Sale **una vez por rodada** y solo contra el que te atacó, si está al alcance de tu arma (más un poco): contra flechas o bolas de fuego que vienen de lejos, solo esquivás. Lo que no viene de un enemigo (rayos, runas, fuego) no se contragolpea.
+- **Contragolpe:** si un enemigo te pega mientras rodás, además de esquivarlo le devolvés un golpe al instante que hace **2,5 veces** el daño de tu arma (el escudo de los esqueletos no lo para). A los enemigos comunes también los empuja; a los jefes, no. Tu personaje brilla dorado. Hay dos medallas: **Devolución** (100 contragolpes) y **Te la devuelvo** (10 contragolpes a Zak en una misma pelea). Sale **una vez por rodada** y solo contra el que te atacó, si está al alcance de tu arma (más un poco): contra flechas o bolas de fuego que vienen de lejos, solo esquivás. Lo que no viene de un enemigo (rayos, runas, fuego) no se contragolpea.
 - **Combos:** cada golpe que conecta suma al combo si no dejás pasar mucho tiempo. El **cuarto golpe seguido es crítico** e inflige ×1,75. El HUD muestra el combo y avisa con ✦ cuando el próximo golpe es crítico.
 - Los golpes producen chispas, la cámara se sacude con críticos y daño fuerte, y la pantalla destella al recibir daño.
 
@@ -290,7 +290,7 @@ Al **nivel 10** brillan con unos destellos dorados y dan una medalla. En la guar
 
 ## Medallas
 
-Cada logro tiene su **medalla**, con un dibujo que lo cuenta: una noche roja para la luna roja, un gólem roto para el Gólem Minero, una corona partida para la revancha contra Zak, un perro que te lame, y así. Hay 33. Se ven con **L** o desde el diario (J). Las que te faltan muestran **solo el nombre**: cómo se consiguen es un secreto, así que hay que probar cosas. Cuando ganás una, sube sobre tu cabeza.
+Cada logro tiene su **medalla**, con un dibujo que lo cuenta: una noche roja para la luna roja, un gólem roto para el Gólem Minero, una corona partida para la revancha contra Zak, un perro que te lame, y así. Hay 35. Se ven con **L** o desde el diario (J). Las que te faltan muestran **solo el nombre**: cómo se consiguen es un secreto, así que hay que probar cosas. Cuando ganás una, sube sobre tu cabeza.
 
 Las partidas de antes reciben solas, al cargarlas, las medallas que ya les correspondían (los jefes vencidos, el nivel, la Espada Elemental…). La cantidad de medallas tiene su propia pestaña en el ranking.
 
@@ -584,7 +584,7 @@ Si ya tenés Node instalado:
 node tests/rules.test.js
 ```
 
-Abrí `tests/index.html` para ejecutar las 47 pruebas de reglas y las 238 pruebas de integración del motor en el navegador. El resultado detalla cada caso aprobado o fallido.
+Abrí `tests/index.html` para ejecutar las 47 pruebas de reglas y las 239 pruebas de integración del motor en el navegador. El resultado detalla cada caso aprobado o fallido.
 
 También se incluyen 96 pruebas de interfaz y de pixel art, 31 del ranking (con un servidor simulado), 36 de controles táctiles y 42 de la nube (también con un servidor simulado) con Chrome y Python 3, sin librerías adicionales. El verificador abre un perfil temporal aislado; nunca usa tus guardados personales:
 

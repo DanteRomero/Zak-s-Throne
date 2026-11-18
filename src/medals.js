@@ -39,6 +39,9 @@ Z.MEDALS = [
  {id: 'weekly', name: 'Siete días', detail: 'Cumpliste un desafío semanal.', tier: 'silver'},
  {id: 'weeklyfirst', name: 'Madrugador', detail: 'Fuiste el primero de todos en cumplir el desafío de la semana.', tier: 'gold'},
  {id: 'bestfriend', name: 'Uña y carne', detail: 'Un compañero llegó al nivel 10.', tier: 'gold'},
+ // v2.39: el contragolpe (counter.js).
+ {id: 'counters', name: 'Devolución', detail: 'Hiciste 100 contragolpes.', tier: 'silver', check: g => (g.player.counters || 0) >= 100},
+ {id: 'zakcounter', name: 'Te la devuelvo', detail: 'Le hiciste 10 contragolpes a Zak en una misma pelea.', tier: 'gold'},
  {id: 'bestiary', name: 'Conocé a tu enemigo', detail: 'Completaste diez páginas del bestiario.', tier: 'silver', check: g => Z.BESTIARY_ORDER && Z.BESTIARY_ORDER.filter(t => g.bestiaryKnown(t)).length >= 10}
 ];
 const BY_ID = Object.fromEntries(Z.MEDALS.map(m => [m.id, m]));
@@ -116,6 +119,10 @@ const ART = {
  weeklyfirst(c) { disc(c, 0, 0, 10, '#2a2418'); POLY(c, [[-8, 6], [-9, -2], [-6, 2]], '#4a8a3a'); POLY(c, [[8, 6], [9, -2], [6, 2]], '#4a8a3a'); POLY(c, [[-7, 8], [-10, 3], [-5, 5]], '#4a8a3a'); POLY(c, [[7, 8], [10, 3], [5, 5]], '#4a8a3a'); R(c, -1, -7, 3, 13, '#e2b23c'); R(c, -3, -5, 2, 2, '#e2b23c'); R(c, -3, 5, 7, 2, '#e2b23c'); R(c, 0, -6, 1, 11, '#fff0a6'); },
  bestfriend(c) { disc(c, 0, 0, 10, '#2a3a28'); POLY(c, [[0, 7], [-7, 0], [-7, -4], [-4, -7], [0, -4], [4, -7], [7, -4], [7, 0]], '#d9708a'); POLY(c, [[0, 4], [-4, 0], [-4, -3], [-2, -4], [0, -2]], '#f0a0b0'); R(c, -2, 8, 2, 1, '#b07a45'); R(c, 1, 8, 2, 1, '#8a8f96'); for (const [x, y] of [[-9, -7], [8, -8], [9, 4]]) { R(c, x, y, 1, 1, '#fff0a6'); } },
  bestiary(c) { disc(c, 0, 0, 10, '#2a1f2a'); R(c, -8, -6, 8, 12, '#efe6cf'); R(c, 0, -6, 8, 12, '#e2d6b8'); R(c, -1, -6, 2, 12, '#6b4422'); R(c, -6, -3, 4, 3, '#2a2228'); R(c, -6, 2, 4, 1, '#8a8070'); R(c, 2, -3, 4, 1, '#8a8070'); R(c, 2, -1, 4, 1, '#8a8070'); R(c, 2, 1, 3, 1, '#8a8070'); disc(c, 6, -6, 2.5, '#b3202a'); R(c, 5, -7, 1, 1, '#e0433f'); },
+ // Dos espadas que se cruzan sobre un destello dorado: el golpe que vuelve.
+ counters(c) { disc(c, 0, 0, 10, '#2a2a3a'); disc(c, 0, 0, 5, '#7a5a1a'); disc(c, 0, 0, 3, '#ffe08a'); Px.rrect(c, 0, 0, Math.PI / 4, -1, -9, 2, 14, '#cfd6de'); Px.rrect(c, 0, 0, -Math.PI / 4, -1, -9, 2, 14, '#e9eef4'); Px.rrect(c, 0, 0, Math.PI / 4, -3, 4, 6, 2, '#c9a24c'); Px.rrect(c, 0, 0, -Math.PI / 4, -3, 4, 6, 2, '#c9a24c'); for (const [x, y] of [[-8, -2], [8, 2], [0, -9], [0, 8]]) R(c, x, y, 1, 1, '#fff0a6'); },
+ // La Espada del Caos partida al medio, con una flecha que vuelve.
+ zakcounter(c) { disc(c, 0, 0, 10, '#15131b'); POLY(c, [[-7, 7], [-5, 9], [0, 3], [-2, 1]], '#6d4ba0'); POLY(c, [[1, 0], [3, 2], [8, -6], [6, -8]], '#a77bff'); R(c, -4, 1, 2, 2, '#e2b23c'); POLY(c, [[-1, -1], [1, 1], [0, -2]], '#ffe08a'); POLY(c, [[-8, -3], [-3, -8], [-3, -5], [2, -5], [2, -2], [-3, -2], [-3, 1]], '#ffd25a'); R(c, 6, 5, 1, 1, '#fff0a6'); R(c, 8, 1, 1, 1, '#fff0a6'); },
  kennel(c) { disc(c, 0, 0, 10, '#4a6a3a'); POLY(c, [[-8, -1], [0, -8], [8, -1]], '#93834f'); R(c, -6, -1, 12, 8, '#d6c298'); R(c, -2, 2, 4, 5, '#795b3e'); for (const [x, y, col] of [[-8, 7, '#b07a45'], [-4, 8, '#4a3e58'], [4, 8, '#8a8f96'], [8, 7, '#7a5ca0']]) disc(c, x, y, 1.6, col); R(c, -1, -5, 2, 2, '#e9ac9a'); }
 };
 // Dibuja una medalla de radio 14 centrada en (x,y). Bloqueada: gris, con un signo de pregunta.

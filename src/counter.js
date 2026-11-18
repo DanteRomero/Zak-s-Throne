@@ -1,6 +1,6 @@
 /* Contragolpe: si rodás justo cuando un enemigo te pega, esquivás el golpe y le devolvés uno al instante
    que hace 2,5 veces el daño de tu arma. A los enemigos comunes además los empuja; a los jefes, no.
-   Sale una vez por rodada y el personaje brilla dorado. No guarda nada en la partida. */
+   Sale una vez por rodada y el personaje brilla dorado. La partida guarda cuántos hiciste (para las medallas). */
 (function () {
 'use strict';
 const Z = window.Zak;
@@ -36,6 +36,9 @@ P.counterStrike = function (source) {
  this.effect(p.x, p.y - 42, 'level', 1, {text: '¡Contragolpe!'});
  this.sound.play('crit'); this.shake(3, .2);
  this.hitEnemy(e, this.weaponDamage() * C.multiplier, false, true, 'counter');
+ // Medallas: 100 contragolpes en la partida y 10 a Zak en una misma pelea.
+ p.counters = (p.counters || 0) + 1;
+ if (e.type === 'zak' && ++this.zakCounters >= 10 && this.awardMedal) this.awardMedal('zakcounter');
  // A los comunes los empuja; los jefes no se mueven.
  if (!e.dead && !isBoss(e)) this.move(e, dx / len * C.push, dy / len * C.push, 8, e.biome);
  return true;
@@ -56,6 +59,16 @@ P.hurtPlayer = function (raw, source, poison = false, opts = {}) {
  const result = baseHurt.apply(this, arguments);
  if (dodged && !result) this.counterStrike(source);
  return result;
+};
+// Cada pelea con Zak cuenta sus contragolpes desde cero.
+const baseThrone = P.enterThrone;
+P.enterThrone = function () { this.zakCounters = 0; return baseThrone.apply(this, arguments); };
+// Los contragolpes se guardan en la partida; las de antes arrancan en 0.
+const baseRestore = P.restoreInventory;
+P.restoreInventory = function (p, source) {
+ baseRestore.apply(this, arguments);
+ const n = Math.floor(Number(source && source.counters));
+ p.counters = Number.isFinite(n) ? Math.max(0, Math.min(1e7, n)) : 0;
 };
 const baseUpdate = P.update;
 P.update = function (dt) {

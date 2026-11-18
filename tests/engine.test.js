@@ -1528,6 +1528,18 @@
       game.hurtPlayer(10, 'mage'); equal(far.hp, fhp, 'too far for fists'); game.hurtPlayer(10, 'lightning', false, {pierce: true}); equal(game.counterUsed, false, 'nobody to counter');
       p.roll = 0; const near2 = enemy('thief', p.x + 30); near2.stun = 100; const nhp = near2.hp; game.hurtPlayer(1, 'thief'); equal(near2.hp, nhp, 'without rolling there is no counter');
     });
+    test('v2.39: counter medals: 100 counters, and 10 on Zak in one fight; the count survives a save and old saves start at 0', () => {
+      const p = fixture(); p.weapon = 'fists'; const thief = enemy('thief', p.x + 30); thief.stun = 100; thief.hp = 1e9; thief.maxHp = 1e9;
+      const counter = () => { p.rollCooldown = 0; p.roll = 0; p.stamina = 1; p.exhausted = 0; ok(game.roll()); p.rollX = 0; p.rollY = 0; game.hurtPlayer(1, 'thief'); thief.x = p.x + 30; };
+      counter(); equal(p.counters, 1); p.counters = 98; counter(); ok(!game.hasMedal('counters')); counter(); equal(p.counters, 100); game.checkMedals(); ok(game.hasMedal('counters'));
+      const save = game.snapshot(); game.newGame('dante'); game.restore(save, 1); equal(game.player.counters, 100, 'kept in the save');
+      const old = game.snapshot(); delete old.player.counters; game.restore(old, 1); equal(game.player.counters, 0, 'old saves start at 0');
+      const q = fixture('gero', true); q.weapon = 'fists'; q.stats.health = 4000; q.hp = 4000; game.enterThrone(); game.finishCutscene(); const zak = game.enemies.find(e => e.type === 'zak');
+      for (let i = 0; i < 9; i++) { Object.assign(zak, {x: q.x + 30, y: q.y}); q.rollCooldown = 0; q.roll = 0; q.stamina = 1; q.exhausted = 0; ok(game.roll()); q.rollX = 0; q.rollY = 0; game.zakHit(zak, 1); }
+      equal(game.zakCounters, 9); ok(!game.hasMedal('zakcounter'));
+      Object.assign(zak, {x: q.x + 30, y: q.y}); q.rollCooldown = 0; q.roll = 0; q.stamina = 1; q.exhausted = 0; ok(game.roll()); q.rollX = 0; q.rollY = 0; game.zakHit(zak, 1); ok(game.hasMedal('zakcounter'), 'ten on Zak');
+      game.leaveThrone(); game.enterThrone(); equal(game.zakCounters, 0, 'each fight counts from zero');
+    });
     test('v2.37: skeleton archers walk slower and only back away when you get closer', () => {
       const p = fixture(); near(Z.enemyStats('archer', 1).moveSpeed, Z.speedBand(30).moveSpeed * .7); equal(Z.ARCHER_RETREAT, 110);
       const archer = enemy('archer', p.x + 130); archer.cooldown = 99; archer.alert = true; const start = archer.x; advance(.3); ok(archer.x <= start + 1, 'at 130 it does not run away');
