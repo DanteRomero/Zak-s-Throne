@@ -448,7 +448,7 @@
     const returnToPause = !!game.player && (game.state === 'playing' || game.state === 'paused');
     openModal('A tu manera', 'OPCIONES Y CONTROLES', parent => {
       parent.append(el('h3','sheet-heading','Pantalla y sonido'));
-      [['sound','Sonido ambiental y combate'],['particles','Partículas y efectos'],['shake','Sacudida de pantalla'],['tutorial','Consejos al empezar'],['tips','Tips: tecla para interactuar'],['notices','Avisos durante el juego'],['guide','Pista del diario: flecha al próximo objetivo'],['fullscreen','Pantalla completa al jugar (celular)']].forEach(([key,label]) => {
+      [['sound','Sonido ambiental y combate'],['particles','Partículas y efectos'],['shake','Sacudida de pantalla'],['tutorial','Consejos al empezar'],['tips','Tips: tecla para interactuar'],['notices','Avisos durante el juego'],['fullscreen','Pantalla completa al jugar (celular)']].forEach(([key,label]) => {
         const row = el('div','setting-row'); row.append(el('span','',label));
         const toggle = button(game.settings[key] ? 'ACTIVADO' : 'DESACTIVADO', () => { game.settings[key] = !game.settings[key]; persistSettings(); toggle.textContent = game.settings[key] ? 'ACTIVADO' : 'DESACTIVADO'; toggle.setAttribute('aria-pressed',String(game.settings[key])); },'toggle');
         toggle.setAttribute('aria-label',label); toggle.setAttribute('aria-pressed',String(game.settings[key])); row.append(toggle); parent.append(row);
@@ -897,8 +897,7 @@
       text('boss-hint',warning || fmt(boss.hp) + ' / ' + fmt(boss.maxHp));
       $('boss-bar').classList.toggle('warning',!!warning);
     }
-    const guide = game.guide(); text('quest-current',guide ? guide.quest.title : 'Todos los caminos recorridos');
-    text('quest-way',guide && guide.label && game.settings.guide ? (guide.near ? '✓ Acá cerca: ' + guide.label : Zak.guideArrow(guide.angle) + ' ' + guide.label + ' · ' + fmt(guide.meters) + ' m') : 'J para abrir el diario');
+    const quests = game.quests(), next = quests.find(quest => !quest.done); text('quest-current',next ? next.title : 'Todos los caminos recorridos');
     const cooldown = Math.max(0,number(p.abilityCooldown));
     text('ability-label',c.ability + (c.abilityPassive ? ' · Pasiva' : cooldown > 0 ? ' · ' + Math.ceil(cooldown) + ' s' : ''));
     $('ability-button').disabled = c.abilityPassive || cooldown > 0; $('ability-button').title = c.abilityDescription;

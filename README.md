@@ -2,7 +2,7 @@
 
 Una aventura de acción y exploración en pixel art, vista desde arriba. Elegí a uno de siete amigos, preparate en la aldea y salí a explorar la cueva y los Yuyos.
 
-Versión actual: **v2.35**. Los cambios de cada versión están en [CHANGELOG.md](CHANGELOG.md).
+Versión actual: **v2.36**. Los cambios de cada versión están en [CHANGELOG.md](CHANGELOG.md).
 
 ## Jugar
 
@@ -170,7 +170,6 @@ La Esfera mágica no va al altar: es un trofeo que solo sirve para vender. El Re
 - **Ficha (C):** tiene dos páginas. En **Tu personaje** está su retrato en un recuadro, el nivel y la experiencia, las estadísticas con los puntos para mejorar, cómo peleás ahora (vida, poder de golpe, armadura, velocidad…) y su habilidad, ventaja y desventaja. En **Tu compañero** está el retrato del que elijas, su nivel, sus números (daño por golpe, cada cuánto pega y saca su especial, cuánto le duran los efectos), su especial, su habilidad del nivel 5 y un campo para **cambiarle el nombre**. Los que todavía no tenés se ven como silueta, con la pista de cómo se consiguen.
 - **Bolsa (B):** todo lo que llevás encima menos la guita: objetos para usar, amuletos, armas con su nivel, armadura y herramientas, hierbas, materiales y **reliquias** (llaves del trono y ofrendas de los jefes).
 - **Diario (J):** arriba, tus enemigos y jefes vencidos y tu récord contra Zak. Después, tres bloques: **Medallero**, **Bestiario** y **Misiones** (los pedidos de los vecinos, en curso y cumplidos; el bloque avisa cuando hay alguno listo para entregar). Abajo, el desafío semanal y los objetivos del diario, con su guita para reclamar.
-- **Pista del diario:** una flechita alrededor de tu personaje apunta al próximo objetivo sin cumplir. Es **dorada** si el objetivo está donde estás y **lila** si primero tenés que tomar una bajada, una subida, un portal o una puerta (apunta a eso: por ejemplo, desde la dimensión de Zak, al portal verde a casa). En la computadora, el recuadro del diario dice también hacia dónde queda y a cuántos metros. Se esconde cuando llegás y mientras peleás contra un jefe. Los objetivos que no son un lugar, como subir al nivel 5, no tienen flecha. Se apaga en **Opciones**.
 
 ## Bolsa, consumibles y amuletos
 
@@ -560,7 +559,6 @@ Implementado con **HTML, CSS y JavaScript**, sin paquetes externos. El mundo se 
 - `src/wanderer.js`: el vendedor ambulante, cuándo y dónde aparece y qué vende.
 - `src/weekly.js`: el desafío semanal y su premio.
 - `src/bestiary.js`: las historias del bestiario y qué enemigos venciste.
-- `src/guide.js`: la pista del diario, hacia dónde queda el próximo objetivo y por qué bajada o portal se llega.
 - `src/ui.js`: menús, HUD, ficha, bolsa, diario y misiones, tienda, ranking, guardados y controles táctiles.
 - `src/ui-extras.js`: la mesa de truco, el medallero, la página del compañero en la ficha, la guardería y la puerta del trono.
 - `src/ui-codex.js`: el bestiario, el desafío semanal del diario y el vendedor ambulante.
@@ -574,9 +572,9 @@ Si ya tenés Node instalado:
 node tests/rules.test.js
 ```
 
-Abrí `tests/index.html` para ejecutar las 47 pruebas de reglas y las 235 pruebas de integración del motor en el navegador. El resultado detalla cada caso aprobado o fallido.
+Abrí `tests/index.html` para ejecutar las 47 pruebas de reglas y las 234 pruebas de integración del motor en el navegador. El resultado detalla cada caso aprobado o fallido.
 
-También se incluyen 98 pruebas de interfaz y de pixel art, 31 del ranking (con un servidor simulado), 36 de controles táctiles y 42 de la nube (también con un servidor simulado) con Chrome y Python 3, sin librerías adicionales. El verificador abre un perfil temporal aislado; nunca usa tus guardados personales:
+También se incluyen 96 pruebas de interfaz y de pixel art, 31 del ranking (con un servidor simulado), 36 de controles táctiles y 42 de la nube (también con un servidor simulado) con Chrome y Python 3, sin librerías adicionales. El verificador abre un perfil temporal aislado; nunca usa tus guardados personales:
 
 ```sh
 python tests/browser_check.py tests/index.html --script tests/engine.test.js

@@ -1495,29 +1495,6 @@
       game.trucoStart(50); const t = game.truco; for (let guard = 0; guard < 400 && !t.match.over; guard++) { const h = t.match.hand; if (h.finished) { game.trucoAct('next'); continue; } const o = Z.Truco.options(t.match, 'player'); if (o.answer) game.trucoAct('quiero'); else if (o.play) game.trucoAct('play', h.cards.player[0].id); }
       ok(t.match.over && t.settled, 'a whole match against the ghost ends');
     });
-    test('v2.30: the journal guide points to the next objective, and through stairs and portals when it is elsewhere', () => {
-      const p = fixture('gero', true), bow = game.world.pickups.find(i => i.id === 'village-bow');
-      Object.assign(p, {x: bow.x - 100, y: bow.y}); game.biome = 'village';
-      let g = game.guide(); equal(g.quest.id, 'bow'); equal(g.label, 'el arco'); near(g.angle, 0, 'east'); equal(g.meters, 10); equal(g.near, false); equal(Z.guideArrow(g.angle), '→');
-      p.x = bow.x - 20; ok(game.guide().near, 'close enough');
-      // Desde la Cueva Profunda, el Capo (en la superficie) se busca por la subida.
-      ['bow', 'stone', 'sword'].forEach(w => { if (!p.weapons.includes(w)) p.weapons.push(w); }); p.discovered.push('cave', 'weeds'); game.questFlags.bought = true;
-      ['thief', 'dog', 'snake', 'rat'].forEach(t => game.questFlags['defeat_' + t] = true); p.level = 5;
-      Object.assign(p, {x: 600, y: 2200}); game.biome = 'cave2';
-      g = game.guide(); equal(g.quest.id, 'capo'); ok(g.via, 'goes through a link'); ok(g.label.startsWith('la subida'), g.label); near(g.x, 104, 'the stairs up');
-      game.biome = 'cave'; Object.assign(p, {x: 400, y: 300}); g = game.guide(); equal(g.via, false); equal(g.label, 'El Capo del Eco');
-      // Desde la dimensión se vuelve por el portal verde, y desde La guardería, por su puerta.
-      game.biome = 'sanctum'; Object.assign(p, {x: 600, y: 3600}); g = game.guide(); ok(g.label.startsWith('el portal verde a casa'), g.label);
-      game.biome = 'kennel'; Object.assign(p, Z.KENNEL.inside); g = game.guide(); ok(g.label.startsWith('la salida de La guardería'), g.label);
-      // Zak se busca por el portal del altar desde la superficie y por la puerta del trono desde la dimensión.
-      Object.keys(Z.ENEMY_TYPES).forEach(t => game.questFlags['defeat_' + t] = true); Object.assign(game.questFlags, {crafted: true, elemental: true, altar: true}); delete game.questFlags.defeat_zak; p.discovered.push('cave2', 'cave3');
-      game.biome = 'village'; Object.assign(p, {x: 770, y: 960}); g = game.guide(); equal(g.quest.id, 'zak'); ok(g.label.startsWith('el portal del altar'), g.label);
-      game.biome = 'sanctum'; Object.assign(p, {x: 600, y: 3600}); g = game.guide(); ok(g.label.startsWith('la puerta del trono'), g.label); equal(Z.guideArrow(g.angle), '↑');
-      game.questFlags.defeat_zak = true; equal(game.guide(), null, 'nothing left');
-      // Subir de nivel no es un lugar: hay objetivo, pero no flecha.
-      const q = fixture('gero', true); game.questFlags = {}; Object.assign(game.questFlags, {bought: true}); ['bow', 'stone', 'sword'].forEach(w => { if (!q.weapons.includes(w)) q.weapons.push(w); }); q.discovered.push('cave', 'weeds');
-      ['thief', 'dog', 'snake', 'rat'].forEach(t => game.questFlags['defeat_' + t] = true); q.level = 1; g = game.guide(); equal(g.quest.id, 'level5'); equal(g.label, undefined);
-    });
     test('v2.30: every enemy but Zak has more health and a little more damage', () => {
       fixture('gero', true); Z.ENEMY_HEALTH = 1.45; Z.BOSS_HEALTH = 1.3; Z.ZAK_HEALTH = 1.1;
       const lvl = game.player.level, thief = Z.enemyStats('thief', lvl), zak = Z.enemyStats('zak', lvl), capo = Z.enemyStats('capo', lvl);

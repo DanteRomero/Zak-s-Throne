@@ -436,21 +436,6 @@
     c.restore();
   }
 
-  // Pista del diario: una flechita dorada alrededor del personaje que apunta al próximo objetivo (guide.js).
-  // Cerca del destino, o peleando contra un jefe, no se dibuja.
-  function drawGuideArrow(c, game, p, time) {
-    const g = game.guide();
-    if (!g || !g.label || g.near) return;
-    const ca = Math.cos(g.angle), sa = Math.sin(g.angle), r = 30 + Math.sin(time * 4) * 2.5, cx = p.x + ca * r, cy = p.y - 10 + sa * r;
-    const tip = [cx + ca * 10, cy + sa * 10], left = [cx - ca * 6 - sa * 8, cy - sa * 6 + ca * 8], right = [cx - ca * 6 + sa * 8, cy - sa * 6 - ca * 8], notch = [cx - ca * 1, cy - sa * 1];
-    const shape = () => { c.beginPath(); c.moveTo(...tip); c.lineTo(...left); c.lineTo(...notch); c.lineTo(...right); c.closePath(); };
-    // Dorada si el objetivo está en este lugar; lila si primero hay que tomar una bajada, una subida o un portal.
-    c.save(); c.globalAlpha = .82 + Math.sin(time * 4) * .13; c.lineJoin = "round";
-    shape(); c.lineWidth = 4; c.strokeStyle = "#1d160f"; c.stroke(); c.fillStyle = g.via ? "#cdb8ff" : "#ffd873"; c.fill();
-    c.lineWidth = 1; c.strokeStyle = "#fff6d8"; c.stroke();
-    c.restore();
-  }
-
   // El herrero: sin remera, musculoso, barbudo y con el martillo en la mano derecha.
   function drawSmith(c, n, time, portrait = false) {
     const skin = "#c98d62", shade = "#a8704b", light = "#e2a879", beard = "#3b2a1f";
@@ -2714,8 +2699,6 @@
       }
       // Lluvia (weather.js): gotas en pantalla, cielo más oscuro y salpicaduras.
       if(!menu&&Z.drawWeather)Z.drawWeather(c,game,ox,oy,W,H,time);
-      // La pista va encima de la oscuridad, la niebla y la lluvia: tiene que verse siempre.
-      if(!menu&&!scene&&game.state==="playing"&&game.settings&&game.settings.guide&&game.guide&&!(p.hp<=0)&&!game.bossTarget()){c.save();c.translate(-ox,-oy);drawGuideArrow(c,game,p,time);c.restore();}
       if(game.hurtFlash>0&&!menu){c.fillStyle="rgba(190,52,44,"+(game.hurtFlash*.55)+")";c.fillRect(0,0,W,H);}
       const maxHealth=p.maxHp||(game.stats?game.stats().maxHealth:0);
       if(p.hp>0&&maxHealth&&p.hp/maxHealth<.3&&!menu)Px.shade(c,W/2,H/2,W,H,[[130,0],[370,.2]],"#882d2a",.8+Math.sin(time*3)*.2);
