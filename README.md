@@ -2,7 +2,7 @@
 
 Una aventura de acción y exploración en pixel art, vista desde arriba. Elegí a uno de siete amigos, preparate en la aldea y salí a explorar la cueva y los Yuyos.
 
-Versión actual: **v2.34**. Los cambios de cada versión están en [CHANGELOG.md](CHANGELOG.md).
+Versión actual: **v2.35**. Los cambios de cada versión están en [CHANGELOG.md](CHANGELOG.md).
 
 ## Jugar
 
@@ -170,6 +170,7 @@ La Esfera mágica no va al altar: es un trofeo que solo sirve para vender. El Re
 - **Ficha (C):** tiene dos páginas. En **Tu personaje** está su retrato en un recuadro, el nivel y la experiencia, las estadísticas con los puntos para mejorar, cómo peleás ahora (vida, poder de golpe, armadura, velocidad…) y su habilidad, ventaja y desventaja. En **Tu compañero** está el retrato del que elijas, su nivel, sus números (daño por golpe, cada cuánto pega y saca su especial, cuánto le duran los efectos), su especial, su habilidad del nivel 5 y un campo para **cambiarle el nombre**. Los que todavía no tenés se ven como silueta, con la pista de cómo se consiguen.
 - **Bolsa (B):** todo lo que llevás encima menos la guita: objetos para usar, amuletos, armas con su nivel, armadura y herramientas, hierbas, materiales y **reliquias** (llaves del trono y ofrendas de los jefes).
 - **Diario (J):** arriba, tus enemigos y jefes vencidos y tu récord contra Zak. Después, tres bloques: **Medallero**, **Bestiario** y **Misiones** (los pedidos de los vecinos, en curso y cumplidos; el bloque avisa cuando hay alguno listo para entregar). Abajo, el desafío semanal y los objetivos del diario, con su guita para reclamar.
+- **Pista del diario:** una flechita alrededor de tu personaje apunta al próximo objetivo sin cumplir. Es **dorada** si el objetivo está donde estás y **lila** si primero tenés que tomar una bajada, una subida, un portal o una puerta (apunta a eso: por ejemplo, desde la dimensión de Zak, al portal verde a casa). En la computadora, el recuadro del diario dice también hacia dónde queda y a cuántos metros. Se esconde cuando llegás y mientras peleás contra un jefe. Los objetivos que no son un lugar, como subir al nivel 5, no tienen flecha. Se apaga en **Opciones**.
 
 ## Bolsa, consumibles y amuletos
 
@@ -355,15 +356,15 @@ Escalan con tu nivel como el resto de los enemigos, no retroceden con los golpes
 
 | Jefe | Dónde | Vida | Fuerza | Velocidad | Resistencia |
 | --- | --- | ---: | ---: | ---: | ---: |
-| El Capo del Eco | Junto a la bajada al Nvl 2 | 572 | 12 | 22 | 35 |
-| La Yarará Madre | Rincón noreste de Los Yuyos | 528 | 10 | 28 | 20 |
-| El Chupasangre | Junto a la bajada al Nvl 3 | 990 | 15 | 35 | 40 |
-| El Gólem Minero | Las Entrañas | 462 por vida (×1; ×1,15; ×1,3; ×1,5) | 22 | 10 | 65 |
-| Cerbero | Altar del gobernante | 1760 | 20 | 62 | 50 |
-| El Rey Mago | Pueblo Mágico, frente a la puerta del trono | 2860 | 30 | 55 | 55 |
+| El Capo del Eco | Junto a la bajada al Nvl 2 | 676 | 12 | 22 | 35 |
+| La Yarará Madre | Rincón noreste de Los Yuyos | 624 | 10 | 28 | 20 |
+| El Chupasangre | Junto a la bajada al Nvl 3 | 1170 | 15 | 35 | 40 |
+| El Gólem Minero | Las Entrañas | 546 por vida (×1; ×1,15; ×1,3; ×1,5) | 22 | 10 | 65 |
+| Cerbero | Altar del gobernante | 2080 | 20 | 62 | 50 |
+| El Rey Mago | Pueblo Mágico, frente a la puerta del trono | 3380 | 30 | 55 | 55 |
 | Zak | Trono de Zak | 22000 por vida (+440 por nivel, y la vida extra desde el nivel 8), 3 vidas | — | 22 | 85 |
 
-Son los valores en nivel 1; todos crecen con tu nivel. Hacen el **68%** de su fuerza como daño (los enemigos comunes, el 72%) y tienen un **10% más de vida** que la base de su ficha (los enemigos comunes, un 20% más). La tabla ya incluye ese extra. Desde el nivel 8 ganan **4%** de vida extra por nivel, como el resto. Entre el aviso y el golpe hay tiempo de reaccionar: entre 0,6 y 1 s para embestidas, saltos y golpes al piso, y menos de medio segundo para los golpes cortos. Caminan un **25% más lento** que lo que indica su velocidad, pero hacen todo a un **ritmo 20% mayor**: preparan, atacan, se mueven y recargan sus ataques antes (los tiempos de aviso de esta sección ya son más cortos en la práctica).
+Son los valores en nivel 1; todos crecen con tu nivel. Hacen el **71%** de su fuerza como daño (los enemigos comunes, el 75%) y tienen un **30% más de vida** que la base de su ficha (los enemigos comunes, un 45% más). Zak es la excepción: se queda con el **10% más de vida** y el **68%** de daño. La tabla ya incluye ese extra. Desde el nivel 8 ganan **4%** de vida extra por nivel, como el resto. Entre el aviso y el golpe hay tiempo de reaccionar: entre 0,6 y 1 s para embestidas, saltos y golpes al piso, y menos de medio segundo para los golpes cortos. Caminan un **25% más lento** que lo que indica su velocidad, pero hacen todo a un **ritmo 20% mayor**: preparan, atacan, se mueven y recargan sus ataques antes (los tiempos de aviso de esta sección ya son más cortos en la práctica).
 
 - **El Capo del Eco:** marca una línea roja y embiste: 160% de su fuerza y frena 1,5 s. *Lluvia de cuchillos*: se planta sin perseguirte ni huir y durante 5 s tira 3 cuchillos por segundo, cada uno hacia donde estés en ese momento (200% de su fuerza). Atraviesan cualquier estructura, llegan a toda la cueva y no salen de ella. **Si te dan 5 en una misma lluvia, te noquea.** Se esquivan rodando, y aturdirlo o salir de la zona la corta.
 - **La Yarará Madre:** te persigue. Colazo en anillo alrededor suyo (marca un círculo rosado: rodá o alejate). Antes de escupir el abanico de veneno retrocede un poco y marca tres líneas (50% de envenenar; 15% contra Fede).
@@ -485,7 +486,7 @@ La que tenés puesta se ve en el personaje: hombreras y cinturón del color del 
 
 ## Enemigos
 
-Casi todos comparten un radio de detección de **195 píxeles**. Tienen **el mismo nivel que tu personaje** y no corren ni gastan energía. Su vida final es un **20% más** que la de esta tabla. Desde el nivel 8, además, cada nivel les suma **4% de vida y 0,5% de fuerza** (`vida × (1 + 0,04 × (nivel − 8))`, `fuerza × (1 + 0,005 × (nivel − 8))`). El daño de los enemigos comunes es el **72%** de su fuerza final; el de los jefes, el **68%**. Así el final del juego sigue siendo exigente. La vida de los enemigos no tiene tope; fuerza, velocidad y resistencia sí (100 antes del extra).
+Casi todos comparten un radio de detección de **195 píxeles**. Tienen **el mismo nivel que tu personaje** y no corren ni gastan energía. Su vida final es un **45% más** que la de esta tabla. Desde el nivel 8, además, cada nivel les suma **4% de vida y 0,5% de fuerza** (`vida × (1 + 0,04 × (nivel − 8))`, `fuerza × (1 + 0,005 × (nivel − 8))`). El daño de los enemigos comunes es el **75%** de su fuerza final; el de los jefes, el **71%** (Zak, el **68%**). Así el final del juego sigue siendo exigente. La vida de los enemigos no tiene tope; fuerza, velocidad y resistencia sí (100 antes del extra).
 
 | Enemigo | Vida | Fuerza | Velocidad | Resistencia | Aumento por nivel: V / F / Vel / R |
 | --- | ---: | ---: | ---: | ---: | --- |
@@ -559,12 +560,13 @@ Implementado con **HTML, CSS y JavaScript**, sin paquetes externos. El mundo se 
 - `src/wanderer.js`: el vendedor ambulante, cuándo y dónde aparece y qué vende.
 - `src/weekly.js`: el desafío semanal y su premio.
 - `src/bestiary.js`: las historias del bestiario y qué enemigos venciste.
+- `src/guide.js`: la pista del diario, hacia dónde queda el próximo objetivo y por qué bajada o portal se llega.
 - `src/ui.js`: menús, HUD, ficha, bolsa, diario y misiones, tienda, ranking, guardados y controles táctiles.
 - `src/ui-extras.js`: la mesa de truco, el medallero, la página del compañero en la ficha, la guardería y la puerta del trono.
 - `src/ui-codex.js`: el bestiario, el desafío semanal del diario y el vendedor ambulante.
 - `src/ranking.js` y `src/config.js`: ranking local u online (Supabase).
 - `src/cloud.js`: cuentas y partidas en la nube (Supabase).
-- `tests/rules.test.js`: 46 pruebas de reglas y casos límite.
+- `tests/rules.test.js`: 47 pruebas de reglas y casos límite.
 
 Si ya tenés Node instalado:
 
@@ -572,9 +574,9 @@ Si ya tenés Node instalado:
 node tests/rules.test.js
 ```
 
-Abrí `tests/index.html` para ejecutar las 46 pruebas de reglas y las 186 pruebas de integración del motor en el navegador. El resultado detalla cada caso aprobado o fallido.
+Abrí `tests/index.html` para ejecutar las 47 pruebas de reglas y las 235 pruebas de integración del motor en el navegador. El resultado detalla cada caso aprobado o fallido.
 
-También se incluyen 96 pruebas de interfaz y de pixel art, 31 del ranking (con un servidor simulado), 36 de controles táctiles y 42 de la nube (también con un servidor simulado) con Chrome y Python 3, sin librerías adicionales. El verificador abre un perfil temporal aislado; nunca usa tus guardados personales:
+También se incluyen 98 pruebas de interfaz y de pixel art, 31 del ranking (con un servidor simulado), 36 de controles táctiles y 42 de la nube (también con un servidor simulado) con Chrome y Python 3, sin librerías adicionales. El verificador abre un perfil temporal aislado; nunca usa tus guardados personales:
 
 ```sh
 python tests/browser_check.py tests/index.html --script tests/engine.test.js

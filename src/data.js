@@ -235,16 +235,19 @@
   Zak.emptyOfferings = () => ({ fang: 0, ring: 0, claw: 0, elemental: 0, eye: 0, sphere: 0 });
   Zak.emptyAltar = () => ({ fang: false, ring: false, claw: false, elemental: false, eye: false });
   Zak.ELEMENTAL_RECIPE = { coins: 0, materials: { wood: 10, stone: 25, iron: 20, gold: 15, diamond: 10 }, offerings: { elemental: 5 } };
-  // Parte de la fuerza que se convierte en daño: 72% para los enemigos comunes y 68% para los jefes.
+  // Parte de la fuerza que se convierte en daño: 75% para los enemigos comunes y 71% para los jefes.
+  // Zak se queda en el 68%: sus golpes ya se miden por tu vida.
   // Los jefes caminan un 25% más lento que su banda de velocidad, pero todo lo hacen
   // a un ritmo 20% mayor: preparan, atacan y recargan antes.
-  Zak.ENEMY_DAMAGE = 0.72;
-  Zak.BOSS_DAMAGE = 0.68;
+  Zak.ENEMY_DAMAGE = 0.75;
+  Zak.BOSS_DAMAGE = 0.71;
+  Zak.ZAK_DAMAGE = 0.68;
   Zak.BOSS_PACE = 0.75;
   Zak.BOSS_TEMPO = 1.2;
-  // Vida final respecto de la ficha: los enemigos comunes tienen un 20% más y los jefes (Zak incluido), un 10% más.
-  Zak.ENEMY_HEALTH = 1.2;
-  Zak.BOSS_HEALTH = 1.1;
+  // Vida final respecto de la ficha: los enemigos comunes tienen un 45% más, los jefes un 30% más y Zak, un 10% más.
+  Zak.ENEMY_HEALTH = 1.45;
+  Zak.BOSS_HEALTH = 1.3;
+  Zak.ZAK_HEALTH = 1.1;
   // Desde el nivel 8 los enemigos ganan vida y fuerza extra: así el final del juego no se vuelve un paseo.
   Zak.lateFactor = function (level) {
     const extra = Math.max(0, Math.floor(Number(level) || 1) - 8);
@@ -471,9 +474,10 @@
     const late = Zak.lateFactor(level);
     if (!definition.fixedHealth) stats.health *= late.health;
     if (!definition.lateHealthOnly) stats.strength *= late.strength;
-    if (!definition.fixedHealth) stats.health *= definition.boss ? Zak.BOSS_HEALTH : Zak.ENEMY_HEALTH;
+    const zak = type === 'zak';
+    if (!definition.fixedHealth) stats.health *= zak ? Zak.ZAK_HEALTH : definition.boss ? Zak.BOSS_HEALTH : Zak.ENEMY_HEALTH;
     // `power` multiplica el daño después del tope de fuerza (las flechas del arquero).
-    stats.strength *= (definition.boss ? Zak.BOSS_DAMAGE : Zak.ENEMY_DAMAGE) * (definition.power || 1);
+    stats.strength *= (zak ? Zak.ZAK_DAMAGE : definition.boss ? Zak.BOSS_DAMAGE : Zak.ENEMY_DAMAGE) * (definition.power || 1);
     stats.maxHealth = stats.health;
     stats.moveSpeed = Zak.speedBand(stats.speed).moveSpeed * (definition.boss ? Zak.BOSS_PACE : 1) * (definition.pace || 1);
     stats.attackCooldown = Zak.speedBand(stats.speed).attackCooldown;

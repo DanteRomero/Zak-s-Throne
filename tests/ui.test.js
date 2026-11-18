@@ -59,6 +59,10 @@
   const hudWait=()=>new Promise(r=>setTimeout(()=>{g.emit('tick');r();},120));g.settings.tips=false;g.player.x=1062;g.player.y=1462;await hudWait();
   assert('Sin tips no se muestra la tecla para interactuar',!!g.nearbyAction()&&document.getElementById('interaction-hint').classList.contains('hidden'));
   g.settings.tips=true;await hudWait();assert('Con tips vuelve la tecla',!document.getElementById('interaction-hint').classList.contains('hidden'));
+  // Pista del diario: hacia dónde y a cuántos metros queda el próximo objetivo; se apaga en las opciones.
+  {const way=document.getElementById('quest-way'),guide=g.guide();
+   assert('La pista del diario dice hacia dónde y a cuántos metros',!!guide&&!!guide.label&&way.textContent.includes(guide.label)&&/ m$|Acá cerca/.test(way.textContent));
+   g.settings.guide=false;await hudWait();assert('Sin la pista vuelve el aviso del diario',way.textContent==='J para abrir el diario');g.settings.guide=true;await hudWait();}
   // El reloj del HUD: día, tarde, noche, luna roja y dimensión de Zak.
   const clock=document.getElementById('hud-time'),clockAt=async(minutes,moon=false,place=null)=>{const biome=g.biome;g.player.playTime=minutes*60;g.player.bloodMoon=moon;g.player.moonNight=moon?0:-1;if(place)g.biome=place;await hudWait();const shown=clock.textContent,red=clock.classList.contains('blood-moon'),statuses=document.getElementById('status-effects').textContent;g.biome=biome;return{shown,red,statuses};};
   assert('A la mañana el reloj dice Día',/☀ DÍA · 08:00/.test((await clockAt(0)).shown));

@@ -154,21 +154,27 @@
     test('Enemigos tienen el mismo nivel que el personaje', () => {
       [1,2,3,4,5].forEach(level => equal(Zak.enemyStats('thief',level).level,level));
       const thief=Zak.enemyStats('thief',3);
-      near(thief.health,103*1.2); near(thief.strength,6*.72); equal(thief.speed,17); equal(thief.endurance,12);
+      near(thief.health,103*1.45); near(thief.strength,6*.75); equal(thief.speed,17); equal(thief.endurance,12);
     });
     test('Crecimientos fraccionarios y daño de veneno se conservan', () => {
       const dog=Zak.enemyStats('dog',3), snake=Zak.enemyStats('snake',3), rat=Zak.enemyStats('rat',3);
-      near(dog.health,61.5*1.2); near(dog.strength,3.5*.72); equal(dog.speed,33); equal(dog.endurance,22);
-      near(snake.health,36*1.2); near(snake.strength,7*.72); equal(snake.poison,3); equal(snake.speed,27); equal(snake.endurance,5.5);
-      near(rat.health,10.5*1.2); near(rat.strength,1.8*.72); equal(rat.speed,42); equal(rat.endurance,.5);
+      near(dog.health,61.5*1.45); near(dog.strength,3.5*.75); equal(dog.speed,33); equal(dog.endurance,22);
+      near(snake.health,36*1.45); near(snake.strength,7*.75); equal(snake.poison,3); equal(snake.speed,27); equal(snake.endurance,5.5);
+      near(rat.health,10.5*1.45); near(rat.strength,1.8*.75); equal(rat.speed,42); equal(rat.endurance,.5);
     });
     test('Desde el nivel 8 los enemigos ganan vida y fuerza extra', () => {
       const base=Zak.enemyStats('thief',8), late=Zak.enemyStats('thief',20);
-      near(base.health,110.5*1.2); near(base.strength,8.5*.72);
-      near(late.health,(100+1.5*19)*1.48*1.2); near(late.strength,(5+.5*19)*1.06*.72);
+      near(base.health,110.5*1.45); near(base.strength,8.5*.75);
+      near(late.health,(100+1.5*19)*1.48*1.45); near(late.strength,(5+.5*19)*1.06*.75);
       equal(Zak.enemyStats('archer',40).health,1,'El arquero siempre se rompe de un golpe');
       near(Zak.enemyStats('zak',40).health,(20000+400*39)*2.28*1.1,'Zak gana la vida tardía');
       near(Zak.enemyStats('zak',40).strength,(40+1.5*39)*.68,'pero no la fuerza tardía');
+    });
+    test('Los jefes aguantan un 30% más que su ficha, pero Zak sigue con el 10%', () => {
+      near(Zak.enemyStats('capo',1).health,520*1.3); near(Zak.enemyStats('capo',1).strength,12*.71);
+      near(Zak.enemyStats('archmage',1).health,2600*1.3); near(Zak.enemyStats('golem',1).strength,22*.71);
+      near(Zak.enemyStats('zak',1).health,20000*1.1); near(Zak.enemyStats('zak',1).strength,40*.68);
+      near(Zak.enemyStats('armor',1).health,420*1.45); near(Zak.enemyStats('armor',1).strength,30*.75);
     });
     test('Las ratas ya no son letales en el final del juego', () => {
       ok(Zak.enemyStats('rat',40).strength<Zak.enemyStats('thief',40).strength,'Una rata pega menos que un chorro');

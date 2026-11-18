@@ -32,12 +32,12 @@
       game.enemies.push(e); return e;
     }
     // Las pruebas del motor miden daño contra la vida de la ficha: los multiplicadores de vida
-    // (ENEMY_HEALTH y BOSS_HEALTH) se prueban aparte en las reglas.
+    // (ENEMY_HEALTH, BOSS_HEALTH y ZAK_HEALTH) se prueban aparte en las reglas.
     function test(name, fn) {
-      const health = [Z.ENEMY_HEALTH, Z.BOSS_HEALTH]; Z.ENEMY_HEALTH = 1; Z.BOSS_HEALTH = 1;
+      const health = [Z.ENEMY_HEALTH, Z.BOSS_HEALTH, Z.ZAK_HEALTH]; Z.ENEMY_HEALTH = 1; Z.BOSS_HEALTH = 1; Z.ZAK_HEALTH = 1;
       try { fn(); results.push({name, pass: true}); }
       catch (error) { results.push({name, pass: false, error: error.message, stack: error.stack}); }
-      finally { Z.biomeAt = original.biomeAt; Z.collides = original.collides; Math.random = original.random; [Z.ENEMY_HEALTH, Z.BOSS_HEALTH] = health; game.pause(); }
+      finally { Z.biomeAt = original.biomeAt; Z.collides = original.collides; Math.random = original.random; [Z.ENEMY_HEALTH, Z.BOSS_HEALTH, Z.ZAK_HEALTH] = health; game.pause(); }
     }
 
     test('Poison ticks five times in five seconds and bypasses armor', () => {
@@ -441,7 +441,7 @@
       p.poison = null; Math.random = () => .2; spider.cooldown = 0; game.enemyAttack(spider); equal(p.poison, null, '0.2 > 15%');
       game.enemies = []; const worm = enemy('worm', p.x + 150); const x = worm.x; advance(1); equal(worm.alert, false); near(worm.x, x, 'Buried worm does not wander');
       worm.x = p.x + 100; advance(.1); ok(worm.alert, 'Worm emerges when you get close');
-      equal(Z.enemyStats('worm', 1).health, 100); near(Z.enemyStats('worm', 1).strength, 7.2, 'Worm damage is 72%');
+      equal(Z.enemyStats('worm', 1).health, 100); near(Z.enemyStats('worm', 1).strength, 7.5, 'Worm damage is 75%');
     });
     test('Materials, tools, upgrades and harvested nodes survive a save round trip', () => {
       const p = fixture('gero', true); Object.assign(p, {axe: 2, pickaxe: 3, torch: true}); p.materials.gold = 7; p.weaponLevels.fists = 4;
@@ -1494,6 +1494,34 @@
       Math.random = original.random; const left = p.coins; game.trucoStart(50); game.trucoLeave(); equal(p.coins, left - 50, 'leaving the table loses the bet');
       game.trucoStart(50); const t = game.truco; for (let guard = 0; guard < 400 && !t.match.over; guard++) { const h = t.match.hand; if (h.finished) { game.trucoAct('next'); continue; } const o = Z.Truco.options(t.match, 'player'); if (o.answer) game.trucoAct('quiero'); else if (o.play) game.trucoAct('play', h.cards.player[0].id); }
       ok(t.match.over && t.settled, 'a whole match against the ghost ends');
+    });
+    test('v2.30: the journal guide points to the next objective, and through stairs and portals when it is elsewhere', () => {
+      const p = fixture('gero', true), bow = game.world.pickups.find(i => i.id === 'village-bow');
+      Object.assign(p, {x: bow.x - 100, y: bow.y}); game.biome = 'village';
+      let g = game.guide(); equal(g.quest.id, 'bow'); equal(g.label, 'el arco'); near(g.angle, 0, 'east'); equal(g.meters, 10); equal(g.near, false); equal(Z.guideArrow(g.angle), '→');
+      p.x = bow.x - 20; ok(game.guide().near, 'close enough');
+      // Desde la Cueva Profunda, el Capo (en la superficie) se busca por la subida.
+      ['bow', 'stone', 'sword'].forEach(w => { if (!p.weapons.includes(w)) p.weapons.push(w); }); p.discovered.push('cave', 'weeds'); game.questFlags.bought = true;
+      ['thief', 'dog', 'snake', 'rat'].forEach(t => game.questFlags['defeat_' + t] = true); p.level = 5;
+      Object.assign(p, {x: 600, y: 2200}); game.biome = 'cave2';
+      g = game.guide(); equal(g.quest.id, 'capo'); ok(g.via, 'goes through a link'); ok(g.label.startsWith('la subida'), g.label); near(g.x, 104, 'the stairs up');
+      game.biome = 'cave'; Object.assign(p, {x: 400, y: 300}); g = game.guide(); equal(g.via, false); equal(g.label, 'El Capo del Eco');
+      // Desde la dimensión se vuelve por el portal verde, y desde La guardería, por su puerta.
+      game.biome = 'sanctum'; Object.assign(p, {x: 600, y: 3600}); g = game.guide(); ok(g.label.startsWith('el portal verde a casa'), g.label);
+      game.biome = 'kennel'; Object.assign(p, Z.KENNEL.inside); g = game.guide(); ok(g.label.startsWith('la salida de La guardería'), g.label);
+      // Zak se busca por el portal del altar desde la superficie y por la puerta del trono desde la dimensión.
+      Object.keys(Z.ENEMY_TYPES).forEach(t => game.questFlags['defeat_' + t] = true); Object.assign(game.questFlags, {crafted: true, elemental: true, altar: true}); delete game.questFlags.defeat_zak; p.discovered.push('cave2', 'cave3');
+      game.biome = 'village'; Object.assign(p, {x: 770, y: 960}); g = game.guide(); equal(g.quest.id, 'zak'); ok(g.label.startsWith('el portal del altar'), g.label);
+      game.biome = 'sanctum'; Object.assign(p, {x: 600, y: 3600}); g = game.guide(); ok(g.label.startsWith('la puerta del trono'), g.label); equal(Z.guideArrow(g.angle), '↑');
+      game.questFlags.defeat_zak = true; equal(game.guide(), null, 'nothing left');
+      // Subir de nivel no es un lugar: hay objetivo, pero no flecha.
+      const q = fixture('gero', true); game.questFlags = {}; Object.assign(game.questFlags, {bought: true}); ['bow', 'stone', 'sword'].forEach(w => { if (!q.weapons.includes(w)) q.weapons.push(w); }); q.discovered.push('cave', 'weeds');
+      ['thief', 'dog', 'snake', 'rat'].forEach(t => game.questFlags['defeat_' + t] = true); q.level = 1; g = game.guide(); equal(g.quest.id, 'level5'); equal(g.label, undefined);
+    });
+    test('v2.30: every enemy but Zak has more health and a little more damage', () => {
+      fixture('gero', true); Z.ENEMY_HEALTH = 1.45; Z.BOSS_HEALTH = 1.3; Z.ZAK_HEALTH = 1.1;
+      const lvl = game.player.level, thief = Z.enemyStats('thief', lvl), zak = Z.enemyStats('zak', lvl), capo = Z.enemyStats('capo', lvl);
+      near(thief.health, 100 * 1.45); near(capo.health, 520 * 1.3); near(zak.health, 20000 * 1.1); near(capo.strength, 12 * .71); near(zak.strength, 40 * .68);
     });
     game.pause(); cancelAnimationFrame(game.frame);
     return {passed: results.filter(r=>r.pass).length, failed: results.filter(r=>!r.pass).length, results};

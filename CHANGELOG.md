@@ -6,6 +6,13 @@ Cada versión lista sus cambios agrupados por tipo:
 - **Change:** algo que ya existía y ahora funciona distinto.
 - **Fix:** un error corregido.
 
+## v2.35 — 2026-11-18
+* Feature
+    - **Pista del diario:** una flechita alrededor de tu personaje apunta al próximo objetivo sin cumplir: el arco, la cueva, el herrero, cada jefe, el altar, la puerta del trono… Es dorada si el objetivo está donde estás y lila si primero hay que tomar una bajada, una subida, un portal o una puerta (apunta a eso). En la computadora, el recuadro del diario dice además hacia dónde queda y a cuántos metros. Se esconde al llegar y mientras peleás contra un jefe, y se apaga en Opciones.
+* Change
+    - **Enemigos más duros:** los comunes tienen un 45% más de vida que su ficha (antes, un 20%) y los jefes, un 30% más (antes, un 10%). Pegan apenas más: el 75% de su fuerza los comunes (antes, el 72%) y el 71% los jefes (antes, el 68%).
+    - **Zak no cambia:** sigue con un 10% más de vida y el 68% de daño.
+
 ## v2.34 — 2026-11-17
 * Fix
     - **El juego se trababa cuando salía un esqueleto entre la niebla:** el oscurecimiento del susto armaba en cada cuadro un círculo gigante nuevo y no lo tiraba. Ahora cada forma se calcula una sola vez. Pasaba lo mismo, más leve, mientras la niebla aparecía o se iba.

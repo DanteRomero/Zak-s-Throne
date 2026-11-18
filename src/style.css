@@ -414,3 +414,5 @@ h1>span{text-shadow:3px 4px 0 #0b211b55,0 0 34px #e7be7230}
 @media(max-height:520px){.choose-hero{display:none}.character-detail{grid-template-columns:1fr 1.35fr;gap:16px}.character-detail .sheet-heading{margin-bottom:6px}.sheet-traits.stack .trait{padding:7px 10px}.menu-copy::before{inset:-14px -20px -12px}.menu-copy::after{display:none}}
 @media(max-width:700px) and (max-height:520px){.character-detail{grid-template-columns:1fr}}
 @media(max-width:700px){.menu-copy::before{inset:-14px -16px -14px}.menu-copy::after{display:none}}
+/* v2.30: pista del diario, hacia dónde y a cuántos metros queda el próximo objetivo. */
+#quest-hint #quest-way{display:block;font-size:10px;line-height:1.45;color:#ecdcaa}
