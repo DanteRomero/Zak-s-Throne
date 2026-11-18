@@ -6,6 +6,10 @@ Cada versión lista sus cambios agrupados por tipo:
 - **Change:** algo que ya existía y ahora funciona distinto.
 - **Fix:** un error corregido.
 
+## v2.38 — 2026-11-18
+* Change
+    - **La armadura sirve contra Zak:** antes sus golpes la ignoraban y siempre se llevaban el 52% de tu vida. Ahora cada punto de armadura baja 1,6 ese porcentaje: con la de diamante se lleva el 37,6% y con la de piedra elemental, el 31,2%, así que aguantás tres golpes y caés con el cuarto. El vino de la abuela también cuenta. Los bumeranes y el Terremoto morado bajan en la misma proporción. El rayo de la Tormenta de agonía sigue matando de un toque.
+
 ## v2.37 — 2026-11-18
 * Feature
     - **Contragolpe:** si un enemigo te pega mientras rodás, además de esquivarlo le devolvés un golpe al instante que hace 2,5 veces el daño de tu arma. A los enemigos comunes también los empuja; a los jefes, no. Tu personaje brilla dorado. Sale una vez por rodada y contra el que te atacó, si está al alcance de tu arma.

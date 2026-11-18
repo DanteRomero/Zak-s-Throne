@@ -588,6 +588,16 @@
       const p = fixture('gero', true); p.stats.health = 400; p.hp = 400; p.stats.endurance = 100; game.enterThrone(); game.finishCutscene(); const zak = game.enemies.find(e => e.type === 'zak');
       game.zakHit(zak, 1); ok(p.hp > 0 && p.hp <= 400 * .48 + 1e-6, 'One hit takes more than half'); game.zakHit(zak, 1); equal(game.state, 'paused');
     });
+    test('v2.38: against Zak, armor lowers the share of your health each hit takes; elemental survives 3 and falls on the 4th', () => {
+      near(Z.zakHitShare(0), .52); near(Z.zakHitShare(13), .312); near(Z.zakHitShare(16), .264); near(Z.zakHitShare(100), .2, 'never below 20%');
+      const hits = armorTier => { const p = fixture('gero', true); p.stats.health = 400; p.hp = 400; p.armorTier = armorTier; game.enterThrone(); game.finishCutscene();
+        const zak = game.enemies.find(e => e.type === 'zak'); let n = 0; while (game.state === 'playing' && n < 10) { game.zakHit(zak, 1); n++; } return n; };
+      equal(hits(0), 2, 'no armor'); equal(hits(2), 3, 'iron'); equal(hits(4), 3, 'diamond'); equal(hits(Z.MAX_ARMOR), 4, 'elemental');
+      const p = fixture('gero', true); p.stats.health = 400; p.hp = 400; p.armorTier = Z.MAX_ARMOR; p.buffs.wine = 30; game.enterThrone(); game.finishCutscene();
+      const zak = game.enemies.find(e => e.type === 'zak'), max = game.stats().maxHealth; game.zakHit(zak, 1); near(max - p.hp, max * .264, 'wine counts');
+      // El rayo de la Tormenta de agonía sigue matando de un toque.
+      game.bolts = [{x: p.x, y: p.y, t: .01, max: .85}]; advance(.05); equal(game.state, 'paused', 'lightning still kills');
+    });
     test('Zak stands still after an attack, leaving an opening for melee', () => {
       const p = fixture('gero', true); game.enterThrone(); game.finishCutscene(); const zak = game.enemies.find(e => e.type === 'zak');
       Object.assign(zak, {x: p.x + 60, y: p.y, act: {id: 'slash', t: 2.09, done: 2, swing: 2}, cd: {slash: 0, raise: 99, storm: 99, wrath: 99, purple: 99, major: 99, boomerang: 99, ready: 1}});

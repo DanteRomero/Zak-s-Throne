@@ -282,9 +282,10 @@ Object.assign(Z.Game.prototype, {
   if(len<48&&e.cd.bite<=0){e.act={id:'bite',t:0};e.cd.bite=1.3;return;}
   this.steer(e,p.x,p.y,e.stats.moveSpeed*.95,dt,len);
  },
- // Cualquier golpe de Zak se lleva un poco más de la mitad de tu vida máxima: con dos alcanza.
+ // Sin armadura, cualquier golpe de Zak se lleva un poco más de la mitad de tu vida máxima: con dos alcanza.
  zakHit(e,mult=1,opts={}){
-  const raw=Math.max(e.stats.strength*mult,this.stats().maxHealth*.52*mult);
+  // La armadura baja la parte de tu vida que se lleva (data.js); la fuerza mínima baja en la misma proporción.
+  const s=this.stats(),share=Z.zakHitShare(s.armor),raw=Math.max(e.stats.strength*mult*share/Z.ZAK_HIT.base,s.maxHealth*share*mult);
   return this.hurtPlayer(raw,'zak',false,{pierce:true,...opts});
  },
  zakAI(e,dt,len){
@@ -324,7 +325,7 @@ Object.assign(Z.Game.prototype, {
    if(a.id==='boomerang'){
     if(a.t<.75){this.aimAt(e);return;}
     this.sound.play('slam');this.shake(5,.3);this.effect(e.x,e.y,'wave',.4,{radius:70});
-    const base=Math.atan2(p.y-6-(e.y-14),p.x-e.x),damage=Math.max(e.stats.strength*.6,this.stats().maxHealth*.52*.6);
+    const base=Math.atan2(p.y-6-(e.y-14),p.x-e.x),zs=this.stats(),share=Z.zakHitShare(zs.armor),damage=Math.max(e.stats.strength*.6*share/Z.ZAK_HIT.base,zs.maxHealth*share*.6);
     for(const offset of [-.38,0,.38]){const ang=base+offset;
      this.projectiles.push({x:e.x+Math.cos(ang)*18,y:e.y-14+Math.sin(ang)*18,dx:Math.cos(ang),dy:Math.sin(ang),type:'boomerang',hostile:true,pierce:true,damage,source:'zak',owner:e.id,traveled:0,range:300,back:false,hitCd:0});}
     this.sound.play('spit');e.act=null;e.cd.boomerang=5.5;e.cd.rest=ZAK_REST;return;}

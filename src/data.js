@@ -218,7 +218,7 @@
       name: 'Zak', boss: true, base: { health: 20000, strength: 40, speed: 22, endurance: 85 },
       growth: { health: 400, strength: 1.5, speed: 0.2, endurance: 0.3 },
       xp: 8000, coins: [300, 400], color: '#6d4ba0', visionRange: 2000, knockback: false, respawn: 0, lives: 3, lateHealthOnly: true,
-      description: 'El gobernante. Tres vidas, la Espada del Caos y dos golpes alcanzan para tumbarte. Espadazos, bumeranes de energía si te alejás, esqueletos, jefes invocados y la Tormenta de agonía (solo la piedra lo daña). En su última vida: la Ira del gobernante y el Terremoto morado.'
+      description: 'El gobernante. Tres vidas, la Espada del Caos y, sin armadura, dos golpes alcanzan para tumbarte. Espadazos, bumeranes de energía si te alejás, esqueletos, jefes invocados y la Tormenta de agonía (solo la piedra lo daña). En su última vida: la Ira del gobernante y el Terremoto morado.'
     }
   };
   // Ofrendas: las sueltan los jefes, se venden en El Almacén y abren el portal del altar.
@@ -527,6 +527,12 @@
     return true;
   };
 
+  // Contra Zak la armadura no resta: baja la parte de tu vida que se lleva cada golpe.
+  // Sin armadura, el 52% (caés con el 2.º); con la de piedra elemental (13), el 31,2% (caés con el 4.º).
+  Zak.ZAK_HIT = { base: 0.52, perArmor: 0.016, min: 0.2 };
+  Zak.zakHitShare = function (armor) {
+    return Math.max(Zak.ZAK_HIT.min, Zak.ZAK_HIT.base - Zak.ZAK_HIT.perArmor * Math.max(0, finite(armor)));
+  };
   Zak.damageAfterArmor = function (raw, armor) {
     raw = Math.max(0, finite(raw));
     if (!raw) return 0;

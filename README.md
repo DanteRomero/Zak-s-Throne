@@ -2,7 +2,7 @@
 
 Una aventura de acción y exploración en pixel art, vista desde arriba. Elegí a uno de siete amigos, preparate en la aldea y salí a explorar la cueva y los Yuyos.
 
-Versión actual: **v2.37**. Los cambios de cada versión están en [CHANGELOG.md](CHANGELOG.md).
+Versión actual: **v2.38**. Los cambios de cada versión están en [CHANGELOG.md](CHANGELOG.md).
 
 ## Jugar
 
@@ -377,7 +377,17 @@ Son los valores en nivel 1; todos crecen con tu nivel. Hacen el **71%** de su fu
 
 En el altar del cementerio se deja **una ofrenda de cada jefe** (E). Si tenés varias del mismo tipo, toma una sola; las que dejás quedan guardadas aunque te vayas. Mientras Cerbero esté vivo, el altar está cerrado. Con las cinco, una escena muestra cómo las ofrendas suben, giran, chocan entre rayos y abren un **portal violeta**: tocalo para entrar a la dimensión de Zak. Al entrar, Zak te recibe con una escena («¿Y vos quién sos?»…) y recién después empieza la pelea. Cada visita gasta un juego completo de ofrendas.
 
-Cualquier golpe de Zak se lleva el **52%** de tu vida máxima, sin importar la armadura: dos golpes alcanzan.
+Sin armadura, cualquier golpe de Zak se lleva el **52%** de tu vida máxima: dos golpes alcanzan. Contra él la armadura no resta puntos: cada punto baja **1,6** ese porcentaje (nunca menos del 20%), y el vino de la abuela también cuenta. Los bumeranes y el Terremoto morado bajan en la misma proporción. El rayo de la Tormenta de agonía sigue matando de un toque.
+
+| Armadura | Golpe de Zak | Caés con el… |
+| --- | ---: | ---: |
+| Sin armadura | 52% | 2.º golpe |
+| 🪵 Madera (2) | 48,8% | 3.º |
+| ⛓ Hierro (4) | 45,6% | 3.º |
+| 🟨 Oro (6) | 42,4% | 3.º |
+| 💎 Diamante (9) | 37,6% | 3.º |
+| 🔮 Piedra elemental (13) | 31,2% | 4.º |
+| 🔮 Elemental + vino (16) | 26,4% | 4.º |
 
 - **Espadazo:** tres golpes hacia adelante en un abanico de 60°.
 - **Bumeranes de energía:** si estás lejos, levanta la espada, golpea el piso y lanza tres bumeranes violetas en abanico (marca tres líneas). Atraviesan paredes, van unos 300 píxeles y vuelven a su mano; pueden pegarte a la ida y a la vuelta. Cada uno se lleva el 31% de tu vida máxima.
@@ -472,7 +482,7 @@ Paco corre el **90%** de lo que marca su banda; Fede, el **80%**.
 
 ### Armaduras
 
-La armadura resta su valor a cada golpe, con un mínimo de **1 de daño por golpe**. El veneno, el desangrado, las quemaduras y los golpes de Zak la ignoran. Se fabrican en El Taller, **en orden**: cada una necesita la anterior y protege más.
+La armadura resta su valor a cada golpe, con un mínimo de **1 de daño por golpe**. El veneno, el desangrado y las quemaduras la ignoran. Contra Zak funciona distinto: baja la parte de tu vida que se lleva cada golpe (ver **El Trono de Zak**). Se fabrican en El Taller, **en orden**: cada una necesita la anterior y protege más.
 
 | Armadura | Armadura | Costo |
 | --- | ---: | --- |
@@ -574,7 +584,7 @@ Si ya tenés Node instalado:
 node tests/rules.test.js
 ```
 
-Abrí `tests/index.html` para ejecutar las 47 pruebas de reglas y las 237 pruebas de integración del motor en el navegador. El resultado detalla cada caso aprobado o fallido.
+Abrí `tests/index.html` para ejecutar las 47 pruebas de reglas y las 238 pruebas de integración del motor en el navegador. El resultado detalla cada caso aprobado o fallido.
 
 También se incluyen 96 pruebas de interfaz y de pixel art, 31 del ranking (con un servidor simulado), 36 de controles táctiles y 42 de la nube (también con un servidor simulado) con Chrome y Python 3, sin librerías adicionales. El verificador abre un perfil temporal aislado; nunca usa tus guardados personales:
 
