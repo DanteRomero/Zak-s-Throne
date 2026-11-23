@@ -6,6 +6,13 @@ Cada versión lista sus cambios agrupados por tipo:
 - **Change:** algo que ya existía y ahora funciona distinto.
 - **Fix:** un error corregido.
 
+## v2.40 — 2026-11-23
+* Feature
+    - **Tamaño de la interfaz:** en Opciones y controles podés achicar o agrandar los recuadros de la pantalla de juego: la vida, la ubicación, los botones de arriba, el diario, los estados y la barra del jefe. Hay cuatro tamaños: muy chica, chica, normal (la de siempre) y grande. Así en el celular queda más pantalla libre para jugar.
+    - **Zoom de la cámara:** en la misma pantalla podés alejar la cámara para ver más mundo alrededor: cerca (la vista de siempre), lejos (un 30% más) y muy lejos (un 60% más). Las dos opciones se guardan y funcionan también en la computadora.
+* Change
+    - **Interiores más chicos que la vista:** si la cámara muestra más que el lugar donde estás (la guardería o el trono con la cámara alejada, o el celular en vertical), el lugar queda centrado y lo de afuera se tapa, en vez de verse lo que hay del otro lado de la pared.
+
 ## v2.39 — 2026-11-18
 * Feature
     - **Medallas del contragolpe:** «Devolución» (plata) por hacer 100 contragolpes y «Te la devuelvo» (oro) por hacerle 10 contragolpes a Zak en una misma pelea. La partida guarda cuántos contragolpes hiciste; las de antes arrancan en 0.

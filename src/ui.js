@@ -50,6 +50,18 @@
     document.documentElement.style.setProperty('--tb', CONTROL_SIZES[game.settings.controls][2]);
   }
   applyControls();
+  // Tamaño de los recuadros del HUD (vida, bolsa, jefe, diario…) y cuánto mundo entra en pantalla.
+  const HUD_SIZES = { tiny: ['Muy chica', .7], small: ['Chica', .85], normal: ['Normal', 1], large: ['Grande', 1.15] };
+  const VIEW_SIZES = { normal: ['Cerca', 1], far: ['Lejos', 1.3], farther: ['Muy lejos', 1.6] };
+  if (HUD_SIZES[preferences.hud]) game.settings.hud = preferences.hud;
+  if (VIEW_SIZES[preferences.view]) game.settings.view = preferences.view;
+  function applyView() {
+    document.documentElement.style.setProperty('--hud', HUD_SIZES[game.settings.hud][1]);
+    if (!game.renderer) return;
+    const view = VIEW_SIZES[game.settings.view][1];
+    if (game.renderer.view !== view) { game.renderer.view = view; game.renderer.resize(game.state === 'playing' || game.state === 'paused'); }
+  }
+  applyView();
   if (game.sound) game.sound.enabled = game.settings.sound;
   function updateSound() {
     const enabled = !!game.settings.sound;
@@ -460,11 +472,20 @@
         sizeToggle.textContent = CONTROL_SIZES[game.settings.controls][0].toUpperCase();
       },'toggle');
       sizeToggle.setAttribute('aria-label','Tamaño de los controles táctiles'); sizeRow.append(sizeToggle); parent.append(sizeRow);
+      parent.append(el('h3','sheet-heading','Interfaz y cámara'));
+      [['hud','Tamaño de la interfaz',HUD_SIZES],['view','Zoom de la cámara',VIEW_SIZES]].forEach(([key,label,options]) => {
+        const keys = Object.keys(options), row = el('div','setting-row'); row.append(el('span','',label));
+        const toggle = button(options[game.settings[key]][0].toUpperCase(), () => {
+          game.settings[key] = keys[(keys.indexOf(game.settings[key]) + 1) % keys.length]; persistSettings(); applyView();
+          toggle.textContent = options[game.settings[key]][0].toUpperCase();
+        },'toggle');
+        toggle.id = 'setting-' + key; toggle.setAttribute('aria-label',label); row.append(toggle); parent.append(row);
+      });
       parent.append(el('h3','sheet-heading','Teclas'));
       const help = el('div','help-grid');
       [['Moverte','WASD / flechas'],['Talar o picar','E, quieto'],['Correr','Shift'],['Atacar','Espacio / clic'],['Rodar','Ctrl / clic derecho (hacia donde vas)'],['Habilidad','Q'],['Interactuar','E'],['Usar hierba','R'],['Usar objeto','F'],['Cambiar objeto','G'],['Bolsa y amuletos','B'],['Pescar','E en una laguna'],['Armas','1 — 5'],['Personaje','C'],['Diario','J'],['Medallas','L'],['Bestiario','K'],['Pausa','Esc']].forEach(([action,key]) => { const row = el('div'); row.append(el('span','',action),el('kbd','',key)); help.append(row); });
       parent.append(help);
-      paragraph(parent,'Los controles táctiles aparecen en pantallas compatibles. En un teléfono, giralo horizontalmente para ver mejor. El sonido se activa después de tu primera interacción.','hint');
+      paragraph(parent,'La interfaz más chica deja ver más pantalla y alejar la cámara muestra más mundo alrededor. Los controles táctiles aparecen en pantallas compatibles. En un teléfono, giralo horizontalmente para ver mejor. El sonido se activa después de tu primera interacción.','hint');
     },returnToPause ? showPause : null);
   }
   $('settings-button').addEventListener('click',showSettings);

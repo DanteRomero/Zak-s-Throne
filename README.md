@@ -2,7 +2,7 @@
 
 Una aventura de acción y exploración en pixel art, vista desde arriba. Elegí a uno de siete amigos, preparate en la aldea y salí a explorar la cueva y los Yuyos.
 
-Versión actual: **v2.39**. Los cambios de cada versión están en [CHANGELOG.md](CHANGELOG.md).
+Versión actual: **v2.40**. Los cambios de cada versión están en [CHANGELOG.md](CHANGELOG.md).
 
 ## Jugar
 
@@ -46,6 +46,7 @@ La dirección de movimiento orienta al personaje; el ratón permite dirigir ataq
 - **Botones para el pulgar derecho:** ⟲ rueda, ✦ usa la habilidad, E se ilumina cuando hay algo para usar cerca, ❦ usa una hierba, 🎒 usa el objeto elegido de la bolsa, » activa o desactiva la carrera y el botón de arma rota entre las conseguidas.
 - **Arriba:** ficha, bolsa y amuletos (🎒), diario, pausa y ⛶ para pantalla completa, que también intenta fijar la orientación horizontal.
 - El teléfono vibra al recibir daño (se desactiva junto con la sacudida de pantalla). Se juega en horizontal o en vertical, aunque en horizontal se ve más mundo. Los botones de la interfaz también permiten acceder a habilidades, armas, ficha, bolsa, diario y pausa.
+- **Interfaz y cámara a tu gusto:** en Opciones, «Tamaño de la interfaz» achica o agranda los recuadros de la vida, la ubicación, los botones de arriba, el diario y la barra del jefe (muy chica, chica, normal o grande), y «Zoom de la cámara» aleja la vista para ver más mundo alrededor (cerca, lejos o muy lejos). Sirven también en la computadora.
 
 El juego se adapta al tamaño de pantalla; en teléfonos conviene usar orientación horizontal. Los indicadores combinan texto, iconos y color. Las opciones permiten ajustar sonido, efectos visuales y la sacudida de pantalla.
 
@@ -586,7 +587,7 @@ node tests/rules.test.js
 
 Abrí `tests/index.html` para ejecutar las 47 pruebas de reglas y las 239 pruebas de integración del motor en el navegador. El resultado detalla cada caso aprobado o fallido.
 
-También se incluyen 96 pruebas de interfaz y de pixel art, 31 del ranking (con un servidor simulado), 36 de controles táctiles y 42 de la nube (también con un servidor simulado) con Chrome y Python 3, sin librerías adicionales. El verificador abre un perfil temporal aislado; nunca usa tus guardados personales:
+También se incluyen 107 pruebas de interfaz y de pixel art, 31 del ranking (con un servidor simulado), 36 de controles táctiles y 42 de la nube (también con un servidor simulado) con Chrome y Python 3, sin librerías adicionales. El verificador abre un perfil temporal aislado; nunca usa tus guardados personales:
 
 ```sh
 python tests/browser_check.py tests/index.html --script tests/engine.test.js

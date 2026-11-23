@@ -210,5 +210,31 @@
    const start=performance.now();for(let k=0;k<40;k++){g.scare=1.4-k*.035;g.fog=k/40;g.renderer.draw(g,g.time+k/60);}const took=performance.now()-start;
    Object.assign(p,{x:saved.x,y:saved.y});Object.assign(g,{biome:saved.biome,fog:saved.fog,scare:saved.scare});g.renderer.initialized=false;
    assert('El susto en la niebla no traba el juego ('+Math.round(took)+' ms para 40 cuadros)',took<2500);}
+  // Tamaño de la interfaz y zoom de la cámara (Opciones).
+  {const p=g.player,saved={x:p.x,y:p.y,biome:g.biome,state:g.state};
+   assert('La interfaz y la cámara arrancan como siempre',g.settings.hud==='normal'&&g.settings.view==='normal'&&getComputedStyle(document.querySelector('.player-panel')).zoom==='1');
+   g.state='playing';g.renderer.resize(true);const near=g.canvas.width;
+   document.getElementById('settings-button').click();
+   const hud=document.getElementById('setting-hud'),view=document.getElementById('setting-view');
+   assert('Opciones muestra el tamaño de la interfaz y el zoom',hud&&view&&hud.textContent==='NORMAL'&&view.textContent==='CERCA');
+   view.click();
+   assert('Alejar la cámara muestra más mundo',view.textContent==='LEJOS'&&g.renderer.view===1.3&&g.canvas.width>near);
+   const mid=g.canvas.width;view.click();const far=g.canvas.width;
+   assert('«Muy lejos» muestra todavía más',view.textContent==='MUY LEJOS'&&far>mid&&far>=near*1.4);
+   const z=Zak.KENNEL_ZONE;Object.assign(p,{x:z.x+z.w/2,y:z.y+z.h/2});g.biome='kennel';g.renderer.initialized=false;g.renderer.draw(g,g.time);
+   assert('Un interior más angosto que la vista queda centrado',Math.abs(g.camera.x-(z.x-(g.canvas.width-z.w)/2))<=1);
+   const corner=g.renderer.ctx.getImageData(2,Math.round(g.canvas.height/2),1,1).data;
+   assert('Lo que queda fuera del interior se tapa ('+[...corner].slice(0,3)+')',corner[0]+corner[1]+corner[2]<100);
+   Object.assign(p,{x:saved.x,y:saved.y});g.biome=saved.biome;g.renderer.initialized=false;
+   view.click();
+   assert('Vuelve a la vista de siempre',view.textContent==='CERCA'&&g.canvas.width===near);
+   hud.click();
+   assert('Agrandar la interfaz agranda los recuadros',hud.textContent==='GRANDE'&&getComputedStyle(document.querySelector('.player-panel')).zoom==='1.15');
+   hud.click();
+   assert('Achicar la interfaz achica los recuadros y la barra del jefe',hud.textContent==='MUY CHICA'&&getComputedStyle(document.getElementById('boss-bar')).zoom==='0.7'&&getComputedStyle(document.querySelector('.bottom-hud')).zoom==='0.7');
+   const stored=JSON.parse(localStorage.getItem('zak.throne.settings.v1')||'{}');
+   assert('Las dos opciones se guardan',stored.hud==='tiny'&&stored.view==='normal');
+   hud.click();hud.click();Zak.UI.hideModal();g.state=saved.state;
+   assert('Y la interfaz vuelve a la normal',g.settings.hud==='normal'&&getComputedStyle(document.querySelector('.player-panel')).zoom==='1');}
   return {passed:results.filter(r=>r.pass).length,failed:results.filter(r=>!r.pass).length,results};
 })()

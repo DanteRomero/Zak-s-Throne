@@ -2301,7 +2301,9 @@
     }
     resize(dynamic = false) {
       const host=this.canvas.parentElement||this.canvas,bounds=host.getBoundingClientRect(),dpr=window.devicePixelRatio||1;
-      const base=dynamic && bounds.width>0 && bounds.width<700 && bounds.height>bounds.width ? 400 : 640;
+      // `view` (Opciones): cuánto mundo entra en pantalla. 1 es la vista de siempre; más, la cámara se aleja.
+      const view=Number.isFinite(this.view)?Math.max(.8,Math.min(1.6,this.view)):1;
+      const base=Math.round((dynamic && bounds.width>0 && bounds.width<700 && bounds.height>bounds.width ? 400 : 640)*(dynamic?view:1));
       let width=base,height=dynamic && bounds.width>0 ? Math.max(200,Math.min(1200,Math.round(base*bounds.height/bounds.width))) : 360,zoom=0;
       if(dynamic&&bounds.width>0){
         // Si la pantalla lo permite, cada píxel del juego mide un número entero de píxeles reales:
@@ -2496,7 +2498,8 @@
       const tx=menu?770+Math.sin(time*.07)*22:focus?focus.x:p.x,ty=menu?955+Math.cos(time*.055)*12:focus?focus.y:p.y;
       const area=viewArea(world,menu?"village":game.biome),cinema=!menu&&(game.cutscene||game.cutsceneFade>0)?Math.round(H*.1):0;
       // En las escenas la cámara puede pasarse del borde lo que miden las franjas negras: esa parte queda tapada.
-      const clampX=v=>Math.max(area.x,Math.min(area.x+area.w-W,v)),clampY=v=>Math.max(area.y-cinema,Math.min(area.y+area.h-H+cinema,v));
+      // Si la vista es más grande que la zona (un interior chico con la cámara alejada), la zona queda centrada.
+      const clampX=v=>area.w<W?area.x-Math.round((W-area.w)/2):Math.max(area.x,Math.min(area.x+area.w-W,v)),clampY=v=>area.h+cinema*2<H?area.y-Math.round((H-area.h)/2):Math.max(area.y-cinema,Math.min(area.y+area.h-H+cinema,v));
       const cx=clampX(tx-(W/2)),cy=clampY(ty-(H/2+4));
       const smoothing=menu?.018:scene?.06:game.cutsceneFade>0?.08:.16;
       if(!this.initialized||(!scene&&!(game.cutsceneFade>0)&&Math.hypot(cx-this.camera.x,cy-this.camera.y)>H)){this.camera.x=cx;this.camera.y=cy;this.initialized=true;}
@@ -2632,6 +2635,10 @@
       for(const effect of game.effects||[])this.drawEffect(c,effect,time);
       if(game.biome==="weeds"&&!menu)for(let k=0;k<4;k++)tuft(c,p.x-8+k*5,p.y+2,"#587a43",true,Math.sin(time*2)>0?1:0);
       c.restore();
+      // Lo que queda fuera de una zona más chica que la vista se tapa: no se ve lo que hay del otro lado de la pared.
+      if(area.w<W||area.h<H){const ax=area.x-ox,ay=area.y-oy;c.fillStyle="#0b1512";
+        if(ax>0)c.fillRect(0,0,ax,H);if(ax+area.w<W)c.fillRect(ax+area.w,0,W-ax-area.w,H);
+        if(ay>0)c.fillRect(0,0,W,ay);if(ay+area.h<H)c.fillRect(0,ay+area.h,W,H-ay-area.h);}
       const hour=Z.dayClock(menu?0:p.playTime).hour,night=Math.max(0,Math.cos((hour-1)*Math.PI/12)),outdoors=!Z.isZakDimension(game.biome)&&game.biome!=="altar"&&!isCaveZone(game.biome);
       if(game.settings?.particles!==false&&!Z.isZakDimension(game.biome)){c.save();c.translate(-ox,-oy);drawAmbient(c,game,ox,oy,W,H,time,outdoors||menu?night:0);c.restore();}
       // Luna roja: aparece y se va de a poco durante la primera y la última hora de la noche.
