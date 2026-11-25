@@ -103,7 +103,7 @@
    // El nido tiene huevos (blancos con manchitas violetas) y las piezas de la guardería se dibujan.
    pen.clearRect(0,0,120,120);Zak.drawExtraObject(pen,{type:'nest',x:30,y:50,w:46,h:18},0);const d=pen.getImageData(0,0,120,120).data,set=new Set();for(let i=0;i<d.length;i+=4)if(d[i+3])set.add('#'+[d[i],d[i+1],d[i+2]].map(v=>v.toString(16).padStart(2,'0')).join(''));
    assert('El nido de la Yarará muestra sus huevos moteados',set.has('#ece3c6')&&set.has('#8a6bb0')&&set.has('#4a3622'));
-   assert('Las piezas de la guardería tienen su dibujo',['kwall','kfence','kcounter','kbell','kdoghouse','kbed','kperch','kfruit','kores','kcart','klamp','khay','krug','kstraw','ksand','kgravel'].every(type=>Zak.drawExtraObject(pen,{type,x:10,y:60,w:30,h:12},0)));}
+   assert('Las piezas de la guardería tienen su dibujo',['kwall','kfence','kcounter','kbell','kdoghouse','kbed','kperch','kfruit','kores','kcart','klamp','khay','krug','kstraw','ksand','kgravel','kgrass','kpalm','kswing','kbananas','kbamboo','kivy','kjfern','kjflower','kmush','kmossrock'].every(type=>Zak.drawExtraObject(pen,{type,x:10,y:60,w:30,h:12},0)));}
   const missing=[];
   for(const text of ['abcdefghijklmnñopqrstuvwxyzáéíóúü¿?¡!.,:;-+/()%0123456789','ABCDEFGHIJKLMNÑOPQRSTUVWXYZÁÉÍÓÚÜ«»…$',...g.world.objects.map(o=>o.label||''),...g.world.npcs.map(n=>n.name||''),...Zak.CHARACTERS.map(c=>c.name),...Object.values(Zak.OFFERINGS).map(o=>o.icon),'♪♫☠✦▸▼▲⚒✝≈✓🗝'])
     for(const ch of Array.from(text))if(!Px.hasGlyph(ch))missing.push(ch);

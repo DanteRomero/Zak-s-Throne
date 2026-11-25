@@ -2,7 +2,7 @@
 
 Una aventura de acción y exploración en pixel art, vista desde arriba. Elegí a uno de siete amigos, preparate en la aldea y salí a explorar la cueva y los Yuyos.
 
-Versión actual: **v2.43**. Los cambios de cada versión están en [CHANGELOG.md](CHANGELOG.md).
+Versión actual: **v2.44**. Los cambios de cada versión están en [CHANGELOG.md](CHANGELOG.md).
 
 ## Jugar
 
@@ -277,7 +277,7 @@ Mientras un enemigo no recibe golpes (el **Refuerzo** del Gólem, el salto de Ce
 - 🐕 **Perro:** cucha, camita, plato de comida, agua, hueso y pelota.
 - 🐍 **Serpiente:** arena, piedra, tronco, lámpara de calor, cactus y la piel que cambió.
 - 🪨 **Golemsín:** piedritas, una montaña de mineral, la zorra de mina, cristales y un yunque.
-- 🐒 **Monin:** una palmera en maceta, una liana para colgarse, un tronco y un racimo de bananas.
+- 🐒 **Monin:** un pedacito de selva con piso de césped: palmera en maceta, cañas de bambú, una liana para colgarse, enredadera en la pared, helechos, flores, hongos, una piedra con musgo, un tronco y un racimo de bananas.
 - Un corral **libre**, con fardos de pasto.
 
 Los compañeros que no llevás esperan cada uno en su corral: entrá, acercate y apretá E para salir con él (el que llevabas se queda), cambiarle el nombre o dejar al tuyo y seguir solo. **Doña Herminia** atiende detrás del mostrador, en el rincón, y cada tanto sale a recorrer los corrales. Si tocás la **campanita** del mostrador, vuelve a atenderte. Adentro es zona segura, no llueve y la luz es siempre tibia; por las ventanas se ve si es de día o de noche.

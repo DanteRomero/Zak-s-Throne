@@ -1615,7 +1615,8 @@
     test('v2.43: Monin has his own pen in the kennel, with his name and decoration', () => {
       const p = fixture('gero', true); const plate = game.world.objects.find(o => o.type === 'kfence' && o.plate === 'monin'); ok(plate, 'a sign for Monin');
       equal(game.world.objects.filter(o => o.type === 'kfence' && o.plate === 'free').length, 1, 'one pen left free');
-      for (const t of ['kpalm', 'kswing', 'kbananas']) ok(game.world.objects.some(o => o.type === t && Z.biomeAt(o.x + 1, o.y + 1) === 'kennel'), t);
+      const grass = game.world.objects.find(o => o.type === 'kgrass'); ok(grass && Math.abs(grass.x + grass.w / 2 - Z.KENNEL.pens.monin.x) < 80, 'a grass floor in his pen');
+      for (const t of ['kpalm', 'kswing', 'kbananas', 'kbamboo', 'kivy', 'kjfern', 'kjflower', 'kmush', 'kmossrock']) ok(game.world.objects.some(o => o.type === t && Z.biomeAt(o.x + 1, o.y + 1) === 'kennel'), t);
       p.pets.monin = {name: 'Coco', level: 1, xp: 0}; p.pets.dog = {name: 'Firulais', level: 1, xp: 0}; p.pet = 'dog'; game.syncPetNpcs();
       const n = game.world.npcs.find(m => m.id === 'kennel-monin'); ok(n, 'waits in the kennel'); ok(Math.abs(n.x - plate.x) < 120 && n.y < plate.y, 'inside the pen with his sign');
     });

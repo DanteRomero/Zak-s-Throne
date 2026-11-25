@@ -32,7 +32,7 @@ Z.buildKennel = function (world, object, path) {
  object('kwall', ROOM.left, FLOOR_BOTTOM, ZONE.w, ROOM.side, true, {face: 'bottom'});
  // Pisos de cada corral (se dibujan debajo de todo): paja en los libres, arena para la serpiente, piedritas para el Golemsín.
  const penBox = pen => { const [x0, x1] = COLS[pen.col]; return pen.row ? {x: x0 + (pen.col ? 6 : 0), y: BOTTOM_FRONT + 6, w: x1 - x0 - (pen.col ? 6 : 0), h: FLOOR_BOTTOM - BOTTOM_FRONT - 6} : {x: x0 + (pen.col ? 6 : 0), y: FLOOR_TOP, w: x1 - x0 - (pen.col ? 6 : 0), h: TOP_FRONT - FLOOR_TOP}; };
- for (const pen of PENS) { const b = penBox(pen), kind = !pen.pet || pen.pet === 'dog' || pen.pet === 'bat' || pen.pet === 'monin' ? 'kstraw' : pen.pet === 'snake' ? 'ksand' : 'kgravel'; object(kind, b.x, b.y, b.w, b.h, false, {variant: pen.col + pen.row * 3, light: pen.pet === 'bat'}); }
+ for (const pen of PENS) { const b = penBox(pen), kind = pen.pet === 'monin' ? 'kgrass' : !pen.pet || pen.pet === 'dog' || pen.pet === 'bat' ? 'kstraw' : pen.pet === 'snake' ? 'ksand' : 'kgravel'; object(kind, b.x, b.y, b.w, b.h, false, {variant: pen.col + pen.row * 3, light: pen.pet === 'bat'}); }
  // Alfombras: un camino por el pasillo y una frente a la puerta.
  object('krug', -700, 2820, 410, 30, false, {variant: 0}); object('krug', -214, 2806, 120, 56, false, {variant: 1});
  // Vallas: entre corrales, y adelante con la tranquera abierta en el medio. Cada corral tiene su cartel.
@@ -55,8 +55,13 @@ Z.buildKennel = function (world, object, path) {
  // Golemsín: montaña de mineral, una zorra de mina con piedras, cristales y un yunque chiquito.
  object('kores', -306, 2998, 26, 16, true); object('kcart', -412, 2994, 30, 16, true); object('kcrystal', -300, 2912, 12, 10, false);
  object('kanvil', -360, 3008, 16, 10, true);
- // Monin: una palmera en maceta, una liana para colgarse, un tronco y un racimo de bananas.
+ // Monin: un pedacito de selva. Piso de césped, palmera, cañas de bambú, liana para colgarse, enredadera en la pared,
+ // helechos, flores, hongos, una piedra con musgo, un tronco y un racimo de bananas.
  object('kpalm', -716, 2656, 16, 12, true); object('kswing', -642, FLOOR_TOP, 10, 46, false); object('klog', -712, 2750, 30, 10, false); object('kbananas', -604, 2752, 14, 8, false);
+ object('kbamboo', -598, 2650, 14, 14, true); object('kivy', -722, FLOOR_TOP - 34, 140, 32, false);
+ object('kjfern', -690, 2706, 12, 8, false, {variant: 0}); object('kjfern', -606, 2700, 12, 8, false, {variant: 1}); object('kjfern', -664, 2764, 12, 8, false, {variant: 2}); object('kjfern', -720, 2722, 12, 8, false, {variant: 1});
+ object('kjflower', -676, 2742, 10, 6, false, {variant: 0}); object('kjflower', -620, 2664, 10, 6, false, {variant: 1}); object('kjflower', -594, 2730, 10, 6, false, {variant: 2});
+ object('kmush', -700, 2690, 8, 6, false); object('kmossrock', -628, 2738, 18, 10, true);
  // Corral libre: fardos de pasto y un cartel.
  object('khay', -708, 2990, 28, 18, true); object('khay', -680, 3004, 26, 16, true);
  // El mostrador de Doña Herminia, en el rincón, con la campanita. Entre el mostrador y la pared queda el paso.
@@ -216,7 +221,7 @@ function drawPiece(c, o, time) {
   case 'kgravel': { R(c, x, y, w, h, '#8a8478'); for (let k = 0; k < 90; k++) { const sx = x + d.hash(k, 4, 47) * (w - 3), sy = y + d.hash(k, 5, 53) * (h - 3); R(c, sx, sy, 3, 2, ['#a19b8e', '#6f6a60', '#b8b2a4'][k % 3]); } return; }
   case 'krug': {
    if (v === 0) { R(c, x, y, w, h, '#8a2f35'); R(c, x + 3, y + 3, w - 6, h - 6, '#b5443f'); for (let k = 8; k < w - 8; k += 16) { R(c, x + k, y + h / 2 - 2, 6, 4, '#e8c47a'); R(c, x + k + 2, y + h / 2 - 1, 2, 2, '#8a2f35'); } R(c, x + 3, y + 5, w - 6, 1, '#e8c47a'); R(c, x + 3, y + h - 6, w - 6, 1, '#e8c47a'); }
-   else { Px.oval(c, x + w / 2, y + h / 2, w / 2, h / 2, '#3f6d4a'); Px.oval(c, x + w / 2, y + h / 2, w / 2 - 5, h / 2 - 4, '#5a8a5a'); Px.oval(c, x + w / 2, y + h / 2, w / 2 - 12, h / 2 - 9, '#3f6d4a'); Z.Draw.pixelText(c, 'BIENVENIDOS', x + w / 2, y + h / 2 + 3, '#e8d9b4', 5); }
+   else { Px.oval(c, x + w / 2, y + h / 2, w / 2, h / 2, '#3f6d4a'); Px.oval(c, x + w / 2, y + h / 2, w / 2 - 5, h / 2 - 4, '#5a8a5a'); Px.oval(c, x + w / 2, y + h / 2, w / 2 - 12, h / 2 - 9, '#3f6d4a'); }
    return;
   }
   case 'kcave': {
@@ -282,6 +287,48 @@ function drawPiece(c, o, time) {
   }
   case 'kcrystal': { POLY(c, [[x + 2, y + h], [x + 4, y + 2], [x + 6, y + h]], '#7fe6f2'); POLY(c, [[x + 5, y + h], [x + 8, y - 3], [x + 11, y + h]], '#a77bff'); R(c, x + 7, y, 1, 5, '#ffffff'); return; }
   case 'kanvil': { R(c, x + 4, y + 4, 8, 6, '#3f4247'); R(c, x, y, 16, 4, '#5e6268'); R(c, x - 2, y + 1, 3, 2, '#5e6268'); R(c, x, y, 16, 1, '#8a8f96'); return; }
+  case 'kgrass': {
+   // Césped del corral de Monin: verde, con matas y alguna florcita.
+   R(c, x, y, w, h, '#4f8a3a'); R(c, x, y, w, 2, '#3f7430');
+   for (let k = 0; k < 90; k++) { const sx = x + d.hash(k, v, 51) * (w - 3), sy = y + 3 + d.hash(k, v, 53) * (h - 6), tone = d.hash(k, v, 57); R(c, sx, sy, 1, 3, tone > .6 ? '#6aa84a' : tone > .3 ? '#3f7430' : '#5a9a40'); R(c, sx + 1, sy + 1, 1, 2, '#2f5a26'); }
+   for (let k = 0; k < 8; k++) R(c, x + d.hash(k, v, 59) * (w - 2), y + 4 + d.hash(k, v, 61) * (h - 8), 1, 1, k % 2 ? '#f2e06a' : '#ffffff');
+   return;
+  }
+  case 'kbamboo': {
+   d.shadow(c, x + w / 2, y + h, w + 2, 3);
+   for (const [dx, tall, col] of [[0, 46, '#7aa84a'], [5, 56, '#8ab85a'], [10, 40, '#6a9a3a']]) {
+    R(c, x + dx, y + h - tall, 3, tall, col); R(c, x + dx, y + h - tall, 1, tall, '#a8d070');
+    for (let k = 8; k < tall; k += 10) R(c, x + dx - 1, y + h - k, 5, 1, '#4a7a2a');
+    POLY(c, [[x + dx + 2, y + h - tall + 6], [x + dx + 9, y + h - tall + 2], [x + dx + 3, y + h - tall + 9]], '#4f9a44');
+   }
+   return;
+  }
+  case 'kivy': {
+   // Enredadera que cae por la pared del fondo, con hojitas.
+   for (let k = 0; k < 9; k++) { const vx = x + 6 + k * 16, len = 14 + Math.round(d.hash(k, 3, 71) * 18), sway = Math.round(Math.sin(time * 1.2 + k)); R(c, vx + sway, y, 1, len, '#2f5a2a'); for (let j = 3; j < len; j += 5) R(c, vx - 2 + sway + (j % 2) * 3, y + j, 3, 2, j % 3 ? '#4f9a44' : '#3f7a34'); }
+   return;
+  }
+  case 'kjfern': {
+   const g = ['#3f8a38', '#4f9a44', '#2f7a2a'][v % 3];
+   for (const [a, b] of [[-6, -6], [6, -6], [-8, -1], [8, -1], [0, -8]]) POLY(c, [[x + 6, y + 7], [x + 6 + a, y + 7 + b], [x + 6 + a * .5, y + 8 + b * .5]], g);
+   return;
+  }
+  case 'kjflower': {
+   const petal = ['#e0507a', '#f2a33a', '#c070e0'][v % 3];
+   R(c, x + 4, y + 2, 1, 4, '#3f7430'); R(c, x + 2, y, 5, 3, petal); R(c, x + 3, y - 1, 3, 1, petal); R(c, x + 4, y + 1, 1, 1, '#ffe08a');
+   R(c, x + 6, y + 3, 3, 2, '#4f9a44');
+   return;
+  }
+  case 'kmush': {
+   R(c, x + 1, y + 3, 2, 3, '#efe6cf'); R(c, x, y + 1, 4, 2, '#c43a3a'); R(c, x + 1, y + 1, 1, 1, '#ffffff');
+   R(c, x + 5, y + 4, 1, 2, '#efe6cf'); R(c, x + 4, y + 3, 3, 1, '#c43a3a');
+   return;
+  }
+  case 'kmossrock': {
+   d.shadow(c, x + w / 2, y + h, w + 2, 3); POLY(c, [[x, y + h], [x + 3, y + 2], [x + 10, y - 1], [x + 17, y + 3], [x + w, y + h]], '#6a6e74');
+   R(c, x + 3, y + 1, 12, 3, '#4f8a3a'); R(c, x + 5, y, 6, 1, '#6aa84a'); R(c, x + 12, y + 4, 4, 2, '#3f7430');
+   return;
+  }
   case 'kpalm': {
    d.shadow(c, x + w / 2, y + h, w + 2, 4); R(c, x + 2, y + 4, 12, 8, '#9a5a32'); R(c, x + 2, y + 4, 12, 2, '#b87a4a'); R(c, x + 3, y + 10, 10, 2, '#7a4422');
    R(c, x + 7, y - 16, 2, 20, '#7a5a38'); R(c, x + 7, y - 16, 1, 20, '#9a7a4a');

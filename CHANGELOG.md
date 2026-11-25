@@ -6,6 +6,11 @@ Cada versión lista sus cambios agrupados por tipo:
 - **Change:** algo que ya existía y ahora funciona distinto.
 - **Fix:** un error corregido.
 
+## v2.44 — 2026-11-25
+* Change
+    - **El corral de Monin es un pedacito de selva:** piso de césped y más plantas: cañas de bambú, enredadera en la pared, helechos, flores, hongos y una piedra con musgo, además de la palmera, la liana, el tronco y las bananas.
+    - **La alfombra redonda de La guardería** ya no dice «Bienvenidos».
+
 ## v2.43 — 2026-11-25
 * Feature
     - **Manada de caníbales:** cuantos más hay juntos, más fuerte pegan. Uno solo pega su daño base; cada otro caníbal vivo a menos de 150 píxeles le suma un 25% (dos juntos, ×1,25; tres, ×1,5), hasta el doble. Arriba de la cabeza se ve cuánto.

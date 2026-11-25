@@ -2520,7 +2520,7 @@
       c.save();c.translate(-ox,-oy);
       const visible=(x,y,pad=90)=>x>ox-pad&&x<ox+W+pad&&y>oy-pad&&y<oy+H+pad;
       const objects=world.objects||[];
-      const FLOOR=["pond","flower","grass","rune","pedestal","krug","kstraw","ksand","kgravel"];
+      const FLOOR=["pond","flower","grass","rune","pedestal","krug","kstraw","ksand","kgravel","kgrass"];
       for(const o of objects)if(FLOOR.includes(o.type)&&visible(o.x+o.w/2,o.y+o.h/2,Math.max(o.w||0,o.h||0)+80))drawObject(c,o,time);
       // Charcos y pasto mojado (weather.js).
       if(!menu&&Z.drawFloorExtras)Z.drawFloorExtras(c,game,visible,time);
