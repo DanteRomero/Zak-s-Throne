@@ -2,7 +2,7 @@
 
 Una aventura de acción y exploración en pixel art, vista desde arriba. Elegí a uno de siete amigos, preparate en la aldea y salí a explorar la cueva y los Yuyos.
 
-Versión actual: **v2.42**. Los cambios de cada versión están en [CHANGELOG.md](CHANGELOG.md).
+Versión actual: **v2.43**. Los cambios de cada versión están en [CHANGELOG.md](CHANGELOG.md).
 
 ## Jugar
 
@@ -277,7 +277,7 @@ Mientras un enemigo no recibe golpes (el **Refuerzo** del Gólem, el salto de Ce
 - 🐕 **Perro:** cucha, camita, plato de comida, agua, hueso y pelota.
 - 🐍 **Serpiente:** arena, piedra, tronco, lámpara de calor, cactus y la piel que cambió.
 - 🪨 **Golemsín:** piedritas, una montaña de mineral, la zorra de mina, cristales y un yunque.
-- 🐒 **Monin:** el que era un corral libre, con fardos de pasto.
+- 🐒 **Monin:** una palmera en maceta, una liana para colgarse, un tronco y un racimo de bananas.
 - Un corral **libre**, con fardos de pasto.
 
 Los compañeros que no llevás esperan cada uno en su corral: entrá, acercate y apretá E para salir con él (el que llevabas se queda), cambiarle el nombre o dejar al tuyo y seguir solo. **Doña Herminia** atiende detrás del mostrador, en el rincón, y cada tanto sale a recorrer los corrales. Si tocás la **campanita** del mostrador, vuelve a atenderte. Adentro es zona segura, no llueve y la luz es siempre tibia; por las ventanas se ve si es de día o de noche.
@@ -528,7 +528,7 @@ Casi todos comparten un radio de detección de **195 píxeles**. Tienen **el mis
 | Gárgola | 300 | 28 | 26 | 70 | +8 / +1,2 / +0,3 / +1 |
 | Sombra de Zak | 160 | 24 | 30 | 30 | +3 / +1 / +0,4 / +0,8 |
 | Mimic | 240 | 30 | 22 | 55 | +6 / +1,2 / +0,3 / +1 |
-| Caníbal | 100 | 8 | 20 | 12 | +1,5 / +0,9 / +0,8 / +1 |
+| Caníbal | 150 | 8 | 20 | 22 | +2,25 / +0,9 / +0,8 / +1 |
 
 - Los **chorros** atacan con cuchillo y no retroceden al recibir golpes.
 - Los **perros** reducen el movimiento un 15% durante 4 segundos; contra Pepe, un 20%.
@@ -546,7 +546,7 @@ Casi todos comparten un radio de detección de **195 píxeles**. Tienen **el mis
 - Las **gárgolas** (Patio) parecen estatuas: mientras son de piedra no les entra ningún golpe. Se despiertan si pasás a menos de 90 píxeles o si les pegás; vuelan, apuntan 0,6 s (línea roja) y se tiran en picada con el 140% de su fuerza. Si te alejás, vuelven a su pedestal y se hacen piedra otra vez, con la vida llena.
 - Las **sombras de Zak** (Patio) atraviesan las paredes y **copian tu último ataque** con 0,55 s de demora: si pegás cuerpo a cuerpo, te devuelven un zarpazo; si tirás con arco o piedra, te tiran un proyectil de sombra. Si no atacás, igual cada tanto te tantean.
 - Los **mimics** salen de algunas carpas del Pueblo Mágico. Son lentos, muerden fuerte (130% de su fuerza), te frenan 2 s y sueltan buena guita.
-- Los **caníbales** (Bosque profundo) tienen la vida de un chorro y pegan más. Andan **de a 2 o 3**: cuando uno te ve, avisa al resto de su grupo. Se quedan a la distancia de la lanza, **apuntan medio segundo** (una línea roja y un **!**) y la clavan hasta unos 56 píxeles adelante, con el **125%** de su fuerza. Rodar lo esquiva y sirve para el contragolpe. Con menos del **15% de vida**, un **35%** de las veces salen corriendo durante 6 s (se les ven gotitas de sudor). **Si un caníbal te noquea**, un **10%** de las veces te roba una cosa que llevás encima: un arma (menos los puños), la armadura puesta, un amuleto puesto o **una sola unidad** de un consumible o de las hierbas. Nunca te roba al compañero. El aviso de la derrota dice qué se llevó. Lo tiene **ese grupo**: si volvés y los vencés a todos, te lo devuelven tal cual (el arma con su nivel).
+- Los **caníbales** (Bosque profundo) tienen un **50% más de vida** que un chorro, algo de armadura y pegan más. Andan **de a 2 o 3**: cuando uno te ve, avisa al resto de su grupo. **Manada:** cuantos más hay juntos, más fuerte pegan. Uno solo pega su daño base; cada otro caníbal vivo a menos de 150 píxeles le suma un **25%** (dos juntos, ×1,25; tres, ×1,5), hasta el **doble**. Arriba de su cabeza se ve cuánto (X1,25, X1,5…). Se quedan a la distancia de la lanza, **apuntan medio segundo** (una línea roja y un **!**) y la clavan hasta unos 56 píxeles adelante, con el **125%** de su fuerza. Rodar lo esquiva y sirve para el contragolpe. Con menos del **15% de vida**, un **35%** de las veces salen corriendo durante 6 s (se les ven gotitas de sudor). **Si un caníbal te noquea**, un **10%** de las veces te roba una cosa que llevás encima: un arma (menos los puños), la armadura puesta, un amuleto puesto o **una sola unidad** de un consumible o de las hierbas. Nunca te roba al compañero. El aviso de la derrota dice qué se llevó. Lo tiene **ese grupo**: si volvés y los vencés a todos, te lo devuelven tal cual (el arma con su nivel).
 
 Los ataques empujan a perros, serpientes y ratas; las ratas prendidas deben terminar su agarre. Los aumentos propios de vida de cada enemigo se aplican según la tabla, sin sumarles los 2 de vida automáticos del jugador. El daño de veneno también respeta el límite de fuerza de 100.
 
@@ -599,7 +599,7 @@ Si ya tenés Node instalado:
 node tests/rules.test.js
 ```
 
-Abrí `tests/index.html` para ejecutar las 47 pruebas de reglas y las 251 pruebas de integración del motor en el navegador. El resultado detalla cada caso aprobado o fallido.
+Abrí `tests/index.html` para ejecutar las 47 pruebas de reglas y las 253 pruebas de integración del motor en el navegador. El resultado detalla cada caso aprobado o fallido.
 
 También se incluyen 109 pruebas de interfaz y de pixel art, 31 del ranking (con un servidor simulado), 36 de controles táctiles y 42 de la nube (también con un servidor simulado) con Chrome y Python 3, sin librerías adicionales. El verificador abre un perfil temporal aislado; nunca usa tus guardados personales:
 

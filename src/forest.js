@@ -30,10 +30,10 @@ Z.isOutdoors = biome => biome === 'forest' || (baseOutdoors ? baseOutdoors(biome
 
 // Caníbales: la vida de un chorro, pero pegan más. Lanza de media distancia, avisada.
 Z.ENEMY_TYPES.cannibal = {
- name: 'Caníbal', base: {health: 100, strength: 8, speed: 20, endurance: 12},
- growth: {health: 1.5, strength: .9, speed: .8, endurance: 1},
+ name: 'Caníbal', base: {health: 150, strength: 8, speed: 20, endurance: 22},
+ growth: {health: 2.25, strength: .9, speed: .8, endurance: 1},
  xp: 65, coins: [6, 11], color: '#7a5038', visionRange: 200, knockback: true,
- description: 'Andan de a 2 o 3 con lanzas: apuntan y la clavan a media distancia. Con poca vida, a veces huyen. Si te noquean, a veces te roban algo que llevás encima.'
+ description: 'Andan de a 2 o 3 con lanzas: apuntan y la clavan a media distancia. Cuantos más hay juntos, más fuerte pegan; uno solo pega lo normal. Con poca vida, a veces huyen. Si te noquean, a veces te roban algo que llevás encima.'
 };
 Z.DIMENSION_AI.cannibal = true; Z.REALM_AI.cannibal = 'cannibalAI';
 if (Z.BESTIARY) {
@@ -41,6 +41,12 @@ if (Z.BESTIARY) {
  if (Z.BESTIARY_ORDER && !Z.BESTIARY_ORDER.includes('cannibal')) Z.BESTIARY_ORDER.push('cannibal');
 }
 const SPEAR = Z.SPEAR = {reach: 56, width: 12, power: 1.25, aim: .5, thrust: .3, rest: 1.3, keep: 36};
+// Manada: cada caníbal vivo a menos de 150 píxeles (además del que pega) suma un 25% de daño, hasta el doble. Uno solo, el daño base.
+const PACK = Z.CANNIBAL_PACK = {radius: 150, bonus: .25, max: 2};
+Z.cannibalPack = (game, e) => {
+ const near = (game.enemies || []).filter(m => m !== e && m.type === 'cannibal' && !m.dead && m.biome === e.biome && Math.hypot(m.x - e.x, m.y - e.y) <= PACK.radius).length;
+ return Math.min(PACK.max, 1 + PACK.bonus * near);
+};
 // Con menos del 15% de vida, un 35% de las veces sale corriendo un rato.
 const FLEE = Z.CANNIBAL_FLEE = {below: .15, chance: .35, time: 6};
 // Si un caníbal te noquea, un 10% de las veces te roba una cosa (una sola unidad).
@@ -231,7 +237,7 @@ Object.assign(P, {
    a.t += dt; e.moving = false;
    if (!a.hit) {
     a.hit = true; const dx = p.x - e.x, dy = p.y - e.y, along = dx * a.dx + dy * a.dy;
-    if (along > -4 && along <= SPEAR.reach && Math.abs(dx * a.dy - dy * a.dx) <= SPEAR.width) this.hurtPlayer(e.stats.strength * SPEAR.power, 'cannibal');
+    if (along > -4 && along <= SPEAR.reach && Math.abs(dx * a.dy - dy * a.dx) <= SPEAR.width) this.hurtPlayer(e.stats.strength * SPEAR.power * Z.cannibalPack(this, e), 'cannibal');
     if (this.state !== 'playing') return;
    }
    if (a.t >= SPEAR.thrust) { e.act = null; e.cooldown = Math.max(SPEAR.rest, e.stats.attackCooldown); }
@@ -505,7 +511,7 @@ function monkey(c, n, time, opts = {}) {
  if (opts.banana) { R(c, 5, -10, 2, 4, '#f2d34a'); R(c, 5, -11, 1, 1, '#5a4a1a'); }
  c.restore();
 }
-if (Z.PET_ART) Z.PET_ART.monin = (c, n, time, opts = {}) => monkey(c, {...n, isPet: !n.wild}, time, {...opts, banana: !!n.wild});
+if (Z.PET_ART) Z.PET_ART.monin = (c, n, time, opts = {}) => monkey(c, {...n, isPet: !n.wild && !n.kennel}, time, {...opts, banana: !!n.wild});
 // Caníbal: piel oscura, pintura blanca, pollera de hojas, un hueso en el pelo y la lanza.
 const baseBody = Z.drawExtraEnemyBody;
 Z.drawExtraEnemyBody = function (c, e, time, walk) {
@@ -545,6 +551,12 @@ Z.extraRenderables = function (game, visible, time) {
   if (e.act && e.act.id === 'aim') list.push({y: e.y + .4, kind: 'custom', draw: (c, t) => {
    const pulse = .4 + Math.abs(Math.sin(t * 16)) * .4, dx = e.aimX || 0, dy = e.aimY || 0; c.save(); c.globalAlpha = pulse; c.strokeStyle = '#ff8f7a'; c.lineWidth = 3; c.setLineDash([5, 4]);
    c.beginPath(); c.moveTo(e.x + dx * 8, e.y - 8 + dy * 8); c.lineTo(e.x + dx * SPEAR.reach, e.y - 8 + dy * SPEAR.reach); c.stroke(); c.restore(); D().pixelText(c, '!', e.x, e.y - 44, '#ff8f7a', 10);
+  }});
+  // Manada: con otros caníbales cerca pegan más, y se ve arriba de la cabeza (X1,25, X1,5…), por encima de los árboles.
+  const pack = Z.cannibalPack(game, e);
+  if (pack > 1) list.push({y: e.y + 40, kind: 'custom', draw: (c, t) => {
+   const label = 'X' + String(Math.round(pack * 100) / 100).replace('.', ','), y = e.y - 46 + Math.round(Math.sin(t * 5 + e.x)), w = label.length * 6 + 6;
+   R(c, e.x - w / 2, y - 6, w, 11, '#1a0f0acc'); D().pixelText(c, label, e.x, y, pack >= 1.5 ? '#ff7a5c' : '#f2c36a', 8);
   }});
   // Huyendo: gotitas de sudor.
   if (e.flee > 0) list.push({y: e.y + .5, kind: 'custom', draw: (c, t) => { const drop = (t * 2 + e.x * .01) % 1; c.globalAlpha = 1 - drop; R(c, e.x + 8, e.y - 32 + drop * 8, 2, 3, '#8fd0ff'); c.globalAlpha = 1; }});

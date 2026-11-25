@@ -6,6 +6,14 @@ Cada versión lista sus cambios agrupados por tipo:
 - **Change:** algo que ya existía y ahora funciona distinto.
 - **Fix:** un error corregido.
 
+## v2.43 — 2026-11-25
+* Feature
+    - **Manada de caníbales:** cuantos más hay juntos, más fuerte pegan. Uno solo pega su daño base; cada otro caníbal vivo a menos de 150 píxeles le suma un 25% (dos juntos, ×1,25; tres, ×1,5), hasta el doble. Arriba de la cabeza se ve cuánto.
+* Change
+    - **Caníbales más resistentes:** un 50% más de vida que un chorro (150 de base y +2,25 por nivel, antes 100 y +1,5) y un poco de armadura.
+* Fix
+    - **El corral de Monin en La guardería** decía «Libre» y no tenía nada. Ahora tiene su nombre en el cartel y su decoración: una palmera en maceta, una liana para colgarse, un tronco y un racimo de bananas.
+
 ## v2.42 — 2026-11-25
 * Change
     - **Bosque profundo más grande:** ahora mide 1520 × 720 píxeles, 2,4 veces más que antes. Tiene más caminos, cinco campamentos de caníbales (antes, tres), cinco monos (antes, tres), más árboles con mono y más frutales: seis bananeros, tres mangos y tres cocoteros.

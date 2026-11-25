@@ -1,4 +1,4 @@
-/* Adentro de La guardería (v2.32): seis corrales separados por vallas, cuatro con su compañero y su decoración,
+/* Adentro de La guardería (v2.32): seis corrales separados por vallas, cinco con su compañero y su decoración (Monin, desde la v2.43),
    el mostrador de Doña Herminia, que camina de corral en corral, y la puerta a la calle. También el portal del
    Santuario para salir de la dimensión de Zak y el nido de la Yarará, rediseñado.
    Todo se agrega al final del mapa: no mueve ninguna veta ni árbol de los que recuerdan las partidas guardadas. */
@@ -12,7 +12,7 @@ const ROOM = {left: ZONE.x, top: ZONE.y, right: ZONE.x + ZONE.w, bottom: ZONE.y 
 const FLOOR_TOP = ROOM.top + ROOM.wall, FLOOR_BOTTOM = ROOM.bottom - ROOM.side;
 // Corrales: tres columnas y dos filas, separadas por un pasillo. Cada uno tiene una tranquera abierta de 32 px.
 const COLS = [[-724, -577], [-571, -427], [-421, -277]], FENCES = [-577, -427, -277], TOP_FRONT = 2774, BOTTOM_FRONT = 2888, GATE = 16;
-const PENS = [{col: 0, row: 0, pet: null}, {col: 1, row: 0, pet: 'bat'}, {col: 2, row: 0, pet: 'dog'}, {col: 0, row: 1, pet: null}, {col: 1, row: 1, pet: 'snake'}, {col: 2, row: 1, pet: 'golem'}];
+const PENS = [{col: 0, row: 0, pet: 'monin'}, {col: 1, row: 0, pet: 'bat'}, {col: 2, row: 0, pet: 'dog'}, {col: 0, row: 1, pet: null}, {col: 1, row: 1, pet: 'snake'}, {col: 2, row: 1, pet: 'golem'}];
 const gateX = col => Math.round((COLS[col][0] + COLS[col][1]) / 2);
 // El portal de salida del Santuario: te devuelve a la plaza de Palihue City.
 const HOME_PORTAL = {x: 886, y: 3540, w: 28, h: 28};
@@ -32,7 +32,7 @@ Z.buildKennel = function (world, object, path) {
  object('kwall', ROOM.left, FLOOR_BOTTOM, ZONE.w, ROOM.side, true, {face: 'bottom'});
  // Pisos de cada corral (se dibujan debajo de todo): paja en los libres, arena para la serpiente, piedritas para el Golemsín.
  const penBox = pen => { const [x0, x1] = COLS[pen.col]; return pen.row ? {x: x0 + (pen.col ? 6 : 0), y: BOTTOM_FRONT + 6, w: x1 - x0 - (pen.col ? 6 : 0), h: FLOOR_BOTTOM - BOTTOM_FRONT - 6} : {x: x0 + (pen.col ? 6 : 0), y: FLOOR_TOP, w: x1 - x0 - (pen.col ? 6 : 0), h: TOP_FRONT - FLOOR_TOP}; };
- for (const pen of PENS) { const b = penBox(pen), kind = !pen.pet || pen.pet === 'dog' || pen.pet === 'bat' ? 'kstraw' : pen.pet === 'snake' ? 'ksand' : 'kgravel'; object(kind, b.x, b.y, b.w, b.h, false, {variant: pen.col + pen.row * 3, light: pen.pet === 'bat'}); }
+ for (const pen of PENS) { const b = penBox(pen), kind = !pen.pet || pen.pet === 'dog' || pen.pet === 'bat' || pen.pet === 'monin' ? 'kstraw' : pen.pet === 'snake' ? 'ksand' : 'kgravel'; object(kind, b.x, b.y, b.w, b.h, false, {variant: pen.col + pen.row * 3, light: pen.pet === 'bat'}); }
  // Alfombras: un camino por el pasillo y una frente a la puerta.
  object('krug', -700, 2820, 410, 30, false, {variant: 0}); object('krug', -214, 2806, 120, 56, false, {variant: 1});
  // Vallas: entre corrales, y adelante con la tranquera abierta en el medio. Cada corral tiene su cartel.
@@ -55,8 +55,10 @@ Z.buildKennel = function (world, object, path) {
  // Golemsín: montaña de mineral, una zorra de mina con piedras, cristales y un yunque chiquito.
  object('kores', -306, 2998, 26, 16, true); object('kcart', -412, 2994, 30, 16, true); object('kcrystal', -300, 2912, 12, 10, false);
  object('kanvil', -360, 3008, 16, 10, true);
- // Corrales libres: fardos de pasto y un cartel.
- object('khay', -712, 2690, 28, 18, true); object('khay', -708, 2990, 28, 18, true); object('khay', -680, 3004, 26, 16, true);
+ // Monin: una palmera en maceta, una liana para colgarse, un tronco y un racimo de bananas.
+ object('kpalm', -716, 2656, 16, 12, true); object('kswing', -642, FLOOR_TOP, 10, 46, false); object('klog', -712, 2750, 30, 10, false); object('kbananas', -604, 2752, 14, 8, false);
+ // Corral libre: fardos de pasto y un cartel.
+ object('khay', -708, 2990, 28, 18, true); object('khay', -680, 3004, 26, 16, true);
  // El mostrador de Doña Herminia, en el rincón, con la campanita. Entre el mostrador y la pared queda el paso.
  object('kcounter', -240, FLOOR_TOP, 10, 78, true, {vertical: true});
  object('kcounter', -240, 2716, 136, 10, true, {});
@@ -280,6 +282,25 @@ function drawPiece(c, o, time) {
   }
   case 'kcrystal': { POLY(c, [[x + 2, y + h], [x + 4, y + 2], [x + 6, y + h]], '#7fe6f2'); POLY(c, [[x + 5, y + h], [x + 8, y - 3], [x + 11, y + h]], '#a77bff'); R(c, x + 7, y, 1, 5, '#ffffff'); return; }
   case 'kanvil': { R(c, x + 4, y + 4, 8, 6, '#3f4247'); R(c, x, y, 16, 4, '#5e6268'); R(c, x - 2, y + 1, 3, 2, '#5e6268'); R(c, x, y, 16, 1, '#8a8f96'); return; }
+  case 'kpalm': {
+   d.shadow(c, x + w / 2, y + h, w + 2, 4); R(c, x + 2, y + 4, 12, 8, '#9a5a32'); R(c, x + 2, y + 4, 12, 2, '#b87a4a'); R(c, x + 3, y + 10, 10, 2, '#7a4422');
+   R(c, x + 7, y - 16, 2, 20, '#7a5a38'); R(c, x + 7, y - 16, 1, 20, '#9a7a4a');
+   for (const [a, b] of [[-11, 4], [11, 4], [-8, -4], [8, -4], [0, -8]]) POLY(c, [[x + 8, y - 16], [x + 8 + a, y - 16 + b], [x + 8 + a * .6, y - 14 + b]], '#3f8a38');
+   return;
+  }
+  case 'kswing': {
+   // Liana colgada del techo, con un nudo abajo para colgarse.
+   const sway = Math.round(Math.sin(time * 1.4) * 2);
+   for (let k = 0; k < h; k += 3) R(c, x + 4 + Math.round(sway * k / h), y + k, 2, 3, k % 6 ? '#3f7a34' : '#2f5a2a');
+   R(c, x + 2 + sway, y + h - 2, 6, 4, '#5a3a20'); R(c, x + 3 + sway, y + h - 2, 4, 1, '#7a5a38');
+   R(c, x + 6, y + 10, 4, 3, '#4f9a44');
+   return;
+  }
+  case 'kbananas': {
+   d.shadow(c, x + w / 2, y + h, w, 3); R(c, x + 5, y - 2, 2, 3, '#5a4a1a');
+   for (let k = 0; k < 4; k++) { R(c, x + k * 3, y + 1 + (k % 2), 4, 6, '#d9b030'); R(c, x + k * 3, y + 1 + (k % 2), 4, 2, '#f2d34a'); R(c, x + k * 3 + 1, y + 6 + (k % 2), 2, 1, '#5a4a1a'); }
+   return;
+  }
   case 'khay': {
    d.shadow(c, x + w / 2, y + h, w + 4, 4); R(c, x, y, w, h, '#b8983a'); R(c, x, y, w, 3, '#e0c46a');
    for (let k = 0; k < w; k += 5) R(c, x + k, y + 3, 1, h - 3, '#9a7e2a'); R(c, x + 6, y, 2, h, '#7a5a2a'); R(c, x + w - 8, y, 2, h, '#7a5a2a');

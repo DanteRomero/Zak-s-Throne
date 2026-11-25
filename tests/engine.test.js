@@ -1546,16 +1546,27 @@
       Object.assign(p, {x: -300, y: 3500}); const save = game.snapshot(); game.restore(save, 1); equal(game.biome, 'forest', 'moved into the new forest'); ok(Z.biomeAt(game.player.x, game.player.y) === 'forest');
       Object.assign(game.player, {x: 400, y: 4200}); const inside = game.snapshot(); game.restore(inside, 1); equal(game.player.x, 400, 'saves in the new forest load where they were');
     });
-    test('v2.41: cannibals come in groups of 2 or 3, with a thief health and more damage', () => {
+    test('v2.43: cannibals come in groups of 2 or 3, tougher than a thief and with more damage', () => {
       fixture('gero', true); const groups = {};
       for (const e of game.enemies) if (e.type === 'cannibal') { equal(e.biome, 'forest'); groups[e.group] = (groups[e.group] || 0) + 1; }
       ok(Object.values(groups).length >= 3 && Object.values(groups).every(n => n >= 2 && n <= 3), JSON.stringify(groups));
-      for (const lv of [1, 20, 50]) { near(Z.enemyStats('cannibal', lv).health, Z.enemyStats('thief', lv).health, 'same health at ' + lv); ok(Z.enemyStats('cannibal', lv).strength > Z.enemyStats('thief', lv).strength, 'more damage at ' + lv); }
+      for (const lv of [1, 20, 50]) { near(Z.enemyStats('cannibal', lv).health, Z.enemyStats('thief', lv).health * 1.5, '50% more health than a thief at ' + lv); ok(Z.enemyStats('cannibal', lv).armor > Z.enemyStats('thief', lv).armor || lv > 1, 'a little armor'); ok(Z.enemyStats('cannibal', lv).strength > Z.enemyStats('thief', lv).strength, 'more damage at ' + lv); }
     });
     test('v2.41: the cannibal aims its spear, warns, and thrusts at medium range; rolling dodges it', () => {
       const p = forestAt(); p.stats.health = 1000; p.hp = 1000; game.enemies = []; const c = enemy('cannibal', p.x + 44, p.y); c.cooldown = 0; c.alert = true;
       advance(.1); equal(c.act && c.act.id, 'aim', 'aims first'); near(p.hp, 1000, 'no hit during the warning'); advance(.6); ok(p.hp < 1000, 'the spear reaches 44 px');
       const hp = p.hp; c.cooldown = 0; c.act = null; c.x = p.x + 44; c.y = p.y; advance(.1); equal(c.act && c.act.id, 'aim'); p.rollCooldown = 0; p.stamina = 1; advance(.35); ok(game.roll()); advance(.1); near(p.hp, hp, 'rolling dodges');
+    });
+    test('v2.43: the more cannibals together, the harder they hit; alone, the base damage', () => {
+      const p = forestAt(); p.stats.health = 1e6; p.hp = 1e6; p.armorTier = 0; game.enemies = [];
+      const a = enemy('cannibal', p.x + 44, p.y); near(Z.cannibalPack(game, a), 1, 'alone');
+      const b = enemy('cannibal', p.x + 90, p.y + 40); near(Z.cannibalPack(game, a), 1.25, 'two together');
+      const c = enemy('cannibal', p.x + 60, p.y - 50); near(Z.cannibalPack(game, a), 1.5, 'three together');
+      const far = enemy('cannibal', p.x + 400, p.y); near(Z.cannibalPack(game, a), 1.5, 'one far away does not count');
+      for (let k = 0; k < 6; k++) enemy('cannibal', p.x + 50, p.y + 10 + k); near(Z.cannibalPack(game, a), 2, 'at most double');
+      // El golpe de verdad: solo vs. con dos compañeros cerca.
+      const hit = list => { game.enemies = list; list.forEach((e, i) => { e.stun = i ? 1e9 : 0; e.act = null; e.dead = false; }); const s = list[0]; Object.assign(s, {x: p.x + 44, y: p.y, cooldown: 0, alert: true}); const hp = p.hp; for (let i = 0; i < 60 && p.hp === hp; i++) game.update(1 / 60); return hp - p.hp; };
+      const alone = hit([a]), trio = hit([a, b, c]); near(trio / alone, 1.5, 'x1.5 with three'); b.dead = true; near(Z.cannibalPack(game, a), 1.25, 'the dead do not count');
     });
     test('v2.41: badly hurt cannibals flee 35% of the time', () => {
       forestAt(); game.enemies = []; const run = enemy('cannibal'), stay = enemy('cannibal');
@@ -1600,6 +1611,13 @@
       p.items.coco = 1; const armor = game.stats().armor; ok(game.useItem('coco').ok); near(game.stats().armor, armor + 3);
       p.hp = game.stats().maxHealth; p.stamina = 1; equal(game.useItem('banana').ok, false, 'keep it for later');
       game.biome = 'village'; p.coins = 100; ok(game.buy('banana').ok); equal(p.coins, 100 - Z.BANANA_PRICE);
+    });
+    test('v2.43: Monin has his own pen in the kennel, with his name and decoration', () => {
+      const p = fixture('gero', true); const plate = game.world.objects.find(o => o.type === 'kfence' && o.plate === 'monin'); ok(plate, 'a sign for Monin');
+      equal(game.world.objects.filter(o => o.type === 'kfence' && o.plate === 'free').length, 1, 'one pen left free');
+      for (const t of ['kpalm', 'kswing', 'kbananas']) ok(game.world.objects.some(o => o.type === t && Z.biomeAt(o.x + 1, o.y + 1) === 'kennel'), t);
+      p.pets.monin = {name: 'Coco', level: 1, xp: 0}; p.pets.dog = {name: 'Firulais', level: 1, xp: 0}; p.pet = 'dog'; game.syncPetNpcs();
+      const n = game.world.npcs.find(m => m.id === 'kennel-monin'); ok(n, 'waits in the kennel'); ok(Math.abs(n.x - plate.x) < 120 && n.y < plate.y, 'inside the pen with his sign');
     });
     test('v2.41: Monin is tamed with 10 bananas and then 2 bandages; old saves start from zero', () => {
       const p = forestAt(); const n = game.world.npcs.find(m => m.id === 'pet-wild-monin'); ok(n && Z.biomeAt(n.x, n.y) === 'forest');
