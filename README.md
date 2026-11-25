@@ -2,7 +2,7 @@
 
 Una aventura de acción y exploración en pixel art, vista desde arriba. Elegí a uno de siete amigos, preparate en la aldea y salí a explorar la cueva y los Yuyos.
 
-Versión actual: **v2.41**. Los cambios de cada versión están en [CHANGELOG.md](CHANGELOG.md).
+Versión actual: **v2.42**. Los cambios de cada versión están en [CHANGELOG.md](CHANGELOG.md).
 
 ## Jugar
 
@@ -78,11 +78,11 @@ Los guardados se conservan en el almacenamiento local del navegador usado para j
   - **Patio de las Gárgolas** (al norte de la Biblioteca, y con un paso al Pueblo Mágico): **gárgolas** que parecen estatuas, **sombras de Zak** y las únicas vetas de **cristal arcano**.
   - **Runas en el piso** (Pueblo Mágico, Biblioteca y Patio): se prenden 2 s de cada 6. Pisar una **prendida** explota y te saca el 15% de la vida (rodando la esquivás). Pisar una **apagada** te da **+15% de daño durante 8 s**. Después de pisarla, cada runa descansa 12 s.
 - **Trono de Zak:** sala gótica de ladrillo negro, siempre de noche pero bien visible. Se llega solo por la puerta del Pueblo Mágico. No hay enemigos: solo **Zak** y su trono.
-- **Bosque profundo:** se entra por el **sendero del borde este de Los Yuyos**, al final del camino de abajo (hay un cartel y un arco de ramas). Es un monte cerrado, lleno de árboles y de un verde oscuro: de día y de noche se ve bien solo cerca tuyo, y también le llega el clima. Adentro hay:
+- **Bosque profundo:** se entra por el **sendero del borde este de Los Yuyos**, al final del camino de abajo (hay un cartel y un arco de ramas). Es un monte grande y cerrado (1520 × 720 píxeles), lleno de árboles y de un verde oscuro: de día y de noche se ve bien solo cerca tuyo, y también le llega el clima. Adentro hay:
   - **Monos** en algunos árboles. No se les puede pegar. Si pasás al lado de su árbol, avisan (un **!** arriba del mono y un círculo rojo donde estás) y medio segundo después te saltan encima: si seguís ahí, te sacan el **8% de la vida** (como mínimo 6). Moverte a tiempo o rodar lo esquiva. Después huyen a otro árbol y descansan 7 s.
-  - **Caníbales** con lanza, en **tres campamentos** con su fogata (grupos de 2 y de 3). Ver **Enemigos**.
+  - **Caníbales** con lanza, en **cinco campamentos** con su fogata (grupos de 2 y de 3). Ver **Enemigos**.
   - **Árboles frutales:** bananeros, mangos y cocoteros. Con **E** juntás 2 bananas, 1 mango o 1 coco; el árbol vuelve a dar a los **2 minutos**.
-  - **Un mono para domesticar:** ver **Compañeros**.
+  - **Un mono para domesticar**, al **fondo** del bosque: lo más lejos de la entrada, en el rincón de arriba a la izquierda. Ver **Compañeros**.
 
 Las bajadas custodiadas no se abren mientras su jefe esté vivo; si reaparece mientras estás abajo, subir siempre se puede. Los enemigos vuelven a aparecer después de **35 segundos**; el Capo y la Yarará, después de **3 minutos**; el Chupasangre, de 4; el Gólem, de 5; y Cerbero, de 10.
 
@@ -267,7 +267,7 @@ Su daño es una parte chica del de tu golpe con el arma que tenés en la mano: a
 | 🦇 **Murciélago** | En la Cueva Profunda, en la esquina de arriba a la derecha (arriba del Chupasangre), cuelga un murcielaguito. Con la vida llena, dale de tu sangre **3 veces**: cada vez te deja con **1 de vida**. Si no tenés la vida llena, solo te dice «Un murciélago chiquito... el pobre parece tener hambre». | Muerde rápido pero despacito, y cada **15 s** deja al enemigo **desangrándose 5 s**: cada segundo le saca lo mismo que una mordida (la armadura lo frena). |
 | 🐍 **Serpiente** | Al caer la Yarará Madre, hay un **5%** de que uno de sus huevos se rompa (con escena del cascarón). Agarrá la viborita con E y **llevala en brazos** a la aldea: mientras tanto no podés atacar, y si te noquean vuelve sola al nido. **Doña Herminia**, la señora de vestido verde de La guardería, te la cría en **10 minutos** por **◉ 2000**; si no te alcanza, se los pagás cuando la vas a buscar, y hasta entonces no te la devuelve. Vuelve grande, de tu tamaño. | Pega cuerpo a cuerpo. Cada **15 s** envenena al enemigo **5 s**, y en cada golpe hay un **4%** de que se coma de un bocado a un enemigo que no sea jefe: tarda **3 s** en tragarlo. |
 | 🪨 **Golemsín** | Al caer el Gólem Minero en Las Entrañas (no el que invoca Zak), hay un **5%** de que entre los escombros aparezca uno chiquito. Te tira una piedra cada **2 s** que saca **5 de vida** sin importar la armadura. Acercate y dale, de a poco o todo junto: **2 de piedra, 2 de hierro, 2 de oro, 2 de diamante y 2 Piedras Elementales**. | Tira piedras de lejos. Cada **20 s**, en plena pelea, te protege **3 s de todo daño** (también de los jefes). Mientras te acompaña, juntás **+1 de cada material** al talar o picar, y **+1 Piedra Elemental** cada vez que levantás una. |
-| 🐒 **Monin** | En el Bosque profundo hay un mono sentado en un tronco, con una banana en la mano. Dale **10 bananas** con E (podés dárselas de a varias, en distintas visitas) y después **2 vendas** para el brazo raspado. | Pega más que el perro y menos que la serpiente. Cada **20 s**, si estás peleando y te falta más del 15% de la vida, se acerca y **te da de comer una fruta de tu bolsa** (la que más cura): te cura lo que cura esa fruta y te hace su efecto. Si no tenés frutas, no hace nada. |
+| 🐒 **Monin** | Al fondo del Bosque profundo (arriba a la izquierda, lo más lejos de la entrada) hay un mono sentado, con una banana en la mano. Dale **10 bananas** con E (podés dárselas de a varias, en distintas visitas) y después **2 vendas** para el brazo raspado. | Pega más que el perro y menos que la serpiente. Cada **20 s**, si estás peleando y te falta más del 15% de la vida, se acerca y **te da de comer una fruta de tu bolsa** (la que más cura): te cura lo que cura esa fruta y te hace su efecto. Si no tenés frutas, no hace nada. |
 
 Mientras un enemigo no recibe golpes (el **Refuerzo** del Gólem, el salto de Cerbero, cuando se levanta con otra vida, la Tormenta de Zak…), tampoco le hace nada ningún efecto: ni inmovilizar, ni desangrar, ni envenenar, ni asustar. El compañero se guarda el especial para cuando se pueda. Lo mismo pasa con la danza de Tena.
 
@@ -599,7 +599,7 @@ Si ya tenés Node instalado:
 node tests/rules.test.js
 ```
 
-Abrí `tests/index.html` para ejecutar las 47 pruebas de reglas y las 250 pruebas de integración del motor en el navegador. El resultado detalla cada caso aprobado o fallido.
+Abrí `tests/index.html` para ejecutar las 47 pruebas de reglas y las 251 pruebas de integración del motor en el navegador. El resultado detalla cada caso aprobado o fallido.
 
 También se incluyen 109 pruebas de interfaz y de pixel art, 31 del ranking (con un servidor simulado), 36 de controles táctiles y 42 de la nube (también con un servidor simulado) con Chrome y Python 3, sin librerías adicionales. El verificador abre un perfil temporal aislado; nunca usa tus guardados personales:
 

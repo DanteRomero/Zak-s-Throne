@@ -6,6 +6,12 @@ Cada versión lista sus cambios agrupados por tipo:
 - **Change:** algo que ya existía y ahora funciona distinto.
 - **Fix:** un error corregido.
 
+## v2.42 — 2026-11-25
+* Change
+    - **Bosque profundo más grande:** ahora mide 1520 × 720 píxeles, 2,4 veces más que antes. Tiene más caminos, cinco campamentos de caníbales (antes, tres), cinco monos (antes, tres), más árboles con mono y más frutales: seis bananeros, tres mangos y tres cocoteros.
+    - **Monin está al fondo del bosque:** en el rincón de arriba a la izquierda, lo más lejos de la entrada.
+    - Si guardaste la partida adentro del bosque de antes, al cargarla aparecés en la entrada del nuevo.
+
 ## v2.41 — 2026-11-25
 * Feature
     - **Bosque profundo:** una zona nueva de la dimensión normal, cerrada, llena de árboles y de un verde oscuro. Se entra por un sendero en el borde este de Los Yuyos, al final del camino de abajo.

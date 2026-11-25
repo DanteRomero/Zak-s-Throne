@@ -11,9 +11,14 @@ const finite = n => Number.isFinite(Number(n)) ? Number(n) : 0, clamp = (v, a, b
 const distance = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
 const isBoss = e => !!(Z.ENEMY_TYPES[e.type] && Z.ENEMY_TYPES[e.type].boss);
 
-// La zona: abajo de La guardería, aislada. Se llega solo por el sendero de Los Yuyos.
-const ZONE = Z.FOREST_ZONE = {x: -780, y: 3080, w: 760, h: 600};
-const INSIDE = {x: -120, y: 3600}, OUTSIDE = {x: 2290, y: 1482};
+// La zona: debajo de todo el mapa, aislada. Se llega solo por el sendero de Los Yuyos.
+// v2.42: el doble de grande (antes, 760 × 600 abajo de La guardería). El mundo crece hacia abajo para que entre;
+// el fondo del mapa queda en 3180 × 4480 píxeles, por debajo del tope de los navegadores de celular.
+const ZONE = Z.FOREST_ZONE = {x: -780, y: 3740, w: 1520, h: 720};
+Z.WORLD_HEIGHT = Math.max(Z.WORLD_HEIGHT, ZONE.y + ZONE.h + 20);
+// Donde estaba el bosque hasta la v2.41: quien guardó adentro aparece en la entrada del nuevo.
+const OLD_ZONE = {x: -780, y: 3060, w: 760, h: 640};
+const INSIDE = {x: 640, y: 4384}, OUTSIDE = {x: 2290, y: 1482};
 const inForest = (x, y) => x >= ZONE.x && x < ZONE.x + ZONE.w && y >= ZONE.y && y < ZONE.y + ZONE.h;
 const baseBiome = Z.biomeAt;
 Z.biomeAt = function (x, y) { return inForest(x, y) ? 'forest' : baseBiome(x, y); };
@@ -40,10 +45,10 @@ const SPEAR = Z.SPEAR = {reach: 56, width: 12, power: 1.25, aim: .5, thrust: .3,
 const FLEE = Z.CANNIBAL_FLEE = {below: .15, chance: .35, time: 6};
 // Si un caníbal te noquea, un 10% de las veces te roba una cosa (una sola unidad).
 const THEFT = Z.CANNIBAL_THEFT = {chance: .1};
-const GROUPS = ['g1', 'g2', 'g3'];
+const GROUPS = ['g1', 'g2', 'g3', 'g4', 'g5'];
 
 // Monos: no se les pega. Si pasás al lado de su árbol, avisan y te saltan encima; después huyen a otro árbol.
-const MONKEY = Z.MONKEY = {count: 3, trigger: 52, warn: .5, leap: .35, flee: .8, rest: 7, radius: 20, share: .08, min: 6};
+const MONKEY = Z.MONKEY = {count: 5, trigger: 52, warn: .5, leap: .35, flee: .8, rest: 7, radius: 20, share: .08, min: 6};
 
 // Frutas: curan y tienen un efecto. Se juntan de los árboles del bosque (vuelven a dar en 2 minutos).
 const FRUITS = Z.FRUITS = {
@@ -73,7 +78,8 @@ Z.PET_SKILLS.monin = {name: 'Distracción', detail: 'Llama a los enemigos comune
 const MONIN = Z.PET_MONIN = {bananas: 10, bandages: 2, feedEvery: 20, feedBelow: .85, taunt: 4, radius: 200};
 Z.KENNEL.pens.monin = {x: -650, y: 2716};
 Z.PET_HOW = Object.assign(Z.PET_HOW || {}, {monin: 'En el Bosque profundo (el sendero del este de Los Yuyos) hay un mono que se deja domesticar con 10 bananas y 2 vendas.'});
-const MONIN_SPOT = {x: -140, y: 3480};
+// Al fondo del bosque: el rincón de arriba a la izquierda, lo más lejos de la entrada.
+const MONIN_SPOT = {x: -690, y: 3930};
 
 const baseCreate = Z.createPlayer;
 Z.createPlayer = function (id) { const p = baseCreate(id); p.petProgress = p.petProgress || {}; p.petProgress.monin = {bananas: 0, bandages: 0}; p.stolen = []; return p; };
@@ -92,32 +98,43 @@ Z.createWorld = function () {
  path(2190, 1460, 140, 34);
  object('stairs', 2318, 1446, 30, 34, false, {dir: 'in', door: true, trail: true, to: 'forest', arrive: INSIDE, label: 'Entrar al Bosque profundo'});
  object('sign', 2270, 1426, 16, 12, true, {label: 'Leer el cartel del bosque', text: 'BOSQUE PROFUNDO → Monos en los árboles y caníbales con lanza. Dicen que te roban lo que llevás encima.'});
+ // Que no se pueda pasar caminando desde el Santuario ni desde la Feria.
+ object('barrier', -780, 3690, 3180, 50, true);
  // Adentro: cerco de monte cerrado y la salida en el rincón de abajo a la derecha.
  object('jhedge', ZONE.x, ZONE.y, ZONE.w, 26, true); object('jhedge', ZONE.x, ZONE.y + ZONE.h - 26, ZONE.w, 26, true);
  object('jhedge', ZONE.x, ZONE.y + 26, 22, ZONE.h - 52, true, {side: true}); object('jhedge', ZONE.x + ZONE.w - 22, ZONE.y + 26, 22, ZONE.h - 52, true, {side: true});
- object('stairs', -98, 3622, 40, 30, false, {dir: 'out', door: true, trail: true, inner: true, to: 'weeds', arrive: OUTSIDE, label: 'Volver a Los Yuyos'});
- path(-720, 3586, 640, 30); path(-420, 3130, 30, 470); path(-700, 3290, 300, 26); path(-420, 3206, 280, 26);
- // Campamentos de los caníbales: una fogata y su grupo.
- const camps = [['g1', -195, 3215, [[-220, 3196], [-170, 3238]]], ['g2', -640, 3250, [[-664, 3228], [-618, 3272], [-600, 3222]]], ['g3', -560, 3470, [[-584, 3450], [-540, 3492], [-520, 3452]]]];
+ object('stairs', 660, 4404, 40, 30, false, {dir: 'out', door: true, trail: true, inner: true, to: 'weeds', arrive: OUTSIDE, label: 'Volver a Los Yuyos'});
+ // Caminos: de la entrada hacia el oeste por abajo, sube por el medio y sigue al oeste por arriba hasta Monin.
+ path(-500, 4366, 1200, 30); path(100, 3800, 30, 580); path(-720, 3836, 850, 28); path(-400, 4086, 500, 26); path(-400, 3860, 26, 240);
+ path(130, 4000, 420, 26); path(520, 4000, 26, 366);
+ // Campamentos de los caníbales: una fogata y su grupo (de 2 o de 3).
+ const camps = [
+  ['g1', 450, 4250, [[430, 4232], [474, 4270]]],
+  ['g2', 300, 3900, [[276, 3880], [322, 3920], [340, 3876]]],
+  ['g3', -150, 4250, [[-174, 4230], [-130, 4272], [-110, 4232]]],
+  ['g4', -250, 3960, [[-270, 3940], [-226, 3982]]],
+  ['g5', -600, 4050, [[-624, 4030], [-580, 4072], [-560, 4032]]]
+ ];
  for (const [group, cx, cy, members] of camps) { object('fcamp', cx - 10, cy - 6, 20, 12, false); for (const [x, y] of members) spawn('cannibal', x, y, {group}); }
  // Árboles frutales: se juntan con E y vuelven a dar a los 2 minutos.
  const fruit = (kind, x, y) => object('fruittree', x - 11, y - 8, 22, 16, true, {fruit: kind, label: 'Juntar ' + (kind === 'banana' ? 'bananas' : kind === 'mango' ? 'un mango' : 'un coco')});
- [[-300, 3545], [-160, 3400], [-720, 3420], [-470, 3160]].forEach(([x, y]) => fruit('banana', x, y));
- [[-350, 3360], [-700, 3140]].forEach(([x, y]) => fruit('mango', x, y));
- [[-640, 3612], [-90, 3330]].forEach(([x, y]) => fruit('coco', x, y));
+ [[600, 4300], [300, 4150], [-50, 3950], [-300, 4300], [-650, 4200], [-640, 3800]].forEach(([x, y]) => fruit('banana', x, y));
+ [[620, 3850], [-100, 4160], [-500, 3950]].forEach(([x, y]) => fruit('mango', x, y));
+ [[680, 4100], [-560, 4412], [200, 4300]].forEach(([x, y]) => fruit('coco', x, y));
  // Árboles con mono: siempre los mismos.
- [[-560, 3150], [-300, 3140], [-120, 3160], [-740, 3530], [-450, 3420], [-260, 3300], [-640, 3380]].forEach(([x, y]) => object('jtree', x - 11, y - 7, 22, 14, true, {monkey: true, variant: 1}));
+ [[600, 3800], [420, 4120], [660, 4180], [350, 4330], [180, 4180], [-50, 4320], [-200, 4040], [-350, 3800], [-550, 3920], [-700, 4350], [-450, 4220], [0, 3795]]
+  .forEach(([x, y]) => object('jtree', x - 11, y - 7, 22, 14, true, {monkey: true, variant: 1}));
  // Monte: árboles con semilla propia, que dejan libres caminos, campamentos, frutales y al mono.
  let seed = 4713; const random = () => { seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0; return seed / 4294967296; };
  const points = [INSIDE, MONIN_SPOT, ...camps.flatMap(([, x, y, m]) => [{x, y}, ...m.map(([a, b]) => ({x: a, y: b}))])];
  const clear = o => !world.paths.some(p => o.x < p.x + p.w + 12 && o.x + o.w > p.x - 12 && o.y < p.y + p.h + 12 && o.y + o.h > p.y - 12)
   && !world.objects.some(p => p.solid && inForest(p.x + 1, p.y + 1) && p.type !== 'jhedge' && o.x < p.x + p.w + 16 && o.x + o.w > p.x - 16 && o.y < p.y + p.h + 18 && o.y + o.h > p.y - 18)
   && !points.some(p => Math.hypot(p.x - (o.x + o.w / 2), p.y - (o.y + o.h / 2)) < 44);
- for (let i = 0, placed = 0; i < 400 && placed < 70; i++) {
+ for (let i = 0, placed = 0; i < 1200 && placed < 170; i++) {
   const o = {x: ZONE.x + 30 + Math.floor(random() * (ZONE.w - 82)), y: ZONE.y + 40 + Math.floor(random() * (ZONE.h - 90)), w: 22, h: 14};
   if (!clear(o)) continue; object('jtree', o.x, o.y, o.w, o.h, true, {variant: Math.floor(random() * 3)}); placed++;
  }
- for (let i = 0; i < 90; i++) { const x = ZONE.x + 30 + Math.floor(random() * (ZONE.w - 60)), y = ZONE.y + 34 + Math.floor(random() * (ZONE.h - 70)); if (world.paths.some(p => x < p.x + p.w + 4 && x + 10 > p.x - 4 && y < p.y + p.h + 4 && y + 6 > p.y - 4)) continue; object('fern', x, y, 10, 6, false, {variant: i % 3}); }
+ for (let i = 0; i < 220; i++) { const x = ZONE.x + 30 + Math.floor(random() * (ZONE.w - 60)), y = ZONE.y + 34 + Math.floor(random() * (ZONE.h - 70)); if (world.paths.some(p => x < p.x + p.w + 4 && x + 10 > p.x - 4 && y < p.y + p.h + 4 && y + 6 > p.y - 4)) continue; object('fern', x, y, 10, 6, false, {variant: i % 3}); }
  world.npcs.push({id: 'pet-wild-monin', kind: 'pet', pet: 'monin', wild: true, name: 'Mono', x: MONIN_SPOT.x, y: MONIN_SPOT.y, homeX: MONIN_SPOT.x, homeY: MONIN_SPOT.y, targetX: MONIN_SPOT.x, targetY: MONIN_SPOT.y, dir: 'down', static: true, radius: 7, tag: 24, walk: 0, moving: false, zone: 'forest'});
  return world;
 };
@@ -172,7 +189,7 @@ Object.assign(P, {
  /* ---------- Monos ---------- */
  monkeyTrees() { const w = this.world; if (!w.monkeyTrees) w.monkeyTrees = w.objects.filter(o => o.type === 'jtree' && o.monkey).map(o => ({id: o.id, x: o.x + o.w / 2, y: o.y + o.h})); return w.monkeyTrees; },
  monkeyList() {
-  if (this.monkeysWorld !== this.world) { const trees = this.monkeyTrees(); this.monkeysWorld = this.world; this.monkeys = [0, 4, 2].slice(0, MONKEY.count).map((k, i) => ({id: i, tree: trees[k].id, x: trees[k].x, y: trees[k].y, cd: 1 + i, act: null})); }
+  if (this.monkeysWorld !== this.world) { const trees = this.monkeyTrees(); this.monkeysWorld = this.world; this.monkeys = [0, 3, 6, 8, 10].slice(0, MONKEY.count).map((k, i) => ({id: i, tree: trees[k].id, x: trees[k].x, y: trees[k].y, cd: 1 + i, act: null})); }
   return this.monkeys;
  },
  updateMonkeys(dt) {
@@ -393,6 +410,13 @@ P.updateEnemies = function (dt) {
  try { baseEnemies.call(this, dt); } finally { this.enemies = [...this.enemies, ...taunted.filter(e => !this.enemies.includes(e))]; }
  if (this.state !== 'playing') return;
  for (const e of taunted) this.tauntedStep(e, dt);
+};
+// Quien guardó adentro del bosque de antes (v2.41) aparece en la entrada del nuevo.
+const baseRestoreGame = P.restore;
+P.restore = function (data, slot) {
+ const r = baseRestoreGame.apply(this, arguments), p = this.player;
+ if (p && p.x >= OLD_ZONE.x && p.x < OLD_ZONE.x + OLD_ZONE.w && p.y >= OLD_ZONE.y && p.y < OLD_ZONE.y + OLD_ZONE.h) { Object.assign(p, INSIDE); this.biome = 'forest'; if (this.pet) Object.assign(this.pet, {x: p.x - 14, y: p.y + 6}); if (this.renderer) this.renderer.initialized = false; }
+ return r;
 };
 // Guardados: las partidas de antes arrancan sin progreso con el mono y sin nada robado.
 P.restoreInventory = function (p, source) {

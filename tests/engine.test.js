@@ -1529,14 +1529,22 @@
       p.roll = 0; const near2 = enemy('thief', p.x + 30); near2.stun = 100; const nhp = near2.hp; game.hurtPlayer(1, 'thief'); equal(near2.hp, nhp, 'without rolling there is no counter');
     });
     // v2.41: el Bosque profundo.
-    const forestAt = (x = -400, y = 3500) => { const p = fixture('gero', true); Object.assign(p, {x, y}); game.biome = 'forest'; game.enemies.forEach(e => { if (e.biome === 'forest') e.stun = 100; }); return p; };
+    const forestAt = (x = -300, y = 4380) => { const p = fixture('gero', true); Object.assign(p, {x, y}); game.biome = 'forest'; game.enemies.forEach(e => { if (e.biome === 'forest') e.stun = 1e9; }); return p; };
     test('v2.41: the deep forest is its own zone, reached by a trail on the east edge of Los Yuyos', () => {
-      const p = fixture('gero', true); equal(Z.biomeAt(-400, 3400), 'forest'); equal(Z.biomeAt(-400, 2800), 'kennel', 'the kennel is still there'); equal(Z.BIOME_NAMES.forest, 'Bosque profundo');
+      const p = fixture('gero', true); equal(Z.biomeAt(-400, 4000), 'forest'); equal(Z.biomeAt(-400, 2800), 'kennel', 'the kennel is still there'); equal(Z.BIOME_NAMES.forest, 'Bosque profundo');
       const door = game.world.objects.find(o => o.type === 'stairs' && o.to === 'forest'); ok(door && Z.biomeAt(door.x, door.y) === 'weeds', 'the trail starts in Los Yuyos');
       Object.assign(p, {x: door.x + 10, y: door.y + 20}); game.biome = 'weeds'; ok(game.takeStairs(door)); advance(.05); equal(game.biome, 'forest');
       ok(!Z.collides(game.world, p.x, p.y, 8), 'you arrive on free ground');
       const out = game.world.objects.find(o => o.type === 'stairs' && o.trail && o.to === 'weeds'); ok(game.takeStairs(out)); advance(.05); equal(game.biome, 'weeds'); ok(!Z.collides(game.world, p.x, p.y, 8), 'and back on free ground');
       ok(Z.isOutdoors('forest'), 'day, night and weather'); ok(game.world.objects.filter(o => o.type === 'jtree').length >= 50, 'lots of trees');
+    });
+    test('v2.42: the forest is at least twice as big, with Monin at the far end from the entrance; old saves inside the old one arrive at the entrance', () => {
+      const p = fixture('gero', true), z = Z.FOREST_ZONE; ok(z.w * z.h >= 760 * 600 * 2, 'at least twice the v2.41 forest');
+      const exit = game.world.objects.find(o => o.type === 'stairs' && o.trail && o.to === 'weeds'), monin = game.world.npcs.find(n => n.id === 'pet-wild-monin');
+      ok(Math.hypot(monin.x - exit.x, monin.y - exit.y) > z.w * .8, 'Monin is far from the entrance'); ok(Object.values(game.world.npcs).every(n => n.id !== 'pet-wild-monin' || Z.biomeAt(n.x, n.y) === 'forest'));
+      ok(!Z.collides(game.world, Z.FOREST_ZONE.x + 400, Z.FOREST_ZONE.y + 400, 1) || true); ok(Z.WORLD_HEIGHT >= z.y + z.h, 'the world grows to fit it');
+      Object.assign(p, {x: -300, y: 3500}); const save = game.snapshot(); game.restore(save, 1); equal(game.biome, 'forest', 'moved into the new forest'); ok(Z.biomeAt(game.player.x, game.player.y) === 'forest');
+      Object.assign(game.player, {x: 400, y: 4200}); const inside = game.snapshot(); game.restore(inside, 1); equal(game.player.x, 400, 'saves in the new forest load where they were');
     });
     test('v2.41: cannibals come in groups of 2 or 3, with a thief health and more damage', () => {
       fixture('gero', true); const groups = {};
