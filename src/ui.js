@@ -893,6 +893,8 @@
     if (p.buffs.wine > 0) statuses.push('🍷 Armadura +3 ' + Math.ceil(p.buffs.wine) + ' s');
     if (p.buffs.fireproof > 0) statuses.push('💧 Sin fuego ' + Math.ceil(p.buffs.fireproof) + ' s');
     if (p.buffs.rune > 0) statuses.push('✦ Runa +15% ' + Math.ceil(p.buffs.rune) + ' s');
+    if (p.buffs.mango > 0) statuses.push('🥭 Daño +15% ' + Math.ceil(p.buffs.mango) + ' s');
+    if (p.buffs.coco > 0) statuses.push('🥥 Armadura +3 ' + Math.ceil(p.buffs.coco) + ' s');
     if (p.invuln > 0) statuses.push('🐠 Inmune ' + Math.ceil(p.invuln) + ' s');
     if (p.buffs.dorado > 0) statuses.push('🐠 Energía infinita ' + Math.ceil(p.buffs.dorado) + ' s');
     if (c.id === 'fede' && p.hp <= s.maxHealth * .3) statuses.push('✦ Último aliento');
@@ -1093,7 +1095,8 @@
     else if (type === 'knockout') {
       openModal('De vuelta en casa', 'UN TROPIEZO EN EL CAMINO',parent => {
         paragraph(parent,detail.quote || 'Un respiro, y volvemos a intentarlo.','death-quote');
-        paragraph(parent,'Volviste a la aldea. Tu experiencia, mejoras y armas siguen con vos. El pozo puede ayudarte a recuperar vida.');
+        // Si un caníbal te robó algo, lo dice en vez del aviso de siempre (forest.js).
+        paragraph(parent,detail.stolen || 'Volviste a la aldea. Tu experiencia, mejoras y armas siguen con vos. El pozo puede ayudarte a recuperar vida.',detail.stolen ? 'hint shop-message' : undefined);
         if (detail.execute) paragraph(parent,'Zak se quedó con toda tu guita (◉ ' + detail.lost + '), tus materiales y tus ofrendas. Las armas y las herramientas siguen con vos.','hint');
         else if (detail.lost > 0) paragraph(parent,'En el tropiezo perdiste ◉ ' + detail.lost + ' monedas.','hint');
         const actions = el('div','modal-actions'); actions.append(button('Levantarme y seguir',() => hideModal(),'button primary')); parent.append(actions);

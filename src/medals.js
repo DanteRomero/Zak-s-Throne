@@ -30,7 +30,7 @@ Z.MEDALS = [
  {id: 'golemsin', name: 'Piedra sobre piedra', detail: 'Domesticaste a un Golemsín.', tier: 'gold', check: pet('golem')},
  {id: 'snake', name: 'Leal y letal', detail: 'Domesticaste a la viborita de la Yarará.', tier: 'gold', check: pet('snake')},
  {id: 'gulp', name: 'De un bocado', detail: 'Tu serpiente se comió entero a un enemigo.', tier: 'silver', check: g => (g.player.petEats || 0) > 0},
- {id: 'kennel', name: 'Familia numerosa', detail: 'Tenés a los cuatro compañeros.', tier: 'gold', check: g => Z.PET_ORDER.every(id => g.ownsPet(id))},
+ {id: 'kennel', name: 'Familia numerosa', detail: 'Tenés a todos los compañeros.', tier: 'gold', check: g => Z.PET_ORDER.every(id => g.ownsPet(id))},
  // v2.24: el clima, el vendedor ambulante y el desafío semanal.
  {id: 'struck', name: 'Elegido del cielo', detail: 'Te cayó un rayo en una tormenta eléctrica.', tier: 'silver'},
  {id: 'ambush', name: 'Se me heló la sangre', detail: 'Un esqueleto salió de la tierra pegado a vos en la niebla del cementerio.', tier: 'silver'},
@@ -39,6 +39,8 @@ Z.MEDALS = [
  {id: 'weekly', name: 'Siete días', detail: 'Cumpliste un desafío semanal.', tier: 'silver'},
  {id: 'weeklyfirst', name: 'Madrugador', detail: 'Fuiste el primero de todos en cumplir el desafío de la semana.', tier: 'gold'},
  {id: 'bestfriend', name: 'Uña y carne', detail: 'Un compañero llegó al nivel 10.', tier: 'gold'},
+ // v2.41: el Bosque profundo (forest.js).
+ {id: 'monin', name: 'Mono con banana', detail: 'Domesticaste a Monin, el mono del Bosque profundo.', tier: 'silver', check: pet('monin')},
  // v2.39: el contragolpe (counter.js).
  {id: 'counters', name: 'Devolución', detail: 'Hiciste 100 contragolpes.', tier: 'silver', check: g => (g.player.counters || 0) >= 100},
  {id: 'zakcounter', name: 'Te la devuelvo', detail: 'Le hiciste 10 contragolpes a Zak en una misma pelea.', tier: 'gold'},
@@ -123,6 +125,8 @@ const ART = {
  counters(c) { disc(c, 0, 0, 10, '#2a2a3a'); disc(c, 0, 0, 5, '#7a5a1a'); disc(c, 0, 0, 3, '#ffe08a'); Px.rrect(c, 0, 0, Math.PI / 4, -1, -9, 2, 14, '#cfd6de'); Px.rrect(c, 0, 0, -Math.PI / 4, -1, -9, 2, 14, '#e9eef4'); Px.rrect(c, 0, 0, Math.PI / 4, -3, 4, 6, 2, '#c9a24c'); Px.rrect(c, 0, 0, -Math.PI / 4, -3, 4, 6, 2, '#c9a24c'); for (const [x, y] of [[-8, -2], [8, 2], [0, -9], [0, 8]]) R(c, x, y, 1, 1, '#fff0a6'); },
  // La Espada del Caos partida al medio, con una flecha que vuelve.
  zakcounter(c) { disc(c, 0, 0, 10, '#15131b'); POLY(c, [[-7, 7], [-5, 9], [0, 3], [-2, 1]], '#6d4ba0'); POLY(c, [[1, 0], [3, 2], [8, -6], [6, -8]], '#a77bff'); R(c, -4, 1, 2, 2, '#e2b23c'); POLY(c, [[-1, -1], [1, 1], [0, -2]], '#ffe08a'); POLY(c, [[-8, -3], [-3, -8], [-3, -5], [2, -5], [2, -2], [-3, -2], [-3, 1]], '#ffd25a'); R(c, 6, 5, 1, 1, '#fff0a6'); R(c, 8, 1, 1, 1, '#fff0a6'); },
+ // Una banana pelada con la cola enrulada de un mono.
+ monin(c) { disc(c, 0, 0, 10, '#1f3a22'); R(c, -7, 5, 2, 2, '#6a4224'); R(c, -9, 1, 2, 5, '#6a4224'); R(c, -8, 0, 3, 2, '#6a4224'); POLY(c, [[-4, 7], [-1, -6], [2, -8], [3, -6], [1, 7]], '#f2d34a'); R(c, 1, -8, 2, 2, '#5a4a1a'); POLY(c, [[-1, -4], [-7, -1], [-6, 1]], '#f8e68a'); POLY(c, [[2, -4], [8, -2], [7, 0]], '#f8e68a'); R(c, -2, -1, 2, 6, '#fff4b8'); },
  kennel(c) { disc(c, 0, 0, 10, '#4a6a3a'); POLY(c, [[-8, -1], [0, -8], [8, -1]], '#93834f'); R(c, -6, -1, 12, 8, '#d6c298'); R(c, -2, 2, 4, 5, '#795b3e'); for (const [x, y, col] of [[-8, 7, '#b07a45'], [-4, 8, '#4a3e58'], [4, 8, '#8a8f96'], [8, 7, '#7a5ca0']]) disc(c, x, y, 1.6, col); R(c, -1, -5, 2, 2, '#e9ac9a'); }
 };
 // Dibuja una medalla de radio 14 centrada en (x,y). Bloqueada: gris, con un signo de pregunta.

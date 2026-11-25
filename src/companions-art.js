@@ -68,7 +68,8 @@ function snake(c, n, time, opts = {}) {
  if (Math.sin(time * 6 + (n.x || 0)) > .4) { R(c, hx + 8 * s, hy, 3, 1, '#d65f6b'); R(c, hx + 11 * s, hy - 1, 1, 1, '#d65f6b'); R(c, hx + 11 * s, hy + 1, 1, 1, '#d65f6b'); }
  c.restore();
 }
-const ART = {dog, bat, golem, snake};
+// Otros módulos suman los suyos (Monin, en forest.js).
+const ART = Z.PET_ART = Object.assign(Z.PET_ART || {}, {dog, bat, golem, snake});
 
 // NPC de compañeros: el perro del plato, el murcielaguito colgado, el Golemsín salvaje, la viborita y los de la guardería.
 Z.drawPetNpc = function (c, n, time) {
@@ -80,6 +81,7 @@ Z.drawPetNpc = function (c, n, time) {
  if (n.pet === 'bat') return bat(c, n, time, {hanging: !!n.wild});
  if (n.pet === 'golem') { if (n.wild && n.throwing > 0) n.throwing = Math.max(0, n.throwing - 1 / 60); return golem(c, {...n, faceLeft: n.dir === 'left'}, time, {angry: !!n.wild, toss: n.throwing > 0 ? 1 : 0}); }
  if (n.pet === 'snake') { if (n.baby && cut && cut.id === 'hatch' && !cut.out) return; return snake(c, n, time, {baby: !!n.baby}); }
+ if (ART[n.pet]) return ART[n.pet](c, {...n, faceLeft: n.faceLeft || n.dir === 'left'}, time, {});
 };
 // El compañero que te sigue, sus piedras, la viborita en brazos, el escudo de piedra y el aura de Zak furioso.
 Z.extraRenderables = function (game, visible, time) {

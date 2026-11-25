@@ -202,6 +202,10 @@
    assert('El reloj avisa la tormenta',/TORMENTA/.test(document.getElementById('hud-time').textContent));}
   // v2.27: la pausa muestra al personaje y sus botones llevan íconos sin cambiar el texto.
   if(!document.getElementById('modal-overlay').classList.contains('hidden'))close();
+  // v2.41: si un caníbal te roba algo al noquearte, el aviso lo dice; la ficha cuenta cómo se consigue a Monin.
+  {g.state='playing';const p=g.player,saved={items:p.items,weapons:p.weapons,weapon:p.weapon,equipped:p.equipped,armorTier:p.armorTier,herbs:p.herbs};Object.assign(p,{items:{bandage:2},weapons:['fists'],weapon:'fists',equipped:[],armorTier:0,herbs:0});const rnd=Math.random;Math.random=()=>0;g.knockout('cannibal');Math.random=rnd;
+   const text=document.getElementById('modal-content').textContent;assert('El aviso de la derrota dice qué te robaron los caníbales',/te robaron 🩹 1 de vendas/.test(text)&&/Me querían de almuerzo/.test(text));close();
+   p.stolen=[];Object.assign(p,saved);g.state='playing';assert('La ficha cuenta cómo se consigue a Monin',/10 bananas y 2 vendas/.test(Zak.PET_HOW.monin));}
   g.state='playing';Zak.UI.showPause();
   assert('La pausa muestra al personaje y botones con íconos',!!document.querySelector('.pause-card canvas')&&document.querySelectorAll('#modal-content .button[data-icon]').length>=5&&[...document.querySelectorAll('#modal-content button')].some(b=>b.textContent==='Guardar partida'));close();
   {// v2.34: el susto del esqueleto en la niebla no traba el juego: dibujar 40 cuadros con el susto y la niebla cambiando es rápido.

@@ -44,7 +44,7 @@
   }
   function zoneAt(world, x, y) {
     if (world.zones) {
-      for (const id of ["kennel", "bazaar", "library", "gargoyles", "sanctum", "magic", "throne", "cave3", "cave2", "altar", "cave", "weeds", "village"]) {
+      for (const id of ["forest", "kennel", "bazaar", "library", "gargoyles", "sanctum", "magic", "throne", "cave3", "cave2", "altar", "cave", "weeds", "village"]) {
         const z = world.zones.find(a => a.id === id);
         if (z && x >= z.x && y >= z.y && x < z.x + z.w && y < z.y + z.h) return id;
       }
@@ -1720,6 +1720,8 @@
     }
   }
   function enemyBody(c,e,time,walk,x) {
+    // Enemigos de otros módulos (los caníbales, en forest.js).
+    if(Z.drawExtraEnemyBody&&Z.drawExtraEnemyBody(c,e,time,walk,x))return;
     if(["book","imp","gargoyle","shadow","mimic"].includes(e.type)){realmBody(c,e,time,walk,x);return;}
     if(e.type==="skeleton"||e.type==="archer"){bones(c,e,time,walk);}
     else if(e.type==="mage"){
@@ -2318,9 +2320,9 @@
     // Terreno natural con ruido y tramado, sin grilla; caminos de borde irregular.
     paintGround(c,world) {
       const left=world.left||0,W=world.width-left,H=world.height,surface=Z.SURFACE_HEIGHT||H;
-      const ids=["void","throne","sanctum","magic","altar","cave","cave2","cave3","weeds","village","bazaar","library","gargoyles","kennel"],soft={altar:1,cave:1,weeds:1,village:1};
+      const ids=["void","throne","sanctum","magic","altar","cave","cave2","cave3","weeds","village","bazaar","library","gargoyles","kennel","forest"],soft={altar:1,cave:1,weeds:1,village:1};
       const hexes={
-        village:["#658549","#6e8d4e","#739353","#7c9a56","#869f5a"],weeds:["#54723e","#5d7b43","#668348","#6f8b4c","#7a9250"],
+        village:["#658549","#6e8d4e","#739353","#7c9a56","#869f5a"],forest:["#1c3420","#203a23","#244026","#284629","#2d4d2d"],weeds:["#54723e","#5d7b43","#668348","#6f8b4c","#7a9250"],
         cave:["#3d4146","#44484d","#4a4d52","#505257","#585a5e"],cave2:["#2a2d34","#2f323a","#33363f","#383b44","#3f424c"],cave3:["#2e2523","#352b29","#3b302d","#40342f","#4b3d37"],
         altar:["#333a2e","#394135","#3f4738","#454d3d","#4c5443"],magic:["#16131d","#1a1723","#1e1a29","#231e2f"],gargoyles:["#15141c","#191822","#1d1b27","#22202d"],library:["#24181a","#291c1d","#2e2020","#332424"],bazaar:["#1d1828","#211b2e","#251f33","#2a2338"],void:["#222428","#26282d","#2a2c31"]
       };
@@ -2694,6 +2696,8 @@
         for(const o of objects)if(o.type==="lantern"&&visible(o.x,o.y,60))Px.glow(c,o.x-ox+o.w/2,o.y-oy-20,40,"#f3bc59",.3+Math.sin(time*7+o.x)*.03);
       } else {
         Px.shade(c,W/2,H*.445,W,H,[[135,0],[380,.16]],"#1d2d1e");
+        // Bosque profundo: verde oscuro y cerrado; se ve bien solo cerca tuyo.
+        if(game.biome==="forest"){c.fillStyle="rgba(6,30,14,.3)";c.fillRect(0,0,W,H);Px.shade(c,p.x-ox,p.y-oy-10,W,H,[[130,0],[340,.42]],"#03140a");}
         // Tarde: la luz se vuelve dorada desde las 14:00, llega al máximo a las 18:00 y se apaga a las 20:00.
         const sunset=hour<14||hour>=20?0:hour<18?(hour-14)/4:(20-hour)/2;
         // Noche cerrada (v2.32): un azul profundo y, alrededor tuyo, la poca luz que da la luna.

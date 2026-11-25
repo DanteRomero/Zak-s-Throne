@@ -6,6 +6,18 @@ Cada versión lista sus cambios agrupados por tipo:
 - **Change:** algo que ya existía y ahora funciona distinto.
 - **Fix:** un error corregido.
 
+## v2.41 — 2026-11-25
+* Feature
+    - **Bosque profundo:** una zona nueva de la dimensión normal, cerrada, llena de árboles y de un verde oscuro. Se entra por un sendero en el borde este de Los Yuyos, al final del camino de abajo.
+    - **Monos:** viven en algunos árboles del bosque y no se les puede pegar. Si pasás al lado, avisan (un «!» y un círculo rojo donde estás) y te saltan encima: si no te movés a tiempo o no rodás, te sacan el 8% de la vida. Después huyen a otro árbol.
+    - **Caníbales:** andan de a 2 o 3, con la vida de un chorro y más daño. Apuntan la lanza medio segundo y la clavan a media distancia. Con menos del 15% de vida, un 35% de las veces salen corriendo. Si uno te noquea, un 10% de las veces te roba una cosa que llevás encima (un arma menos los puños, la armadura, un amuleto puesto o una sola unidad de un consumible), nunca al compañero, y el aviso de la derrota dice qué se llevó. Venciendo a todo ese grupo lo recuperás.
+    - **Frutas:** 🍌 banana (cura el 15% y llena la energía), 🥭 mango (cura el 20% y +15% de daño 20 s) y 🥥 coco (cura el 20% y +3 de armadura 30 s). Se juntan con E de los árboles del bosque, que vuelven a dar a los 2 minutos. El Almacén vende bananas a ◉ 30.
+    - **Monin, el mono:** un compañero nuevo, en el Bosque profundo. Se domestica con 10 bananas y después 2 vendas. Pega más que el perro y menos que la serpiente. Cada 20 s, si peleás herido, te da de comer una fruta de tu bolsa, con su efecto. Al nivel 5 aprende **Distracción**: durante 4 s los enemigos comunes de alrededor van a pegarle a él (los esquiva saltando) y no a vos.
+    - **Medalla «Mono con banana»** por domesticar a Monin, y una página del bestiario para el caníbal.
+* Change
+    - **«Familia numerosa»** ahora pide tener a todos los compañeros. Quien ya la tenía no la pierde.
+    - **La guardería:** Monin usa uno de los dos corrales que estaban libres.
+
 ## v2.40 — 2026-11-23
 * Feature
     - **Tamaño de la interfaz:** en Opciones y controles podés achicar o agrandar los recuadros de la pantalla de juego: la vida, la ubicación, los botones de arriba, el diario, los estados y la barra del jefe. Hay cuatro tamaños: muy chica, chica, normal (la de siempre) y grande. Así en el celular queda más pantalla libre para jugar.

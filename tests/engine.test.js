@@ -1431,7 +1431,7 @@
     });
     test('v2.32: the companions you leave wait in their own pen, and you can visit them', () => {
       const p = fixture('gero', true); for (const id of Z.PET_ORDER) p.pets[id] = {name: Z.PETS[id].name}; p.pet = 'bat'; game.syncPetNpcs();
-      const kept = game.world.npcs.filter(n => n.kennel); equal(kept.length, 3, 'all but the bat'); ok(!kept.some(n => n.pet === 'bat'));
+      const kept = game.world.npcs.filter(n => n.kennel); equal(kept.length, Z.PET_ORDER.length - 1, 'all but the bat'); ok(!kept.some(n => n.pet === 'bat'));
       for (let i = 0; i < 900; i++) game.updateNpcs(1 / 15);
       for (const n of kept) { const pen = Z.KENNEL.pens[n.pet]; equal(Z.biomeAt(n.x, n.y), 'kennel'); ok(Math.abs(n.x - pen.x) <= 50 && Math.abs(n.y - pen.y) <= 36, n.name + ' stays in its pen'); ok(!Z.collides(game.world, n.x, n.y, 7, n.id), n.name + ' is not stuck'); }
       const dog = kept.find(n => n.pet === 'dog'); Object.assign(p, {x: dog.x, y: dog.y + 18}); game.biome = 'kennel'; equal(game.petTarget(), dog, 'you can walk in and pet it');
@@ -1527,6 +1527,95 @@
       game.enemies = []; const far = enemy('mage', p.x + 300); far.stun = 100; const fhp = far.hp; p.rollCooldown = 0; p.roll = 0; ok(game.roll()); p.rollX = 0; p.rollY = 0;
       game.hurtPlayer(10, 'mage'); equal(far.hp, fhp, 'too far for fists'); game.hurtPlayer(10, 'lightning', false, {pierce: true}); equal(game.counterUsed, false, 'nobody to counter');
       p.roll = 0; const near2 = enemy('thief', p.x + 30); near2.stun = 100; const nhp = near2.hp; game.hurtPlayer(1, 'thief'); equal(near2.hp, nhp, 'without rolling there is no counter');
+    });
+    // v2.41: el Bosque profundo.
+    const forestAt = (x = -400, y = 3500) => { const p = fixture('gero', true); Object.assign(p, {x, y}); game.biome = 'forest'; game.enemies.forEach(e => { if (e.biome === 'forest') e.stun = 100; }); return p; };
+    test('v2.41: the deep forest is its own zone, reached by a trail on the east edge of Los Yuyos', () => {
+      const p = fixture('gero', true); equal(Z.biomeAt(-400, 3400), 'forest'); equal(Z.biomeAt(-400, 2800), 'kennel', 'the kennel is still there'); equal(Z.BIOME_NAMES.forest, 'Bosque profundo');
+      const door = game.world.objects.find(o => o.type === 'stairs' && o.to === 'forest'); ok(door && Z.biomeAt(door.x, door.y) === 'weeds', 'the trail starts in Los Yuyos');
+      Object.assign(p, {x: door.x + 10, y: door.y + 20}); game.biome = 'weeds'; ok(game.takeStairs(door)); advance(.05); equal(game.biome, 'forest');
+      ok(!Z.collides(game.world, p.x, p.y, 8), 'you arrive on free ground');
+      const out = game.world.objects.find(o => o.type === 'stairs' && o.trail && o.to === 'weeds'); ok(game.takeStairs(out)); advance(.05); equal(game.biome, 'weeds'); ok(!Z.collides(game.world, p.x, p.y, 8), 'and back on free ground');
+      ok(Z.isOutdoors('forest'), 'day, night and weather'); ok(game.world.objects.filter(o => o.type === 'jtree').length >= 50, 'lots of trees');
+    });
+    test('v2.41: cannibals come in groups of 2 or 3, with a thief health and more damage', () => {
+      fixture('gero', true); const groups = {};
+      for (const e of game.enemies) if (e.type === 'cannibal') { equal(e.biome, 'forest'); groups[e.group] = (groups[e.group] || 0) + 1; }
+      ok(Object.values(groups).length >= 3 && Object.values(groups).every(n => n >= 2 && n <= 3), JSON.stringify(groups));
+      for (const lv of [1, 20, 50]) { near(Z.enemyStats('cannibal', lv).health, Z.enemyStats('thief', lv).health, 'same health at ' + lv); ok(Z.enemyStats('cannibal', lv).strength > Z.enemyStats('thief', lv).strength, 'more damage at ' + lv); }
+    });
+    test('v2.41: the cannibal aims its spear, warns, and thrusts at medium range; rolling dodges it', () => {
+      const p = forestAt(); p.stats.health = 1000; p.hp = 1000; game.enemies = []; const c = enemy('cannibal', p.x + 44, p.y); c.cooldown = 0; c.alert = true;
+      advance(.1); equal(c.act && c.act.id, 'aim', 'aims first'); near(p.hp, 1000, 'no hit during the warning'); advance(.6); ok(p.hp < 1000, 'the spear reaches 44 px');
+      const hp = p.hp; c.cooldown = 0; c.act = null; c.x = p.x + 44; c.y = p.y; advance(.1); equal(c.act && c.act.id, 'aim'); p.rollCooldown = 0; p.stamina = 1; advance(.35); ok(game.roll()); advance(.1); near(p.hp, hp, 'rolling dodges');
+    });
+    test('v2.41: badly hurt cannibals flee 35% of the time', () => {
+      forestAt(); game.enemies = []; const run = enemy('cannibal'), stay = enemy('cannibal');
+      Math.random = () => .3; run.hp = run.maxHp * .2; game.hitEnemy(run, run.maxHp * .1, true); ok(run.flee > 0, 'below 15%: 0.3 < 35%');
+      Math.random = () => .5; stay.hp = stay.maxHp * .2; game.hitEnemy(stay, stay.maxHp * .1, true); ok(!(stay.flee > 0), '0.5 > 35%'); Math.random = () => 0; game.hitEnemy(stay, 1, true); ok(!(stay.flee > 0), 'it only tries once');
+    });
+    test('v2.41: a cannibal knockout may steal one unit of something you carry; beating its group gives it back', () => {
+      const p = forestAt(); p.items = {bandage: 3}; p.weapons = ['fists']; p.weapon = 'fists'; p.equipped = []; p.amulets = []; p.armorTier = 0; p.herbs = 0; p.pets = {dog: {name: 'Firulais'}}; p.pet = 'dog';
+      const events = []; game.onEvent = (t, d) => events.push([t, d]); Math.random = () => 0;
+      game.knockout('cannibal'); equal(game.itemCount('bandage'), 2, 'only one bandage'); equal(p.stolen.length, 1); equal(p.pet, 'dog', 'never the companion');
+      const ko = events.find(([t]) => t === 'knockout')[1]; ok(/robaron 🩹 1 de vendas/.test(ko.stolen), ko.stolen); equal(ko.quote, 'Me querían de almuerzo. Casi lo logran.');
+      const group = p.stolen[0].group, save = game.snapshot(); game.restore(save, 1); equal(game.player.stolen.length, 1, 'the save remembers it');
+      game.state = 'playing'; Math.random = original.random; for (const e of game.enemies.filter(e => e.type === 'cannibal' && e.group === group)) { e.stun = 100; game.hitEnemy(e, 1e9, true); }
+      equal(game.itemCount('bandage'), 3, 'back after beating the whole group'); equal(game.player.stolen.length, 0);
+      // Con solo los puños y el compañero, no hay nada para robar.
+      const q = forestAt(); q.items = {}; q.weapons = ['fists']; q.equipped = []; q.armorTier = 0; q.herbs = 0; Math.random = () => 0; game.knockout('cannibal'); equal(q.stolen.length, 0); ok(q.weapons.includes('fists'));
+      // Al 10%: con 0,11 no roba.
+      const r = forestAt(); r.items = {bandage: 3}; Math.random = () => .11; game.knockout('cannibal'); equal(game.itemCount('bandage'), 3);
+      const old = game.snapshot(); delete old.player.stolen; game.restore(old, 1); equal(game.player.stolen.length, 0, 'old saves start with nothing stolen');
+    });
+    test('v2.41: a stolen weapon, armor or amulet is taken whole and returned the same', () => {
+      const p = forestAt(); p.items = {}; p.herbs = 0; p.weapons = ['fists', 'sword']; p.weapon = 'sword'; p.weaponLevels.sword = 3; p.equipped = []; p.armorTier = 0;
+      Math.random = () => 0; game.knockout('cannibal'); ok(!p.weapons.includes('sword')); equal(p.weapon, 'fists');
+      game.state = 'playing'; Math.random = original.random; game.recoverStolen(p.stolen[0].group); ok(p.weapons.includes('sword')); equal(p.weaponLevels.sword, 3, 'keeps its level');
+      p.weapons = ['fists']; p.armorTier = Z.MAX_ARMOR; Math.random = () => 0; game.knockout('cannibal'); equal(p.armorTier, 0); game.state = 'playing'; game.recoverStolen(p.stolen[0].group); equal(p.armorTier, Z.MAX_ARMOR);
+      p.armorTier = 0; p.amulets = ['horseshoe']; p.equipped = ['horseshoe']; game.knockout('cannibal'); equal(p.equipped.length, 0); game.state = 'playing'; game.recoverStolen(p.stolen[0].group); ok(p.equipped.includes('horseshoe'));
+    });
+    test('v2.41: monkeys warn and jump on you when you pass by their tree, then flee to another; they are not enemies', () => {
+      const p = forestAt(); game.monkeysWorld = null; const m = game.monkeyList()[0], tree = game.monkeyTrees().find(t => t.id === m.tree); m.cd = 0;
+      ok(!game.enemies.some(e => e.type === 'monkey'), 'not attackable'); p.stats.health = 400; p.hp = 400; Object.assign(p, {x: tree.x + 20, y: tree.y + 10});
+      advance(.05); equal(m.act && m.act.id, 'warn', 'a warning first'); near(p.hp, 400); advance(.5 + .4); ok(p.hp < 400, 'standing still, it lands on you'); ok(m.act && m.act.id === 'flee'); advance(1); equal(m.act, null); ok(m.tree !== tree.id, 'another tree');
+      const n = game.monkeyList()[1], t2 = game.monkeyTrees().find(t => t.id === n.tree); n.cd = 0; p.hp = 400; Object.assign(p, {x: t2.x + 20, y: t2.y + 10}); advance(.05); equal(n.act && n.act.id, 'warn');
+      Object.assign(p, {x: t2.x + 90, y: t2.y + 60}); advance(.95); near(p.hp, 400, 'moving away in time avoids it');
+    });
+    test('v2.41: fruit trees give bananas, mangos and coconuts; each fruit heals and has its effect; the shop sells bananas', () => {
+      const p = forestAt(); p.items = {}; const tree = game.world.objects.find(o => o.type === 'fruittree' && o.fruit === 'banana'); Object.assign(p, {x: tree.x + tree.w / 2, y: tree.y + tree.h + 10});
+      game.monkeysWorld = null; game.monkeyList().forEach(m => m.cd = 1e9);
+      ok(/bananas/.test(game.nearbyAction().label), game.nearbyAction() && game.nearbyAction().label); game.interact(); equal(game.itemCount('banana'), 2); ok(tree.harvested); game.interact(); equal(game.itemCount('banana'), 2, 'empty until it regrows');
+      advance(Z.FRUIT_REGROW + .2); ok(!tree.harvested, 'regrows in 2 minutes');
+      const max = game.stats().maxHealth; p.hp = max / 2; p.stamina = .2; ok(game.useItem('banana').ok); near(p.hp, max * .65); equal(p.stamina, 1);
+      p.items.mango = 1; const dmg = game.stats().damageMultiplier; ok(game.useItem('mango').ok); near(game.stats().damageMultiplier, dmg * 1.15); advance(20.1); near(game.stats().damageMultiplier, dmg);
+      p.items.coco = 1; const armor = game.stats().armor; ok(game.useItem('coco').ok); near(game.stats().armor, armor + 3);
+      p.hp = game.stats().maxHealth; p.stamina = 1; equal(game.useItem('banana').ok, false, 'keep it for later');
+      game.biome = 'village'; p.coins = 100; ok(game.buy('banana').ok); equal(p.coins, 100 - Z.BANANA_PRICE);
+    });
+    test('v2.41: Monin is tamed with 10 bananas and then 2 bandages; old saves start from zero', () => {
+      const p = forestAt(); const n = game.world.npcs.find(m => m.id === 'pet-wild-monin'); ok(n && Z.biomeAt(n.x, n.y) === 'forest');
+      const done = () => { if (game.cutscene) game.finishCutscene(); };
+      p.items = {banana: 6, bandage: 2}; game.giveMonin(n); done(); equal(game.moninData().bananas, 6); equal(game.moninData().bandages, 0, 'bananas first');
+      p.items.banana = 10; game.giveMonin(n); done(); equal(game.moninData().bananas, 10); equal(game.itemCount('banana'), 6, 'only the 4 it still wanted');
+      game.giveMonin(n); done(); ok(game.ownsPet('monin')); equal(p.pet, 'monin'); equal(game.itemCount('bandage'), 0); ok(!game.world.npcs.some(m => m.id === 'pet-wild-monin'));
+      const save = game.snapshot(); delete save.player.petProgress.monin; save.player.pets = {}; save.player.pet = null; game.restore(save, 1); equal(game.moninData().bananas, 0); game.syncPetNpcs(); ok(game.world.npcs.some(m => m.id === 'pet-wild-monin'));
+      ok(Z.PETS.monin.hit > Z.PETS.dog.hit && Z.PETS.monin.hit < Z.PETS.snake.hit, 'between the dog and the snake');
+    });
+    test('v2.41: Monin feeds you a fruit from your bag while you fight hurt', () => {
+      const p = forestAt(); p.pets.monin = {name: 'Monin', level: 1, xp: 0}; p.pet = 'monin'; game.pet = null; game.ensurePet(); p.items = {mango: 1};
+      game.enemies = []; const c = enemy('cannibal', p.x + 120, p.y); c.alert = true; const max = game.stats().maxHealth; p.hp = max * .5; p.invuln = 99;
+      game.pet.feedCd = 0; for (let i = 0; i < 180 && game.itemCount('mango'); i++) { p.invuln = 99; game.update(1 / 60); }
+      equal(game.itemCount('mango'), 0, 'it used the mango'); ok(p.hp > max * .65, 'healed 20%'); ok(p.buffs.mango > 0, 'and the mango effect');
+      p.hp = max * .5; game.pet.feedCd = 0; advance(1); ok(p.hp <= max * .5 + 1e-6, 'no fruit, no feeding');
+    });
+    test('v2.41: at level 5 Monin distracts common enemies: they chase him, he dodges, and they leave you alone', () => {
+      const p = forestAt(); p.pets.monin = {name: 'Monin', level: 5, xp: 0}; p.pet = 'monin'; game.pet = null; const pet = game.ensurePet(); Object.assign(pet, {x: p.x - 40, y: p.y});
+      game.enemies = []; const a = enemy('thief', p.x + 30, p.y), boss = enemy('capo', p.x + 60, p.y); a.alert = true; boss.alert = true;
+      ok(game.petSkill(pet)); pet.skill = 99; ok(a.taunt > 0); ok(!(boss.taunt > 0), 'bosses ignore it');
+      p.stats.health = 1000; p.hp = 1000; boss.stun = 100; a.cooldown = 0; for (let i = 0; i < 120; i++) { boss.stun = 100; game.update(1 / 60); }
+      near(p.hp, 1000, 'the thief only goes for Monin'); ok(distance2(a, game.pet) < 40, 'it chased him');
+      for (let i = 0; i < 180; i++) { boss.stun = 100; game.update(1 / 60); } ok(!(a.taunt > 0), 'it wears off');
     });
     test('v2.39: counter medals: 100 counters, and 10 on Zak in one fight; the count survives a save and old saves start at 0', () => {
       const p = fixture(); p.weapon = 'fists'; const thief = enemy('thief', p.x + 30); thief.stun = 100; thief.hp = 1e9; thief.maxHp = 1e9;

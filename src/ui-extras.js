@@ -232,7 +232,7 @@ function showThroneChoice() {
 }
 // Segunda página de la ficha: tu compañero, sus números, su habilidad y su nombre.
 // Los que todavía no tenés se ven como silueta, con la pista de cómo se consiguen.
-const HOW = {dog: 'Un perro con el plato vacío espera en la puerta de La guardería. Comprá comida para perro en El Almacén.', bat: 'En la Cueva Profunda, arriba a la derecha, cuelga un murcielaguito con hambre.', snake: 'A veces, al caer la Yarará Madre, uno de sus huevos se rompe.', golem: 'A veces, al caer el Gólem Minero, entre los escombros queda uno chiquito.'};
+const HOW = Zak.PET_HOW = Object.assign({dog: 'Un perro con el plato vacío espera en la puerta de La guardería. Comprá comida para perro en El Almacén.', bat: 'En la Cueva Profunda, arriba a la derecha, cuelga un murcielaguito con hambre.', snake: 'A veces, al caer la Yarará Madre, uno de sus huevos se rompe.', golem: 'A veces, al caer el Gólem Minero, entre los escombros queda uno chiquito.'}, Zak.PET_HOW || {});
 const num = n => (Math.round(n * 10) / 10).toLocaleString('es-AR');
 function petSilhouette(c, id) {
  Zak.drawPetPortrait(c, id); const x = c.getContext('2d'); x.save(); x.globalCompositeOperation = 'source-in'; x.fillStyle = '#0b1d17'; x.fillRect(0, 0, c.width, c.height); x.restore();
